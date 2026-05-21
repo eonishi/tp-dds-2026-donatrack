@@ -21,15 +21,20 @@ public class CargaDonacion {
   }
 
   public void cargarDonacion(List<Bien> bienes){
-
     bienes.stream()
-        .collect(Collectors.groupingBy(Bien::getSubcategoria))
-        .forEach((subCategoria, bienesDeEsaSubCategoria) -> {
-          Donacion donacion = new Donacion(bienesDeEsaSubCategoria);
+        .collect(Collectors.groupingBy(bien -> new SegmentacionKey(
+            bien.getSubcategoria(),
+            bien.isEsPerecedero() ? bien.getFechaVencimiento() : null,
+            bien.getEstadoDeUso() != null ? bien.getEstadoDeUso() : ar.edu.utn.donatrack.BienesYCategorias.EstadoUso.NO_APLICA
+        )))
+        .forEach((key, bienesDeClave) -> {
+          Donacion donacion = new Donacion(bienesDeClave);
           donaciones.add(donacion);
         });
+  }
 
-
+  public List<Donacion> getDonaciones() {
+    return donaciones;
   }
 
 }

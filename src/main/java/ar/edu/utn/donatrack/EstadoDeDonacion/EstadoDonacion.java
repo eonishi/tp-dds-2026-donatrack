@@ -4,11 +4,11 @@ import ar.edu.utn.donatrack.RegistroYSegmentacionDeDonaciones.Donacion;
 
 public abstract class EstadoDonacion {
 
-  public abstract void asignar();
-  public abstract void planificarRuta();
-  public abstract void iniciarTraslado();
-  public abstract void confirmarEntrega();
-  public abstract void reportarFalla();
-  public abstract void marcarVencida();
+  public abstract void asignar(Donacion donacion, String justificacion);
+  public abstract void planificarRuta(Donacion donacion, String justificacion);
+  public abstract void iniciarTraslado(Donacion donacion, String justificacion);
+  public abstract void confirmarEntrega(Donacion donacion, String justificacion);
+  public abstract void reportarFalla(Donacion donacion, String justificacion);
+  public abstract void marcarVencida(Donacion donacion, String justificacion);
 
 }

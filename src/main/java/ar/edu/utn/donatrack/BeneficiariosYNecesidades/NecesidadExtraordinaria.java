@@ -4,7 +4,6 @@ public class NecesidadExtraordinaria extends Necesidad{
 
   @Override
   public boolean estaSatisfecha() {
-    // TODO
-    return true;
+    return super.estaSatisfecha();
   }
 }

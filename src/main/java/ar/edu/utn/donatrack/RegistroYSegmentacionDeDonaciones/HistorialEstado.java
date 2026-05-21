@@ -13,4 +13,16 @@ public class HistorialEstado {
     this.estadoAlcanzado = estadoAlcanzado;
     this.justificacion = justificacion;
   }
+
+  public LocalDate getFecha() {
+    return fecha;
+  }
+
+  public NombreEstado getEstadoAlcanzado() {
+    return estadoAlcanzado;
+  }
+
+  public String getJustificacion() {
+    return justificacion;
+  }
 }

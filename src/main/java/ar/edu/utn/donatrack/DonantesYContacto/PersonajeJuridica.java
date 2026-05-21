@@ -10,7 +10,7 @@ public class PersonajeJuridica extends Donante{
   private List<Representante> representantes = new ArrayList<>();
 
 
-  public PersonajeJuridica(MedioDeContacto medioDeContacto,int numDocumento, TipoDocumento documento,String razonSocial, TipoOrganizacion tipoOrganizacion, String rubro){
+  public PersonajeJuridica(MedioDeContacto medioDeContacto,long numDocumento, TipoDocumento documento,String razonSocial, TipoOrganizacion tipoOrganizacion, String rubro){
     super(medioDeContacto,numDocumento,documento);
     this.razonSocial = razonSocial;
     this.tipoOrganizacion = tipoOrganizacion;
@@ -21,4 +21,31 @@ public class PersonajeJuridica extends Donante{
     representantes.add(representante);
   }
 
+  public String getRazonSocial() {
+    return razonSocial;
+  }
+
+  public TipoOrganizacion getTipoOrganizacion() {
+    return tipoOrganizacion;
+  }
+
+  public String getRubro() {
+    return rubro;
+  }
+
+  public List<Representante> getRepresentantes() {
+    return representantes;
+  }
+
+  public void setRazonSocial(String razonSocial) {
+    this.razonSocial = razonSocial;
+  }
+
+  public void setTipoOrganizacion(TipoOrganizacion tipoOrganizacion) {
+    this.tipoOrganizacion = tipoOrganizacion;
+  }
+
+  public void setRubro(String rubro) {
+    this.rubro = rubro;
+  }
 }

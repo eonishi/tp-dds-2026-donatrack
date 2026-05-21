@@ -26,4 +26,32 @@ public class Bien {
   public SubCategoria getSubcategoria() {
     return subcategoria;
   }
+
+  public String getDescripcion() {
+    return descripcion;
+  }
+
+  public String getFoto() {
+    return foto;
+  }
+
+  public double getCantidad() {
+    return cantidad;
+  }
+
+  public UnidadMedida getUnidad() {
+    return unidad;
+  }
+
+  public boolean isEsPerecedero() {
+    return esPerecedero;
+  }
+
+  public LocalDate getFechaVencimiento() {
+    return fechaVencimiento;
+  }
+
+  public EstadoUso getEstadoDeUso() {
+    return estadoDeUso;
+  }
 }
