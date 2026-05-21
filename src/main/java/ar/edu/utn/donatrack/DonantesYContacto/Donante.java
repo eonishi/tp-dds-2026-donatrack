@@ -1,12 +1,16 @@
 package ar.edu.utn.donatrack.DonantesYContacto;
 
 public class Donante {
-  private static long id;
   public MedioDeContacto medioDeContacto;
+  protected int numDocumento;
+  protected TipoDocumento documento;
 
   //Constructor
-  public Donante(long id) {
-    Donante.id = id;
+  public Donante(MedioDeContacto medioDeContacto,int numDocumento, TipoDocumento documento) {
+    this.medioDeContacto = medioDeContacto;
+    this.numDocumento = numDocumento;
+    this.documento = documento;
+
   }
 
   //Métodos

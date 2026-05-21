@@ -3,14 +3,15 @@ package ar.edu.utn.donatrack.DonantesYContacto;
 
 import java.util.ArrayList;
 import java.util.List;
-public class PersonajeJuridica {
-  private static String razonSocial;
+public class PersonajeJuridica extends Donante{
+  private String razonSocial;
   private TipoOrganizacion tipoOrganizacion;
-  private static String rubro;
+  private String rubro;
   private List<Representante> representantes = new ArrayList<>();
 
 
-  public PersonajeJuridica(String razonSocial, TipoOrganizacion tipoOrganizacion, String rubro){
+  public PersonajeJuridica(MedioDeContacto medioDeContacto,int numDocumento, TipoDocumento documento,String razonSocial, TipoOrganizacion tipoOrganizacion, String rubro){
+    super(medioDeContacto,numDocumento,documento);
     this.razonSocial = razonSocial;
     this.tipoOrganizacion = tipoOrganizacion;
     this.rubro = rubro;

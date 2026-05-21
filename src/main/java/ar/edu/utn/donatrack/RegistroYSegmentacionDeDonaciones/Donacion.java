@@ -1,5 +1,8 @@
 package ar.edu.utn.donatrack.RegistroYSegmentacionDeDonaciones;
 
+import ar.edu.utn.donatrack.BienesYCategorias.Bien;
+import ar.edu.utn.donatrack.BienesYCategorias.SubCategoria;
+import ar.edu.utn.donatrack.EstadoDeDonacion.EnDeposito;
 import ar.edu.utn.donatrack.EstadoDeDonacion.EstadoDonacion;
 import org.w3c.dom.html.HTMLDOMImplementation;
 import java.util.ArrayList;
@@ -7,18 +10,16 @@ import java.util.List;
 
 
 public class Donacion {
-  private int id;
-  private double cantidadTotal;
-  private EstadoDonacion estado;
+  private EstadoDonacion estado = new EnDeposito();
   private String justificacion = "Sin comentarios";
   private List<HistorialEstado> historialEstado = new ArrayList<>();
+  private List<Bien> bienes = new ArrayList<>();
+
 
 
   //Constructor
-  public Donacion(int id, double cantidadTotal, EstadoDonacion estado) {
-    this.id = id;
-    this.cantidadTotal = cantidadTotal;
-    this.estado = estado;
+  public Donacion(List<Bien> bienes) {
+    this.bienes.addAll(bienes);
   }
 
 
@@ -29,5 +30,9 @@ public class Donacion {
   public void cambiarEstado(HistorialEstado nuevoHistorial, EstadoDonacion NuevoEstado, String justificacion){
     historialEstado.add(nuevoHistorial);
     estado = NuevoEstado;
+  }
+
+  public SubCategoria getSubcategoria (){
+    return bienes.get(0).getSubcategoria();
   }
 }

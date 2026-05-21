@@ -22,4 +22,8 @@ public class Bien {
     this.estadoDeUso = estadoDeUso;
     this.subcategoria = subcategoria;
   }
+
+  public SubCategoria getSubcategoria() {
+    return subcategoria;
+  }
 }
