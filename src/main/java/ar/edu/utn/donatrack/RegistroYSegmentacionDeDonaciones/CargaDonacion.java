@@ -9,7 +9,13 @@ public class CargaDonacion {
   private static String descripcionGeneral;
   List<Donacion> donaciones = new ArrayList<>();
 
+  //Constructor
+  public CargaDonacion(LocalDate fechaRegistro) {
+    this.fechaRegistro = fechaRegistro;
+  }
+
   public void segmentarDonaciones(){
     //TODO
+
   }
 }

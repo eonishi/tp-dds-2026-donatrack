@@ -5,7 +5,28 @@ import ar.edu.utn.donatrack.RegistroYSegmentacionDeDonaciones.Donacion;
 public class ListaParaEntregar extends EstadoDonacion {
 
   @Override
-  public void iniciarTraslado(Donacion donacion){
+  public void asignar(){
+  }
+
+  @Override
+  public void planificarRuta(){
 
   }
+  @Override
+  public void iniciarTraslado(){
+
+  }
+  @Override
+  public void confirmarEntrega(){
+
+  }
+  @Override
+  public void reportarFalla(){
+
+  }
+  @Override
+  public void marcarVencida(){
+
+  }
+
 }
