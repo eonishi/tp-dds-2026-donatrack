@@ -10,4 +10,16 @@ public class Bien {
   private boolean esPerecedero;
   LocalDate fechaVencimiento;
   private EstadoUso estadoDeUso;
+  private SubCategoria subcategoria;
+
+  public Bien(String descripcion, String foto, double cantidad, UnidadMedida unidad, boolean esPerecedero, LocalDate fechaVencimiento, EstadoUso estadoDeUso, SubCategoria subcategoria) {
+    this.descripcion = descripcion;
+    this.foto = foto;
+    this.cantidad = cantidad;
+    this.unidad = unidad;
+    this.esPerecedero = esPerecedero;
+    this.fechaVencimiento = fechaVencimiento;
+    this.estadoDeUso = estadoDeUso;
+    this.subcategoria = subcategoria;
+  }
 }

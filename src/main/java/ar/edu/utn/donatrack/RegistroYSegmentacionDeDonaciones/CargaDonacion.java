@@ -15,7 +15,8 @@ public class CargaDonacion {
   }
 
   public void segmentarDonaciones(){
-    //TODO
+
+    donaciones.forEach(donacion => );
 
   }
 }

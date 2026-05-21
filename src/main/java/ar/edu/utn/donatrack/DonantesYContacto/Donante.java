@@ -18,5 +18,4 @@ public class Donante {
     this.medioDeContacto = medioDeContacto;
   }
 
-
 }
