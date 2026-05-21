@@ -1,45 +1,83 @@
 package ar.edu.utn.donatrack.ServiciosExternosYUtilidades;
-import com.opencsv.bean.CsvToBeanBuilder;
 
+import ar.edu.utn.donatrack.DonantesYContacto.*;
+import com.opencsv.bean.CsvToBeanBuilder;
 import java.io.Reader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 
 public class ImportadorDonantesCSV {
 
-  public static void main(String[] args) {
+  public static List<DonanteCsv> importarDeCsv(Reader reader) {
+    return new CsvToBeanBuilder<DonanteCsv>(reader)
+        .withType(DonanteCsv.class)
+        .withIgnoreLeadingWhiteSpace(true)
+        .build()
+        .parse();
+  }
 
-    // Poné la ruta exacta donde guardaste tu archivo
-    String rutaArchivo = "donantes_import_20000_UTF8_BOM.csv";
+  public static void importarYRegistrar(Reader reader, DonantesRepository repo) {
+    List<DonanteCsv> parsed = importarDeCsv(reader);
+    for (DonanteCsv csv : parsed) {
+      Donante donante = mapearADonante(csv);
+      repo.registrarOActualizar(donante);
+    }
+  }
 
-    try {
-      // Usamos Files de Java 11+ asegurando que lea en formato UTF-8 (para los acentos)
-      Reader reader = Files.newBufferedReader(Path.of(rutaArchivo), StandardCharsets.UTF_8);
+  public static Donante mapearADonante(DonanteCsv csv) {
+    String emailStr = (csv.getEmail() != null && !csv.getEmail().trim().isEmpty()) ? csv.getEmail().trim() : "sin-email";
+    CorreoElectronico email = new CorreoElectronico(emailStr);
 
-      // Magia de OpenCSV: Convertir el CSV en Lista de Objetos
-      List<DonanteCsv> listaDonantes = new CsvToBeanBuilder<DonanteCsv>(reader)
-          .withType(DonanteCsv.class)
-          .withIgnoreLeadingWhiteSpace(true) // Limpia espacios en blanco accidentales
-          .build()
-          .parse();
-
-      System.out.println("¡Éxito! Se importaron " + listaDonantes.size() + " donantes.");
-
-      // Imprimimos los primeros 3 para comprobar que funcionó bien
-      System.out.println("\n--- MUESTRA DE LOS PRIMEROS 3 DONANTES ---");
-      for (int i = 0; i < 3; i++) {
-        DonanteCsv d = listaDonantes.get(i);
-        System.out.println(d.getNombreRazonSocial() + " | DNI/CUIT: " + d.getDocumento() + " | Email: " + d.getEmail());
+    TipoDocumento tipoDoc = TipoDocumento.DNI; 
+    if (csv.getTipoDoc() != null) {
+      try {
+        tipoDoc = TipoDocumento.valueOf(csv.getTipoDoc().toUpperCase().trim());
+      } catch (IllegalArgumentException e) {
+        if (csv.getTipoDoc().trim().equalsIgnoreCase("CUIL") || csv.getTipoDoc().trim().equalsIgnoreCase("CUIT")) {
+          tipoDoc = TipoDocumento.CUIT;
+        }
       }
+    }
 
-      // IMPORTANTE: Cerrar el archivo para liberar memoria
-      reader.close();
+    long numDoc = 0;
+    if (csv.getDocumento() != null) {
+      String docClean = csv.getDocumento().replaceAll("[^0-9]", "");
+      if (!docClean.isEmpty()) {
+        try {
+          numDoc = Long.parseLong(docClean);
+        } catch (NumberFormatException ignored) {}
+      }
+    }
 
-    } catch (Exception e) {
-      System.out.println("Ocurrió un error al procesar el archivo: " + e.getMessage());
-      e.printStackTrace();
+    if ("JURIDICA".equalsIgnoreCase(csv.getTipoPersona()) || "JURÍDICA".equalsIgnoreCase(csv.getTipoPersona())) {
+      PersonajeJuridica juridica = new PersonajeJuridica(
+          email, 
+          numDoc, 
+          tipoDoc, 
+          csv.getNombreRazonSocial() != null ? csv.getNombreRazonSocial() : "", 
+          TipoOrganizacion.ONG, 
+          ""
+      );
+      if (csv.getTelefono() != null && !csv.getTelefono().trim().isEmpty()) {
+        juridica.setMedioDeContacto(new Whatsapp(csv.getTelefono().trim()));
+      }
+      return juridica;
+    } else {
+      String nombreCompleto = csv.getNombreRazonSocial() != null ? csv.getNombreRazonSocial() : "";
+      String nombre = nombreCompleto;
+      String apellido = "";
+      if (nombreCompleto.contains(" ")) {
+        int idx = nombreCompleto.indexOf(" ");
+        apellido = nombreCompleto.substring(idx + 1);
+        nombre = nombreCompleto.substring(0, idx);
+      }
+      
+      PersonaHumana humana = new PersonaHumana(
+          email, nombre, apellido, 0, numDoc, tipoDoc, "", ""
+      );
+      if (csv.getTelefono() != null && !csv.getTelefono().trim().isEmpty()) {
+        humana.setMedioDeContacto(new Whatsapp(csv.getTelefono().trim()));
+      }
+      return humana;
     }
   }
 }

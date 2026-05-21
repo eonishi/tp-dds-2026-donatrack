@@ -1,31 +1,30 @@
 package ar.edu.utn.donatrack.EstadoDeDonacion;
 
 import ar.edu.utn.donatrack.RegistroYSegmentacionDeDonaciones.Donacion;
+import ar.edu.utn.donatrack.RegistroYSegmentacionDeDonaciones.HistorialEstado;
+import ar.edu.utn.donatrack.RegistroYSegmentacionDeDonaciones.NombreEstado;
+import java.time.LocalDate;
 
-public class AsignacionRealizada extends EstadoDonacion{
+public class AsignacionRealizada extends EstadoDonacion {
   @Override
-  public void asignar(){
+  public void asignar(Donacion donacion) { throw new IllegalStateException("La donación ya se encuentra asignada."); }
+
+  @Override
+  public void planificarRuta(Donacion donacion) {
+    donacion.cambiarEstado(new HistorialEstado(LocalDate.now(), NombreEstado.LISTA_PARA_ENTREGAR, null), new ListaParaEntregar());
   }
 
   @Override
-  public void planificarRuta(){
+  public void iniciarTraslado(Donacion donacion) { throw new IllegalStateException("No se puede iniciar el traslado sin haber planificado la ruta previamente."); }
 
-  }
   @Override
-  public void iniciarTraslado(){
+  public void confirmarEntrega(Donacion donacion) { throw new IllegalStateException("No se puede confirmar la entrega de una donación que no está en traslado."); }
 
-  }
   @Override
-  public void confirmarEntrega(){
+  public void reportarFalla(Donacion donacion, String justificacion) { throw new IllegalStateException("No se puede reportar falla para una donación que no está en traslado."); }
 
-  }
   @Override
-  public void reportarFalla(){
-
+  public void marcarVencida(Donacion donacion) {
+    donacion.cambiarEstado(new HistorialEstado(LocalDate.now(), NombreEstado.VENCIDA, null), new Vencida());
   }
-  @Override
-  public void marcarVencida(){
-
-  }
-
 }

@@ -1,25 +1,52 @@
 package ar.edu.utn.donatrack.DonantesYContacto;
 
-public class Donante {
-  public MedioDeContacto medioDeContacto;
-  protected int numDocumento;
-  protected TipoDocumento documento;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
-  //Constructor
-  public Donante(MedioDeContacto medioDeContacto,int numDocumento, TipoDocumento documento) {
-    this.medioDeContacto = medioDeContacto;
+public abstract class Donante {
+  protected long numDocumento;
+  protected TipoDocumento documento;
+  protected List<MedioDeContacto> mediosDeContacto = new ArrayList<>();
+  protected MedioDeContacto medioContactoPredeterminado;
+
+  public Donante(MedioDeContacto medioDeContacto, long numDocumento, TipoDocumento documento) {  
     this.numDocumento = numDocumento;
     this.documento = documento;
-
+    if (medioDeContacto != null) {
+      this.mediosDeContacto.add(medioDeContacto);
+    }
   }
 
-  //Métodos
   public void setMedioDeContacto(MedioDeContacto medioDeContacto) {
-    this.medioDeContacto = medioDeContacto;
+    if (medioDeContacto != null && !mediosDeContacto.contains(medioDeContacto)) {
+      this.mediosDeContacto.add(medioDeContacto);    
+    }
   }
 
-  public void setMedioContactoPredterminado(MedioDeContacto medioDeContacto){
-    this.medioDeContacto = medioDeContacto;
+  public void setMedioContactoPredeterminado(MedioDeContacto medioDeContacto){
+    if (medioDeContacto != null && !mediosDeContacto.contains(medioDeContacto)) {
+      this.medioContactoPredeterminado = medioDeContacto;
+      this.mediosDeContacto.add(medioDeContacto);
+    }
   }
 
+  public MedioDeContacto getMedioContactoPredeterminado() {
+    return medioContactoPredeterminado != null ? medioContactoPredeterminado : mediosDeContacto.get(0);
+  }
+
+  public List<MedioDeContacto> getMediosDeContacto() {
+    return Collections.unmodifiableList(mediosDeContacto);
+  }
+
+  public long getNumDocumento() { return numDocumento; }
+  public TipoDocumento getDocumento() { return documento; }
+
+  public Optional<String> extraerEmail() {
+    return mediosDeContacto.stream()
+        .filter(m -> m instanceof CorreoElectronico)
+        .map(MedioDeContacto::getContacto)
+        .findFirst();
+  }
 }

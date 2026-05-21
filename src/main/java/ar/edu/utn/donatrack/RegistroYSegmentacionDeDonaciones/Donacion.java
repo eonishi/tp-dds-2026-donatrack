@@ -4,35 +4,39 @@ import ar.edu.utn.donatrack.BienesYCategorias.Bien;
 import ar.edu.utn.donatrack.BienesYCategorias.SubCategoria;
 import ar.edu.utn.donatrack.EstadoDeDonacion.EnDeposito;
 import ar.edu.utn.donatrack.EstadoDeDonacion.EstadoDonacion;
-import org.w3c.dom.html.HTMLDOMImplementation;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-
 
 public class Donacion {
   private EstadoDonacion estado = new EnDeposito();
-  private String justificacion = "Sin comentarios";
-  private List<HistorialEstado> historialEstado = new ArrayList<>();
-  private List<Bien> bienes = new ArrayList<>();
+  private final List<HistorialEstado> historialEstado = new ArrayList<>();
+  private final List<Bien> bienes = new ArrayList<>();
 
-
-
-  //Constructor
   public Donacion(List<Bien> bienes) {
     this.bienes.addAll(bienes);
   }
 
-
-  public void setJustificacion(String justificacion) {
-    this.justificacion = justificacion;
-  }
-
-  public void cambiarEstado(HistorialEstado nuevoHistorial, EstadoDonacion NuevoEstado, String justificacion){
+  public void cambiarEstado(HistorialEstado nuevoHistorial, EstadoDonacion nuevoEstado){
     historialEstado.add(nuevoHistorial);
-    estado = NuevoEstado;
+    estado = nuevoEstado;
   }
 
-  public SubCategoria getSubcategoria (){
-    return bienes.get(0).getSubcategoria();
+  public SubCategoria getSubcategoria (){ return bienes.get(0).getSubcategoria(); }
+  public EstadoDonacion getEstado() { return estado; }
+
+  public List<HistorialEstado> getHistorialEstado() {
+    return Collections.unmodifiableList(historialEstado);
   }
+
+  public List<Bien> getBienes() {
+    return Collections.unmodifiableList(bienes);
+  }
+
+  public void asignar() { this.estado.asignar(this); }
+  public void planificarRuta() { this.estado.planificarRuta(this); }
+  public void iniciarTraslado() { this.estado.iniciarTraslado(this); }
+  public void confirmarEntrega() { this.estado.confirmarEntrega(this); }
+  public void reportarFalla(String justificacion) { this.estado.reportarFalla(this, justificacion); }
+  public void marcarVencida() { this.estado.marcarVencida(this); }
 }
