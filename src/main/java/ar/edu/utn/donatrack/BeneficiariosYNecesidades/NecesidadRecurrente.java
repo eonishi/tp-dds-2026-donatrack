@@ -1,15 +1,14 @@
 package ar.edu.utn.donatrack.BeneficiariosYNecesidades;
 
-public class NecesidadRecurrente extends Necesidad{
-
+public class NecesidadRecurrente extends Necesidad {
   TipoPeriodo periodo;
 
-  @Override
-  public boolean estaSatisfecha() {
-    return false;
+  public NecesidadRecurrente(String descripcion, double cantidadObjetivo, TipoPeriodo periodo) {
+    super(descripcion, cantidadObjetivo);
+    this.periodo = periodo;
   }
 
-  public void reiniciarPeriodo(){
-
+  public void reiniciarPeriodo() {
+    setCantidadRecibida(0);
   }
 }
