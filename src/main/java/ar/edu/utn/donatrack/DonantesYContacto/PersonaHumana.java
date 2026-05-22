@@ -1,13 +1,22 @@
 package ar.edu.utn.donatrack.DonantesYContacto;
 
 public class PersonaHumana extends Donante {
-  private String nombre;
-  private String apellido;
-  private int edad;
-  private String genero;
+  private final String nombre;
+  private final String apellido;
+  private Integer edad;
+  private String genero; // Quizas un enum (?)
   private String direccion;
 
-  public PersonaHumana(MedioDeContacto medioDeContacto, String nombre, String apellido, int edad, long numDocumento, TipoDocumento documento, String genero, String direccion) {
+  public PersonaHumana(
+      MedioDeContacto medioDeContacto,
+      String nombre,
+      String apellido,
+      Integer edad,
+      String numDocumento,
+      TipoDocumento documento,
+      String genero,
+      String direccion
+  ) {
     super(validateMedioDeContacto(medioDeContacto), numDocumento, documento);
     this.nombre = nombre;
     this.apellido = apellido;
@@ -23,14 +32,11 @@ public class PersonaHumana extends Donante {
     return medioDeContacto;
   }
 
-  public void actualizarDatosDesdeCSV(PersonaHumana nuevosDatos) {
-    this.nombre = nuevosDatos.getNombre();
-    this.apellido = nuevosDatos.getApellido();
-    this.numDocumento = nuevosDatos.getNumDocumento();
-    this.documento = nuevosDatos.getDocumento();
-  }
-
   public String getNombre() { return nombre; }
   public String getApellido() { return apellido; }
   public int getEdad() { return edad; }
+
+  public void setGenero(String genero) { this.genero = genero; }
+  public void setEdad(int edad){ this.edad = edad; }
+  public void setDireccion(String direccion){ this.direccion = direccion; }
 }

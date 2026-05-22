@@ -1,0 +1,11 @@
+TipoPersona,TipoDoc,Documento,Nombre/Razón Social,Email,Teléfono
+HUMANA,DNI,28456905,Ana Navarro,ananavarro3658@yahoo.com,+54 11 5181-9600
+HUMANA,DNI,11780798,Benjamín Castro,benjamíncastro8929@yahoo.com,+54 11 4379-4026
+HUMANA,DNI,32588477,Sofía García,sofíagarcía1520@gmail.com,+54 11 4155-9407
+HUMANA,DNI,15288191,Sebastián Torres,sebastiántorres5926@empresa.com,+54 11 5103-4131
+HUMANA,DNI,34483473,Agustina Álvarez,agustinaálvarez6066@outlook.com,+54 11 4341-9283
+JURIDICA,CUIT,30-52235350-3,Santa Fe Industrial Fundación,santafeindustrial8180@yahoo.com,+54 11 4724-2388
+JURIDICA,CUIT,30-87701200-6,Santa Fe Industrial S.R.L.,santafeindustrial1344@mail.com,+54 11 4998-5435
+JURIDICA,CUIT,30-31810617-3,PampaTech S.R.L.,pampatech6756@outlook.com,+54 11 5256-3421
+JURIDICA,CUIT,30-24549543-5,BioSalud S.A.,biosalud5664@contacto.ar,+54 11 4698-1693
+JURIDICA,CUIT,30-79519112-3,Mate & Co S.R.L.,mateandco823@servicios.com.ar,+54 11 5172-7889

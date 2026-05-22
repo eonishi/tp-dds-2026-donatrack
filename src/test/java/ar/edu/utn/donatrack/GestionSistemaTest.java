@@ -129,35 +129,4 @@ class DonaTrackTest {
         necesidad.recibirDonacion(8.0); // Se alcanza el objetivo [cite: 74]
         assertTrue(necesidad.estaSatisfecha());
     }
-
-    // ==========================================
-    // 4. TESTS DE REPOSITORIO E IMPORTACIÓN
-    // ==========================================
-
-    @Test
-    void repositorioCSV_EvitaDuplicadosPorEmail_Y_Actualiza() {
-        // Arrange
-        DonantesRepository repo = new DonantesRepository();
-        
-        // Creamos un donante inicial en el sistema
-        CorreoElectronico mail = new CorreoElectronico("ana@mail.com");
-        PersonaHumana existente = new PersonaHumana(mail, "Ana", "Gomez", 0, 1111, TipoDocumento.DNI, "", "");
-        repo.registrarOActualizar(existente);
-
-        // Simulamos un CSV donde viene la misma Ana pero con apellido actualizado ("Pérez") y número de doc [cite: 85]
-        String csvData = "TipoPersona,TipoDoc,Documento,Nombre/Razón Social,Email,Teléfono\n" +
-                         "HUMANA,DNI,12345678,Ana Pérez,ana@mail.com,+54 11 5555-5555";
-        StringReader reader = new StringReader(csvData);
-
-        // Act
-        ImportadorDonantesCSV.importarYRegistrar(reader, repo);
-
-        // Assert
-        assertEquals(1, repo.getDonantes().size(), "El repositorio duplicó al donante en vez de actualizarlo.");
-        
-        PersonaHumana actualizada = (PersonaHumana) repo.getDonantes().get(0);
-        assertEquals("Pérez", actualizada.getApellido(), "No se actualizó el apellido del donante existente.");
-        assertEquals(12345678L, actualizada.getNumDocumento(), "No se actualizó el documento.");
-        assertEquals(2, actualizada.getMediosDeContacto().size(), "No se agregó el nuevo teléfono de contacto.");
-    }
 }
