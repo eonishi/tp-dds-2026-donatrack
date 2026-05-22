@@ -15,69 +15,45 @@ public class ImportadorDonantesCSV {
         .parse();
   }
 
-  public static void importarYRegistrar(Reader reader, DonantesRepository repo) {
+  public static void importarYRegistrar(Reader reader) {
     List<DonanteCsv> parsed = importarDeCsv(reader);
     for (DonanteCsv csv : parsed) {
       Donante donante = mapearADonante(csv);
-      repo.registrarOActualizar(donante);
+      // TODO: Guardar los donantes
     }
   }
 
   public static Donante mapearADonante(DonanteCsv csv) {
-    String emailStr = (csv.getEmail() != null && !csv.getEmail().trim().isEmpty()) ? csv.getEmail().trim() : "sin-email";
-    CorreoElectronico email = new CorreoElectronico(emailStr);
+    switch (csv.getTipoPersona()){
+      case HUMANA:
+        var nombreApellido = csv.getNombreRazonSocial().trim().split(" ");
+        var nuevaPersonaHumana =  new PersonaHumana(
+            new CorreoElectronico(csv.getEmail()),
+            nombreApellido[0],
+            (nombreApellido.length > 1) ? nombreApellido[1] : "",
+            null,
+            csv.getDocumento(),
+            csv.getTipoDoc(),
+            null,
+            null
+        );
+        nuevaPersonaHumana.addMedioDeContacto(new SMS(csv.getTelefono()));
+        return nuevaPersonaHumana;
 
-    TipoDocumento tipoDoc = TipoDocumento.DNI; 
-    if (csv.getTipoDoc() != null) {
-      try {
-        tipoDoc = TipoDocumento.valueOf(csv.getTipoDoc().toUpperCase().trim());
-      } catch (IllegalArgumentException e) {
-        if (csv.getTipoDoc().trim().equalsIgnoreCase("CUIL") || csv.getTipoDoc().trim().equalsIgnoreCase("CUIT")) {
-          tipoDoc = TipoDocumento.CUIT;
-        }
-      }
-    }
+      case JURIDICA:
+        var nuevaPersonaJuridica =  new PersonajeJuridica(
+            new CorreoElectronico(csv.getEmail()),
+            csv.getDocumento(),
+            csv.getTipoDoc(),
+            csv.getNombreRazonSocial(),
+            null,
+            null
+        );
+        nuevaPersonaJuridica.addMedioDeContacto(new SMS(csv.getTelefono()));
+        return nuevaPersonaJuridica;
 
-    long numDoc = 0;
-    if (csv.getDocumento() != null) {
-      String docClean = csv.getDocumento().replaceAll("[^0-9]", "");
-      if (!docClean.isEmpty()) {
-        try {
-          numDoc = Long.parseLong(docClean);
-        } catch (NumberFormatException ignored) {}
-      }
-    }
-
-    if ("JURIDICA".equalsIgnoreCase(csv.getTipoPersona()) || "JURÍDICA".equalsIgnoreCase(csv.getTipoPersona())) {
-      PersonajeJuridica juridica = new PersonajeJuridica(
-          email, 
-          numDoc, 
-          tipoDoc, 
-          csv.getNombreRazonSocial() != null ? csv.getNombreRazonSocial() : "", 
-          TipoOrganizacion.ONG, 
-          ""
-      );
-      if (csv.getTelefono() != null && !csv.getTelefono().trim().isEmpty()) {
-        juridica.setMedioDeContacto(new Whatsapp(csv.getTelefono().trim()));
-      }
-      return juridica;
-    } else {
-      String nombreCompleto = csv.getNombreRazonSocial() != null ? csv.getNombreRazonSocial() : "";
-      String nombre = nombreCompleto;
-      String apellido = "";
-      if (nombreCompleto.contains(" ")) {
-        int idx = nombreCompleto.indexOf(" ");
-        apellido = nombreCompleto.substring(idx + 1);
-        nombre = nombreCompleto.substring(0, idx);
-      }
-      
-      PersonaHumana humana = new PersonaHumana(
-          email, nombre, apellido, 0, numDoc, tipoDoc, "", ""
-      );
-      if (csv.getTelefono() != null && !csv.getTelefono().trim().isEmpty()) {
-        humana.setMedioDeContacto(new Whatsapp(csv.getTelefono().trim()));
-      }
-      return humana;
+      default:
+        throw new IllegalArgumentException("TipoPersona importada no es válida");
     }
   }
 }

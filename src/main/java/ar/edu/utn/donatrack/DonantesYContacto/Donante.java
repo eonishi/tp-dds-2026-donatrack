@@ -3,44 +3,44 @@ package ar.edu.utn.donatrack.DonantesYContacto;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 public abstract class Donante {
-  protected long numDocumento;
+  protected String numDocumento;
   protected TipoDocumento documento;
   protected List<MedioDeContacto> mediosDeContacto = new ArrayList<>();
-  protected MedioDeContacto medioContactoPredeterminado;
+  protected MedioDeContacto contactoPredeterminado;
 
-  public Donante(MedioDeContacto medioDeContacto, long numDocumento, TipoDocumento documento) {  
+  public Donante(MedioDeContacto medioDeContacto, String numDocumento, TipoDocumento documento) {
+    Objects.requireNonNull(medioDeContacto);
     this.numDocumento = numDocumento;
     this.documento = documento;
-    if (medioDeContacto != null) {
-      this.mediosDeContacto.add(medioDeContacto);
-    }
+    this.mediosDeContacto.add(medioDeContacto);
+    this.contactoPredeterminado = medioDeContacto;
   }
 
-  public void setMedioDeContacto(MedioDeContacto medioDeContacto) {
+  public void addMedioDeContacto(MedioDeContacto medioDeContacto) {
     if (medioDeContacto != null && !mediosDeContacto.contains(medioDeContacto)) {
       this.mediosDeContacto.add(medioDeContacto);    
     }
   }
 
-  public void setMedioContactoPredeterminado(MedioDeContacto medioDeContacto){
-    if (medioDeContacto != null && !mediosDeContacto.contains(medioDeContacto)) {
-      this.medioContactoPredeterminado = medioDeContacto;
-      this.mediosDeContacto.add(medioDeContacto);
+  public void setContactoPredeterminado(MedioDeContacto medioDeContacto){
+    if (medioDeContacto != null && mediosDeContacto.contains(medioDeContacto)) {
+      this.contactoPredeterminado = medioDeContacto;
     }
   }
 
   public MedioDeContacto getMedioContactoPredeterminado() {
-    return medioContactoPredeterminado != null ? medioContactoPredeterminado : mediosDeContacto.get(0);
+    return this.contactoPredeterminado;
   }
 
   public List<MedioDeContacto> getMediosDeContacto() {
     return Collections.unmodifiableList(mediosDeContacto);
   }
 
-  public long getNumDocumento() { return numDocumento; }
+  public String getNumDocumento() { return numDocumento; }
   public TipoDocumento getDocumento() { return documento; }
 
   public Optional<String> extraerEmail() {

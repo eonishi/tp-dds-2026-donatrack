@@ -1,7 +1,7 @@
 package ar.edu.utn.donatrack.DonantesYContacto;
 
 public abstract class MedioDeContacto {
-  private String contacto;
+  private final String contacto;
   public MedioDeContacto(String contacto) { this.contacto = contacto; }
   public String getContacto() { return contacto; }
 

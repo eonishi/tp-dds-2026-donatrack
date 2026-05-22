@@ -1,8 +1,8 @@
 package ar.edu.utn.donatrack.DonantesYContacto;
 
 public class Representante {
-  private String nombre;
-  private String apellido;
+  private final String nombre;
+  private final String apellido;
 
   public Representante(String nombre, String apellido){
     this.nombre = nombre;

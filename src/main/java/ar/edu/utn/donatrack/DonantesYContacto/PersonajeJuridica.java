@@ -5,12 +5,19 @@ import java.util.Collections;
 import java.util.List;
 
 public class PersonajeJuridica extends Donante {
-  private String razonSocial;
-  private TipoOrganizacion tipoOrganizacion;
-  private String rubro;
-  private List<Representante> representantes = new ArrayList<>();
+  private final String razonSocial;
+  private final TipoOrganizacion tipoOrganizacion;
+  private final String rubro;
+  private final List<Representante> representantes = new ArrayList<>();
 
-  public PersonajeJuridica(MedioDeContacto medioDeContacto, long numDocumento, TipoDocumento documento, String razonSocial, TipoOrganizacion tipoOrganizacion, String rubro){
+  public PersonajeJuridica(
+      MedioDeContacto medioDeContacto,
+      String numDocumento,
+      TipoDocumento documento,
+      String razonSocial,
+      TipoOrganizacion tipoOrganizacion,
+      String rubro
+  ){
     super(medioDeContacto, numDocumento, documento);
     this.razonSocial = razonSocial;
     this.tipoOrganizacion = tipoOrganizacion;
@@ -21,12 +28,6 @@ public class PersonajeJuridica extends Donante {
     if (!representantes.contains(representante)) {
         representantes.add(representante);
     }
-  }
-
-  public void actualizarDatosDesdeCSV(PersonajeJuridica nuevosDatos) {
-    this.razonSocial = nuevosDatos.getRazonSocial();
-    this.numDocumento = nuevosDatos.getNumDocumento();
-    this.documento = nuevosDatos.getDocumento();
   }
 
   public String getRazonSocial() { return razonSocial; }
