@@ -3,14 +3,14 @@ package ar.edu.utn.donatrack.BienesYCategorias;
 import java.time.LocalDate;
 
 public class Bien {
-  private String descripcion;
-  private String foto; 
-  private double cantidad;
-  private UnidadMedida unidad;
-  private boolean esPerecedero;
-  private LocalDate fechaVencimiento;
-  private EstadoUso estadoDeUso;
-  private SubCategoria subcategoria;
+  private final String descripcion;
+  private final String foto;
+  private final double cantidad;
+  private final UnidadMedida unidad;
+  private final boolean esPerecedero;
+  private final LocalDate fechaVencimiento;
+  private final EstadoUso estadoDeUso;
+  private final SubCategoria subcategoria;
 
   public Bien(String descripcion, String foto, double cantidad, UnidadMedida unidad, boolean esPerecedero, LocalDate fechaVencimiento, EstadoUso estadoDeUso, SubCategoria subcategoria) {
     this.descripcion = descripcion;
