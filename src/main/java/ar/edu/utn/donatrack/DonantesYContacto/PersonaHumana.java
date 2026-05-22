@@ -8,7 +8,7 @@ public class PersonaHumana extends Donante {
   private String direccion;
 
   public PersonaHumana(
-      MedioDeContacto medioDeContacto,
+      CorreoElectronico medioDeContacto,
       String nombre,
       String apellido,
       Integer edad,
@@ -17,7 +17,7 @@ public class PersonaHumana extends Donante {
       String genero,
       String direccion
   ) {
-    super(validateMedioDeContacto(medioDeContacto), numDocumento, documento);
+    super(medioDeContacto, numDocumento, documento);
     this.nombre = nombre;
     this.apellido = apellido;
     this.edad = edad;
@@ -25,12 +25,6 @@ public class PersonaHumana extends Donante {
     this.direccion = direccion;
   }
 
-  private static MedioDeContacto validateMedioDeContacto(MedioDeContacto medioDeContacto) { 
-    if (!(medioDeContacto instanceof CorreoElectronico)) {
-      throw new IllegalArgumentException("El medio de contacto obligatorio para una persona humana debe ser un Correo Electrónico.");
-    }
-    return medioDeContacto;
-  }
 
   public String getNombre() { return nombre; }
   public String getApellido() { return apellido; }

@@ -20,7 +20,7 @@ public class CargaDonacion {
     bienes.stream()
         .collect(Collectors.groupingBy(bien -> new SegmentacionKey(
             bien.getSubcategoria(),
-            bien.isEsPerecedero() ? bien.getFechaVencimiento() : null,
+            bien.esPerecedero() ? bien.getFechaVencimiento() : null,
             bien.getEstadoDeUso() != null ? bien.getEstadoDeUso() : EstadoUso.NO_APLICA
         )))
         .forEach((key, bienesDeClave) -> {
