@@ -74,23 +74,23 @@ class DonaTrackTest {
 
         // Act & Assert
         // Estado inicial
-        assertTrue(donacion.getEstado() instanceof EnDeposito);
+      assertInstanceOf(EnDeposito.class, donacion.getEstado());
 
         // Transición: En Depósito -> Asignada
         donacion.asignar();
-        assertTrue(donacion.getEstado() instanceof AsignacionRealizada);
+      assertInstanceOf(AsignacionRealizada.class, donacion.getEstado());
 
         // Transición: Asignada -> Lista para entregar
         donacion.planificarRuta();
-        assertTrue(donacion.getEstado() instanceof ListaParaEntregar);
+      assertInstanceOf(ListaParaEntregar.class, donacion.getEstado());
 
         // Transición: Lista para entregar -> En traslado
         donacion.iniciarTraslado();
-        assertTrue(donacion.getEstado() instanceof EnTraslado);
+      assertInstanceOf(EnTraslado.class, donacion.getEstado());
 
         // Transición: En traslado -> Entrega fallida (Único estado que requiere justificación según enunciado)
         donacion.reportarFalla("Tocamos timbre pero nadie respondió");
-        assertTrue(donacion.getEstado() instanceof EntregaFallida);
+      assertInstanceOf(EntregaFallida.class, donacion.getEstado());
 
         // Verificamos el historial para asegurar la trazabilidad
         List<HistorialEstado> historial = donacion.getHistorialEstado();
