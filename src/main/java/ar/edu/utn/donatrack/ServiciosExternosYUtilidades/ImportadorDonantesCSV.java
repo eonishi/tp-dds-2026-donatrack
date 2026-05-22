@@ -3,6 +3,7 @@ package ar.edu.utn.donatrack.ServiciosExternosYUtilidades;
 import ar.edu.utn.donatrack.DonantesYContacto.*;
 import com.opencsv.bean.CsvToBeanBuilder;
 import java.io.Reader;
+import java.sql.SQLOutput;
 import java.util.List;
 
 public class ImportadorDonantesCSV {
@@ -20,6 +21,7 @@ public class ImportadorDonantesCSV {
     for (DonanteCsv csv : parsed) {
       Donante donante = mapearADonante(csv);
       // TODO: Guardar los donantes
+      System.out.println(csv.getEmail());
     }
   }
 
