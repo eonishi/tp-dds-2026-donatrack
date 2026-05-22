@@ -7,9 +7,7 @@ public class SubCategoria {
     this.nombre = nombre;
   }
 
-  public String getNombre() {
-    return nombre;
-  }
+  public String getNombre() { return nombre; }
 
   @Override
   public boolean equals(Object o) {
@@ -24,4 +22,3 @@ public class SubCategoria {
     return java.util.Objects.hash(nombre);
   }
 }
-

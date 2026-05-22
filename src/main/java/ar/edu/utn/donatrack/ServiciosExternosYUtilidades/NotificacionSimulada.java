@@ -13,22 +13,6 @@ public class NotificacionSimulada {
     this.completada = completada;
   }
 
-  public String getDestinatario() {
-    return destinatario;
-  }
-
-  public String getMensaje() {
-    return mensaje;
-  }
-
-  public String getMedio() {
-    return medio;
-  }
-
-  public boolean isCompletada() {
-    return completada;
-  }
-
   public void completar() {
     this.completada = true;
   }

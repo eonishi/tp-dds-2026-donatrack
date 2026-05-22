@@ -16,17 +16,9 @@ public class SegmentacionKey {
     this.estadoUso = estadoUso;
   }
 
-  public SubCategoria getSubcategoria() {
-    return subcategoria;
-  }
-
-  public LocalDate getFechaVencimiento() {
-    return fechaVencimiento;
-  }
-
-  public EstadoUso getEstadoUso() {
-    return estadoUso;
-  }
+  public SubCategoria getSubcategoria() { return subcategoria; }
+  public LocalDate getFechaVencimiento() { return fechaVencimiento; }
+  public EstadoUso getEstadoUso() { return estadoUso; }
 
   @Override
   public boolean equals(Object o) {

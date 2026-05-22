@@ -1,48 +1,29 @@
 package ar.edu.utn.donatrack.BeneficiariosYNecesidades;
 
-public class Necesidad {
-  private long id;
+public abstract class Necesidad {
   private String descripcion;
   private double cantidadObjetivo;
-  private double cantidadRecibida;
+  private double cantidadRecibida = 0.0;
 
-  public long getId() {
-    return id;
-  }
+  public String getDescripcion() { return descripcion; }
+  public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
 
-  public void setId(long id) {
-    this.id = id;
-  }
+  public double getCantidadObjetivo() { return cantidadObjetivo; }
+  public void setCantidadObjetivo(double cantidadObjetivo) { this.cantidadObjetivo = cantidadObjetivo; }
 
-  public String getDescripcion() {
-    return descripcion;
-  }
-
-  public void setDescripcion(String descripcion) {
-    this.descripcion = descripcion;
-  }
-
-  public double getCantidadObjetivo() {
-    return cantidadObjetivo;
-  }
-
-  public void setCantidadObjetivo(double cantidadObjetivo) {
-    this.cantidadObjetivo = cantidadObjetivo;
-  }
-
-  public double getCantidadRecibida() {
-    return cantidadRecibida;
-  }
-
-  public void setCantidadRecibida(double cantidadRecibida) {
-    this.cantidadRecibida = cantidadRecibida;
-  }
+  public double getCantidadRecibida() { return cantidadRecibida; }
 
   public boolean estaSatisfecha(){
     return cantidadRecibida >= cantidadObjetivo;
   }
 
   public void recibirDonacion(Double cantidad){
-    this.cantidadRecibida += cantidad;
+    if (cantidad != null && cantidad > 0) {
+        this.cantidadRecibida += cantidad;
+    }
+  }
+
+  protected void resetearCantidadRecibida() {
+      this.cantidadRecibida = 0.0;
   }
 }

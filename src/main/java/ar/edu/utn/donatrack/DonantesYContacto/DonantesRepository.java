@@ -1,6 +1,7 @@
 package ar.edu.utn.donatrack.DonantesYContacto;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,62 +13,39 @@ public class DonantesRepository {
       return Optional.empty();
     }
     return donantes.stream()
-        .filter(d -> email.trim().equalsIgnoreCase(d.getEmail()))
+        .filter(d -> d.extraerEmail().isPresent() && d.extraerEmail().get().equalsIgnoreCase(email.trim()))
         .findFirst();
   }
 
   public List<Donante> getDonantes() {
-    return donantes;
+    return Collections.unmodifiableList(donantes);
   }
 
   public Donante registrarOActualizar(Donante nuevoDonante) {
-    String email = nuevoDonante.getEmail();
-    Optional<Donante> existenteOpt = buscarPorEmail(email);
+    Optional<String> emailOpt = nuevoDonante.extraerEmail();
+    if (emailOpt.isEmpty()) {
+        donantes.add(nuevoDonante);
+        return nuevoDonante;
+    }
+
+    Optional<Donante> existenteOpt = buscarPorEmail(emailOpt.get());
 
     if (existenteOpt.isPresent()) {
       Donante existente = existenteOpt.get();
-      // Actualizar campos comunes
-      existente.setNumDocumento(nuevoDonante.getNumDocumento());
-      existente.setDocumento(nuevoDonante.getDocumento());
 
-      // Agregar nuevos medios de contacto que no existan
       for (MedioDeContacto medio : nuevoDonante.getMediosDeContacto()) {
-        existente.agregarMedioDeContacto(medio);
-      }
-      if (nuevoDonante.getMedioContactoPredeterminado() != null) {
-        existente.setMedioContactoPredeterminado(nuevoDonante.getMedioContactoPredeterminado());
+        existente.setMedioDeContacto(medio);
       }
 
-      // Actualizar por subtipo
       if (existente instanceof PersonaHumana && nuevoDonante instanceof PersonaHumana) {
-        PersonaHumana eHumana = (PersonaHumana) existente;
-        PersonaHumana nHumana = (PersonaHumana) nuevoDonante;
-        eHumana.setNombre(nHumana.getNombre());
-        eHumana.setApellido(nHumana.getApellido());
-        eHumana.setEdad(nHumana.getEdad());
-        eHumana.setGenero(nHumana.getGenero());
-        eHumana.setDireccion(nHumana.getDireccion());
+        ((PersonaHumana) existente).actualizarDatosDesdeCSV((PersonaHumana) nuevoDonante);
       } else if (existente instanceof PersonajeJuridica && nuevoDonante instanceof PersonajeJuridica) {
-        PersonajeJuridica eJuridica = (PersonajeJuridica) existente;
-        PersonajeJuridica nJuridica = (PersonajeJuridica) nuevoDonante;
-        eJuridica.setRazonSocial(nJuridica.getRazonSocial());
-        // setTipoOrganizacion y setRubro si los proveemos, agreguemos setters en PersonajeJuridica
-        eJuridica.setTipoOrganizacion(nJuridica.getTipoOrganizacion());
-        eJuridica.setRubro(nJuridica.getRubro());
-        for (Representante rep : nJuridica.getRepresentantes()) {
-          if (!eJuridica.getRepresentantes().contains(rep)) {
-            eJuridica.agregarRepresentante(rep);
-          }
-        }
+        ((PersonajeJuridica) existente).actualizarDatosDesdeCSV((PersonajeJuridica) nuevoDonante);
       }
       return existente;
     } else {
       donantes.add(nuevoDonante);
       return nuevoDonante;
     }
-  }
-
-  public void clear() {
-    donantes.clear();
   }
 }

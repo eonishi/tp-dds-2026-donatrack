@@ -2,16 +2,8 @@ package ar.edu.utn.donatrack.DonantesYContacto;
 
 public abstract class MedioDeContacto {
   private String contacto;
-
-  //Constructor
-
-  public MedioDeContacto(String contacto) {
-    this.contacto = contacto;
-  }
-
-  public String getContacto() {
-    return contacto;
-  }
+  public MedioDeContacto(String contacto) { this.contacto = contacto; }
+  public String getContacto() { return contacto; }
 
   @Override
   public boolean equals(Object o) {
@@ -26,6 +18,5 @@ public abstract class MedioDeContacto {
     return java.util.Objects.hash(contacto);
   }
 
-  //Método abstracto
   public abstract void enviarMensaje (String mensaje);
 }
