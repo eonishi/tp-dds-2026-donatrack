@@ -1,20 +1,23 @@
 package ar.edu.utn.donatrack.BeneficiariosYNecesidades;
 
+import ar.edu.utn.donatrack.BienesYCategorias.Bien;
+
 public abstract class Necesidad {
   private String descripcion;
-  private double cantidadObjetivo;
   private double cantidadRecibida = 0.0;
+  private final Bien bienObjetivo;
+
+  public Necesidad(Bien bien){
+    this.bienObjetivo = bien;
+  }
 
   public String getDescripcion() { return descripcion; }
   public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
 
-  public double getCantidadObjetivo() { return cantidadObjetivo; }
-  public void setCantidadObjetivo(double cantidadObjetivo) { this.cantidadObjetivo = cantidadObjetivo; }
-
   public double getCantidadRecibida() { return cantidadRecibida; }
 
   public boolean estaSatisfecha(){
-    return cantidadRecibida >= cantidadObjetivo;
+    return  cantidadRecibida >= bienObjetivo.getCantidad();
   }
 
   public void recibirDonacion(Double cantidad){
