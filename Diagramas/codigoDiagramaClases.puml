@@ -1,0 +1,270 @@
+@startuml DonaTrack
+
+' --- CONFIGURACIÓN DE ESTILO ---
+skinparam monochrome true
+skinparam shadowing false
+hide empty members
+
+' ==========================================
+' PACKAGE: Servicios Externos y Utilidades
+' ==========================================
+package "Servicios Externos y Utilidades" {
+    interface Notificador {
+        + enviarNotificacion(destinatario: MedioContacto, mensaje: String)
+    }
+
+    class ImportadorDonantesCSV {
+        + procesarArchivo(ruta: String)
+    }
+
+    class Coordenadas {
+        - latitud: Double
+        - longitud: Double
+    }
+
+    interface ServicioUbicacion {
+        + obtenerUbicacion(patente: String): Coordenadas
+    }
+
+}
+
+' ==========================================
+' PACKAGE: Donantes y Contacto
+' ==========================================
+package "Donantes y Contacto" {
+    abstract class Donante {
+        - tipoDocumento: TipoDocumento
+        - numeroDocumento: String
+        + addMedioDeContacto(medioDeContacto: MedioContacto)
+    }
+
+    enum TipoDocumento {
+        DNI
+        CUIL
+    }
+
+    class PersonaHumana {
+        - nombre: String
+        - apellido: String
+        - edad: Integer
+        - genero: String
+        - direccion: String
+    }
+
+    class PersonaJuridica {
+        - razonSocial: String
+        - rubro: String
+        - tipoOrganizacion: TipoOrganizacion
+    }
+
+    enum TipoOrganizacion {
+        GUBERNAMENTAL
+        ONG
+        EMPRESA
+        INSTITUCION
+    }
+
+    class Representante {
+        - nombre: String
+        - apellido: String
+    }
+
+    abstract class MedioContacto {
+        - valor: String
+        + enviarMensaje(mensaje: String)
+    }
+
+    class CorreoElectronico {
+        + enviarMensaje(mensaje: String)
+    }
+
+    class SMS {
+        + enviarMensaje(mensaje: String)
+    }
+
+    class WhatsApp {
+        + enviarMensaje(mensaje: String)
+    }
+}
+
+' ==========================================
+' PACKAGE: Registro y Segmentación de Donaciones
+' ==========================================
+package "Registro y Segmentación de Donaciones" {
+    class CargaDonacion {
+        - fechaRegistro: LocalDateTime
+        + cargaDonacion(bienes: List<Bien>)
+    }
+
+    class Donacion {
+        + cambiarEstado(nuevoHistorial: HistorialEstado, nuevoEstado: EstadoDonacion)
+    }
+
+    class HistorialEstado {
+        - fecha: LocalDateTime
+        - estadoAlcanzado: NombreEstado
+        - justificacion: String [0..1]
+    }
+    enum NombreEstado {
+        EN_DEPOSITO
+        ASIGNACION_REALIZADA
+        LISTA_PAR_ENTREGAR
+        EN_TRASLADO
+        ENTREGADA
+        ENTREGA_FALLIDA
+        VENCIDA
+    }
+    class Camion {
+        - volumen: Float 
+        - altura: Float
+        - capacidad: Float
+        - patente: String
+    }
+}
+
+' ==========================================
+' PACKAGE: Estados de Donación (State Pattern)
+' ==========================================
+package "Estados de Donación (State Pattern)" {
+    abstract class EstadoDonacion {
+        + asignar(donacion: Donacion)
+        + planificarRuta(donacion: Donacion)
+        + iniciarTraslado(donacion: Donacion)
+        + confirmarEntrega(donacion: Donacion)
+        + reportarFalla(donacion: Donacion, justificacion: String)
+        + marcarVencida(donacion: Donacion)
+    }
+
+    class EnDeposito
+    class AsignacionRealizada
+    class ListaParaEntregar
+    class EnTraslado
+    class Entregada
+    class EntregaFallida
+    class Vencida
+}
+
+' ==========================================
+' PACKAGE: Bienes y Categorias
+' ==========================================
+package "Bienes y Categorias" {
+    class Categoria {
+        - nombre: String
+        - requiereEstadoUso: Boolean
+        + agregarSubCategoria(subCategoria: SubCategoria)
+    }
+
+    class Subcategoria {
+        - nombre: String
+    }
+
+    class Bien {
+        - descripcion: String
+        - foto: String [0..1]
+        - cantidad: Double
+        - esPerecedero: Boolean
+        - estadoUso: EstadoUso
+        - unidad: UnidadMedida
+        - fechaVencimiento: LocalDate [0..1]
+    }
+
+    enum UnidadMedida {
+        KILOGRAMOS
+        UNIDADES
+        LITROS
+    }
+
+    enum EstadoUso {
+        NUEVO
+        USADO
+        NO_APLICA
+    }
+}
+
+' ==========================================
+' PACKAGE: Beneficiarios y Necesidades
+' ==========================================
+package "Beneficiarios y Necesidades" {
+    class EntidadBeneficiaria {
+        - razonSocial: String
+        - direccion: String
+        - telefono: String
+        - correosRepresentantes: List<String>
+    }
+
+    abstract class Necesidad {
+        - descripcion: String
+        - cantidadRecibida: double = 0.0
+        - bienObjetivo: Bien
+        + Necesidad(bien: Bien)
+        + getDescripcion(): String
+        + setDescripcion(descripcion: String): void
+        + getCantidadRecibida(): double
+        + estaSatisfecha(): boolean
+        + recibirDonacion(cantidad: Double): void
+        # resetearCantidadRecibida(): void
+    }
+
+    class NecesidadExtraordinaria {
+        + estaSatisfecha(): boolean
+    }
+
+    class NecesidadRecurrente {
+        - periodo: TipoPeriodo
+        + estaSatisfecha(): boolean
+        + reiniciarPeriodo()
+    }
+
+    enum TipoPeriodo {
+        SEMANAL
+        MENSUAL
+    }
+}
+
+' RELACIONES 
+
+' Relaciones de Donantes y Contacto
+Donante <|-- PersonaHumana
+Donante <|-- PersonaJuridica
+PersonaHumana "1" --> "1" MedioContacto : "poses predeterminado"
+PersonaJuridica "1" --> "1" Representante : "autoriza"
+Donante "1" --> "1..3" MedioContacto : "tiene"
+MedioContacto <|-- CorreoElectronico
+MedioContacto <|-- SMS
+MedioContacto <|-- WhatsApp
+ImportadorDonantesCSV ..> Donante : "carga"
+Notificador ..> MedioContacto: "usa"
+Donante ..> ServicioUbicacion: "usa"
+EntidadBeneficiaria ..> ServicioUbicacion: "usa"
+
+' Registro y sementación de donaciones
+CargaDonacion "*" --> "1" Donante : "realizada por"
+CargaDonacion "1" o-- "1..*" Donacion : "contiene"
+Donacion "1" *--> "*" HistorialEstado : "auditoria"
+HistorialEstado "*" --> "1" NombreEstado : "registra"
+Camion "1" <-- "0..*" CargaDonacion: "entrega"
+Camion "1" --> "0..*" Coordenadas: "provee"
+
+' Relaciones de Estado (State Pattern)
+Donacion --> EstadoDonacion : "estadoActual"
+EstadoDonacion <|-- EnDeposito
+EstadoDonacion <|-- AsignacionRealizada
+EstadoDonacion <|-- ListaParaEntregar
+EstadoDonacion <|-- EnTraslado
+EstadoDonacion <|-- Entregada
+EstadoDonacion <|-- EntregaFallida
+EstadoDonacion <|-- Vencida
+
+' Relaciones de Bienes y Categorías
+Categoria "1" *--> "*" Subcategoria : "contiene"
+Bien --> Subcategoria : "clasificado en"
+Donacion --> Bien : "agrupa"
+Donacion "0..*" --> "0..1" EntidadBeneficiaria : "Se le asigna"
+
+' Relaciones de Beneficiarios y Necesidades
+EntidadBeneficiaria "1" *--> "*" Necesidad : "registra"
+Necesidad <|-- NecesidadExtraordinaria
+Necesidad <|-- NecesidadRecurrente
+Necesidad "*" --> "1" Bien : "tiene"
+
+@enduml
