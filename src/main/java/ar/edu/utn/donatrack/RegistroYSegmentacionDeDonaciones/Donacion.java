@@ -4,6 +4,7 @@ import ar.edu.utn.donatrack.BienesYCategorias.Bien;
 import ar.edu.utn.donatrack.BienesYCategorias.SubCategoria;
 import ar.edu.utn.donatrack.EstadoDeDonacion.EnDeposito;
 import ar.edu.utn.donatrack.EstadoDeDonacion.EstadoDonacion;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -17,13 +18,18 @@ public class Donacion {
     this.bienes.addAll(bienes);
   }
 
-  public void cambiarEstado(HistorialEstado nuevoHistorial, EstadoDonacion nuevoEstado){
+  public void cambiarEstado(HistorialEstado nuevoHistorial, EstadoDonacion nuevoEstado) {
     historialEstado.add(nuevoHistorial);
     estado = nuevoEstado;
   }
 
-  public SubCategoria getSubcategoria (){ return bienes.get(0).getSubcategoria(); }
-  public EstadoDonacion getEstado() { return estado; }
+  public SubCategoria getSubcategoria() {
+    return bienes.get(0).getSubcategoria();
+  }
+
+  public EstadoDonacion getEstado() {
+    return estado;
+  }
 
   public List<HistorialEstado> getHistorialEstado() {
     return Collections.unmodifiableList(historialEstado);
@@ -33,10 +39,27 @@ public class Donacion {
     return Collections.unmodifiableList(bienes);
   }
 
-  public void asignar() { this.estado.asignar(this); }
-  public void planificarRuta() { this.estado.planificarRuta(this); }
-  public void iniciarTraslado() { this.estado.iniciarTraslado(this); }
-  public void confirmarEntrega() { this.estado.confirmarEntrega(this); }
-  public void reportarFalla(String justificacion) { this.estado.reportarFalla(this, justificacion); }
-  public void marcarVencida() { this.estado.marcarVencida(this); }
+  public void asignar() {
+    this.estado.asignar(this);
+  }
+
+  public void planificarRuta() {
+    this.estado.planificarRuta(this);
+  }
+
+  public void iniciarTraslado() {
+    this.estado.iniciarTraslado(this);
+  }
+
+  public void confirmarEntrega() {
+    this.estado.confirmarEntrega(this);
+  }
+
+  public void reportarFalla(String justificacion) {
+    this.estado.reportarFalla(this, justificacion);
+  }
+
+  public void marcarVencida() {
+    this.estado.marcarVencida(this);
+  }
 }

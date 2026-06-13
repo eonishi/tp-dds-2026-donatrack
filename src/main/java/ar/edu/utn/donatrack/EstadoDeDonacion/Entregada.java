@@ -4,15 +4,32 @@ import ar.edu.utn.donatrack.RegistroYSegmentacionDeDonaciones.Donacion;
 
 public class Entregada extends EstadoDonacion {
   @Override
-  public void asignar(Donacion donacion) { throw new IllegalStateException("La donación ya ha sido entregada. No admite cambios de estado."); }
+  public void asignar(Donacion donacion) {
+    throw new IllegalStateException("La donación ya ha sido entregada. No admite cambios de estado.");
+  }
+
   @Override
-  public void planificarRuta(Donacion donacion) { throw new IllegalStateException("La donación ya ha sido entregada. No admite cambios de estado."); }
+  public void planificarRuta(Donacion donacion) {
+    throw new IllegalStateException("La donación ya ha sido entregada. No admite cambios de estado.");
+  }
+
   @Override
-  public void iniciarTraslado(Donacion donacion) { throw new IllegalStateException("La donación ya ha sido entregada. No admite cambios de estado."); }
+  public void iniciarTraslado(Donacion donacion) {
+    throw new IllegalStateException("La donación ya ha sido entregada. No admite cambios de estado.");
+  }
+
   @Override
-  public void confirmarEntrega(Donacion donacion) { throw new IllegalStateException("La donación ya ha sido entregada. No admite cambios de estado."); }
+  public void confirmarEntrega(Donacion donacion) {
+    throw new IllegalStateException("La donación ya ha sido entregada. No admite cambios de estado.");
+  }
+
   @Override
-  public void reportarFalla(Donacion donacion, String justificacion) { throw new IllegalStateException("La donación ya ha sido entregada. No admite cambios de estado."); }
+  public void reportarFalla(Donacion donacion, String justificacion) {
+    throw new IllegalStateException("La donación ya ha sido entregada. No admite cambios de estado.");
+  }
+
   @Override
-  public void marcarVencida(Donacion donacion) { throw new IllegalStateException("La donación ya ha sido entregada. No admite cambios de estado."); }
+  public void marcarVencida(Donacion donacion) {
+    throw new IllegalStateException("La donación ya ha sido entregada. No admite cambios de estado.");
+  }
 }

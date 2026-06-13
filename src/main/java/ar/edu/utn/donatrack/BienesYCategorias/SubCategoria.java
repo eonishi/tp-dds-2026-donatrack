@@ -2,12 +2,20 @@ package ar.edu.utn.donatrack.BienesYCategorias;
 
 public class SubCategoria {
   private String nombre;
+  private Categoria categoria;
 
-  public SubCategoria(String nombre) {
+  public SubCategoria(String nombre, Categoria categoria) {
     this.nombre = nombre;
+    this.categoria = categoria;
   }
 
-  public String getNombre() { return nombre; }
+  public String getNombre() {
+    return nombre;
+  }
+
+  public Categoria getCategoria() {
+    return this.categoria;
+  }
 
   @Override
   public boolean equals(Object o) {

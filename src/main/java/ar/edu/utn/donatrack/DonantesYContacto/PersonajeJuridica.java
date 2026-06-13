@@ -17,21 +17,32 @@ public class PersonajeJuridica extends Donante {
       String razonSocial,
       TipoOrganizacion tipoOrganizacion,
       String rubro
-  ){
+  ) {
     super(medioDeContacto, numDocumento, documento);
     this.razonSocial = razonSocial;
     this.tipoOrganizacion = tipoOrganizacion;
     this.rubro = rubro;
   }
 
-  public void agregarRepresentante(Representante representante){
+  public void agregarRepresentante(Representante representante) {
     if (!representantes.contains(representante)) {
-        representantes.add(representante);
+      representantes.add(representante);
     }
   }
 
-  public String getRazonSocial() { return razonSocial; }
-  public TipoOrganizacion getTipoOrganizacion() { return tipoOrganizacion; }
-  public String getRubro() { return rubro; }
-  public List<Representante> getRepresentantes() { return Collections.unmodifiableList(representantes); }
+  public String getRazonSocial() {
+    return razonSocial;
+  }
+
+  public TipoOrganizacion getTipoOrganizacion() {
+    return tipoOrganizacion;
+  }
+
+  public String getRubro() {
+    return rubro;
+  }
+
+  public List<Representante> getRepresentantes() {
+    return Collections.unmodifiableList(representantes);
+  }
 }

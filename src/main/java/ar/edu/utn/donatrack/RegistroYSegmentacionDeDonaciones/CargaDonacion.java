@@ -2,6 +2,7 @@ package ar.edu.utn.donatrack.RegistroYSegmentacionDeDonaciones;
 
 import ar.edu.utn.donatrack.BienesYCategorias.Bien;
 import ar.edu.utn.donatrack.BienesYCategorias.EstadoUso;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;

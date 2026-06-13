@@ -24,8 +24,8 @@ class DonaTrackTest {
 
     @BeforeEach
     void setUp() {
-        subcatSillas = new SubCategoria("Sillas");
-        subcatFideos = new SubCategoria("Fideos Secos");
+        subcatSillas = new SubCategoria("Sillas", Categoria.MOBILIARIO);
+        subcatFideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
         hoy = LocalDate.now();
     }
 
@@ -117,7 +117,7 @@ class DonaTrackTest {
     void necesidades_SumaDonaciones_Y_QuedaSatisfecha() {
         Bien fideosNecesidad = new Bien("Fideos", "", 5, UnidadMedida.KILOGRAMOS, true, hoy.plusYears(1), EstadoUso.NO_APLICA, subcatFideos);
         // Arrange
-        NecesidadExtraordinaria necesidad = new NecesidadExtraordinaria(fideosNecesidad);
+        Necesidad necesidad = new Necesidad(fideosNecesidad);
 
         // Act & Assert
         necesidad.recibirDonacion(2.0); // Una persona dona 2 [cite: 73]

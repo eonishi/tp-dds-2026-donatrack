@@ -1,6 +1,6 @@
 package ar.edu.utn.donatrack.DonantesYContacto;
 
-public class Whatsapp extends MedioDeContacto{
+public class Whatsapp extends MedioDeContacto {
 
   //Constructor
   public Whatsapp(String contacto) {
@@ -11,7 +11,7 @@ public class Whatsapp extends MedioDeContacto{
 
   //Método
   @Override
-  public void enviarMensaje(String mensaje){
+  public void enviarMensaje(String mensaje) {
   }
 
 }

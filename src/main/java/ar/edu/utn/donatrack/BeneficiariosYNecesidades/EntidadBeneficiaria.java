@@ -9,7 +9,7 @@ public class EntidadBeneficiaria {
   private String direccion;
   private String telefono;
 
-  private final List<NecesidadExtraordinaria> necesidadesExtraordinarias = new ArrayList<>();
+  private final List<Necesidad> necesidadesExtraordinarias = new ArrayList<>();
   private final List<NecesidadRecurrente> necesidadesRecurrentes = new ArrayList<>();
   private final List<String> correos = new ArrayList<>();
 
@@ -19,11 +19,19 @@ public class EntidadBeneficiaria {
     this.telefono = telefono;
   }
 
-  public String getRazonSocial() { return razonSocial; }
-  public String getDireccion() { return direccion; }
-  public String getTelefono() { return telefono; }
+  public String getRazonSocial() {
+    return razonSocial;
+  }
 
-  public List<NecesidadExtraordinaria> getNecesidadesExtraordinarias() {
+  public String getDireccion() {
+    return direccion;
+  }
+
+  public String getTelefono() {
+    return telefono;
+  }
+
+  public List<Necesidad> getNecesidadesExtraordinarias() {
     return Collections.unmodifiableList(necesidadesExtraordinarias);
   }
 
@@ -35,7 +43,7 @@ public class EntidadBeneficiaria {
     return Collections.unmodifiableList(correos);
   }
 
-  public void agregarNecesidadExtraordinaria(NecesidadExtraordinaria n) {
+  public void agregarNecesidadExtraordinaria(Necesidad n) {
     this.necesidadesExtraordinarias.add(n);
   }
 

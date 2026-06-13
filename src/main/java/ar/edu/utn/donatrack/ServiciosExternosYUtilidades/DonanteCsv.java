@@ -17,10 +17,27 @@ public class DonanteCsv {
   @CsvBindByName(column = "Teléfono")
   private String telefono;
 
-  public TipoPersona getTipoPersona() { return TipoPersona.valueOf(tipoPersona.trim()); }
-  public TipoDocumento getTipoDoc() { return TipoDocumento.valueOf(tipoDoc); }
-  public String getDocumento() { return documento; }
-  public String getNombreRazonSocial() { return nombreRazonSocial; }
-  public String getEmail() { return email; }
-  public String getTelefono() { return telefono; }
+  public TipoPersona getTipoPersona() {
+    return TipoPersona.valueOf(tipoPersona.trim());
+  }
+
+  public TipoDocumento getTipoDoc() {
+    return TipoDocumento.valueOf(tipoDoc);
+  }
+
+  public String getDocumento() {
+    return documento;
+  }
+
+  public String getNombreRazonSocial() {
+    return nombreRazonSocial;
+  }
+
+  public String getEmail() {
+    return email;
+  }
+
+  public String getTelefono() {
+    return telefono;
+  }
 }

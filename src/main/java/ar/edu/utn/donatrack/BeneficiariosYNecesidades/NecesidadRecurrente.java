@@ -9,15 +9,20 @@ public class NecesidadRecurrente extends Necesidad {
     super(bien);
   }
 
-  public TipoPeriodo getPeriodo() { return periodo; }
-  public void setPeriodo(TipoPeriodo periodo) { this.periodo = periodo; }
+  public TipoPeriodo getPeriodo() {
+    return periodo;
+  }
+
+  public void setPeriodo(TipoPeriodo periodo) {
+    this.periodo = periodo;
+  }
 
   @Override
   public boolean estaSatisfecha() {
     return super.estaSatisfecha();
   }
 
-  public void reiniciarPeriodo(){
-    this.resetearCantidadRecibida(); 
+  public void reiniciarPeriodo() {
+    this.resetearCantidadRecibida();
   }
 }

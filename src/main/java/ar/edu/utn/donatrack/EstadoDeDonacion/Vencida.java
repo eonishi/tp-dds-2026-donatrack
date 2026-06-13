@@ -4,15 +4,32 @@ import ar.edu.utn.donatrack.RegistroYSegmentacionDeDonaciones.Donacion;
 
 public class Vencida extends EstadoDonacion {
   @Override
-  public void asignar(Donacion donacion) { throw new IllegalStateException("La donación se encuentra vencida. No admite cambios de estado."); }
+  public void asignar(Donacion donacion) {
+    throw new IllegalStateException("La donación se encuentra vencida. No admite cambios de estado.");
+  }
+
   @Override
-  public void planificarRuta(Donacion donacion) { throw new IllegalStateException("La donación se encuentra vencida. No admite cambios de estado."); }
+  public void planificarRuta(Donacion donacion) {
+    throw new IllegalStateException("La donación se encuentra vencida. No admite cambios de estado.");
+  }
+
   @Override
-  public void iniciarTraslado(Donacion donacion) { throw new IllegalStateException("La donación se encuentra vencida. No admite cambios de estado."); }
+  public void iniciarTraslado(Donacion donacion) {
+    throw new IllegalStateException("La donación se encuentra vencida. No admite cambios de estado.");
+  }
+
   @Override
-  public void confirmarEntrega(Donacion donacion) { throw new IllegalStateException("La donación se encuentra vencida. No admite cambios de estado."); }
+  public void confirmarEntrega(Donacion donacion) {
+    throw new IllegalStateException("La donación se encuentra vencida. No admite cambios de estado.");
+  }
+
   @Override
-  public void reportarFalla(Donacion donacion, String justificacion) { throw new IllegalStateException("La donación se encuentra vencida. No admite cambios de estado."); }
+  public void reportarFalla(Donacion donacion, String justificacion) {
+    throw new IllegalStateException("La donación se encuentra vencida. No admite cambios de estado.");
+  }
+
   @Override
-  public void marcarVencida(Donacion donacion) { throw new IllegalStateException("La donación ya se encuentra vencida."); }
+  public void marcarVencida(Donacion donacion) {
+    throw new IllegalStateException("La donación ya se encuentra vencida.");
+  }
 }

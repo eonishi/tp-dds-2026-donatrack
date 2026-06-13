@@ -1,6 +1,6 @@
 package ar.edu.utn.donatrack.DonantesYContacto;
 
-public class SMS extends MedioDeContacto{
+public class SMS extends MedioDeContacto {
 
   //Constructor
   public SMS(String contacto) {
@@ -9,10 +9,9 @@ public class SMS extends MedioDeContacto{
   }
 
 
-
   //Método
   @Override
-  public void enviarMensaje(String mensaje){
+  public void enviarMensaje(String mensaje) {
 
   }
 

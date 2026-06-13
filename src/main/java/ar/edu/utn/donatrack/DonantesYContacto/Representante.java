@@ -4,13 +4,18 @@ public class Representante {
   private final String nombre;
   private final String apellido;
 
-  public Representante(String nombre, String apellido){
+  public Representante(String nombre, String apellido) {
     this.nombre = nombre;
     this.apellido = apellido;
   }
 
-  public String getNombre() { return nombre; }
-  public String getApellido() { return apellido; }
+  public String getNombre() {
+    return nombre;
+  }
+
+  public String getApellido() {
+    return apellido;
+  }
 
   @Override
   public boolean equals(Object o) {
