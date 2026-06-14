@@ -1,13 +1,14 @@
 package ar.edu.utn.donatrack;
 
-import ar.edu.utn.donatrack.DonantesYContacto.Donante;
-import ar.edu.utn.donatrack.DonantesYContacto.PersonaHumana;
-import ar.edu.utn.donatrack.DonantesYContacto.PersonajeJuridica;
-import ar.edu.utn.donatrack.ServiciosExternosYUtilidades.ImportadorDonantesCSV;
+import static org.junit.jupiter.api.Assertions.*;
+
+import ar.edu.utn.donatrack.donantes.Donante;
+import ar.edu.utn.donatrack.donantes.PersonaHumana;
+import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
+import ar.edu.utn.donatrack.utilidades.ImportadorDonantesCsv;
 import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class ImportDonantesCsvTest {
 
@@ -15,7 +16,7 @@ public class ImportDonantesCsvTest {
   public void importDonantesDesdeCsv() throws IOException {
     String pathString = "src/test/java/ar/edu/utn/donatrack/csv/donantes.csv";
 
-    List<Donante> donantes = ImportadorDonantesCSV.importarDeCsv(pathString);
+    List<Donante> donantes = ImportadorDonantesCsv.importarDeCsv(pathString);
 
     assertNotNull(donantes);
     assertFalse(donantes.isEmpty(), "La lista de donantes no debería estar vacía");
