@@ -4,7 +4,7 @@ public class PersonaHumana extends Donante {
   private final String nombre;
   private final String apellido;
   private Integer edad;
-  private String genero; // Quizas un enum (?)
+  private final Genero genero;
   private String direccion;
 
   public PersonaHumana(
@@ -14,7 +14,7 @@ public class PersonaHumana extends Donante {
       Integer edad,
       String numDocumento,
       TipoDocumento documento,
-      String genero,
+      Genero genero,
       String direccion) {
     super(medioDeContacto, numDocumento, documento);
     this.nombre = nombre;
@@ -36,9 +36,7 @@ public class PersonaHumana extends Donante {
     return edad;
   }
 
-  public void setGenero(String genero) {
-    this.genero = genero;
-  }
+  public Genero getGenero(){return genero;}
 
   public void setEdad(int edad) {
     this.edad = edad;
