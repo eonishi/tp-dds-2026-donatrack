@@ -42,3 +42,13 @@ buildNumber.properties
 .project
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
+
+# AI tooling files
+.agents
+.atl
+.settings
+skills-lock.json
+AGENTS.md
+docs/agents/
+.codegraph/
+opencode.jsonc
