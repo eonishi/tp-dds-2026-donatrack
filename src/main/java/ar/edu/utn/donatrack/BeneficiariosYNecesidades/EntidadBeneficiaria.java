@@ -24,6 +24,7 @@ public class EntidadBeneficiaria {
   public String getTelefono() { return telefono; }
 
   public List<NecesidadExtraordinaria> getNecesidadesExtraordinarias() {
+      // innnecesario el unmodifiableList
     return Collections.unmodifiableList(necesidadesExtraordinarias);
   }
 
