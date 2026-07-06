@@ -1,5 +1,7 @@
 package ar.edu.utn.donatrack.beneficiarios;
 
+import ar.edu.utn.donatrack.donaciones.Donacion;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -12,6 +14,7 @@ public class EntidadBeneficiaria {
   private final List<Necesidad> necesidadesExtraordinarias = new ArrayList<>();
   private final List<NecesidadRecurrente> necesidadesRecurrentes = new ArrayList<>();
   private final List<String> correos = new ArrayList<>();
+  private final List<RecepcionDonacion> recepciones = new ArrayList<>();
 
   public EntidadBeneficiaria(String razonSocial, String direccion, String telefono) {
     this.razonSocial = razonSocial;
@@ -43,6 +46,10 @@ public class EntidadBeneficiaria {
     return Collections.unmodifiableList(correos);
   }
 
+  public List<RecepcionDonacion> getRecepciones() {
+    return Collections.unmodifiableList(recepciones);
+  }
+
   public void agregarNecesidadExtraordinaria(Necesidad n) {
     this.necesidadesExtraordinarias.add(n);
   }
@@ -53,5 +60,25 @@ public class EntidadBeneficiaria {
 
   public void agregarCorreo(String correo) {
     this.correos.add(correo);
+  }
+
+  public void registrarRecepcion(Donacion donacion, LocalDate fechaRecepcion) {
+    this.recepciones.add(new RecepcionDonacion(donacion, fechaRecepcion));
+    this.actualizarNecesidadesCon(donacion);
+  }
+
+  public long cantidadDonacionesRecibidasDesde(LocalDate fechaDesde) {
+    return recepciones.stream().filter(recepcion -> !recepcion.getFechaRecepcion().isBefore(fechaDesde)).count();
+  }
+
+  private void actualizarNecesidadesCon(Donacion donacion) {
+    necesidadesExtraordinarias.forEach(necesidad -> aplicarSiCoincide(necesidad, donacion));
+    necesidadesRecurrentes.forEach(necesidad -> aplicarSiCoincide(necesidad, donacion));
+  }
+
+  private void aplicarSiCoincide(Necesidad necesidad, Donacion donacion) {
+    if (necesidad.getBienObjetivo().getSubcategoria().equals(donacion.getSubcategoria())) {
+      necesidad.recibirDonacion(donacion.getCantidadTotal());
+    }
   }
 }

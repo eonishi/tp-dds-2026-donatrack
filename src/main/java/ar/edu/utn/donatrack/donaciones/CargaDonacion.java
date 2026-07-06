@@ -11,9 +11,15 @@ import java.util.stream.Collectors;
 public class CargaDonacion {
   private final LocalDate fechaRegistro;
   private final List<Donacion> donaciones = new ArrayList<>();
+  private final DonacionesRepository donacionesRepository;
 
   public CargaDonacion(LocalDate fechaRegistro) {
+    this(fechaRegistro, null);
+  }
+
+  public CargaDonacion(LocalDate fechaRegistro, DonacionesRepository donacionesRepository) {
     this.fechaRegistro = fechaRegistro;
+    this.donacionesRepository = donacionesRepository;
   }
 
   public void cargarDonacion(List<Bien> bienes) {
@@ -31,6 +37,9 @@ public class CargaDonacion {
             (key, bienesDeClave) -> {
               Donacion donacion = new Donacion(bienesDeClave);
               donaciones.add(donacion);
+              if (donacionesRepository != null) {
+                donacionesRepository.addDonacion(donacion);
+              }
             });
   }
 

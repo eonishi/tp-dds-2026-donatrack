@@ -23,6 +23,10 @@ public class Necesidad {
     return cantidadRecibida;
   }
 
+  public Bien getBienObjetivo() {
+    return bienObjetivo;
+  }
+
   public boolean estaSatisfecha() {
     return cantidadRecibida >= bienObjetivo.getCantidad();
   }
