@@ -8,7 +8,8 @@ public class ResultadoMatchmaking {
   private final List<MatchCandidato> coincidencias = new ArrayList<>();
   private final List<RankingMatchmaking> rankings = new ArrayList<>();
 
-  public ResultadoMatchmaking(List<MatchCandidato> coincidencias, List<RankingMatchmaking> rankings) {
+  public ResultadoMatchmaking(
+      List<MatchCandidato> coincidencias, List<RankingMatchmaking> rankings) {
     if (coincidencias != null) {
       this.coincidencias.addAll(coincidencias);
     }

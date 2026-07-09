@@ -68,7 +68,9 @@ public class EntidadBeneficiaria {
   }
 
   public long cantidadDonacionesRecibidasDesde(LocalDate fechaDesde) {
-    return recepciones.stream().filter(recepcion -> !recepcion.getFechaRecepcion().isBefore(fechaDesde)).count();
+    return recepciones.stream()
+        .filter(recepcion -> !recepcion.getFechaRecepcion().isBefore(fechaDesde))
+        .count();
   }
 
   private void actualizarNecesidadesCon(Donacion donacion) {

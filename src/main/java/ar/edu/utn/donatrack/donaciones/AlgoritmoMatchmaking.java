@@ -8,5 +8,7 @@ public interface AlgoritmoMatchmaking {
   String getNombre();
 
   RankingMatchmaking rankear(
-      Donacion donacion, Collection<EntidadBeneficiaria> entidadesBeneficiarias, LocalDate fechaReferencia);
+      Donacion donacion,
+      Collection<EntidadBeneficiaria> entidadesBeneficiarias,
+      LocalDate fechaReferencia);
 }

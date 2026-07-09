@@ -73,7 +73,8 @@ public class Donacion {
 
   public void confirmarEntidadBeneficiaria(EntidadBeneficiaria entidadBeneficiaria) {
     if (!(estado instanceof EnDeposito)) {
-      throw new IllegalStateException("Solo se puede confirmar una entidad para donaciones en depósito.");
+      throw new IllegalStateException(
+          "Solo se puede confirmar una entidad para donaciones en depósito.");
     }
     this.entidadBeneficiariaConfirmada = entidadBeneficiaria;
     this.asignar();

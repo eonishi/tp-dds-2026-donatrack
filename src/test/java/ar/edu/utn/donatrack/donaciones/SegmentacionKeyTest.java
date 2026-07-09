@@ -19,7 +19,9 @@ class SegmentacionKeyTest {
     SegmentacionKey keyA = new SegmentacionKey(categoria, LocalDate.of(2026, 7, 10), estado);
     SegmentacionKey keyB = new SegmentacionKey(categoria, LocalDate.of(2026, 7, 12), estado);
 
-    assertEquals(keyA.equals(keyB), keyB.equals(keyA),
+    assertEquals(
+        keyA.equals(keyB),
+        keyB.equals(keyA),
         "equals must be symmetric: A.equals(B) should equal B.equals(A)");
   }
 
@@ -53,14 +55,21 @@ class SegmentacionKeyTest {
     SubCategoria otraCategoria = new SubCategoria("Arroz", Categoria.ALIMENTO);
     SegmentacionKey base = new SegmentacionKey(categoria, fecha, estado);
     assertAll(
-        () -> assertFalse(base.equals(new SegmentacionKey(otraCategoria, fecha, estado)),
-            "different subcategoria"),
-        () -> assertFalse(base.equals(new SegmentacionKey(categoria, LocalDate.of(2026, 8, 1), estado)),
-            "different fechaVencimiento"),
-        () -> assertFalse(base.equals(new SegmentacionKey(categoria, null, estado)),
-            "null fechaVencimiento"),
-        () -> assertFalse(base.equals(new SegmentacionKey(categoria, fecha, EstadoUso.USADO)),
-            "different estadoUso"));
+        () ->
+            assertFalse(
+                base.equals(new SegmentacionKey(otraCategoria, fecha, estado)),
+                "different subcategoria"),
+        () ->
+            assertFalse(
+                base.equals(new SegmentacionKey(categoria, LocalDate.of(2026, 8, 1), estado)),
+                "different fechaVencimiento"),
+        () ->
+            assertFalse(
+                base.equals(new SegmentacionKey(categoria, null, estado)), "null fechaVencimiento"),
+        () ->
+            assertFalse(
+                base.equals(new SegmentacionKey(categoria, fecha, EstadoUso.USADO)),
+                "different estadoUso"));
   }
 
   @Test

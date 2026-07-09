@@ -16,7 +16,9 @@ public class AlgoritmoPrioridadSubAtendidos implements AlgoritmoMatchmaking {
 
   @Override
   public RankingMatchmaking rankear(
-      Donacion donacion, Collection<EntidadBeneficiaria> entidadesBeneficiarias, LocalDate fechaReferencia) {
+      Donacion donacion,
+      Collection<EntidadBeneficiaria> entidadesBeneficiarias,
+      LocalDate fechaReferencia) {
     LocalDate fechaDesde = fechaReferencia.minusMonths(3);
     List<MatchCandidato> candidatos = new ArrayList<>();
 
@@ -41,6 +43,8 @@ public class AlgoritmoPrioridadSubAtendidos implements AlgoritmoMatchmaking {
     List<Necesidad> necesidades = new ArrayList<>(entidad.getNecesidadesExtraordinarias());
     necesidades.addAll(entidad.getNecesidadesRecurrentes());
     return necesidades.stream()
-        .anyMatch(necesidad -> necesidad.getBienObjetivo().getSubcategoria().equals(donacion.getSubcategoria()));
+        .anyMatch(
+            necesidad ->
+                necesidad.getBienObjetivo().getSubcategoria().equals(donacion.getSubcategoria()));
   }
 }

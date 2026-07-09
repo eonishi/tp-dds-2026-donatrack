@@ -36,7 +36,9 @@ public class PersonaHumana extends Donante {
     return edad;
   }
 
-  public Genero getGenero(){return genero;}
+  public Genero getGenero() {
+    return genero;
+  }
 
   public void setEdad(int edad) {
     this.edad = edad;

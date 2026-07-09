@@ -13,7 +13,9 @@ public class DonacionesRepository {
   }
 
   public List<Donacion> getDonacionesEnDeposito() {
-    return donaciones.stream().filter(donacion -> donacion.getEstado() instanceof EnDeposito).toList();
+    return donaciones.stream()
+        .filter(donacion -> donacion.getEstado() instanceof EnDeposito)
+        .toList();
   }
 
   public void addDonacion(Donacion donacion) {

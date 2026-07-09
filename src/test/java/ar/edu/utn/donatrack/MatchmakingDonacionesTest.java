@@ -10,8 +10,8 @@ import ar.edu.utn.donatrack.bienes.Categoria;
 import ar.edu.utn.donatrack.bienes.EstadoUso;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
-import ar.edu.utn.donatrack.donaciones.AlgoritmoMatchmaking;
 import ar.edu.utn.donatrack.donaciones.AlgoritmoCompatibilidadSemantica;
+import ar.edu.utn.donatrack.donaciones.AlgoritmoMatchmaking;
 import ar.edu.utn.donatrack.donaciones.AlgoritmoPrioridadSubAtendidos;
 import ar.edu.utn.donatrack.donaciones.CargaDonacion;
 import ar.edu.utn.donatrack.donaciones.Donacion;
@@ -34,14 +34,7 @@ public class MatchmakingDonacionesTest {
   void cargaDonacionRegistraLasDonacionesEnElRepositorio() {
     SubCategoria subCategoria = new SubCategoria("Sillas", Categoria.MOBILIARIO);
     Bien silla =
-        new Bien(
-            "Silla",
-            "",
-            1,
-            UnidadMedida.UNIDADES,
-            null,
-            EstadoUso.USADO,
-            subCategoria);
+        new Bien("Silla", "", 1, UnidadMedida.UNIDADES, null, EstadoUso.USADO, subCategoria);
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     CargaDonacion cargaDonacion = new CargaDonacion(LocalDate.now(), donacionesRepository);
 
@@ -54,13 +47,18 @@ public class MatchmakingDonacionesTest {
   void matchmakingGuardaCoincidenciasCuandoAmbosAlgoritmosCoinciden() {
     LocalDate fecha = LocalDate.of(2026, 7, 6);
     SubCategoria alimentos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
-    Donacion donacion = new Donacion(List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+    Donacion donacion =
+        new Donacion(List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     donacionesRepository.addDonacion(donacion);
 
-    EntidadBeneficiaria hogarA = crearEntidadConNecesidad("Hogar A", alimentos, 5, fecha.plusMonths(4));
-    EntidadBeneficiaria hogarB = crearEntidadConNecesidad("Hogar B", alimentos, 5, fecha.plusMonths(4));
-    hogarB.registrarRecepcion(new Donacion(List.of(crearBien("Vieja", 1, alimentos, fecha.plusMonths(1)))), fecha.minusDays(10));
+    EntidadBeneficiaria hogarA =
+        crearEntidadConNecesidad("Hogar A", alimentos, 5, fecha.plusMonths(4));
+    EntidadBeneficiaria hogarB =
+        crearEntidadConNecesidad("Hogar B", alimentos, 5, fecha.plusMonths(4));
+    hogarB.registrarRecepcion(
+        new Donacion(List.of(crearBien("Vieja", 1, alimentos, fecha.plusMonths(1)))),
+        fecha.minusDays(10));
 
     BeneficiariosRepository beneficiariosRepository = new BeneficiariosRepository();
     beneficiariosRepository.addBeneficiario(hogarA);
@@ -86,12 +84,15 @@ public class MatchmakingDonacionesTest {
     LocalDate fecha = LocalDate.of(2026, 7, 6);
     SubCategoria alimentos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     SubCategoria ropa = new SubCategoria("Abrigos", Categoria.VESTIMENTA);
-    Donacion donacion = new Donacion(List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+    Donacion donacion =
+        new Donacion(List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     donacionesRepository.addDonacion(donacion);
 
-    EntidadBeneficiaria compatible = crearEntidadConNecesidad("Compatible", alimentos, 5, fecha.plusMonths(4));
-    EntidadBeneficiaria noCompatible = crearEntidadConNecesidadNoPerecedera("Sin match semántico", ropa, 2);
+    EntidadBeneficiaria compatible =
+        crearEntidadConNecesidad("Compatible", alimentos, 5, fecha.plusMonths(4));
+    EntidadBeneficiaria noCompatible =
+        crearEntidadConNecesidadNoPerecedera("Sin match semántico", ropa, 2);
 
     BeneficiariosRepository beneficiariosRepository = new BeneficiariosRepository();
     beneficiariosRepository.addBeneficiario(compatible);
@@ -131,10 +132,12 @@ public class MatchmakingDonacionesTest {
   void confirmacionAdministrativaAsignaEntidadYRegistraRecepcion() {
     LocalDate fecha = LocalDate.of(2026, 7, 6);
     SubCategoria alimentos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
-    Donacion donacion = new Donacion(List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+    Donacion donacion =
+        new Donacion(List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     BeneficiariosRepository beneficiariosRepository = new BeneficiariosRepository();
-    EntidadBeneficiaria entidad = crearEntidadConNecesidad("Hogar", alimentos, 5, fecha.plusMonths(4));
+    EntidadBeneficiaria entidad =
+        crearEntidadConNecesidad("Hogar", alimentos, 5, fecha.plusMonths(4));
 
     ServicioMatchmakingDonaciones servicio =
         new ServicioMatchmakingDonaciones(
@@ -157,12 +160,15 @@ public class MatchmakingDonacionesTest {
         crearEntidadConNecesidad("Menos Atendida", alimentos, 5, fecha.plusMonths(4));
     EntidadBeneficiaria entidadMasAtendida =
         crearEntidadConNecesidad("Mas Atendida", alimentos, 5, fecha.plusMonths(4));
-    Donacion donacion = new Donacion(List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+    Donacion donacion =
+        new Donacion(List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
 
     entidadMasAtendida.registrarRecepcion(
-        new Donacion(List.of(crearBien("Vieja", 1, alimentos, fecha.plusMonths(1)))), fecha.minusDays(5));
+        new Donacion(List.of(crearBien("Vieja", 1, alimentos, fecha.plusMonths(1)))),
+        fecha.minusDays(5));
     entidadMasAtendida.registrarRecepcion(
-        new Donacion(List.of(crearBien("Vieja 2", 1, alimentos, fecha.plusMonths(1)))), fecha.minusDays(15));
+        new Donacion(List.of(crearBien("Vieja 2", 1, alimentos, fecha.plusMonths(1)))),
+        fecha.minusDays(15));
     entidadMasAtendida.registrarRecepcion(
         new Donacion(List.of(crearBien("Fuera trimestre", 1, alimentos, fecha.plusMonths(1)))),
         fecha.minusMonths(4));
@@ -171,13 +177,13 @@ public class MatchmakingDonacionesTest {
         new AlgoritmoPrioridadSubAtendidos()
             .rankear(donacion, List.of(entidadMasAtendida, entidadMenosAtendida), fecha);
 
-    assertEquals("Menos Atendida", ranking.getCandidatos().get(0).getEntidadBeneficiaria().getRazonSocial());
+    assertEquals(
+        "Menos Atendida", ranking.getCandidatos().get(0).getEntidadBeneficiaria().getRazonSocial());
   }
 
   @Test
   void schedulerCalculaDemoraHastaLaProximaMedianoche() {
-    Clock clock =
-        Clock.fixed(Instant.parse("2026-07-06T21:30:00Z"), ZoneId.of("UTC"));
+    Clock clock = Clock.fixed(Instant.parse("2026-07-06T21:30:00Z"), ZoneId.of("UTC"));
 
     long demora = MatchmakingScheduler.milisegundosHastaProximaMedianoche(clock);
 

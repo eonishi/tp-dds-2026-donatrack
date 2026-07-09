@@ -24,7 +24,9 @@ public class ServicioMatchmakingDonaciones {
   }
 
   public void ejecutarMatchmakingDiario(LocalDate fechaReferencia) {
-    donacionesRepository.getDonacionesEnDeposito().forEach(donacion -> recalcular(donacion, fechaReferencia));
+    donacionesRepository
+        .getDonacionesEnDeposito()
+        .forEach(donacion -> recalcular(donacion, fechaReferencia));
   }
 
   public void confirmarAsignacionAdministrativa(
@@ -41,7 +43,8 @@ public class ServicioMatchmakingDonaciones {
                     algoritmo.rankear(
                         donacion, beneficiariosRepository.getBeneficiarios(), fechaReferencia))
             .toList();
-    donacion.actualizarResultadoMatchmaking(new ResultadoMatchmaking(coincidencias(rankings), rankings));
+    donacion.actualizarResultadoMatchmaking(
+        new ResultadoMatchmaking(coincidencias(rankings), rankings));
   }
 
   private List<MatchCandidato> coincidencias(List<RankingMatchmaking> rankings) {
@@ -62,7 +65,8 @@ public class ServicioMatchmakingDonaciones {
         .map(
             candidato ->
                 new MatchCandidato(
-                    candidato.getEntidadBeneficiaria(), puntajeTotal(candidato.getEntidadBeneficiaria(), rankings)))
+                    candidato.getEntidadBeneficiaria(),
+                    puntajeTotal(candidato.getEntidadBeneficiaria(), rankings)))
         .toList();
   }
 
@@ -72,7 +76,8 @@ public class ServicioMatchmakingDonaciones {
         .collect(Collectors.toSet());
   }
 
-  private int puntajeTotal(EntidadBeneficiaria entidadBeneficiaria, List<RankingMatchmaking> rankings) {
+  private int puntajeTotal(
+      EntidadBeneficiaria entidadBeneficiaria, List<RankingMatchmaking> rankings) {
     return rankings.stream()
         .flatMap(ranking -> ranking.getCandidatos().stream())
         .filter(candidato -> candidato.getEntidadBeneficiaria().equals(entidadBeneficiaria))

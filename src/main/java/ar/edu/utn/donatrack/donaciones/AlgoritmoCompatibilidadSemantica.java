@@ -17,7 +17,9 @@ public class AlgoritmoCompatibilidadSemantica implements AlgoritmoMatchmaking {
 
   @Override
   public RankingMatchmaking rankear(
-      Donacion donacion, Collection<EntidadBeneficiaria> entidadesBeneficiarias, LocalDate fechaReferencia) {
+      Donacion donacion,
+      Collection<EntidadBeneficiaria> entidadesBeneficiarias,
+      LocalDate fechaReferencia) {
     List<MatchCandidato> candidatos = new ArrayList<>();
     for (EntidadBeneficiaria entidad : entidadesBeneficiarias) {
       int puntaje = calcularPuntaje(donacion, entidad, fechaReferencia);
@@ -33,7 +35,8 @@ public class AlgoritmoCompatibilidadSemantica implements AlgoritmoMatchmaking {
   private int calcularPuntaje(
       Donacion donacion, EntidadBeneficiaria entidad, LocalDate fechaReferencia) {
     return necesidades(entidad).stream()
-        .mapToInt(necesidad -> puntajeNecesidad(donacion, necesidad.getBienObjetivo(), fechaReferencia))
+        .mapToInt(
+            necesidad -> puntajeNecesidad(donacion, necesidad.getBienObjetivo(), fechaReferencia))
         .max()
         .orElse(0);
   }
@@ -68,7 +71,8 @@ public class AlgoritmoCompatibilidadSemantica implements AlgoritmoMatchmaking {
       return puntaje;
     }
 
-    if (donacion.getFechaVencimiento() != null && donacion.getFechaVencimiento().isAfter(fechaReferencia)) {
+    if (donacion.getFechaVencimiento() != null
+        && donacion.getFechaVencimiento().isAfter(fechaReferencia)) {
       puntaje += 10;
     }
 

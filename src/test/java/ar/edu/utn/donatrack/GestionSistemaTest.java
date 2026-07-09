@@ -33,23 +33,9 @@ class DonaTrackTest {
   void segmentarDonacion_AgrupaPorSubcategoria_EstadoUso_Y_Vencimiento() {
     // Arrange
     Bien sillaNueva =
-        new Bien(
-            "Silla nueva",
-            "",
-            2,
-            UnidadMedida.UNIDADES,
-            null,
-            EstadoUso.NUEVO,
-            subcatSillas);
+        new Bien("Silla nueva", "", 2, UnidadMedida.UNIDADES, null, EstadoUso.NUEVO, subcatSillas);
     Bien sillaUsada =
-        new Bien(
-            "Silla usada",
-            "",
-            4,
-            UnidadMedida.UNIDADES,
-            null,
-            EstadoUso.USADO,
-            subcatSillas);
+        new Bien("Silla usada", "", 4, UnidadMedida.UNIDADES, null, EstadoUso.USADO, subcatSillas);
     Bien fideos2026 =
         new Bien(
             "Fideos que vencen 2026",
@@ -214,22 +200,13 @@ class DonaTrackTest {
             hoy.plusDays(1),
             EstadoUso.NO_APLICA,
             subcat);
-    assertTrue(
-        conVencimiento.esPerecedero(),
-        "Si tiene fecha de vencimiento, debe ser perecedero");
+    assertTrue(conVencimiento.esPerecedero(), "Si tiene fecha de vencimiento, debe ser perecedero");
 
     // Caso 2: fechaVencimiento == null → esPerecedero() == false
     Bien sinVencimiento =
         new Bien(
-            "Sin vencimiento",
-            "",
-            1,
-            UnidadMedida.UNIDADES,
-            null,
-            EstadoUso.NO_APLICA,
-            subcat);
+            "Sin vencimiento", "", 1, UnidadMedida.UNIDADES, null, EstadoUso.NO_APLICA, subcat);
     assertFalse(
-        sinVencimiento.esPerecedero(),
-        "Si no tiene fecha de vencimiento, no debe ser perecedero");
+        sinVencimiento.esPerecedero(), "Si no tiene fecha de vencimiento, no debe ser perecedero");
   }
 }
