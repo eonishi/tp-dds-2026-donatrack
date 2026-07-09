@@ -43,8 +43,6 @@ public class AlgoritmoPrioridadSubAtendidos implements AlgoritmoMatchmaking {
     List<Necesidad> necesidades = new ArrayList<>(entidad.getNecesidadesExtraordinarias());
     necesidades.addAll(entidad.getNecesidadesRecurrentes());
     return necesidades.stream()
-        .anyMatch(
-            necesidad ->
-                necesidad.getBienObjetivo().getSubcategoria().equals(donacion.getSubcategoria()));
+        .anyMatch(necesidad -> necesidad.getSubcategoria().equals(donacion.getSubcategoria()));
   }
 }

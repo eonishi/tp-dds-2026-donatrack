@@ -1,12 +1,14 @@
 package ar.edu.utn.donatrack.beneficiarios;
 
-import ar.edu.utn.donatrack.bienes.Bien;
+import ar.edu.utn.donatrack.bienes.SubCategoria;
+import ar.edu.utn.donatrack.bienes.UnidadMedida;
 
 public class NecesidadRecurrente extends Necesidad {
   private TipoPeriodo periodo;
 
-  public NecesidadRecurrente(Bien bien) {
-    super(bien);
+  public NecesidadRecurrente(
+      SubCategoria subcategoria, double cantidadObjetivo, UnidadMedida unidad, String descripcion) {
+    super(subcategoria, cantidadObjetivo, unidad, descripcion);
   }
 
   public TipoPeriodo getPeriodo() {
@@ -15,11 +17,6 @@ public class NecesidadRecurrente extends Necesidad {
 
   public void setPeriodo(TipoPeriodo periodo) {
     this.periodo = periodo;
-  }
-
-  @Override
-  public boolean estaSatisfecha() {
-    return super.estaSatisfecha();
   }
 
   public void reiniciarPeriodo() {

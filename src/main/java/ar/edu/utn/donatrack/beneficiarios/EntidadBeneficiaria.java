@@ -79,7 +79,7 @@ public class EntidadBeneficiaria {
   }
 
   private void aplicarSiCoincide(Necesidad necesidad, Donacion donacion) {
-    if (necesidad.getBienObjetivo().getSubcategoria().equals(donacion.getSubcategoria())) {
+    if (necesidad.getSubcategoria().equals(donacion.getSubcategoria())) {
       necesidad.recibirDonacion(donacion.getCantidadTotal());
     }
   }

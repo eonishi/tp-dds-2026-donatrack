@@ -159,26 +159,17 @@ class DonaTrackTest {
 
   @Test
   void necesidades_SumaDonaciones_Y_QuedaSatisfecha() {
-    Bien fideosNecesidad =
-        new Bien(
-            "Fideos",
-            "",
-            5,
-            UnidadMedida.KILOGRAMOS,
-            hoy.plusYears(1),
-            EstadoUso.NO_APLICA,
-            subcatFideos);
     // Arrange
-    Necesidad necesidad = new Necesidad(fideosNecesidad);
+    Necesidad necesidad = new Necesidad(subcatFideos, 5.0, UnidadMedida.KILOGRAMOS, "Fideos");
 
     // Act & Assert
-    necesidad.recibirDonacion(2.0); // Una persona dona 2 [cite: 73]
+    necesidad.recibirDonacion(2.0); // Una persona dona 2
     assertFalse(necesidad.estaSatisfecha());
 
-    necesidad.recibirDonacion(20.0); // Otra dona 20 [cite: 73]
+    necesidad.recibirDonacion(20.0); // Otra dona 20, se alcanza el objetivo
     assertTrue(necesidad.estaSatisfecha());
 
-    necesidad.recibirDonacion(8.0); // Se alcanza el objetivo [cite: 74]
+    necesidad.recibirDonacion(8.0); // Mas donaciones, sigue satisfecha
     assertTrue(necesidad.estaSatisfecha());
   }
 

@@ -2,7 +2,6 @@ package ar.edu.utn.donatrack.donaciones;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.beneficiarios.Necesidad;
-import ar.edu.utn.donatrack.bienes.Bien;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,7 +21,7 @@ public class AlgoritmoCompatibilidadSemantica implements AlgoritmoMatchmaking {
       LocalDate fechaReferencia) {
     List<MatchCandidato> candidatos = new ArrayList<>();
     for (EntidadBeneficiaria entidad : entidadesBeneficiarias) {
-      int puntaje = calcularPuntaje(donacion, entidad, fechaReferencia);
+      int puntaje = calcularPuntaje(donacion, entidad);
       if (puntaje > 0) {
         candidatos.add(new MatchCandidato(entidad, puntaje));
       }
@@ -32,11 +31,9 @@ public class AlgoritmoCompatibilidadSemantica implements AlgoritmoMatchmaking {
     return new RankingMatchmaking(getNombre(), candidatos);
   }
 
-  private int calcularPuntaje(
-      Donacion donacion, EntidadBeneficiaria entidad, LocalDate fechaReferencia) {
+  private int calcularPuntaje(Donacion donacion, EntidadBeneficiaria entidad) {
     return necesidades(entidad).stream()
-        .mapToInt(
-            necesidad -> puntajeNecesidad(donacion, necesidad.getBienObjetivo(), fechaReferencia))
+        .mapToInt(necesidad -> puntajeNecesidad(donacion, necesidad))
         .max()
         .orElse(0);
   }
@@ -47,38 +44,18 @@ public class AlgoritmoCompatibilidadSemantica implements AlgoritmoMatchmaking {
     return necesidades;
   }
 
-  private int puntajeNecesidad(Donacion donacion, Bien bienObjetivo, LocalDate fechaReferencia) {
+  private int puntajeNecesidad(Donacion donacion, Necesidad necesidad) {
     int puntaje = 0;
-    if (!donacion.getSubcategoria().equals(bienObjetivo.getSubcategoria())) {
+    if (!donacion.getSubcategoria().equals(necesidad.getSubcategoria())) {
       return 0;
     }
 
     puntaje += 50;
 
-    if (donacion.getUnidad().equals(bienObjetivo.getUnidad())) {
+    if (donacion.getUnidad().equals(necesidad.getUnidad())) {
       puntaje += 15;
     }
-    if (Double.compare(donacion.getCantidadTotal(), bienObjetivo.getCantidad()) >= 0) {
-      puntaje += 10;
-    }
-    if (donacion.getBienes().get(0).getEstadoDeUso().equals(bienObjetivo.getEstadoDeUso())) {
-      puntaje += 10;
-    }
-    if (donacion.esPerecedera() == bienObjetivo.esPerecedero()) {
-      puntaje += 5;
-    }
-    if (!donacion.esPerecedera()) {
-      return puntaje;
-    }
-
-    if (donacion.getFechaVencimiento() != null
-        && donacion.getFechaVencimiento().isAfter(fechaReferencia)) {
-      puntaje += 10;
-    }
-
-    if (bienObjetivo.getFechaVencimiento() != null
-        && donacion.getFechaVencimiento() != null
-        && !donacion.getFechaVencimiento().isBefore(bienObjetivo.getFechaVencimiento())) {
+    if (Double.compare(donacion.getCantidadTotal(), necesidad.getCantidadObjetivo()) >= 0) {
       puntaje += 10;
     }
 

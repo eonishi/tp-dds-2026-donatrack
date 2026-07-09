@@ -206,7 +206,7 @@ public class MatchmakingDonacionesTest {
       String razonSocial, SubCategoria subCategoria, double cantidad, LocalDate fechaVencimiento) {
     EntidadBeneficiaria entidad = new EntidadBeneficiaria(razonSocial, "Direccion", "Telefono");
     entidad.agregarNecesidadExtraordinaria(
-        new Necesidad(crearBien("Necesidad", cantidad, subCategoria, fechaVencimiento)));
+        new Necesidad(subCategoria, cantidad, UnidadMedida.KILOGRAMOS, "Necesidad"));
     return entidad;
   }
 
@@ -214,15 +214,7 @@ public class MatchmakingDonacionesTest {
       String razonSocial, SubCategoria subCategoria, double cantidad) {
     EntidadBeneficiaria entidad = new EntidadBeneficiaria(razonSocial, "Direccion", "Telefono");
     entidad.agregarNecesidadExtraordinaria(
-        new Necesidad(
-            new Bien(
-                "Necesidad",
-                "",
-                cantidad,
-                UnidadMedida.UNIDADES,
-                null,
-                EstadoUso.USADO,
-                subCategoria)));
+        new Necesidad(subCategoria, cantidad, UnidadMedida.UNIDADES, "Necesidad"));
     return entidad;
   }
 }
