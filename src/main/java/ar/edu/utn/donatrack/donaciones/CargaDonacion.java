@@ -29,7 +29,7 @@ public class CargaDonacion {
                 bien ->
                     new SegmentacionKey(
                         bien.getSubcategoria(),
-                        bien.esPerecedero() ? bien.getFechaVencimiento() : null,
+                        bien.getFechaVencimiento(),
                         bien.getEstadoDeUso() != null
                             ? bien.getEstadoDeUso()
                             : EstadoUso.NO_APLICA)))

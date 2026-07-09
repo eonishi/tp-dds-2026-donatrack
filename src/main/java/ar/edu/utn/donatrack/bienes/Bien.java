@@ -7,7 +7,6 @@ public class Bien {
   private final String foto;
   private final double cantidad;
   private final UnidadMedida unidad;
-  private final boolean esPerecedero;
   private final LocalDate fechaVencimiento;
   private final EstadoUso estadoDeUso;
   private final SubCategoria subcategoria;
@@ -17,7 +16,6 @@ public class Bien {
       String foto,
       double cantidad,
       UnidadMedida unidad,
-      boolean esPerecedero,
       LocalDate fechaVencimiento,
       EstadoUso estadoDeUso,
       SubCategoria subcategoria) {
@@ -25,7 +23,6 @@ public class Bien {
     this.foto = foto;
     this.cantidad = cantidad;
     this.unidad = unidad;
-    this.esPerecedero = esPerecedero;
     this.fechaVencimiento = fechaVencimiento;
     this.estadoDeUso = estadoDeUso;
     this.subcategoria = subcategoria;
@@ -52,7 +49,7 @@ public class Bien {
   }
 
   public boolean esPerecedero() {
-    return esPerecedero;
+    return fechaVencimiento != null;
   }
 
   public LocalDate getFechaVencimiento() {

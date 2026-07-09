@@ -39,7 +39,6 @@ public class MatchmakingDonacionesTest {
             "",
             1,
             UnidadMedida.UNIDADES,
-            false,
             null,
             EstadoUso.USADO,
             subCategoria);
@@ -192,7 +191,6 @@ public class MatchmakingDonacionesTest {
         "",
         cantidad,
         UnidadMedida.KILOGRAMOS,
-        true,
         fechaVencimiento,
         EstadoUso.NO_APLICA,
         subCategoria);
@@ -216,7 +214,6 @@ public class MatchmakingDonacionesTest {
                 "",
                 cantidad,
                 UnidadMedida.UNIDADES,
-                false,
                 null,
                 EstadoUso.USADO,
                 subCategoria)));

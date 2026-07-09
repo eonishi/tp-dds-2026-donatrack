@@ -38,7 +38,6 @@ class DonaTrackTest {
             "",
             2,
             UnidadMedida.UNIDADES,
-            false,
             null,
             EstadoUso.NUEVO,
             subcatSillas);
@@ -48,7 +47,6 @@ class DonaTrackTest {
             "",
             4,
             UnidadMedida.UNIDADES,
-            false,
             null,
             EstadoUso.USADO,
             subcatSillas);
@@ -58,7 +56,6 @@ class DonaTrackTest {
             "",
             10,
             UnidadMedida.KILOGRAMOS,
-            true,
             hoy.plusYears(1),
             EstadoUso.NO_APLICA,
             subcatFideos);
@@ -68,7 +65,6 @@ class DonaTrackTest {
             "",
             5,
             UnidadMedida.KILOGRAMOS,
-            true,
             hoy.plusYears(2),
             EstadoUso.NO_APLICA,
             subcatFideos);
@@ -78,7 +74,6 @@ class DonaTrackTest {
             "",
             5,
             UnidadMedida.KILOGRAMOS,
-            true,
             hoy.plusYears(1),
             EstadoUso.NO_APLICA,
             subcatFideos);
@@ -121,7 +116,6 @@ class DonaTrackTest {
             "",
             10,
             UnidadMedida.KILOGRAMOS,
-            true,
             hoy.plusYears(1),
             EstadoUso.NO_APLICA,
             subcatFideos);
@@ -163,7 +157,6 @@ class DonaTrackTest {
             "",
             10,
             UnidadMedida.KILOGRAMOS,
-            true,
             hoy.plusYears(1),
             EstadoUso.NO_APLICA,
             subcatFideos);
@@ -186,7 +179,6 @@ class DonaTrackTest {
             "",
             5,
             UnidadMedida.KILOGRAMOS,
-            true,
             hoy.plusYears(1),
             EstadoUso.NO_APLICA,
             subcatFideos);
@@ -202,5 +194,42 @@ class DonaTrackTest {
 
     necesidad.recibirDonacion(8.0); // Se alcanza el objetivo [cite: 74]
     assertTrue(necesidad.estaSatisfecha());
+  }
+
+  // ==========================================
+  // 4. TEST DE INVARIANTE: esPerecedero derivado
+  // ==========================================
+
+  @Test
+  void bien_DerivaPerecederoDeFechaVencimiento() {
+    SubCategoria subcat = new SubCategoria("Test", Categoria.ALIMENTO);
+
+    // Caso 1: fechaVencimiento != null → esPerecedero() == true
+    Bien conVencimiento =
+        new Bien(
+            "Con vencimiento",
+            "",
+            1,
+            UnidadMedida.UNIDADES,
+            hoy.plusDays(1),
+            EstadoUso.NO_APLICA,
+            subcat);
+    assertTrue(
+        conVencimiento.esPerecedero(),
+        "Si tiene fecha de vencimiento, debe ser perecedero");
+
+    // Caso 2: fechaVencimiento == null → esPerecedero() == false
+    Bien sinVencimiento =
+        new Bien(
+            "Sin vencimiento",
+            "",
+            1,
+            UnidadMedida.UNIDADES,
+            null,
+            EstadoUso.NO_APLICA,
+            subcat);
+    assertFalse(
+        sinVencimiento.esPerecedero(),
+        "Si no tiene fecha de vencimiento, no debe ser perecedero");
   }
 }
