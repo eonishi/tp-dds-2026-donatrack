@@ -31,8 +31,8 @@ public class Necesidad {
     return cantidadRecibida >= bienObjetivo.getCantidad();
   }
 
-  public void recibirDonacion(Double cantidad) {
-    if (cantidad != null && cantidad > 0) {
+  public void recibirDonacion(double cantidad) {
+    if (cantidad > 0) {
       this.cantidadRecibida += cantidad;
     }
   }
