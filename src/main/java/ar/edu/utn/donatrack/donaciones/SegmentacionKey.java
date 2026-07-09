@@ -9,18 +9,12 @@ public class SegmentacionKey {
   private final SubCategoria subcategoria;
   private final LocalDate fechaVencimiento;
   private final EstadoUso estadoUso;
-  private LocalDate fechaMin = null;
 
   public SegmentacionKey(
       SubCategoria subcategoria, LocalDate fechaVencimiento, EstadoUso estadoUso) {
     this.subcategoria = subcategoria;
     this.fechaVencimiento = fechaVencimiento;
     this.estadoUso = estadoUso;
-
-    if (fechaVencimiento != null) {
-      final int rangoDeFecha = 5;
-      this.fechaMin = fechaVencimiento.minusDays(rangoDeFecha);
-    }
   }
 
   public SubCategoria getSubcategoria() {
@@ -44,14 +38,9 @@ public class SegmentacionKey {
       return false;
     }
     SegmentacionKey that = (SegmentacionKey) o;
-    if (fechaVencimiento == null) {
-      return Objects.equals(subcategoria, that.subcategoria) && estadoUso == that.estadoUso;
-    } else {
-      return Objects.equals(subcategoria, that.subcategoria)
-          && fechaMin.isBefore(that.fechaVencimiento)
-          && (fechaVencimiento.isAfter(that.fechaVencimiento)
-              || fechaVencimiento.isEqual(that.fechaVencimiento));
-    }
+    return Objects.equals(subcategoria, that.subcategoria)
+        && Objects.equals(fechaVencimiento, that.fechaVencimiento)
+        && estadoUso == that.estadoUso;
   }
 
   @Override
