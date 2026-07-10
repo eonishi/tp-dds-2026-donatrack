@@ -153,9 +153,143 @@ class DonaTrackTest {
     assertThrows(IllegalStateException.class, donacion::iniciarTraslado);
   }
 
+  @Test
+  void retornarAlDeposito_SoloPermitidoDesdeEntregaFallida() {
+    Bien fideos =
+        new Bien(
+            "Fideos",
+            "",
+            10,
+            UnidadMedida.KILOGRAMOS,
+            LocalDate.now().plusYears(1),
+            EstadoUso.NO_APLICA,
+            new SubCategoria("Test", Categoria.ALIMENTO));
+
+    // EnDeposito — estado inicial
+    Donacion enDeposito = new Donacion(List.of(fideos));
+    assertThrows(
+        IllegalStateException.class,
+        enDeposito::retornarAlDeposito,
+        "EnDeposito no debería permitir retornarAlDeposito");
+
+    // AsignacionRealizada
+    Donacion asignada = new Donacion(List.of(fideos));
+    asignada.confirmarEntidadBeneficiaria(new EntidadBeneficiaria("Hogar", "Dir", "Tel"));
+    assertThrows(
+        IllegalStateException.class,
+        asignada::retornarAlDeposito,
+        "AsignacionRealizada no debería permitir retornarAlDeposito");
+
+    // ListaParaEntregar
+    Donacion lista = new Donacion(List.of(fideos));
+    lista.confirmarEntidadBeneficiaria(new EntidadBeneficiaria("Hogar", "Dir", "Tel"));
+    lista.planificarRuta();
+    assertThrows(
+        IllegalStateException.class,
+        lista::retornarAlDeposito,
+        "ListaParaEntregar no debería permitir retornarAlDeposito");
+
+    // EnTraslado
+    Donacion traslado = new Donacion(List.of(fideos));
+    traslado.confirmarEntidadBeneficiaria(new EntidadBeneficiaria("Hogar", "Dir", "Tel"));
+    traslado.planificarRuta();
+    traslado.iniciarTraslado();
+    assertThrows(
+        IllegalStateException.class,
+        traslado::retornarAlDeposito,
+        "EnTraslado no debería permitir retornarAlDeposito");
+
+    // Entregada
+    Donacion entregada = new Donacion(List.of(fideos));
+    entregada.confirmarEntidadBeneficiaria(new EntidadBeneficiaria("Hogar", "Dir", "Tel"));
+    entregada.planificarRuta();
+    entregada.iniciarTraslado();
+    entregada.confirmarEntrega();
+    assertThrows(
+        IllegalStateException.class,
+        entregada::retornarAlDeposito,
+        "Entregada no debería permitir retornarAlDeposito");
+
+    // Vencida
+    Donacion vencida = new Donacion(List.of(fideos));
+    vencida.marcarVencida();
+    assertThrows(
+        IllegalStateException.class,
+        vencida::retornarAlDeposito,
+        "Vencida no debería permitir retornarAlDeposito");
+  }
+
+  @Test
+  void alRetornarAlDeposito_DespuesDeEntregaFallida_LimpiaEntidadBeneficiaria() {
+    // Arrange
+    EntidadBeneficiaria entidad = new EntidadBeneficiaria("Hogar Test", "Dir", "Tel");
+    Bien fideos =
+        new Bien(
+            "Fideos",
+            "",
+            10,
+            UnidadMedida.KILOGRAMOS,
+            hoy.plusYears(1),
+            EstadoUso.NO_APLICA,
+            subcatFideos);
+    Donacion donacion = new Donacion(List.of(fideos));
+
+    // Llevar la donacion hasta EntregaFallida con entidad beneficiaria asignada
+    donacion.confirmarEntidadBeneficiaria(
+        entidad); // EnDeposito → AsignacionRealizada + set entidad
+    assertNotNull(donacion.getEntidadBeneficiaria(), "La entidad debería estar asignada");
+    assertEquals(entidad, donacion.getEntidadBeneficiaria());
+
+    donacion.planificarRuta(); // → ListaParaEntregar
+    donacion.iniciarTraslado(); // → EnTraslado
+    donacion.reportarFalla("Dirección incorrecta"); // → EntregaFallida
+    assertInstanceOf(EntregaFallida.class, donacion.getEstado());
+
+    // Act
+    donacion.retornarAlDeposito();
+
+    // Assert
+    assertInstanceOf(
+        EnDeposito.class,
+        donacion.getEstado(),
+        "Tras retornar al depósito, el estado debe ser EnDeposito");
+    assertNull(
+        donacion.getEntidadBeneficiaria(),
+        "La entidad beneficiaria debe limpiarse al retornar al depósito");
+  }
+
   // ==========================================
   // 3. TESTS DE NECESIDADES
   // ==========================================
+
+  @Test
+  void entregaFallida_NoPermitePlanificarRutaDirecta() {
+    // Arrange
+    Bien fideos =
+        new Bien(
+            "Fideos",
+            "",
+            10,
+            UnidadMedida.KILOGRAMOS,
+            hoy.plusYears(1),
+            EstadoUso.NO_APLICA,
+            subcatFideos);
+    Donacion donacion = new Donacion(List.of(fideos));
+    EntidadBeneficiaria entidad = new EntidadBeneficiaria("Hogar", "Dir", "Tel");
+
+    // Llevar la donacion hasta EntregaFallida
+    donacion.confirmarEntidadBeneficiaria(entidad);
+    donacion.planificarRuta();
+    donacion.iniciarTraslado();
+    donacion.reportarFalla("No respondieron");
+    assertInstanceOf(EntregaFallida.class, donacion.getEstado());
+
+    // Act & Assert — planificarRuta desde EntregaFallida debe lanzar excepción
+    assertThrows(
+        IllegalStateException.class,
+        donacion::planificarRuta,
+        "Desde EntregaFallida no se debe poder planificar ruta directamente");
+  }
 
   @Test
   void necesidades_SumaDonaciones_Y_QuedaSatisfecha() {

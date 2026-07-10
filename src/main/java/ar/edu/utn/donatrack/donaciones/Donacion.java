@@ -16,7 +16,7 @@ public class Donacion {
   private final List<HistorialEstado> historialEstado = new ArrayList<>();
   private final List<Bien> bienes = new ArrayList<>();
   private ResultadoMatchmaking resultadoMatchmakingVigente;
-  private EntidadBeneficiaria entidadBeneficiariaConfirmada;
+  private EntidadBeneficiaria entidadBeneficiaria;
 
   public Donacion(List<Bien> bienes) {
     this.bienes.addAll(bienes);
@@ -63,8 +63,12 @@ public class Donacion {
     return resultadoMatchmakingVigente;
   }
 
-  public EntidadBeneficiaria getEntidadBeneficiariaConfirmada() {
-    return entidadBeneficiariaConfirmada;
+  public EntidadBeneficiaria getEntidadBeneficiaria() {
+    return entidadBeneficiaria;
+  }
+
+  public void limpiarEntidadBeneficiaria() {
+    this.entidadBeneficiaria = null;
   }
 
   public void actualizarResultadoMatchmaking(ResultadoMatchmaking resultadoMatchmakingVigente) {
@@ -76,7 +80,7 @@ public class Donacion {
       throw new IllegalStateException(
           "Solo se puede confirmar una entidad para donaciones en depósito.");
     }
-    this.entidadBeneficiariaConfirmada = entidadBeneficiaria;
+    this.entidadBeneficiaria = entidadBeneficiaria;
     this.asignar();
   }
 
@@ -102,5 +106,9 @@ public class Donacion {
 
   public void marcarVencida() {
     this.estado.marcarVencida(this);
+  }
+
+  public void retornarAlDeposito() {
+    this.estado.retornarAlDeposito(this);
   }
 }

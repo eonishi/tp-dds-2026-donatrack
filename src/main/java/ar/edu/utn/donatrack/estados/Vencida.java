@@ -37,4 +37,10 @@ public class Vencida extends EstadoDonacion {
   public void marcarVencida(Donacion donacion) {
     throw new IllegalStateException("La donación ya se encuentra vencida.");
   }
+
+  @Override
+  public void retornarAlDeposito(Donacion donacion) {
+    throw new IllegalStateException(
+        "La donación se encuentra vencida. No admite cambios de estado.");
+  }
 }

@@ -40,4 +40,10 @@ public class EnTraslado extends EstadoDonacion {
     donacion.cambiarEstado(
         new HistorialEstado(LocalDate.now(), NombreEstado.VENCIDA, null), new Vencida());
   }
+
+  @Override
+  public void retornarAlDeposito(Donacion donacion) {
+    throw new IllegalStateException(
+        "No se puede retornar al depósito: la donación está en traslado.");
+  }
 }

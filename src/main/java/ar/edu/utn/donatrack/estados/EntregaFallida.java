@@ -13,10 +13,8 @@ public class EntregaFallida extends EstadoDonacion {
 
   @Override
   public void planificarRuta(Donacion donacion) {
-    // Al fallar y volver al depósito, se puede volver a planificar ruta.
-    donacion.cambiarEstado(
-        new HistorialEstado(LocalDate.now(), NombreEstado.LISTA_PARA_ENTREGAR, null),
-        new ListaParaEntregar());
+    throw new IllegalStateException(
+        "No se puede planificar ruta desde una entrega fallida. Use retornarAlDeposito primero.");
   }
 
   @Override
@@ -39,5 +37,12 @@ public class EntregaFallida extends EstadoDonacion {
   public void marcarVencida(Donacion donacion) {
     donacion.cambiarEstado(
         new HistorialEstado(LocalDate.now(), NombreEstado.VENCIDA, null), new Vencida());
+  }
+
+  @Override
+  public void retornarAlDeposito(Donacion donacion) {
+    donacion.limpiarEntidadBeneficiaria();
+    donacion.cambiarEstado(
+        new HistorialEstado(LocalDate.now(), NombreEstado.EN_DEPOSITO, null), new EnDeposito());
   }
 }

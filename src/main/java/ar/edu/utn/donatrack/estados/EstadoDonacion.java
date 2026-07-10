@@ -14,4 +14,6 @@ public abstract class EstadoDonacion {
   public abstract void reportarFalla(Donacion donacion, String justificacion);
 
   public abstract void marcarVencida(Donacion donacion);
+
+  public abstract void retornarAlDeposito(Donacion donacion);
 }

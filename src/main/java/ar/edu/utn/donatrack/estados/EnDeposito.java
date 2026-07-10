@@ -41,4 +41,9 @@ public class EnDeposito extends EstadoDonacion {
     donacion.cambiarEstado(
         new HistorialEstado(LocalDate.now(), NombreEstado.VENCIDA, null), new Vencida());
   }
+
+  @Override
+  public void retornarAlDeposito(Donacion donacion) {
+    throw new IllegalStateException("La donación ya se encuentra en depósito.");
+  }
 }

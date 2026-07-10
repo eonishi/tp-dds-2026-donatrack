@@ -38,4 +38,10 @@ public class Entregada extends EstadoDonacion {
     throw new IllegalStateException(
         "La donación ya ha sido entregada. No admite cambios de estado.");
   }
+
+  @Override
+  public void retornarAlDeposito(Donacion donacion) {
+    throw new IllegalStateException(
+        "La donación ya ha sido entregada. No admite cambios de estado.");
+  }
 }

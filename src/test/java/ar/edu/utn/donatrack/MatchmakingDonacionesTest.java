@@ -148,7 +148,7 @@ public class MatchmakingDonacionesTest {
 
     servicio.confirmarAsignacionAdministrativa(donacion, entidad, fecha);
 
-    assertEquals(entidad, donacion.getEntidadBeneficiariaConfirmada());
+    assertEquals(entidad, donacion.getEntidadBeneficiaria());
     assertInstanceOf(AsignacionRealizada.class, donacion.getEstado());
     assertEquals(0, entidad.getRecepciones().size());
     assertFalse(necesidad.estaSatisfecha());
