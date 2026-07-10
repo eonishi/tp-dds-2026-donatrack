@@ -2,13 +2,15 @@ package ar.edu.utn.donatrack.beneficiarios;
 
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
+import ar.edu.utn.donatrack.notificaciones.Notificable;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public class EntidadBeneficiaria {
+public class EntidadBeneficiaria implements Notificable {
   private String razonSocial;
   private String direccion;
   private String telefono;
@@ -46,6 +48,11 @@ public class EntidadBeneficiaria {
 
   public List<CorreoElectronico> getCorreos() {
     return Collections.unmodifiableList(correos);
+  }
+
+  @Override
+  public List<MedioDeContacto> getMediosDeContacto() {
+    return Collections.unmodifiableList(new ArrayList<>(correos));
   }
 
   public List<RecepcionDonacion> getRecepciones() {

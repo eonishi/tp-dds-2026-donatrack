@@ -1,12 +1,13 @@
 package ar.edu.utn.donatrack.donantes;
 
+import ar.edu.utn.donatrack.notificaciones.Notificable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-public abstract class Donante {
+public abstract class Donante implements Notificable {
   protected String numDocumento;
   protected TipoDocumento documento;
   protected List<MedioDeContacto> mediosDeContacto = new ArrayList<>();

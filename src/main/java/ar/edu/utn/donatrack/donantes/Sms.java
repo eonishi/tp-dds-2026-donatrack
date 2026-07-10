@@ -1,14 +1,15 @@
 package ar.edu.utn.donatrack.donantes;
 
+import ar.edu.utn.donatrack.notificaciones.Notificador;
+
 public class Sms extends MedioDeContacto {
 
-  // Constructor
   public Sms(String contacto) {
-
     super(contacto);
   }
 
-  // Método
   @Override
-  public void enviarMensaje(String mensaje) {}
+  public void aceptar(Notificador notificador, String mensaje) {
+    notificador.enviar(this, mensaje);
+  }
 }
