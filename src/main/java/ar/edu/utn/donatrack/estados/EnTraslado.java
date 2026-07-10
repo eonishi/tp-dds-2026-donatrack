@@ -26,6 +26,7 @@ public class EnTraslado extends EstadoDonacion {
   public void confirmarEntrega(Donacion donacion) {
     donacion.cambiarEstado(
         new HistorialEstado(LocalDate.now(), NombreEstado.ENTREGADA, null), new Entregada());
+    donacion.getEntidadBeneficiaria().registrarRecepcion(donacion, LocalDate.now());
   }
 
   @Override
