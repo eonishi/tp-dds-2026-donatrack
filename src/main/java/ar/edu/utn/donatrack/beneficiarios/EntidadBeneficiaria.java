@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class EntidadBeneficiaria {
   private String razonSocial;
@@ -82,5 +83,21 @@ public class EntidadBeneficiaria {
     if (necesidad.getSubcategoria().equals(donacion.getSubcategoria())) {
       necesidad.recibirDonacion(donacion.getCantidadTotal());
     }
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof EntidadBeneficiaria that)) {
+      return false;
+    }
+    return Objects.equals(razonSocial, that.razonSocial);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(razonSocial);
   }
 }
