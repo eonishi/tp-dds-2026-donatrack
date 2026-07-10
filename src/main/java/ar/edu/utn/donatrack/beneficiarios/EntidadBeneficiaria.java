@@ -1,6 +1,7 @@
 package ar.edu.utn.donatrack.beneficiarios;
 
 import ar.edu.utn.donatrack.donaciones.Donacion;
+import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,7 +15,7 @@ public class EntidadBeneficiaria {
 
   private final List<Necesidad> necesidadesExtraordinarias = new ArrayList<>();
   private final List<NecesidadRecurrente> necesidadesRecurrentes = new ArrayList<>();
-  private final List<String> correos = new ArrayList<>();
+  private final List<CorreoElectronico> correos = new ArrayList<>();
   private final List<RecepcionDonacion> recepciones = new ArrayList<>();
 
   public EntidadBeneficiaria(String razonSocial, String direccion, String telefono) {
@@ -43,7 +44,7 @@ public class EntidadBeneficiaria {
     return Collections.unmodifiableList(necesidadesRecurrentes);
   }
 
-  public List<String> getCorreos() {
+  public List<CorreoElectronico> getCorreos() {
     return Collections.unmodifiableList(correos);
   }
 
@@ -59,7 +60,7 @@ public class EntidadBeneficiaria {
     this.necesidadesRecurrentes.add(n);
   }
 
-  public void agregarCorreo(String correo) {
+  public void agregarCorreo(CorreoElectronico correo) {
     this.correos.add(correo);
   }
 
