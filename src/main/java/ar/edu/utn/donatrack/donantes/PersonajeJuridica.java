@@ -5,19 +5,19 @@ import java.util.Collections;
 import java.util.List;
 
 public class PersonajeJuridica extends Donante {
-  private final String razonSocial;
+  private String razonSocial;
   private final TipoOrganizacion tipoOrganizacion;
   private final String rubro;
   private final List<Representante> representantes = new ArrayList<>();
 
   public PersonajeJuridica(
-      MedioDeContacto medioDeContacto,
+      CorreoElectronico email,
       String numDocumento,
       TipoDocumento documento,
       String razonSocial,
       TipoOrganizacion tipoOrganizacion,
       String rubro) {
-    super(medioDeContacto, numDocumento, documento);
+    super(email, numDocumento, documento);
     this.razonSocial = razonSocial;
     this.tipoOrganizacion = tipoOrganizacion;
     this.rubro = rubro;
@@ -43,5 +43,13 @@ public class PersonajeJuridica extends Donante {
 
   public List<Representante> getRepresentantes() {
     return Collections.unmodifiableList(representantes);
+  }
+
+  @Override
+  void merge(Donante entrante) {
+    super.merge(entrante);
+    if (entrante instanceof PersonajeJuridica pj) {
+      this.razonSocial = pj.razonSocial;
+    }
   }
 }

@@ -1,8 +1,8 @@
 package ar.edu.utn.donatrack.donantes;
 
 public class PersonaHumana extends Donante {
-  private final String nombre;
-  private final String apellido;
+  private String nombre;
+  private String apellido;
   private Integer edad;
   private final Genero genero;
   private String direccion;
@@ -46,5 +46,14 @@ public class PersonaHumana extends Donante {
 
   public void setDireccion(String direccion) {
     this.direccion = direccion;
+  }
+
+  @Override
+  void merge(Donante entrante) {
+    super.merge(entrante);
+    if (entrante instanceof PersonaHumana ph) {
+      this.nombre = ph.nombre;
+      this.apellido = ph.apellido;
+    }
   }
 }

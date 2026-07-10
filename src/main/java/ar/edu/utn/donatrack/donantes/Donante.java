@@ -56,6 +56,14 @@ public abstract class Donante implements Notificable {
         .findFirst();
   }
 
+  void merge(Donante entrante) {
+    this.numDocumento = entrante.numDocumento;
+    this.documento = entrante.documento;
+    for (MedioDeContacto medio : entrante.mediosDeContacto) {
+      addMedioDeContacto(medio);
+    }
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
