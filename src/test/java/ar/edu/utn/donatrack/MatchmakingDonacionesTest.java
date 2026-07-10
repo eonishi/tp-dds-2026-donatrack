@@ -129,7 +129,7 @@ public class MatchmakingDonacionesTest {
   }
 
   @Test
-  void confirmacionAdministrativaAsignaEntidadYRegistraRecepcion() {
+  void confirmarAsignacionAdministrativa_NoRegistraRecepcionNiSatisfaceNecesidades() {
     LocalDate fecha = LocalDate.of(2026, 7, 6);
     SubCategoria alimentos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     Donacion donacion =
@@ -138,6 +138,7 @@ public class MatchmakingDonacionesTest {
     BeneficiariosRepository beneficiariosRepository = new BeneficiariosRepository();
     EntidadBeneficiaria entidad =
         crearEntidadConNecesidad("Hogar", alimentos, 5, fecha.plusMonths(4));
+    Necesidad necesidad = entidad.getNecesidadesExtraordinarias().get(0);
 
     ServicioMatchmakingDonaciones servicio =
         new ServicioMatchmakingDonaciones(
@@ -149,7 +150,24 @@ public class MatchmakingDonacionesTest {
 
     assertEquals(entidad, donacion.getEntidadBeneficiariaConfirmada());
     assertInstanceOf(AsignacionRealizada.class, donacion.getEstado());
+    assertEquals(0, entidad.getRecepciones().size());
+    assertFalse(necesidad.estaSatisfecha());
+  }
+
+  @Test
+  void registrarRecepcionDirectamenteRegistraYSatisfaceNecesidad() {
+    LocalDate fecha = LocalDate.of(2026, 7, 6);
+    SubCategoria alimentos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
+    Donacion donacion =
+        new Donacion(List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+    EntidadBeneficiaria entidad =
+        crearEntidadConNecesidad("Hogar", alimentos, 5, fecha.plusMonths(4));
+    Necesidad necesidad = entidad.getNecesidadesExtraordinarias().get(0);
+
+    entidad.registrarRecepcion(donacion, fecha);
+
     assertEquals(1, entidad.getRecepciones().size());
+    assertTrue(necesidad.estaSatisfecha());
   }
 
   @Test

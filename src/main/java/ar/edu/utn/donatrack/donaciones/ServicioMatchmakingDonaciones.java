@@ -32,7 +32,6 @@ public class ServicioMatchmakingDonaciones {
   public void confirmarAsignacionAdministrativa(
       Donacion donacion, EntidadBeneficiaria entidadBeneficiaria, LocalDate fechaConfirmacion) {
     donacion.confirmarEntidadBeneficiaria(entidadBeneficiaria);
-    entidadBeneficiaria.registrarRecepcion(donacion, fechaConfirmacion);
   }
 
   private void recalcular(Donacion donacion, LocalDate fechaReferencia) {
