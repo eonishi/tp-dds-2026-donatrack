@@ -5,6 +5,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import ar.edu.utn.donatrack.beneficiarios.*;
 import ar.edu.utn.donatrack.bienes.*;
 import ar.edu.utn.donatrack.donaciones.*;
+import ar.edu.utn.donatrack.donantes.CorreoElectronico;
+import ar.edu.utn.donatrack.donantes.Donante;
+import ar.edu.utn.donatrack.donantes.Genero;
+import ar.edu.utn.donatrack.donantes.PersonaHumana;
+import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.estados.*;
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -17,12 +22,23 @@ class DonaTrackTest {
   private SubCategoria subcatSillas;
   private SubCategoria subcatFideos;
   private LocalDate hoy;
+  private Donante donanteDummy;
 
   @BeforeEach
   void setUp() {
     subcatSillas = new SubCategoria("Sillas", Categoria.MOBILIARIO);
     subcatFideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     hoy = LocalDate.now();
+    donanteDummy =
+        new PersonaHumana(
+            new CorreoElectronico("test@test.com"),
+            "Juan",
+            "Perez",
+            30,
+            "12345678",
+            TipoDocumento.DNI,
+            Genero.MASCULINO,
+            "Calle Falsa 123");
   }
 
   // ==========================================
@@ -66,10 +82,11 @@ class DonaTrackTest {
 
     List<Bien> bienesDonados =
         Arrays.asList(sillaNueva, sillaUsada, fideos2026, fideos2027, masFideos2026);
-    CargaDonacion carga = new CargaDonacion(hoy);
+    DonacionesRepository repo = new DonacionesRepository();
+    CargaDonacion carga = new CargaDonacion(hoy, repo);
 
     // Act
-    carga.cargarDonacion(bienesDonados);
+    carga.cargarDonacion(donanteDummy, bienesDonados);
 
     // Assert
     // Debe haber 4 donaciones separadas:
@@ -79,12 +96,12 @@ class DonaTrackTest {
     // 4. Fideos 2027
     assertEquals(
         4,
-        carga.getDonaciones().size(),
+        repo.getDonaciones().size(),
         "La segmentación no agrupó correctamente las unidades mínimas.");
 
     // Verificamos que agrupó correctamente los fideos del mismo vencimiento
     boolean encontroGrupoFideos =
-        carga.getDonaciones().stream()
+        repo.getDonaciones().stream()
             .anyMatch(d -> d.getBienes().size() == 2 && d.getSubcategoria().equals(subcatFideos));
     assertTrue(encontroGrupoFideos, "No agrupó los bienes idénticos en la misma donación.");
   }
@@ -105,7 +122,7 @@ class DonaTrackTest {
             hoy.plusYears(1),
             EstadoUso.NO_APLICA,
             subcatFideos);
-    Donacion donacion = new Donacion(List.of(fideos));
+    Donacion donacion = new Donacion(donanteDummy, List.of(fideos));
 
     // Act & Assert
     // Estado inicial
@@ -146,7 +163,7 @@ class DonaTrackTest {
             hoy.plusYears(1),
             EstadoUso.NO_APLICA,
             subcatFideos);
-    Donacion donacion = new Donacion(List.of(fideos));
+    Donacion donacion = new Donacion(donanteDummy, List.of(fideos));
 
     // Act & Assert
     // Intentar iniciar un traslado desde el depósito sin asignar ni planificar
@@ -166,14 +183,14 @@ class DonaTrackTest {
             new SubCategoria("Test", Categoria.ALIMENTO));
 
     // EnDeposito — estado inicial
-    Donacion enDeposito = new Donacion(List.of(fideos));
+    Donacion enDeposito = new Donacion(donanteDummy, List.of(fideos));
     assertThrows(
         IllegalStateException.class,
         enDeposito::retornarAlDeposito,
         "EnDeposito no debería permitir retornarAlDeposito");
 
     // AsignacionRealizada
-    Donacion asignada = new Donacion(List.of(fideos));
+    Donacion asignada = new Donacion(donanteDummy, List.of(fideos));
     asignada.confirmarEntidadBeneficiaria(new EntidadBeneficiaria("Hogar", "Dir", "Tel"));
     assertThrows(
         IllegalStateException.class,
@@ -181,7 +198,7 @@ class DonaTrackTest {
         "AsignacionRealizada no debería permitir retornarAlDeposito");
 
     // ListaParaEntregar
-    Donacion lista = new Donacion(List.of(fideos));
+    Donacion lista = new Donacion(donanteDummy, List.of(fideos));
     lista.confirmarEntidadBeneficiaria(new EntidadBeneficiaria("Hogar", "Dir", "Tel"));
     lista.planificarRuta();
     assertThrows(
@@ -190,7 +207,7 @@ class DonaTrackTest {
         "ListaParaEntregar no debería permitir retornarAlDeposito");
 
     // EnTraslado
-    Donacion traslado = new Donacion(List.of(fideos));
+    Donacion traslado = new Donacion(donanteDummy, List.of(fideos));
     traslado.confirmarEntidadBeneficiaria(new EntidadBeneficiaria("Hogar", "Dir", "Tel"));
     traslado.planificarRuta();
     traslado.iniciarTraslado();
@@ -200,7 +217,7 @@ class DonaTrackTest {
         "EnTraslado no debería permitir retornarAlDeposito");
 
     // Entregada
-    Donacion entregada = new Donacion(List.of(fideos));
+    Donacion entregada = new Donacion(donanteDummy, List.of(fideos));
     entregada.confirmarEntidadBeneficiaria(new EntidadBeneficiaria("Hogar", "Dir", "Tel"));
     entregada.planificarRuta();
     entregada.iniciarTraslado();
@@ -211,7 +228,7 @@ class DonaTrackTest {
         "Entregada no debería permitir retornarAlDeposito");
 
     // Vencida
-    Donacion vencida = new Donacion(List.of(fideos));
+    Donacion vencida = new Donacion(donanteDummy, List.of(fideos));
     vencida.marcarVencida();
     assertThrows(
         IllegalStateException.class,
@@ -232,7 +249,7 @@ class DonaTrackTest {
             hoy.plusYears(1),
             EstadoUso.NO_APLICA,
             subcatFideos);
-    Donacion donacion = new Donacion(List.of(fideos));
+    Donacion donacion = new Donacion(donanteDummy, List.of(fideos));
 
     // Llevar la donacion hasta EntregaFallida con entidad beneficiaria asignada
     donacion.confirmarEntidadBeneficiaria(
@@ -274,7 +291,7 @@ class DonaTrackTest {
             hoy.plusYears(1),
             EstadoUso.NO_APLICA,
             subcatFideos);
-    Donacion donacion = new Donacion(List.of(fideos));
+    Donacion donacion = new Donacion(donanteDummy, List.of(fideos));
     EntidadBeneficiaria entidad = new EntidadBeneficiaria("Hogar", "Dir", "Tel");
 
     // Llevar la donacion hasta EntregaFallida

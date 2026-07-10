@@ -9,11 +9,28 @@ import ar.edu.utn.donatrack.bienes.Categoria;
 import ar.edu.utn.donatrack.bienes.EstadoUso;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
+import ar.edu.utn.donatrack.donantes.CorreoElectronico;
+import ar.edu.utn.donatrack.donantes.Donante;
+import ar.edu.utn.donatrack.donantes.Genero;
+import ar.edu.utn.donatrack.donantes.PersonaHumana;
+import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class AlgoritmoCompatibilidadSemanticaTest {
+
+  private static Donante crearDonanteDummy() {
+    return new PersonaHumana(
+        new CorreoElectronico("test@test.com"),
+        "Juan",
+        "Perez",
+        30,
+        "12345678",
+        TipoDocumento.DNI,
+        Genero.MASCULINO,
+        "Calle Falsa 123");
+  }
 
   @Test
   void puntajeMaximo_ConTodosLosCriterios_NoSupera75() {
@@ -25,7 +42,7 @@ class AlgoritmoCompatibilidadSemanticaTest {
     // Una donación que cumple subcategoria, unidad y cantidad suficiente
     Bien bienFideos =
         new Bien("Fideos", "", 15.0, UnidadMedida.KILOGRAMOS, null, EstadoUso.NO_APLICA, fideos);
-    Donacion donacion = new Donacion(List.of(bienFideos));
+    Donacion donacion = new Donacion(crearDonanteDummy(), List.of(bienFideos));
 
     var algoritmo = new AlgoritmoCompatibilidadSemantica();
 
@@ -49,7 +66,7 @@ class AlgoritmoCompatibilidadSemanticaTest {
 
     Bien bienSillas =
         new Bien("Silla", "", 1.0, UnidadMedida.UNIDADES, null, EstadoUso.NUEVO, sillas);
-    Donacion donacion = new Donacion(List.of(bienSillas));
+    Donacion donacion = new Donacion(crearDonanteDummy(), List.of(bienSillas));
 
     var ranking =
         new AlgoritmoCompatibilidadSemantica()
@@ -67,7 +84,7 @@ class AlgoritmoCompatibilidadSemanticaTest {
 
     Bien bienFideos =
         new Bien("Fideos", "", 15.0, UnidadMedida.KILOGRAMOS, null, EstadoUso.NO_APLICA, fideos);
-    Donacion donacion = new Donacion(List.of(bienFideos));
+    Donacion donacion = new Donacion(crearDonanteDummy(), List.of(bienFideos));
 
     var algoritmo = new AlgoritmoCompatibilidadSemantica();
 

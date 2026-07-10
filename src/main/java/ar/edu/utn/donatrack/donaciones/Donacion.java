@@ -4,12 +4,14 @@ import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
+import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.estados.EnDeposito;
 import ar.edu.utn.donatrack.estados.EstadoDonacion;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class Donacion {
   private EstadoDonacion estado = new EnDeposito();
@@ -17,8 +19,10 @@ public class Donacion {
   private final List<Bien> bienes = new ArrayList<>();
   private ResultadoMatchmaking resultadoMatchmakingVigente;
   private EntidadBeneficiaria entidadBeneficiaria;
+  private final Donante donante;
 
-  public Donacion(List<Bien> bienes) {
+  public Donacion(Donante donante, List<Bien> bienes) {
+    this.donante = Objects.requireNonNull(donante, "donante no puede ser null");
     this.bienes.addAll(bienes);
   }
 
@@ -65,6 +69,10 @@ public class Donacion {
 
   public EntidadBeneficiaria getEntidadBeneficiaria() {
     return entidadBeneficiaria;
+  }
+
+  public Donante getDonante() {
+    return donante;
   }
 
   public void limpiarEntidadBeneficiaria() {

@@ -2,27 +2,23 @@ package ar.edu.utn.donatrack.donaciones;
 
 import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.EstadoUso;
+import ar.edu.utn.donatrack.donantes.Donante;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class CargaDonacion {
   private final LocalDate fechaRegistro;
-  private final List<Donacion> donaciones = new ArrayList<>();
   private final DonacionesRepository donacionesRepository;
-
-  public CargaDonacion(LocalDate fechaRegistro) {
-    this(fechaRegistro, null);
-  }
 
   public CargaDonacion(LocalDate fechaRegistro, DonacionesRepository donacionesRepository) {
     this.fechaRegistro = fechaRegistro;
-    this.donacionesRepository = donacionesRepository;
+    this.donacionesRepository =
+        Objects.requireNonNull(donacionesRepository, "donacionesRepository no puede ser null");
   }
 
-  public void cargarDonacion(List<Bien> bienes) {
+  public void cargarDonacion(Donante donante, List<Bien> bienes) {
     bienes.stream()
         .collect(
             Collectors.groupingBy(
@@ -35,15 +31,8 @@ public class CargaDonacion {
                             : EstadoUso.NO_APLICA)))
         .forEach(
             (key, bienesDeClave) -> {
-              Donacion donacion = new Donacion(bienesDeClave);
-              donaciones.add(donacion);
-              if (donacionesRepository != null) {
-                donacionesRepository.addDonacion(donacion);
-              }
+              Donacion donacion = new Donacion(donante, bienesDeClave);
+              donacionesRepository.addDonacion(donacion);
             });
-  }
-
-  public List<Donacion> getDonaciones() {
-    return Collections.unmodifiableList(donaciones);
   }
 }
