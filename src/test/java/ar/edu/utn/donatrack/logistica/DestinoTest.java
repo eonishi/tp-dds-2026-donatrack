@@ -157,4 +157,36 @@ class DestinoTest {
 
     assertSame(entidad, destino.getEntidadBeneficiaria());
   }
+
+  // ── Phase 1: equals/hashCode  ────────────────────────
+
+  @Test
+  void mismaEntidadBeneficiaria_EqualsDevuelveTrue() {
+    EntidadBeneficiaria entidad =
+        new EntidadBeneficiaria("Fundación Ayuda", "Calle 123", "555-0100");
+    Destino a = new Destino(entidad);
+    Destino b = new Destino(entidad);
+
+    assertEquals(a, b);
+  }
+
+  @Test
+  void mismaEntidadBeneficiaria_HashCodeEsIgual() {
+    EntidadBeneficiaria entidad =
+        new EntidadBeneficiaria("Fundación Ayuda", "Calle 123", "555-0100");
+    Destino a = new Destino(entidad);
+    Destino b = new Destino(entidad);
+
+    assertEquals(a.hashCode(), b.hashCode());
+  }
+
+  @Test
+  void distintaEntidadBeneficiaria_EqualsDevuelveFalse() {
+    EntidadBeneficiaria entidadA = new EntidadBeneficiaria("Fundación A", "Calle 1", "555-0001");
+    EntidadBeneficiaria entidadB = new EntidadBeneficiaria("Fundación B", "Calle 2", "555-0002");
+    Destino a = new Destino(entidadA);
+    Destino b = new Destino(entidadB);
+
+    assertNotEquals(a, b);
+  }
 }

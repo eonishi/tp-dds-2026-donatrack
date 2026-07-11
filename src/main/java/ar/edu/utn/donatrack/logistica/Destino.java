@@ -76,4 +76,23 @@ public class Destino {
   public List<Donacion> getDonaciones() {
     return Collections.unmodifiableList(new ArrayList<>(donaciones));
   }
+
+  // ── Identity based on EntidadBeneficiaria ──────────────
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    Destino that = (Destino) o;
+    return Objects.equals(entidadBeneficiaria, that.entidadBeneficiaria);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(entidadBeneficiaria);
+  }
 }
