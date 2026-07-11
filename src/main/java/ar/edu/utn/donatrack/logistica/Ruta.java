@@ -13,7 +13,6 @@ import java.util.UUID;
  * enCurso}. Su identidad es sintética mediante {@link UUID}. La validación de duplicados en la
  * lista de destinos se realiza mediante la igualdad de {@link Destino} basada en {@link
  * ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria}.
- *
  */
 public class Ruta {
 

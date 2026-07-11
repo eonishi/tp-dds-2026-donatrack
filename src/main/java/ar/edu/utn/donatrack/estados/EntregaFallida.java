@@ -42,6 +42,7 @@ public class EntregaFallida extends EstadoDonacion {
   @Override
   public void retornarAlDeposito(Donacion donacion) {
     donacion.limpiarEntidadBeneficiaria();
+    donacion.limpiarCamion();
     donacion.cambiarEstado(
         new HistorialEstado(LocalDate.now(), NombreEstado.EN_DEPOSITO, null), new EnDeposito());
   }

@@ -14,7 +14,9 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
+import ar.edu.utn.donatrack.estados.EnDeposito;
 import ar.edu.utn.donatrack.estados.Entregada;
+import ar.edu.utn.donatrack.logistica.Camion;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -157,6 +159,75 @@ class DonacionTest {
         1,
         entidad.getRecepciones().size(),
         "La recepción igual se registra aunque no haya match de necesidades");
+  }
+
+  // ── TDD Phase 1: RED — Camion lifecycle tests ─────────────────────
+
+  @Test
+  void nuevaDonacion_GetCamionRetornaEmpty() {
+    Donacion donacion = new Donacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    assertTrue(donacion.getCamion().isEmpty(), "Nueva donación no debe tener camión asignado");
+  }
+
+  @Test
+  void asignarCamion_GetCamionRetornaElCamion() {
+    Donacion donacion = new Donacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    Camion camion = new Camion("ABC123", 10.0, 2.5, 1000.0);
+    donacion.asignarCamion(camion);
+    assertTrue(donacion.getCamion().isPresent(), "getCamion() debe devolver un Optional con valor");
+    assertSame(camion, donacion.getCamion().get(), "El camion devuelto debe ser el mismo asignado");
+  }
+
+  @Test
+  void asignarCamionNull_LanzaNullPointerException() {
+    Donacion donacion = new Donacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    assertThrows(
+        NullPointerException.class,
+        () -> donacion.asignarCamion(null),
+        "asignarCamion(null) debe lanzar NullPointerException");
+  }
+
+  @Test
+  void limpiarCamion_GetCamionRetornaEmpty() {
+    Donacion donacion = new Donacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    Camion camion = new Camion("ABC123", 10.0, 2.5, 1000.0);
+    donacion.asignarCamion(camion);
+    donacion.limpiarCamion();
+    assertTrue(donacion.getCamion().isEmpty(), "limpiarCamion() debe dejar getCamion() vacío");
+  }
+
+  @Test
+  void retornarAlDeposito_LimpiaCamion() {
+    Donacion donacion = new Donacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    Camion camion = new Camion("XYZ789", 15.0, 3.0, 2000.0);
+    donacion.asignarCamion(camion);
+
+    // Walk through: EnDeposito → Asignada → ListaParaEntregar → EnTraslado → EntregaFallida
+    donacion.confirmarEntidadBeneficiaria(new EntidadBeneficiaria("Hogar", "Dir", "Tel"));
+    donacion.planificarRuta();
+    donacion.iniciarTraslado();
+    donacion.reportarFalla("Dirección incorrecta");
+
+    assertInstanceOf(
+        ar.edu.utn.donatrack.estados.EntregaFallida.class,
+        donacion.getEstado(),
+        "Debe estar en estado EntregaFallida antes de retornar");
+
+    donacion.retornarAlDeposito();
+
+    assertTrue(donacion.getCamion().isEmpty(), "retornarAlDeposito() debe limpiar el camión");
+    assertInstanceOf(EnDeposito.class, donacion.getEstado(), "Debe volver a EnDeposito");
+  }
+
+  private static Bien crearBienDummy() {
+    return new Bien(
+        "Test",
+        "",
+        1.0,
+        UnidadMedida.UNIDADES,
+        null,
+        EstadoUso.NO_APLICA,
+        new SubCategoria("X", Categoria.ALIMENTO));
   }
 
   private static Donante crearDonanteDummy() {
