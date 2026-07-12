@@ -1,8 +1,14 @@
 package ar.edu.utn.donatrack.estados;
 
 import ar.edu.utn.donatrack.donaciones.Donacion;
+import ar.edu.utn.donatrack.donaciones.NombreEstado;
 
 public class Entregada extends EstadoDonacion {
+  @Override
+  public NombreEstado getNombreEstado() {
+    return NombreEstado.ENTREGADA;
+  }
+
   @Override
   public void asignar(Donacion donacion) {
     throw new IllegalStateException(

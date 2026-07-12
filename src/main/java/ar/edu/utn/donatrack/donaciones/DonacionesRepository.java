@@ -18,6 +18,12 @@ public class DonacionesRepository {
         .toList();
   }
 
+  public List<Donacion> getDonacionesEnAsignacionRealizada() {
+    return donaciones.stream()
+        .filter(donacion -> donacion.getNombreEstado() == NombreEstado.ASIGNACION_REALIZADA)
+        .toList();
+  }
+
   public void addDonacion(Donacion donacion) {
     this.donaciones.add(donacion);
   }

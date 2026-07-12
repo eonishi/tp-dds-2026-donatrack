@@ -7,6 +7,11 @@ import java.time.LocalDate;
 
 public class EnDeposito extends EstadoDonacion {
   @Override
+  public NombreEstado getNombreEstado() {
+    return NombreEstado.EN_DEPOSITO;
+  }
+
+  @Override
   public void asignar(Donacion donacion) {
     donacion.cambiarEstado(
         new HistorialEstado(LocalDate.now(), NombreEstado.ASIGNACION_REALIZADA, null),

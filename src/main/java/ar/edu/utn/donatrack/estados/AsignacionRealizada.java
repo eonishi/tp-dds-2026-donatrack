@@ -7,6 +7,11 @@ import java.time.LocalDate;
 
 public class AsignacionRealizada extends EstadoDonacion {
   @Override
+  public NombreEstado getNombreEstado() {
+    return NombreEstado.ASIGNACION_REALIZADA;
+  }
+
+  @Override
   public void asignar(Donacion donacion) {
     throw new IllegalStateException("La donación ya se encuentra asignada.");
   }

@@ -1,6 +1,9 @@
 package ar.edu.utn.donatrack.logistica;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -23,6 +26,13 @@ public class CamionRepository {
    */
   public void agregar(Camion camion) {
     this.camiones.add(camion);
+  }
+
+  /**
+   * @return copia inmodificable de todos los camiones almacenados
+   */
+  public List<Camion> listarTodos() {
+    return Collections.unmodifiableList(new ArrayList<>(camiones));
   }
 
   /**

@@ -7,6 +7,11 @@ import java.time.LocalDate;
 
 public class ListaParaEntregar extends EstadoDonacion {
   @Override
+  public NombreEstado getNombreEstado() {
+    return NombreEstado.LISTA_PARA_ENTREGAR;
+  }
+
+  @Override
   public void asignar(Donacion donacion) {
     throw new IllegalStateException("La donación ya se encuentra asignada.");
   }

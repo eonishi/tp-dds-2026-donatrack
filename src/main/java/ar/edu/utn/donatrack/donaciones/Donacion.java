@@ -41,6 +41,10 @@ public class Donacion {
     return estado;
   }
 
+  public NombreEstado getNombreEstado() {
+    return estado.getNombreEstado();
+  }
+
   public List<HistorialEstado> getHistorialEstado() {
     return Collections.unmodifiableList(historialEstado);
   }

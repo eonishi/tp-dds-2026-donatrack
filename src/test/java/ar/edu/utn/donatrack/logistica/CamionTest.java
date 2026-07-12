@@ -115,6 +115,45 @@ class CamionTest {
     assertTrue(resultado.isEmpty());
   }
 
+  // ── listarTodos Tests ─────────────────────────────────────────────
+
+  @Test
+  void listarTodos_ConVariosCamiones_DevuelveTodos() {
+    CamionRepository repo = new CamionRepository();
+    Camion a = new Camion("ABC123", 45.0, 2.5, 5000.0);
+    Camion b = new Camion("XYZ789", 50.0, 3.0, 6000.0);
+    Camion c = new Camion("DEF456", 40.0, 2.0, 4000.0);
+    repo.agregar(a);
+    repo.agregar(b);
+    repo.agregar(c);
+
+    var todos = repo.listarTodos();
+
+    assertEquals(3, todos.size());
+    assertTrue(todos.contains(a));
+    assertTrue(todos.contains(b));
+    assertTrue(todos.contains(c));
+  }
+
+  @Test
+  void listarTodos_SinCamiones_DevuelveListaVacia() {
+    CamionRepository repo = new CamionRepository();
+
+    var todos = repo.listarTodos();
+
+    assertTrue(todos.isEmpty());
+  }
+
+  @Test
+  void listarTodos_DevuelveListaInmodificable() {
+    CamionRepository repo = new CamionRepository();
+    repo.agregar(new Camion("ABC123", 45.0, 2.5, 5000.0));
+
+    var todos = repo.listarTodos();
+
+    assertThrows(UnsupportedOperationException.class, () -> todos.add(null));
+  }
+
   @Test
   void agregarCamion_PatenteDuplicada_NoAumentaTamanio() {
     CamionRepository repo = new CamionRepository();
