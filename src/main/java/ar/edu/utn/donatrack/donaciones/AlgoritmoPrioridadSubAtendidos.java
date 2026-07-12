@@ -36,7 +36,7 @@ public class AlgoritmoPrioridadSubAtendidos implements AlgoritmoMatchmaking {
         Comparator.comparingInt(MatchCandidato::getPuntaje)
             .reversed()
             .thenComparing(candidato -> candidato.getEntidadBeneficiaria().getRazonSocial()));
-    return new RankingMatchmaking(getNombre(), candidatos);
+    return new RankingMatchmaking(getNombre(), candidatos.stream().limit(10).toList());
   }
 
   private boolean tieneNecesidadCompatible(Donacion donacion, EntidadBeneficiaria entidad) {

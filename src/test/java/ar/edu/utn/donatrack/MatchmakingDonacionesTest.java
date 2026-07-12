@@ -18,8 +18,10 @@ import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donaciones.MatchCandidato;
 import ar.edu.utn.donatrack.donaciones.MatchmakingScheduler;
+import ar.edu.utn.donatrack.donaciones.PropuestaDeAsignacion;
+import ar.edu.utn.donatrack.donaciones.PropuestaRepository;
+import ar.edu.utn.donatrack.donaciones.PropuestaRepositoryImpl;
 import ar.edu.utn.donatrack.donaciones.RankingMatchmaking;
-import ar.edu.utn.donatrack.donaciones.ResultadoMatchmaking;
 import ar.edu.utn.donatrack.donaciones.ServicioMatchmakingDonaciones;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
@@ -83,19 +85,24 @@ public class MatchmakingDonacionesTest {
     beneficiariosRepository.addBeneficiario(hogarA);
     beneficiariosRepository.addBeneficiario(hogarB);
 
+    PropuestaRepository propuestaRepository = new PropuestaRepositoryImpl();
     ServicioMatchmakingDonaciones servicio =
         new ServicioMatchmakingDonaciones(
             donacionesRepository,
             beneficiariosRepository,
+            propuestaRepository,
             List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos()));
 
     servicio.ejecutarMatchmakingDiario(fecha);
 
-    ResultadoMatchmaking resultado = donacion.getResultadoMatchmakingVigente();
-    assertNotNull(resultado);
-    assertTrue(resultado.tieneCoincidencias());
-    assertEquals(2, resultado.getCoincidencias().size());
-    assertEquals(2, resultado.getRankings().size());
+    PropuestaDeAsignacion propuesta =
+        propuestaRepository.findPendingByDonacion(donacion).orElse(null);
+    assertNotNull(propuesta, "Matchmaking debe crear una PropuestaDeAsignacion");
+    assertTrue(propuesta.isPendiente(), "Propuesta debe estar pendiente");
+    assertEquals(
+        2,
+        propuesta.getRankings().size(),
+        "Propuesta debe contener los rankings de ambos algoritmos");
   }
 
   @Test
@@ -118,10 +125,12 @@ public class MatchmakingDonacionesTest {
     beneficiariosRepository.addBeneficiario(compatible);
     beneficiariosRepository.addBeneficiario(noCompatible);
 
+    PropuestaRepository propuestaRepository = new PropuestaRepositoryImpl();
     ServicioMatchmakingDonaciones servicio =
         new ServicioMatchmakingDonaciones(
             donacionesRepository,
             beneficiariosRepository,
+            propuestaRepository,
             List.of(
                 new AlgoritmoCompatibilidadSemantica(),
                 new AlgoritmoMatchmaking() {
@@ -142,37 +151,91 @@ public class MatchmakingDonacionesTest {
 
     servicio.ejecutarMatchmakingDiario(fecha);
 
-    ResultadoMatchmaking resultado = donacion.getResultadoMatchmakingVigente();
-    assertNotNull(resultado);
-    assertFalse(resultado.tieneCoincidencias());
-    assertEquals(2, resultado.getRankings().size());
+    PropuestaDeAsignacion propuesta =
+        propuestaRepository.findPendingByDonacion(donacion).orElse(null);
+    assertNotNull(propuesta, "Matchmaking debe crear una PropuestaDeAsignacion");
+    assertEquals(
+        2,
+        propuesta.getRankings().size(),
+        "Propuesta debe contener los rankings de ambos algoritmos");
   }
 
   @Test
-  void confirmarAsignacionAdministrativa_NoRegistraRecepcionNiSatisfaceNecesidades() {
+  void matchmaking_SaltaDonacionConPropuestaPendiente() {
     LocalDate fecha = LocalDate.of(2026, 7, 6);
     SubCategoria alimentos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     Donante donante = crearDonanteDummy();
     Donacion donacion =
         new Donacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
     DonacionesRepository donacionesRepository = new DonacionesRepository();
+    donacionesRepository.addDonacion(donacion);
     BeneficiariosRepository beneficiariosRepository = new BeneficiariosRepository();
-    EntidadBeneficiaria entidad =
-        crearEntidadConNecesidad("Hogar", alimentos, 5, fecha.plusMonths(4));
-    Necesidad necesidad = entidad.getNecesidadesExtraordinarias().get(0);
+    beneficiariosRepository.addBeneficiario(
+        crearEntidadConNecesidad("Entidad", alimentos, 5, fecha.plusMonths(4)));
 
+    PropuestaRepository propuestaRepository = new PropuestaRepositoryImpl();
     ServicioMatchmakingDonaciones servicio =
         new ServicioMatchmakingDonaciones(
             donacionesRepository,
             beneficiariosRepository,
+            propuestaRepository,
             List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos()));
 
+    // First execution creates Propuesta
+    servicio.ejecutarMatchmakingDiario(fecha);
+    PropuestaDeAsignacion primera =
+        propuestaRepository.findPendingByDonacion(donacion).orElse(null);
+    assertNotNull(primera, "Primer matchmaking debe crear Propuesta");
+
+    // Second execution should NOT replace
+    servicio.ejecutarMatchmakingDiario(fecha);
+    PropuestaDeAsignacion segunda =
+        propuestaRepository.findPendingByDonacion(donacion).orElse(null);
+    assertNotNull(segunda, "Propuesta debe seguir existiendo");
+    assertSame(primera, segunda, "Segundo matchmaking no debe reemplazar la Propuesta pendiente");
+  }
+
+  @Test
+  void confirmarAsignacionAdministrativa_DelegaEnPropuesta() {
+    LocalDate fecha = LocalDate.of(2026, 7, 6);
+    SubCategoria alimentos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
+    Donante donante = crearDonanteDummy();
+    Donacion donacion =
+        new Donacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+    DonacionesRepository donacionesRepository = new DonacionesRepository();
+    donacionesRepository.addDonacion(donacion);
+    BeneficiariosRepository beneficiariosRepository = new BeneficiariosRepository();
+    EntidadBeneficiaria entidad =
+        crearEntidadConNecesidad("Hogar", alimentos, 5, fecha.plusMonths(4));
+
+    PropuestaRepository propuestaRepository = new PropuestaRepositoryImpl();
+    ServicioMatchmakingDonaciones servicio =
+        new ServicioMatchmakingDonaciones(
+            donacionesRepository,
+            beneficiariosRepository,
+            propuestaRepository,
+            List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos()));
+
+    // Run matchmaking to create Propuesta first
+    servicio.ejecutarMatchmakingDiario(fecha);
+
+    // Now confirm
     servicio.confirmarAsignacionAdministrativa(donacion, entidad, fecha);
 
-    assertEquals(entidad, donacion.getEntidadBeneficiaria());
-    assertInstanceOf(AsignacionRealizada.class, donacion.getEstado());
-    assertEquals(0, entidad.getRecepciones().size());
-    assertFalse(necesidad.estaSatisfecha());
+    // Propuesta should be removed from repo
+    assertTrue(
+        propuestaRepository.findPendingByDonacion(donacion).isEmpty(),
+        "Propuesta debe ser removida del repositorio tras confirmar");
+    assertEquals(
+        entidad, donacion.getEntidadBeneficiaria(), "Donacion debe tener la entidad beneficiaria");
+    assertInstanceOf(
+        AsignacionRealizada.class,
+        donacion.getEstado(),
+        "Donacion debe estar en AsignacionRealizada");
+    assertEquals(
+        0,
+        entidad.getRecepciones().size(),
+        "confirmarAsignacionAdministrativa NO debe llamar registrarRecepcion");
   }
 
   @Test

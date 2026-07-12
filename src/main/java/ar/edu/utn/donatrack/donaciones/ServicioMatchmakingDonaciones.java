@@ -4,22 +4,22 @@ import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class ServicioMatchmakingDonaciones {
   private final DonacionesRepository donacionesRepository;
   private final BeneficiariosRepository beneficiariosRepository;
+  private final PropuestaRepository propuestaRepository;
   private final List<AlgoritmoMatchmaking> algoritmos;
 
   public ServicioMatchmakingDonaciones(
       DonacionesRepository donacionesRepository,
       BeneficiariosRepository beneficiariosRepository,
+      PropuestaRepository propuestaRepository,
       List<AlgoritmoMatchmaking> algoritmos) {
     this.donacionesRepository = donacionesRepository;
     this.beneficiariosRepository = beneficiariosRepository;
+    this.propuestaRepository = propuestaRepository;
     this.algoritmos = new ArrayList<>(algoritmos);
   }
 
@@ -31,10 +31,21 @@ public class ServicioMatchmakingDonaciones {
 
   public void confirmarAsignacionAdministrativa(
       Donacion donacion, EntidadBeneficiaria entidadBeneficiaria, LocalDate fechaConfirmacion) {
-    donacion.confirmarEntidadBeneficiaria(entidadBeneficiaria);
+    PropuestaDeAsignacion propuesta =
+        propuestaRepository
+            .findPendingByDonacion(donacion)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException("No hay una propuesta pendiente para la donación."));
+    propuesta.confirmar(entidadBeneficiaria);
+    propuestaRepository.remove(donacion);
   }
 
   private void recalcular(Donacion donacion, LocalDate fechaReferencia) {
+    if (propuestaRepository.findPendingByDonacion(donacion).isPresent()) {
+      return; // skip Donaciones with existing pending Propuesta
+    }
+
     List<RankingMatchmaking> rankings =
         algoritmos.stream()
             .map(
@@ -42,45 +53,6 @@ public class ServicioMatchmakingDonaciones {
                     algoritmo.rankear(
                         donacion, beneficiariosRepository.getBeneficiarios(), fechaReferencia))
             .toList();
-    donacion.actualizarResultadoMatchmaking(
-        new ResultadoMatchmaking(coincidencias(rankings), rankings));
-  }
-
-  private List<MatchCandidato> coincidencias(List<RankingMatchmaking> rankings) {
-    if (rankings.size() < 2) {
-      return List.of();
-    }
-
-    Set<EntidadBeneficiaria> comunes = new HashSet<>(entidades(rankings.get(0)));
-    rankings.stream().skip(1).forEach(ranking -> comunes.retainAll(entidades(ranking)));
-
-    if (comunes.isEmpty()) {
-      return List.of();
-    }
-
-    return rankings.get(0).getCandidatos().stream()
-        .filter(candidato -> comunes.contains(candidato.getEntidadBeneficiaria()))
-        .limit(10)
-        .map(
-            candidato ->
-                new MatchCandidato(
-                    candidato.getEntidadBeneficiaria(),
-                    puntajeTotal(candidato.getEntidadBeneficiaria(), rankings)))
-        .toList();
-  }
-
-  private Set<EntidadBeneficiaria> entidades(RankingMatchmaking ranking) {
-    return ranking.getCandidatos().stream()
-        .map(MatchCandidato::getEntidadBeneficiaria)
-        .collect(Collectors.toSet());
-  }
-
-  private int puntajeTotal(
-      EntidadBeneficiaria entidadBeneficiaria, List<RankingMatchmaking> rankings) {
-    return rankings.stream()
-        .flatMap(ranking -> ranking.getCandidatos().stream())
-        .filter(candidato -> candidato.getEntidadBeneficiaria().equals(entidadBeneficiaria))
-        .mapToInt(MatchCandidato::getPuntaje)
-        .sum();
+    propuestaRepository.save(new PropuestaDeAsignacion(donacion, rankings));
   }
 }

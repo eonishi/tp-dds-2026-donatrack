@@ -28,7 +28,7 @@ public class AlgoritmoCompatibilidadSemantica implements AlgoritmoMatchmaking {
     }
 
     candidatos.sort(Comparator.comparingInt(MatchCandidato::getPuntaje).reversed());
-    return new RankingMatchmaking(getNombre(), candidatos);
+    return new RankingMatchmaking(getNombre(), candidatos.stream().limit(10).toList());
   }
 
   private int calcularPuntaje(Donacion donacion, EntidadBeneficiaria entidad) {

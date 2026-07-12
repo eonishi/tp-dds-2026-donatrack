@@ -57,6 +57,54 @@ class AlgoritmoCompatibilidadSemanticaTest {
   }
 
   @Test
+  void rankear_ConMasDe10Entidades_RetornaMaximo10Candidatos() {
+    SubCategoria fideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
+    Donacion donacion =
+        new Donacion(
+            crearDonanteDummy(),
+            List.of(
+                new Bien(
+                    "Fideos",
+                    "",
+                    15.0,
+                    UnidadMedida.KILOGRAMOS,
+                    null,
+                    EstadoUso.NO_APLICA,
+                    fideos)));
+
+    // Create 15 entidades with matching subcategoria
+    var entidades =
+        java.util.stream.IntStream.range(0, 15)
+            .mapToObj(
+                i -> {
+                  EntidadBeneficiaria e = new EntidadBeneficiaria("Entidad " + i, "Dir", "Tel");
+                  e.agregarNecesidadExtraordinaria(
+                      new Necesidad(fideos, 5.0, UnidadMedida.KILOGRAMOS, "Fideos"));
+                  return e;
+                })
+            .toList();
+
+    var ranking =
+        new AlgoritmoCompatibilidadSemantica()
+            .rankear(donacion, entidades, LocalDate.of(2026, 7, 9));
+
+    assertTrue(
+        ranking.getCandidatos().size() <= 10,
+        "Compatibilidad semantica debe retornar máximo 10 candidatos");
+    assertEquals(
+        10,
+        ranking.getCandidatos().size(),
+        "Con 15 entidades compatibles debe retornar exactamente 10");
+    // Verify sort order: highest puntaje first
+    for (int i = 1; i < ranking.getCandidatos().size(); i++) {
+      assertTrue(
+          ranking.getCandidatos().get(i - 1).getPuntaje()
+              >= ranking.getCandidatos().get(i).getPuntaje(),
+          "Candidatos deben estar ordenados por puntaje descendente");
+    }
+  }
+
+  @Test
   void puntaje_SubcategoriaDiferente_RetornaCero() {
     SubCategoria fideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     SubCategoria sillas = new SubCategoria("Sillas", Categoria.MOBILIARIO);

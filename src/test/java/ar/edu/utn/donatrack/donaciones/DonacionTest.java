@@ -219,6 +219,48 @@ class DonacionTest {
     assertInstanceOf(EnDeposito.class, donacion.getEstado(), "Debe volver a EnDeposito");
   }
 
+  // ── Matchmaking + PropuestaDeAsignacion tests ─────────────────────
+
+  @Test
+  void setEntidadBeneficiaria_AsignaEntidad() {
+    Donacion donacion = new Donacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    EntidadBeneficiaria entidad = new EntidadBeneficiaria("Hogar", "Dir", "Tel");
+
+    donacion.setEntidadBeneficiaria(entidad);
+
+    assertSame(
+        entidad,
+        donacion.getEntidadBeneficiaria(),
+        "setEntidadBeneficiaria debe asignar la entidad");
+  }
+
+  @Test
+  void confirmarEntidadBeneficiaria_SinInstanceOf_TransicionaCorrectamente() {
+    Donacion donacion = new Donacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    EntidadBeneficiaria entidad = new EntidadBeneficiaria("Hogar", "Dir", "Tel");
+
+    donacion.confirmarEntidadBeneficiaria(entidad);
+
+    assertSame(entidad, donacion.getEntidadBeneficiaria());
+    assertInstanceOf(ar.edu.utn.donatrack.estados.AsignacionRealizada.class, donacion.getEstado());
+  }
+
+  @Test
+  void confirmarEntidadBeneficiaria_EnAsignacionRealizada_LanzaException() {
+    Donacion donacion = new Donacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    EntidadBeneficiaria entidad = new EntidadBeneficiaria("Hogar", "Dir", "Tel");
+
+    // Transition to AsignacionRealizada first
+    donacion.confirmarEntidadBeneficiaria(entidad);
+
+    // Second call should throw because AsignacionRealizada.asignar() throws
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            donacion.confirmarEntidadBeneficiaria(new EntidadBeneficiaria("Otro", "Dir2", "Tel2")),
+        "Llamar confirmarEntidadBeneficiaria desde AsignacionRealizada debe lanzar excepción");
+  }
+
   private static Bien crearBienDummy() {
     return new Bien(
         "Test",
