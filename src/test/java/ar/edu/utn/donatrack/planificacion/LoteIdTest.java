@@ -2,6 +2,7 @@ package ar.edu.utn.donatrack.planificacion;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import ar.edu.utn.donatrack.logistica.planificacion.LoteId;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;

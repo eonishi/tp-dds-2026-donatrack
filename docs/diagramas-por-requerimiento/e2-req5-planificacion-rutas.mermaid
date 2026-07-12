@@ -1,0 +1,85 @@
+%% ============================================================================
+%% ENTREGA 2 — Requerimiento 5
+%% "El sistema debe, en horarios de baja carga, generar los planes de rutas
+%%  para los camiones durante la siguiente jornada operativa, integrándose con
+%%  el componente externo provisto."
+%% Port (PlanificadorRutas) hacia el componente externo + agregado Ruta.
+%% Fragmento mínimo del dominio involucrado (incluye infraestructura).
+%% ============================================================================
+classDiagram
+    direction TB
+
+    class ServicioPlanificacionRutas {
+        <<infraestructura>>
+        +planificar() List~LoteId~
+        +procesarResultado(resultado: ResultadoPlanificacion)
+    }
+    class PlanificadorRutas {
+        <<interface / port externo>>
+        +enviarLote(lote: LoteDonaciones) LoteId
+    }
+    class LoteDonaciones {
+        <<record>>
+        -donaciones: List~Donacion~
+        -camiones: List~Camion~
+    }
+    class LoteId {
+        <<record>>
+        -value: UUID
+    }
+    class ResultadoPlanificacion {
+        <<record>>
+        -loteId: LoteId
+        -rutas: Map
+    }
+    class Ruta {
+        -id: UUID
+        -camion: Camion
+        -destinos: List~Destino~
+        -enCurso: boolean
+        +iniciar()
+        +finalizar()
+    }
+    class Destino {
+        -entidadBeneficiaria: EntidadBeneficiaria
+        -donaciones: List~Donacion~
+        +agregarDonacion(donacion: Donacion)
+    }
+    class Camion {
+        -patente: String
+        -volumenM3: double
+        -alturaM: double
+        -capacidadCargaKg: double
+    }
+    class Donacion
+    class EntidadBeneficiaria
+    class DonacionesRepository {
+        <<infraestructura>>
+        +getDonacionesEnAsignacionRealizada() List~Donacion~
+    }
+    class CamionRepository {
+        <<infraestructura>>
+        +listarTodos() List~Camion~
+    }
+    class RutaRepository {
+        <<infraestructura>>
+        +agregar(ruta: Ruta)
+    }
+
+    ServicioPlanificacionRutas ..> DonacionesRepository : en Asignación Realizada
+    ServicioPlanificacionRutas ..> CamionRepository : flota
+    ServicioPlanificacionRutas ..> PlanificadorRutas : enviarLote
+    ServicioPlanificacionRutas ..> RutaRepository : persiste
+    PlanificadorRutas ..> LoteDonaciones : recibe
+    PlanificadorRutas ..> LoteId : devuelve
+    LoteDonaciones o-- "*" Donacion : donaciones
+    LoteDonaciones o-- "*" Camion : camiones
+    ServicioPlanificacionRutas ..> ResultadoPlanificacion : procesarResultado
+    ResultadoPlanificacion --> LoteId : loteId
+    ResultadoPlanificacion o-- "*" Camion : rutas
+    ResultadoPlanificacion o-- "*" EntidadBeneficiaria : destinos
+    ServicioPlanificacionRutas ..> Ruta : crea
+    Ruta *-- Camion : camion
+    Ruta *-- "*" Destino : destinos
+    Destino *-- EntidadBeneficiaria : entidad
+    Destino o-- "*" Donacion : donaciones

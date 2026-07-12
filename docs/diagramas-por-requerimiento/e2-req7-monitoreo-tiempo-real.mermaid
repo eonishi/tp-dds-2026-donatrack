@@ -1,0 +1,64 @@
+%% ============================================================================
+%% ENTREGA 2 — Requerimiento 7
+%% "El sistema debe mostrar en tiempo real tanto a la persona donante como a la
+%%  entidad beneficiaria de la donación la localización de los camiones."
+%% Lectura de posición del camión (GPS/app) procesada y correlacionada con la
+%% ruta activa; el inicio de ruta notifica con enlace al mapa.
+%% Fragmento mínimo del dominio involucrado (incluye infraestructura).
+%% ============================================================================
+classDiagram
+    direction TB
+
+    class MonitorRutas {
+        <<infraestructura>>
+        +procesar(lectura: LecturaPosicion)
+        +ultimaPosicion(camion: Camion) Optional~LecturaPosicion~
+    }
+    class LecturaPosicion {
+        <<record>>
+        -camion: Camion
+        -coordenada: Coordenada
+        -velocidad: double
+        -timestamp: LocalDateTime
+    }
+    class Coordenada {
+        <<record>>
+        -latitud: double
+        -longitud: double
+    }
+    class Camion {
+        -patente: String
+        -volumenM3: double
+        -alturaM: double
+        -capacidadCargaKg: double
+    }
+    class Ruta {
+        -id: UUID
+        -camion: Camion
+        -destinos: List~Destino~
+        -enCurso: boolean
+    }
+    class Destino {
+        -entidadBeneficiaria: EntidadBeneficiaria
+        -donaciones: List~Donacion~
+    }
+    class Donacion
+    class Donante
+    class EntidadBeneficiaria
+    class RutaRepository {
+        <<infraestructura>>
+        +buscarPorCamion(camion: Camion) Optional~Ruta~
+    }
+    class EventoInicioRuta
+    class InfoMapa
+
+    MonitorRutas ..> LecturaPosicion : procesar()
+    LecturaPosicion o-- Camion : camion
+    LecturaPosicion *-- Coordenada : coordenada
+    MonitorRutas ..> RutaRepository : correlaciona ruta activa
+    Ruta *-- Camion : camion
+    Ruta *-- "*" Destino : destinos
+    Destino o-- "*" Donacion : donaciones
+    Donacion --> Donante : donante
+    Donacion --> EntidadBeneficiaria : entidad
+    EventoInicioRuta ..> InfoMapa : enlace al mapa (seguimiento en vivo)

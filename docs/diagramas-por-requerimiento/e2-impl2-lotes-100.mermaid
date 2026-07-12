@@ -1,0 +1,37 @@
+%% ============================================================================
+%% ENTREGA 2 — Requerimiento de implementación 2
+%% "El sistema deberá realizar las solicitudes al proveedor en lotes puesto
+%%  que, por restricciones del proveedor, cada ejecución procesa como máximo
+%%  100 donaciones a entregar."
+%% Fragmento mínimo del dominio involucrado (incluye infraestructura).
+%% ============================================================================
+classDiagram
+    direction TB
+
+    class ServicioPlanificacionRutas {
+        <<infraestructura>>
+        +planificar() List~LoteId~
+        +partirEnLotes(donaciones: List~Donacion~, tamanioMaximo: int) List~List~Donacion~~
+    }
+    class LoteDonaciones {
+        <<record>>
+        -donaciones: List~Donacion~
+        -camiones: List~Camion~
+        +valida: máx 100 donaciones por lote
+    }
+    class LoteId {
+        <<record>>
+        -value: UUID
+    }
+    class Donacion
+    class Camion
+    class PlanificadorRutas {
+        <<interface / componente externo>>
+        +enviarLote(lote: LoteDonaciones) LoteId
+    }
+
+    ServicioPlanificacionRutas ..> LoteDonaciones : arma lotes (<= 100)
+    LoteDonaciones o-- "*" Donacion : donaciones
+    LoteDonaciones o-- "*" Camion : camiones
+    PlanificadorRutas ..> LoteDonaciones : recibe por ejecución
+    PlanificadorRutas ..> LoteId : devuelve

@@ -1,4 +1,4 @@
-package ar.edu.utn.donatrack.planificacion;
+package ar.edu.utn.donatrack.logistica.planificacion;
 
 import java.util.Objects;
 import java.util.UUID;

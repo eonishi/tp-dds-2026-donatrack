@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.logistica.Camion;
+import ar.edu.utn.donatrack.logistica.planificacion.LoteDonaciones;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;

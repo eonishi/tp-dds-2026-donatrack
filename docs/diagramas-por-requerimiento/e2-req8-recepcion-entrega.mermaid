@@ -1,0 +1,66 @@
+%% ============================================================================
+%% ENTREGA 2 — Requerimiento 8
+%% "El sistema debe gestionar la recepción de la entrega por parte de las
+%%  entidades beneficiarias en todos los casos."
+%% Confirmación exitosa (Entregada) o fallida (Entrega fallida + retorno).
+%% Fragmento mínimo del dominio involucrado.
+%% ============================================================================
+classDiagram
+    direction TB
+
+    class EntidadBeneficiaria {
+        -razonSocial: String
+        -direccion: String
+        -telefono: String
+        -recepciones: List~RecepcionDonacion~
+        +registrarRecepcion(donacion: Donacion, fechaRecepcion: LocalDate)
+    }
+    class RecepcionDonacion {
+        -donacion: Donacion
+        -fechaRecepcion: LocalDate
+    }
+    class Donacion {
+        -estado: EstadoDonacion
+        -camion: Camion
+        -historialEstado: List~HistorialEstado~
+        +confirmarEntrega()
+        +reportarFalla(justificacion: String)
+        +retornarAlDeposito()
+    }
+    class EstadoDonacion {
+        <<abstract>>
+        +confirmarEntrega(donacion: Donacion)
+        +reportarFalla(donacion: Donacion, justificacion: String)
+        +retornarAlDeposito(donacion: Donacion)
+    }
+    class Entregada
+    class EntregaFallida
+    class EnDeposito
+    class HistorialEstado {
+        -fecha: LocalDate
+        -estadoAlcanzado: NombreEstado
+        -justificacion: String
+    }
+    class Camion {
+        -patente: String
+    }
+    class NombreEstado {
+        <<enumeration>>
+        EN_DEPOSITO
+        ASIGNACION_REALIZADA
+        LISTA_PARA_ENTREGAR
+        EN_TRASLADO
+        ENTREGADA
+        ENTREGA_FALLIDA
+        VENCIDA
+    }
+
+    EntidadBeneficiaria *-- "*" RecepcionDonacion : recepciones
+    RecepcionDonacion --> Donacion : registra
+    Donacion *-- EstadoDonacion : estado actual
+    Donacion --> "0..1" Camion : camión responsable
+    Donacion *-- "*" HistorialEstado : historial
+    EstadoDonacion <|-- Entregada
+    EstadoDonacion <|-- EntregaFallida
+    EstadoDonacion <|-- EnDeposito
+    HistorialEstado --> NombreEstado : estadoAlcanzado

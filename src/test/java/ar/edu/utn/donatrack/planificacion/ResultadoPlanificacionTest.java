@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.logistica.Camion;
+import ar.edu.utn.donatrack.logistica.planificacion.LoteId;
+import ar.edu.utn.donatrack.logistica.planificacion.ResultadoPlanificacion;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;

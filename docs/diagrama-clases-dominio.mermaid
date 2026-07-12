@@ -1,0 +1,432 @@
+%% ============================================================================
+%% DonaTrack — Diagrama de clases del dominio (estado actual del código)
+%% Generado a partir de src/main/java — 2026-08-18
+%%
+%% Alcance: clases del dominio (entidades, value objects, enums y patrones de
+%% diseño: State en Donacion, Strategy en matchmaking, double dispatch en
+%% notificaciones).
+%% Excluye a propósito: repositorios, servicios de aplicación, schedulers,
+%% importadores CSV y utilidades (infraestructura).
+%%
+%% Nota de render: requiere Mermaid v10+ por el uso de `namespace`.
+%% ============================================================================
+classDiagram
+    direction TB
+
+    %% ─────────────────────────── Donantes ───────────────────────────
+    namespace donantes {
+        class Donante {
+            <<abstract>>
+            #numDocumento: String
+            #documento: TipoDocumento
+            #mediosDeContacto: List~MedioDeContacto~
+            #contactoPredeterminado: MedioDeContacto
+            +addMedioDeContacto(medio: MedioDeContacto)
+            +setContactoPredeterminado(medio: MedioDeContacto)
+            +getMediosDeContacto() List~MedioDeContacto~
+            +extraerEmail() Optional~String~
+        }
+        class PersonaHumana {
+            -nombre: String
+            -apellido: String
+            -edad: Integer
+            -genero: Genero
+            -direccion: String
+            +setEdad(edad: int)
+            +setDireccion(direccion: String)
+        }
+        class PersonajeJuridica {
+            -razonSocial: String
+            -tipoOrganizacion: TipoOrganizacion
+            -rubro: String
+            -representantes: List~Representante~
+            +agregarRepresentante(representante: Representante)
+        }
+        class Representante {
+            -nombre: String
+            -apellido: String
+        }
+        class MedioDeContacto {
+            <<abstract>>
+            -contacto: String
+            +aceptar(notificador: Notificador, mensaje: String)
+        }
+        class CorreoElectronico
+        class Whatsapp
+        class Sms
+        class TipoDocumento {
+            <<enumeration>>
+            DNI
+            CUIT
+        }
+        class Genero {
+            <<enumeration>>
+            FEMENINO
+            MASCULINO
+        }
+        class TipoOrganizacion {
+            <<enumeration>>
+            GUBERNAMENTAL
+            ONG
+            EMPRESA
+            INSTITUCION
+        }
+    }
+
+    %% ─────────────────────────── Bienes ───────────────────────────
+    namespace bienes {
+        class Bien {
+            -descripcion: String
+            -foto: String
+            -cantidad: double
+            -unidad: UnidadMedida
+            -fechaVencimiento: LocalDate
+            -estadoDeUso: EstadoUso
+            -subcategoria: SubCategoria
+            +esPerecedero() boolean
+            +getCantidad() double
+        }
+        class SubCategoria {
+            -nombre: String
+            -categoria: Categoria
+        }
+        class Categoria {
+            <<enumeration>>
+            ALIMENTO
+            MOBILIARIO
+            VESTIMENTA
+        }
+        class EstadoUso {
+            <<enumeration>>
+            NUEVO
+            USADO
+            NO_APLICA
+        }
+        class UnidadMedida {
+            <<enumeration>>
+            KILOGRAMOS
+            UNIDADES
+            LITROS
+        }
+    }
+
+    %% ─────────────────────────── Beneficiarios ───────────────────────────
+    namespace beneficiarios {
+        class EntidadBeneficiaria {
+            -razonSocial: String
+            -direccion: String
+            -telefono: String
+            -necesidadesExtraordinarias: List~Necesidad~
+            -necesidadesRecurrentes: List~NecesidadRecurrente~
+            -correos: List~CorreoElectronico~
+            -recepciones: List~RecepcionDonacion~
+            +registrarRecepcion(donacion: Donacion, fechaRecepcion: LocalDate)
+            +cantidadDonacionesRecibidasDesde(fechaDesde: LocalDate) long
+            +agregarNecesidadExtraordinaria(n: Necesidad)
+            +agregarNecesidadRecurrente(n: NecesidadRecurrente)
+        }
+        class Necesidad {
+            -descripcion: String
+            -cantidadRecibida: double
+            -subcategoria: SubCategoria
+            -cantidadObjetivo: double
+            -unidad: UnidadMedida
+            +estaSatisfecha() boolean
+            +recibirDonacion(cantidad: double)
+        }
+        class NecesidadRecurrente {
+            -periodo: TipoPeriodo
+            +reiniciarPeriodo()
+        }
+        class RecepcionDonacion {
+            -donacion: Donacion
+            -fechaRecepcion: LocalDate
+        }
+        class TipoPeriodo {
+            <<enumeration>>
+            SEMANAL
+            MENSUAL
+        }
+    }
+
+    %% ─────────────────────────── Donaciones ───────────────────────────
+    namespace donaciones {
+        class Donacion {
+            -estado: EstadoDonacion
+            -historialEstado: List~HistorialEstado~
+            -bienes: List~Bien~
+            -entidadBeneficiaria: EntidadBeneficiaria
+            -camion: Camion
+            -donante: Donante
+            +asignar()
+            +planificarRuta()
+            +iniciarTraslado()
+            +confirmarEntrega()
+            +reportarFalla(justificacion: String)
+            +marcarVencida()
+            +retornarAlDeposito()
+            +getCantidadTotal() double
+            +esPerecedera() boolean
+        }
+        class HistorialEstado {
+            -fecha: LocalDate
+            -estadoAlcanzado: NombreEstado
+            -justificacion: String
+        }
+        class PropuestaDeAsignacion {
+            -donacion: Donacion
+            -rankings: List~RankingMatchmaking~
+            -pendiente: boolean
+            +confirmar(elegida: EntidadBeneficiaria)
+        }
+        class RankingMatchmaking {
+            -algoritmo: String
+            -candidatos: List~MatchCandidato~
+        }
+        class MatchCandidato {
+            -entidadBeneficiaria: EntidadBeneficiaria
+            -puntaje: int
+        }
+        class AlgoritmoMatchmaking {
+            <<interface>>
+            +getNombre() String
+            +rankear(donacion: Donacion, entidades: Collection~EntidadBeneficiaria~, fechaReferencia: LocalDate) RankingMatchmaking
+        }
+        class AlgoritmoCompatibilidadSemantica
+        class AlgoritmoPrioridadSubAtendidos
+        class NombreEstado {
+            <<enumeration>>
+            EN_DEPOSITO
+            ASIGNACION_REALIZADA
+            LISTA_PARA_ENTREGAR
+            EN_TRASLADO
+            ENTREGADA
+            ENTREGA_FALLIDA
+            VENCIDA
+        }
+    }
+
+    %% ─────────────────────────── Estados (State) ───────────────────────────
+    namespace estados {
+        class EstadoDonacion {
+            <<abstract>>
+            +getNombreEstado() NombreEstado
+            +asignar(donacion: Donacion)
+            +planificarRuta(donacion: Donacion)
+            +iniciarTraslado(donacion: Donacion)
+            +confirmarEntrega(donacion: Donacion)
+            +reportarFalla(donacion: Donacion, justificacion: String)
+            +marcarVencida(donacion: Donacion)
+            +retornarAlDeposito(donacion: Donacion)
+        }
+        class EnDeposito
+        class AsignacionRealizada
+        class ListaParaEntregar
+        class EnTraslado
+        class Entregada
+        class EntregaFallida
+        class Vencida
+    }
+
+    %% ─────────────────────────── Logística ───────────────────────────
+    namespace logistica {
+        class Ruta {
+            -id: UUID
+            -camion: Camion
+            -destinos: List~Destino~
+            -enCurso: boolean
+            +iniciar()
+            +finalizar()
+        }
+        class Destino {
+            -entidadBeneficiaria: EntidadBeneficiaria
+            -donaciones: List~Donacion~
+            +agregarDonacion(donacion: Donacion)
+        }
+        class Camion {
+            -patente: String
+            -volumenM3: double
+            -alturaM: double
+            -capacidadCargaKg: double
+        }
+    }
+
+    %% ─────────────────────────── Planificación ───────────────────────────
+    namespace planificacion {
+        class PlanificadorRutas {
+            <<interface>>
+            +enviarLote(lote: LoteDonaciones) LoteId
+        }
+        class LoteDonaciones {
+            <<record>>
+            -donaciones: List~Donacion~
+            -camiones: List~Camion~
+        }
+        class LoteId {
+            <<record>>
+            -value: UUID
+        }
+        class ResultadoPlanificacion {
+            <<record>>
+            -loteId: LoteId
+            -rutas: Map
+        }
+    }
+
+    %% ─────────────────────────── Monitoreo ───────────────────────────
+    namespace monitoreo {
+        class Coordenada {
+            <<record>>
+            -latitud: double
+            -longitud: double
+        }
+        class LecturaPosicion {
+            <<record>>
+            -camion: Camion
+            -coordenada: Coordenada
+            -velocidad: double
+            -timestamp: LocalDateTime
+        }
+    }
+
+    %% ─────────────────────────── Notificaciones ───────────────────────────
+    namespace notificaciones {
+        class Notificable {
+            <<interface>>
+            +getMediosDeContacto() List~MedioDeContacto~
+        }
+        class Notificador {
+            <<interface>>
+            +enviarNotificacion(destinatario: MedioDeContacto, mensaje: String)
+            +enviar(destinatario: CorreoElectronico, mensaje: String)
+            +enviar(destinatario: Whatsapp, mensaje: String)
+            +enviar(destinatario: Sms, mensaje: String)
+        }
+        class NotificadorSimulado
+        class Notificacion {
+            -destinatario: MedioDeContacto
+            -mensaje: String
+            -payload: NotificacionPayload
+            -fechaCreacion: LocalDateTime
+            -estado: EstadoNotificacion
+            +marcarEnviada()
+            +marcarFallida()
+        }
+        class EstadoNotificacion {
+            <<enumeration>>
+            PENDIENTE
+            ENVIADA
+            FALLIDA
+        }
+        class NotificacionPayload {
+            <<interface>>
+        }
+        class ComprobanteEntrega
+        class InfoMapa
+        class SinPayload
+        class EventoNotificable {
+            <<abstract>>
+            +generarNotificaciones() List~Notificacion~
+        }
+        class EventoBienvenida
+        class EventoAsignacion
+        class EventoInicioRuta
+        class EventoEntregaExitosa
+        class EventoEntregaNoSatisfactoria
+        class EventoAusenciaDonante
+    }
+
+    %% ─────────────────────────── Relaciones ───────────────────────────
+
+    %% donantes
+    Donante <|-- PersonaHumana
+    Donante <|-- PersonajeJuridica
+    Donante *-- "*" MedioDeContacto : medios
+    Donante --> TipoDocumento : documento
+    PersonaHumana --> Genero : genero
+    PersonajeJuridica --> TipoOrganizacion : tipo
+    PersonajeJuridica o-- "*" Representante : representantes
+    MedioDeContacto <|-- CorreoElectronico
+    MedioDeContacto <|-- Whatsapp
+    MedioDeContacto <|-- Sms
+    MedioDeContacto ..> Notificador : aceptar(notificador)
+
+    %% bienes
+    Bien *-- SubCategoria : subcategoria
+    Bien --> UnidadMedida : unidad
+    Bien --> EstadoUso : estadoDeUso
+    SubCategoria --> Categoria : categoria
+
+    %% beneficiarios
+    EntidadBeneficiaria *-- "*" Necesidad : extraordinarias
+    EntidadBeneficiaria *-- "*" NecesidadRecurrente : recurrentes
+    EntidadBeneficiaria *-- "*" CorreoElectronico : correos
+    EntidadBeneficiaria *-- "*" RecepcionDonacion : recepciones
+    Necesidad <|-- NecesidadRecurrente
+    Necesidad *-- SubCategoria : subcategoria
+    Necesidad --> UnidadMedida : unidad
+    NecesidadRecurrente --> TipoPeriodo : periodo
+    RecepcionDonacion --> Donacion : registra
+
+    %% donaciones
+    Donacion *-- "*" Bien : bienes
+    Donacion *-- "*" HistorialEstado : historial
+    Donacion *-- EstadoDonacion : estado actual
+    Donacion --> Donante : donante
+    Donacion --> "0..1" EntidadBeneficiaria : asignada a
+    Donacion --> "0..1" Camion : asignado a
+    HistorialEstado --> NombreEstado : estadoAlcanzado
+    PropuestaDeAsignacion *-- Donacion : donacion
+    PropuestaDeAsignacion *-- "*" RankingMatchmaking : rankings
+    RankingMatchmaking *-- "*" MatchCandidato : candidatos
+    MatchCandidato --> EntidadBeneficiaria : candidata
+    AlgoritmoMatchmaking <|.. AlgoritmoCompatibilidadSemantica
+    AlgoritmoMatchmaking <|.. AlgoritmoPrioridadSubAtendidos
+    AlgoritmoMatchmaking ..> RankingMatchmaking : genera
+
+    %% estados
+    EstadoDonacion <|-- EnDeposito
+    EstadoDonacion <|-- AsignacionRealizada
+    EstadoDonacion <|-- ListaParaEntregar
+    EstadoDonacion <|-- EnTraslado
+    EstadoDonacion <|-- Entregada
+    EstadoDonacion <|-- EntregaFallida
+    EstadoDonacion <|-- Vencida
+    EstadoDonacion ..> Donacion : opera sobre
+
+    %% logística
+    Ruta *-- Camion : camion
+    Ruta *-- "*" Destino : destinos
+    Destino *-- EntidadBeneficiaria : entidad
+    Destino o-- "*" Donacion : donaciones
+
+    %% planificación
+    PlanificadorRutas ..> LoteDonaciones : recibe
+    PlanificadorRutas ..> LoteId : devuelve
+    LoteDonaciones o-- "*" Donacion : donaciones
+    LoteDonaciones o-- "*" Camion : camiones
+    ResultadoPlanificacion --> LoteId : loteId
+    ResultadoPlanificacion o-- "*" Camion : rutas
+    ResultadoPlanificacion o-- "*" EntidadBeneficiaria : rutas
+
+    %% monitoreo
+    LecturaPosicion o-- Camion : camion
+    LecturaPosicion *-- Coordenada : coordenada
+
+    %% notificaciones
+    Donante ..|> Notificable
+    EntidadBeneficiaria ..|> Notificable
+    Notificador <|.. NotificadorSimulado
+    Notificacion *-- MedioDeContacto : destinatario
+    Notificacion o-- NotificacionPayload : payload
+    Notificacion --> EstadoNotificacion : estado
+    NotificacionPayload <|.. ComprobanteEntrega
+    NotificacionPayload <|.. InfoMapa
+    NotificacionPayload <|.. SinPayload
+    EventoNotificable <|-- EventoBienvenida
+    EventoNotificable <|-- EventoAsignacion
+    EventoNotificable <|-- EventoInicioRuta
+    EventoNotificable <|-- EventoEntregaExitosa
+    EventoNotificable <|-- EventoEntregaNoSatisfactoria
+    EventoNotificable <|-- EventoAusenciaDonante
+    EventoNotificable ..> Notificacion : genera

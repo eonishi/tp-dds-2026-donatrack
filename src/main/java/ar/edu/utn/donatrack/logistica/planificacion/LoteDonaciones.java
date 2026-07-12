@@ -1,4 +1,4 @@
-package ar.edu.utn.donatrack.planificacion;
+package ar.edu.utn.donatrack.logistica.planificacion;
 
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.logistica.Camion;

@@ -1,4 +1,4 @@
-package ar.edu.utn.donatrack.monitoreo;
+package ar.edu.utn.donatrack.logistica.monitoreo;
 
 import ar.edu.utn.donatrack.logistica.Camion;
 import java.time.LocalDateTime;

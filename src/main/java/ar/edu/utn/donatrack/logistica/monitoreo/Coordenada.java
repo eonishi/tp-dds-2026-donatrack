@@ -1,4 +1,4 @@
-package ar.edu.utn.donatrack.monitoreo;
+package ar.edu.utn.donatrack.logistica.monitoreo;
 
 /**
  * Representa una coordenada geográfica con latitud y longitud.

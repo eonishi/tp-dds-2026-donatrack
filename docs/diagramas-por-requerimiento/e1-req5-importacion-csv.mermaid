@@ -1,0 +1,55 @@
+%% ============================================================================
+%% ENTREGA 1 — Requerimiento 5
+%% "El sistema deberá permitir la importación masiva de donantes en CSV."
+%% Upsert por email: si existe se actualiza (merge), si no se crea.
+%% Fragmento mínimo del dominio involucrado (incluye piezas de infraestructura).
+%% ============================================================================
+classDiagram
+    direction TB
+
+    class ImportadorDonantesCsv {
+        <<infraestructura>>
+        +importarDeCsv(path: String) List~Donante~
+        +mapearDonante(csv: DonanteCsv) Donante
+    }
+    class DonanteCsv {
+        <<infraestructura>>
+        -tipoPersona: String
+        -tipoDoc: String
+        -documento: String
+        -nombreRazonSocial: String
+        -email: String
+        -telefono: String
+    }
+    class TipoPersona {
+        <<enumeration>>
+        HUMANA
+        JURIDICA
+    }
+    class DonantesRepository {
+        <<infraestructura>>
+        +upsert(entrantes: List~Donante~)
+        +buscarPorEmail(email: String) Donante
+        +addMany(nuevos: List~Donante~)
+    }
+    class Donante {
+        <<abstract>>
+        #numDocumento: String
+        #documento: TipoDocumento
+        #mediosDeContacto: List~MedioDeContacto~
+        +extraerEmail() Optional~String~
+        +merge(entrante: Donante)
+    }
+    class PersonaHumana
+    class PersonajeJuridica
+    class CorreoElectronico
+    class Sms
+
+    ImportadorDonantesCsv ..> DonanteCsv : parsea
+    DonanteCsv --> TipoPersona : tipo
+    ImportadorDonantesCsv ..> Donante : mapea
+    Donante <|-- PersonaHumana
+    Donante <|-- PersonajeJuridica
+    ImportadorDonantesCsv ..> CorreoElectronico : crea medio
+    ImportadorDonantesCsv ..> Sms : crea medio
+    DonantesRepository ..> Donante : upsert / merge

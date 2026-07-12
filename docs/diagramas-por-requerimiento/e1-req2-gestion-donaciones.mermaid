@@ -1,0 +1,66 @@
+%% ============================================================================
+%% ENTREGA 1 — Requerimiento 2
+%% "El sistema deberá permitir la gestión de las donaciones resultantes."
+%% Incluye la carga única con segmentación automática por subcategoría.
+%% Fragmento mínimo del dominio involucrado.
+%% ============================================================================
+classDiagram
+    direction TB
+
+    class CargaDonacion {
+        -fechaRegistro: LocalDate
+        +cargarDonacion(donante: Donante, bienes: List~Bien~)
+    }
+    class SegmentacionKey {
+        -subcategoria: SubCategoria
+        -fechaVencimiento: LocalDate
+        -estadoUso: EstadoUso
+    }
+    class Donacion {
+        -donante: Donante
+        -bienes: List~Bien~
+        +getCantidadTotal() double
+        +esPerecedera() boolean
+        +getSubcategoria() SubCategoria
+    }
+    class Bien {
+        -descripcion: String
+        -foto: String
+        -cantidad: double
+        -unidad: UnidadMedida
+        -fechaVencimiento: LocalDate
+        -estadoDeUso: EstadoUso
+        -subcategoria: SubCategoria
+        +esPerecedero() boolean
+    }
+    class SubCategoria {
+        -nombre: String
+        -categoria: Categoria
+    }
+    class Categoria {
+        <<enumeration>>
+        ALIMENTO
+        MOBILIARIO
+        VESTIMENTA
+    }
+    class EstadoUso {
+        <<enumeration>>
+        NUEVO
+        USADO
+        NO_APLICA
+    }
+    class UnidadMedida {
+        <<enumeration>>
+        KILOGRAMOS
+        UNIDADES
+        LITROS
+    }
+
+    CargaDonacion ..> SegmentacionKey : agrupa bienes por
+    CargaDonacion ..> Donacion : genera
+    Donacion *-- "*" Bien : bienes
+    Donacion --> Donante : donante
+    Bien *-- SubCategoria : subcategoria
+    Bien --> UnidadMedida : unidad
+    Bien --> EstadoUso : estadoDeUso
+    SubCategoria --> Categoria : categoria

@@ -1,0 +1,70 @@
+%% ============================================================================
+%% ENTREGA 2 — Requerimiento 3
+%% "El sistema debe garantizar la ejecución asincrónica de los algoritmos de
+%%  asignación de donaciones presentes en el depósito."
+%% Strategy (AlgoritmoMatchmaking) + ejecución diaria en horario de baja carga
+%% (MatchmakingScheduler) + propuestas pendientes de confirmación.
+%% Fragmento mínimo del dominio involucrado (incluye infraestructura).
+%% ============================================================================
+classDiagram
+    direction TB
+
+    class MatchmakingScheduler {
+        <<infraestructura>>
+        +iniciar()
+        +detener()
+    }
+    class ServicioMatchmakingDonaciones {
+        <<infraestructura>>
+        +ejecutarMatchmakingDiario(fechaReferencia: LocalDate)
+        +confirmarAsignacionAdministrativa(donacion: Donacion, entidad: EntidadBeneficiaria, fecha: LocalDate)
+    }
+    class DonacionesRepository {
+        <<infraestructura>>
+        +getDonacionesEnDeposito() List~Donacion~
+    }
+    class BeneficiariosRepository {
+        <<infraestructura>>
+        +getBeneficiarios() List~EntidadBeneficiaria~
+    }
+    class PropuestaRepository {
+        <<infraestructura>>
+        +save(propuesta: PropuestaDeAsignacion)
+        +findPendingByDonacion(donacion: Donacion) Optional~PropuestaDeAsignacion~
+    }
+    class AlgoritmoMatchmaking {
+        <<interface>>
+        +getNombre() String
+        +rankear(donacion: Donacion, entidades: Collection~EntidadBeneficiaria~, fechaReferencia: LocalDate) RankingMatchmaking
+    }
+    class AlgoritmoCompatibilidadSemantica
+    class AlgoritmoPrioridadSubAtendidos
+    class RankingMatchmaking {
+        -algoritmo: String
+        -candidatos: List~MatchCandidato~
+    }
+    class MatchCandidato {
+        -entidadBeneficiaria: EntidadBeneficiaria
+        -puntaje: int
+    }
+    class PropuestaDeAsignacion {
+        -donacion: Donacion
+        -rankings: List~RankingMatchmaking~
+        -pendiente: boolean
+        +confirmar(elegida: EntidadBeneficiaria)
+    }
+    class Donacion
+    class EntidadBeneficiaria
+
+    MatchmakingScheduler ..> ServicioMatchmakingDonaciones : ejecuta diario
+    ServicioMatchmakingDonaciones o-- "*" AlgoritmoMatchmaking : algoritmos
+    ServicioMatchmakingDonaciones ..> DonacionesRepository : en depósito
+    ServicioMatchmakingDonaciones ..> BeneficiariosRepository : entidades
+    ServicioMatchmakingDonaciones ..> PropuestaRepository : guarda propuestas
+    AlgoritmoMatchmaking <|.. AlgoritmoCompatibilidadSemantica
+    AlgoritmoMatchmaking <|.. AlgoritmoPrioridadSubAtendidos
+    AlgoritmoMatchmaking ..> RankingMatchmaking : rankear()
+    RankingMatchmaking *-- "*" MatchCandidato : candidatos
+    MatchCandidato --> EntidadBeneficiaria : candidata
+    PropuestaDeAsignacion *-- Donacion : donacion
+    PropuestaDeAsignacion *-- "*" RankingMatchmaking : rankings
