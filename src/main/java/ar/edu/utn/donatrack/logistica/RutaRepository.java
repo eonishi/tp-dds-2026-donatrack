@@ -36,6 +36,18 @@ public class RutaRepository {
   }
 
   /**
+   * Busca la ruta activa (enCurso = true) asociada a un camión.
+   *
+   * @param camion el camión a buscar (no nulo)
+   * @return un {@link Optional} con la ruta activa si existe, o {@link Optional#empty()} si no
+   */
+  public Optional<Ruta> buscarPorCamion(Camion camion) {
+    return rutas.values().stream()
+        .filter(r -> r.getCamion().equals(camion) && r.isEnCurso())
+        .findFirst();
+  }
+
+  /**
    * @return copia de la lista de todas las rutas almacenadas
    */
   public List<Ruta> listarTodas() {
