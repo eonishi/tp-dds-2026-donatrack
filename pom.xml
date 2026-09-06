@@ -7,6 +7,20 @@
     <groupId>ar.edu.utn.donatrack</groupId>
     <artifactId>tp-dds-2026-donatrack</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <!--
+      Proyecto dividido en dos microservicios (ver docs/enunciado/enunciado-2.md):
+        * donaciones : gestión de donaciones, donantes, entidades beneficiarias,
+                       matchmaking y notificaciones.
+        * logistica  : gestión de flota de camiones, rutas, monitoreo y planificación.
+      Cada módulo es un microservicio independiente; la integración REST entre ambos
+      queda pendiente (la lógica cruzada está comentada dentro de cada módulo).
+    -->
+    <modules>
+        <module>donaciones</module>
+        <module>logistica</module>
+    </modules>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -114,6 +128,7 @@
                 <configuration>
                     <archive>
                         <manifest>
+                            <!-- TODO: definir el Main de cada microservicio (hoy solo hay tests) -->
                             <mainClass>Main</mainClass>
                         </manifest>
                     </archive>
