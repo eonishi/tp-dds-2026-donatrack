@@ -14,7 +14,9 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
+import ar.edu.utn.donatrack.estados.Entregada;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -61,7 +63,7 @@ class AlgoritmoPrioridadSubAtendidosTest {
             .toList();
 
     var ranking =
-        new AlgoritmoPrioridadSubAtendidos()
+        new AlgoritmoPrioridadSubAtendidos(new DonacionesRepository())
             .rankear(donacion, entidades, LocalDate.of(2026, 7, 11));
 
     assertTrue(
@@ -107,7 +109,7 @@ class AlgoritmoPrioridadSubAtendidosTest {
         new Necesidad(fideos, 8.0, UnidadMedida.KILOGRAMOS, "Fideos"));
 
     var ranking =
-        new AlgoritmoPrioridadSubAtendidos()
+        new AlgoritmoPrioridadSubAtendidos(new DonacionesRepository())
             .rankear(donacion, List.of(e1, e2, e3), LocalDate.of(2026, 7, 11));
 
     assertEquals(3, ranking.getCandidatos().size(), "Con 3 entidades debe retornar las 3");
@@ -128,7 +130,7 @@ class AlgoritmoPrioridadSubAtendidosTest {
         new Necesidad(fideos, 5.0, UnidadMedida.KILOGRAMOS, "Fideos"));
 
     var ranking =
-        new AlgoritmoPrioridadSubAtendidos()
+        new AlgoritmoPrioridadSubAtendidos(new DonacionesRepository())
             .rankear(donacion, List.of(entidad), LocalDate.of(2026, 7, 11));
 
     assertTrue(
@@ -137,7 +139,7 @@ class AlgoritmoPrioridadSubAtendidosTest {
   }
 
   @Test
-  void puntaje_EntidadConMuchasRecepciones_RetornaPuntajeMenor() {
+  void puntaje_EntidadConMuchasEntregas_RetornaPuntajeMenor() {
     SubCategoria fideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     Donacion donacion =
         new Donacion(
@@ -159,26 +161,48 @@ class AlgoritmoPrioridadSubAtendidosTest {
     EntidadBeneficiaria conMuchas = new EntidadBeneficiaria("Ya Recibio", "Dir", "Tel");
     conMuchas.agregarNecesidadExtraordinaria(
         new Necesidad(fideos, 5.0, UnidadMedida.KILOGRAMOS, "Fideos"));
-    // Simulate 50 recepciones
+    // Simulate 50 entregas
+    DonacionesRepository donacionesRepository = new DonacionesRepository();
     for (int i = 0; i < 50; i++) {
-      conMuchas.registrarRecepcion(donacion, LocalDate.of(2026, 6, 1));
+      donacionesRepository.addDonacion(
+          crearDonacionEntregada(conMuchas, fideos, LocalDateTime.of(2026, 6, 1, 10, 0)));
     }
 
     var ranking =
-        new AlgoritmoPrioridadSubAtendidos()
+        new AlgoritmoPrioridadSubAtendidos(donacionesRepository)
             .rankear(donacion, List.of(sinRecepciones, conMuchas), LocalDate.of(2026, 7, 11));
 
     assertEquals(2, ranking.getCandidatos().size());
     assertTrue(
         ranking.getCandidatos().get(0).getPuntaje() > ranking.getCandidatos().get(1).getPuntaje(),
-        "Entidad sin recepciones debe tener mayor puntaje que la que ya recibió mucho");
+        "Entidad sin entregas debe tener mayor puntaje que la que ya recibió mucho");
     assertEquals(
         100,
         ranking.getCandidatos().get(0).getPuntaje(),
-        "Entidad sin recepciones debería tener puntaje 100");
+        "Entidad sin entregas debería tener puntaje 100");
     assertEquals(
         50,
         ranking.getCandidatos().get(1).getPuntaje(),
-        "Entidad con 50 recepciones debería tener puntaje 100 - 50 = 50");
+        "Entidad con 50 entregas debería tener puntaje 100 - 50 = 50");
+  }
+
+  private static Donacion crearDonacionEntregada(
+      EntidadBeneficiaria entidad, SubCategoria subCategoria, LocalDateTime fechaEntrega) {
+    Donacion donacion =
+        new Donacion(
+            crearDonanteDummy(),
+            List.of(
+                new Bien(
+                    "Entregada",
+                    "",
+                    1.0,
+                    UnidadMedida.KILOGRAMOS,
+                    null,
+                    EstadoUso.NO_APLICA,
+                    subCategoria)));
+    donacion.confirmarEntidadBeneficiaria(entidad);
+    donacion.cambiarEstado(
+        new HistorialEstado(fechaEntrega, NombreEstado.ENTREGADA, null), new Entregada());
+    return donacion;
   }
 }

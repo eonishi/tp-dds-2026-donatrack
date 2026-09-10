@@ -1,6 +1,8 @@
 package ar.edu.utn.donatrack.donaciones;
 
+import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.estados.EnDeposito;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -43,5 +45,18 @@ public class DonacionesRepository {
 
   public synchronized void deleteById(UUID id) {
     donaciones.remove(id);
+  }
+
+  public long cantidadEntregadasDesde(EntidadBeneficiaria entidad, LocalDate fechaDesde) {
+    return donaciones.stream()
+        .filter(donacion -> entidad.equals(donacion.getEntidadBeneficiaria()))
+        .filter(
+            donacion ->
+                donacion.getHistorialEstado().stream()
+                    .anyMatch(
+                        historial ->
+                            historial.getEstadoAlcanzado() == NombreEstado.ENTREGADA
+                                && !historial.getFecha().toLocalDate().isBefore(fechaDesde)))
+        .count();
   }
 }

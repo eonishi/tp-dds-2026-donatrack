@@ -3,7 +3,7 @@ package ar.edu.utn.donatrack.estados;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.HistorialEstado;
 import ar.edu.utn.donatrack.donaciones.NombreEstado;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class EnTraslado extends EstadoDonacion {
   @Override
@@ -34,21 +34,21 @@ public class EnTraslado extends EstadoDonacion {
           "No se puede confirmar la entrega sin una entidad beneficiaria asignada.");
     }
     donacion.cambiarEstado(
-        new HistorialEstado(LocalDate.now(), NombreEstado.ENTREGADA, null), new Entregada());
-    donacion.getEntidadBeneficiaria().registrarRecepcion(donacion, LocalDate.now());
+        new HistorialEstado(LocalDateTime.now(), NombreEstado.ENTREGADA, null), new Entregada());
+    donacion.getEntidadBeneficiaria().aplicarDonacionRecibida(donacion);
   }
 
   @Override
   public void reportarFalla(Donacion donacion, String justificacion) {
     donacion.cambiarEstado(
-        new HistorialEstado(LocalDate.now(), NombreEstado.ENTREGA_FALLIDA, justificacion),
+        new HistorialEstado(LocalDateTime.now(), NombreEstado.ENTREGA_FALLIDA, justificacion),
         new EntregaFallida());
   }
 
   @Override
   public void marcarVencida(Donacion donacion) {
     donacion.cambiarEstado(
-        new HistorialEstado(LocalDate.now(), NombreEstado.VENCIDA, null), new Vencida());
+        new HistorialEstado(LocalDateTime.now(), NombreEstado.VENCIDA, null), new Vencida());
   }
 
   @Override

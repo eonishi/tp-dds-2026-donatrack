@@ -16,8 +16,10 @@ import ar.edu.utn.donatrack.donaciones.AlgoritmoPrioridadSubAtendidos;
 import ar.edu.utn.donatrack.donaciones.CargaDonacion;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
+import ar.edu.utn.donatrack.donaciones.HistorialEstado;
 import ar.edu.utn.donatrack.donaciones.MatchCandidato;
 import ar.edu.utn.donatrack.donaciones.MatchmakingScheduler;
+import ar.edu.utn.donatrack.donaciones.NombreEstado;
 import ar.edu.utn.donatrack.donaciones.PropuestaDeAsignacion;
 import ar.edu.utn.donatrack.donaciones.PropuestaRepository;
 import ar.edu.utn.donatrack.donaciones.PropuestaRepositoryImpl;
@@ -29,9 +31,11 @@ import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.estados.AsignacionRealizada;
+import ar.edu.utn.donatrack.estados.Entregada;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -77,9 +81,8 @@ public class MatchmakingDonacionesTest {
         crearEntidadConNecesidad("Hogar A", alimentos, 5, fecha.plusMonths(4));
     EntidadBeneficiaria hogarB =
         crearEntidadConNecesidad("Hogar B", alimentos, 5, fecha.plusMonths(4));
-    hogarB.registrarRecepcion(
-        new Donacion(donante, List.of(crearBien("Vieja", 1, alimentos, fecha.plusMonths(1)))),
-        fecha.minusDays(10));
+    donacionesRepository.addDonacion(
+        crearDonacionEntregada(hogarB, alimentos, fecha.minusDays(10).atTime(10, 0)));
 
     BeneficiariosRepository beneficiariosRepository = new BeneficiariosRepository();
     beneficiariosRepository.addBeneficiario(hogarA);
@@ -91,7 +94,9 @@ public class MatchmakingDonacionesTest {
             donacionesRepository,
             beneficiariosRepository,
             propuestaRepository,
-            List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos()));
+            List.of(
+                new AlgoritmoCompatibilidadSemantica(),
+                new AlgoritmoPrioridadSubAtendidos(donacionesRepository)));
 
     servicio.ejecutarMatchmakingDiario(fecha);
 
@@ -179,7 +184,9 @@ public class MatchmakingDonacionesTest {
             donacionesRepository,
             beneficiariosRepository,
             propuestaRepository,
-            List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos()));
+            List.of(
+                new AlgoritmoCompatibilidadSemantica(),
+                new AlgoritmoPrioridadSubAtendidos(donacionesRepository)));
 
     // First execution creates Propuesta
     servicio.ejecutarMatchmakingDiario(fecha);
@@ -214,7 +221,9 @@ public class MatchmakingDonacionesTest {
             donacionesRepository,
             beneficiariosRepository,
             propuestaRepository,
-            List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos()));
+            List.of(
+                new AlgoritmoCompatibilidadSemantica(),
+                new AlgoritmoPrioridadSubAtendidos(donacionesRepository)));
 
     // Run matchmaking to create Propuesta first
     servicio.ejecutarMatchmakingDiario(fecha);
@@ -233,13 +242,14 @@ public class MatchmakingDonacionesTest {
         donacion.getEstado(),
         "Donacion debe estar en AsignacionRealizada");
     assertEquals(
-        0,
-        entidad.getRecepciones().size(),
-        "confirmarAsignacionAdministrativa NO debe llamar registrarRecepcion");
+        0.0,
+        entidad.getNecesidadesExtraordinarias().get(0).getCantidadRecibida(),
+        0.001,
+        "confirmarAsignacionAdministrativa NO debe aplicar la donación a las necesidades");
   }
 
   @Test
-  void registrarRecepcionDirectamenteRegistraYSatisfaceNecesidad() {
+  void aplicarDonacionRecibida_SatisfaceNecesidad() {
     LocalDate fecha = LocalDate.of(2026, 7, 6);
     SubCategoria alimentos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     Donante donante = crearDonanteDummy();
@@ -249,14 +259,13 @@ public class MatchmakingDonacionesTest {
         crearEntidadConNecesidad("Hogar", alimentos, 5, fecha.plusMonths(4));
     Necesidad necesidad = entidad.getNecesidadesExtraordinarias().get(0);
 
-    entidad.registrarRecepcion(donacion, fecha);
+    entidad.aplicarDonacionRecibida(donacion);
 
-    assertEquals(1, entidad.getRecepciones().size());
     assertTrue(necesidad.estaSatisfecha());
   }
 
   @Test
-  void prioridadSubAtendidosUsaRecepcionesDelUltimoTrimestre() {
+  void prioridadSubAtendidosUsaEntregasDelUltimoTrimestre() {
     LocalDate fecha = LocalDate.of(2026, 7, 6);
     SubCategoria alimentos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     Donante donante = crearDonanteDummy();
@@ -266,20 +275,17 @@ public class MatchmakingDonacionesTest {
         crearEntidadConNecesidad("Mas Atendida", alimentos, 5, fecha.plusMonths(4));
     Donacion donacion =
         new Donacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+    DonacionesRepository donacionesRepository = new DonacionesRepository();
 
-    entidadMasAtendida.registrarRecepcion(
-        new Donacion(donante, List.of(crearBien("Vieja", 1, alimentos, fecha.plusMonths(1)))),
-        fecha.minusDays(5));
-    entidadMasAtendida.registrarRecepcion(
-        new Donacion(donante, List.of(crearBien("Vieja 2", 1, alimentos, fecha.plusMonths(1)))),
-        fecha.minusDays(15));
-    entidadMasAtendida.registrarRecepcion(
-        new Donacion(
-            donante, List.of(crearBien("Fuera trimestre", 1, alimentos, fecha.plusMonths(1)))),
-        fecha.minusMonths(4));
+    donacionesRepository.addDonacion(
+        crearDonacionEntregada(entidadMasAtendida, alimentos, fecha.minusDays(5).atTime(10, 0)));
+    donacionesRepository.addDonacion(
+        crearDonacionEntregada(entidadMasAtendida, alimentos, fecha.minusDays(15).atTime(10, 0)));
+    donacionesRepository.addDonacion(
+        crearDonacionEntregada(entidadMasAtendida, alimentos, fecha.minusMonths(4).atTime(10, 0)));
 
     var ranking =
-        new AlgoritmoPrioridadSubAtendidos()
+        new AlgoritmoPrioridadSubAtendidos(donacionesRepository)
             .rankear(donacion, List.of(entidadMasAtendida, entidadMenosAtendida), fecha);
 
     assertEquals(
@@ -305,6 +311,16 @@ public class MatchmakingDonacionesTest {
         fechaVencimiento,
         EstadoUso.NO_APLICA,
         subCategoria);
+  }
+
+  private static Donacion crearDonacionEntregada(
+      EntidadBeneficiaria entidad, SubCategoria subCategoria, LocalDateTime fechaEntrega) {
+    Donacion donacion =
+        new Donacion(crearDonanteDummy(), List.of(crearBien("Entregada", 1, subCategoria, null)));
+    donacion.confirmarEntidadBeneficiaria(entidad);
+    donacion.cambiarEstado(
+        new HistorialEstado(fechaEntrega, NombreEstado.ENTREGADA, null), new Entregada());
+    return donacion;
   }
 
   private static EntidadBeneficiaria crearEntidadConNecesidad(

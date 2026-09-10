@@ -73,14 +73,13 @@ Para mantener el bajo acoplamiento, no se comparten entidades de base de datos. 
 
 **4. Confirmación de entrega exitosa**
 * **Situación:** La entidad beneficiaria confirma la recepción de la donación.
-* **Cruce:** Donaciones pasa el estado a "Entregada" y necesita registrar en su sistema qué camión (dato de Logística) realizó la entrega.
+* **Cruce:** Donaciones pasa el estado a "Entregada". El camión que realizó la entrega ya quedó registrado al iniciar la ruta (endpoint 3), por lo que esta confirmación no lo reenvía.
 * **Contrato API:**
   * **Endpoint:** `PATCH /api/donaciones/{idDonacion}/estado`
   * **Payload Request:**
     ```json
     {
-      "nuevoEstado": "ENTREGADA",
-      "idCamion": "AF123ZZ"
+      "nuevoEstado": "ENTREGADA"
     }
     ```
   * **Payload Response:** `200 OK` | `400 Bad Request`
@@ -101,13 +100,13 @@ Para mantener el bajo acoplamiento, no se comparten entidades de base de datos. 
 
 **6. Reclamo por entrega no recibida**
 * **Situación:** La entidad informa en la plataforma que no recibió la entrega en el día estipulado.
-* **Cruce:** El sistema marca la entrega como "No recibida" y, si se determina que vuelve al depósito, la entrega debe volver al estado "Pendiente". Esto requiere coordinar el cambio de estado entre la ruta de Logística y la donación en Donaciones.
+* **Cruce:** El sistema marca la entrega como "No recibida", lo que corresponde al estado `ENTREGA_FALLIDA`; si se determina que vuelve al depósito, la donación pasa al estado `EN_DEPOSITO`. Esto requiere coordinar el cambio de estado entre la ruta de Logística y la donación en Donaciones.
 * **Contrato API:**
   * **Endpoint:** `PATCH /api/donaciones/{idDonacion}/estado`
   * **Payload Request:**
     ```json
     {
-      "nuevoEstado": "PENDIENTE",
+      "nuevoEstado": "ENTREGA_FALLIDA",
       "justificacion": "Reclamo administrativo: no se recibió en la fecha estipulada"
     }
     ```

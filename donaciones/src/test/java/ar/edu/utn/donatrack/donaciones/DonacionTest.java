@@ -78,7 +78,7 @@ class DonacionTest {
   }
 
   @Test
-  void confirmarEntrega_EnTraslado_RegistraRecepcionYSatisfaceNecesidad() {
+  void confirmarEntrega_EnTraslado_SatisfaceNecesidad() {
     SubCategoria subcatFideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     Necesidad necesidad = new Necesidad(subcatFideos, 5.0, UnidadMedida.KILOGRAMOS, "Fideos");
 
@@ -111,15 +111,14 @@ class DonacionTest {
     // Assert: estado cambió
     assertInstanceOf(Entregada.class, donacion.getEstado());
 
-    // Assert: registrarRecepcion fue llamado → cantidadRecibida incrementada
+    // Assert: aplicarDonacionRecibida fue llamado → cantidadRecibida incrementada
     assertTrue(
         necesidad.getCantidadRecibida() > 0,
-        "EntidadBeneficiaria.registrarRecepcion debe incrementar cantidadRecibida");
+        "EntidadBeneficiaria.aplicarDonacionRecibida debe incrementar cantidadRecibida");
     assertEquals(10.0, necesidad.getCantidadRecibida(), 0.001);
     assertTrue(
         necesidad.estaSatisfecha(),
         "Necesidad con objetivo 5kg debería quedar satisfecha con 10kg recibidos");
-    assertEquals(1, entidad.getRecepciones().size(), "Debe registrarse exactamente una recepción");
   }
 
   @Test
@@ -153,10 +152,6 @@ class DonacionTest {
         0.001,
         "Necesidad con subcategoría distinta no debe incrementarse");
     assertFalse(necesidad.estaSatisfecha(), "Necesidad no debe quedar satisfecha");
-    assertEquals(
-        1,
-        entidad.getRecepciones().size(),
-        "La recepción igual se registra aunque no haya match de necesidades");
   }
 
   // ── TDD Phase 1: RED — Camion lifecycle tests ─────────────────────

@@ -4,7 +4,6 @@ import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.notificaciones.Notificable;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -21,7 +20,6 @@ public class EntidadBeneficiaria implements Notificable {
   private final List<Necesidad> necesidadesExtraordinarias = new ArrayList<>();
   private final List<NecesidadRecurrente> necesidadesRecurrentes = new ArrayList<>();
   private final List<CorreoElectronico> correos = new ArrayList<>();
-  private final List<Recepcion> recepciones = new ArrayList<>();
 
   public EntidadBeneficiaria(String razonSocial, String direccion, String telefono) {
     this(UUID.randomUUID(), razonSocial, direccion, telefono);
@@ -68,10 +66,6 @@ public class EntidadBeneficiaria implements Notificable {
     return Collections.unmodifiableList(new ArrayList<>(correos));
   }
 
-  public List<Recepcion> getRecepciones() {
-    return Collections.unmodifiableList(recepciones);
-  }
-
   public void agregarNecesidadExtraordinaria(Necesidad n) {
     this.necesidadesExtraordinarias.add(n);
   }
@@ -110,18 +104,9 @@ public class EntidadBeneficiaria implements Notificable {
     }
   }
 
-  public void registrarRecepcion(Donacion donacion, LocalDate fechaRecepcion) {
-    this.recepciones.add(new Recepcion(donacion, fechaRecepcion));
-    this.actualizarNecesidadesCon(donacion);
-  }
 
-  public long cantidadDonacionesRecibidasDesde(LocalDate fechaDesde) {
-    return recepciones.stream()
-        .filter(recepcion -> !recepcion.getFechaRecepcion().isBefore(fechaDesde))
-        .count();
-  }
-
-  private void actualizarNecesidadesCon(Donacion donacion) {
+  public void aplicarDonacionRecibida(Donacion donacion) {
+    Objects.requireNonNull(donacion, "donacion no puede ser null");
     necesidadesExtraordinarias.forEach(necesidad -> aplicarSiCoincide(necesidad, donacion));
     necesidadesRecurrentes.forEach(necesidad -> aplicarSiCoincide(necesidad, donacion));
   }

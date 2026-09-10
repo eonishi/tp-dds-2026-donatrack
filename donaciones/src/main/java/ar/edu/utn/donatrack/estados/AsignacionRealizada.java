@@ -3,7 +3,7 @@ package ar.edu.utn.donatrack.estados;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.HistorialEstado;
 import ar.edu.utn.donatrack.donaciones.NombreEstado;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class AsignacionRealizada extends EstadoDonacion {
   @Override
@@ -19,7 +19,7 @@ public class AsignacionRealizada extends EstadoDonacion {
   @Override
   public void planificarRuta(Donacion donacion) {
     donacion.cambiarEstado(
-        new HistorialEstado(LocalDate.now(), NombreEstado.LISTA_PARA_ENTREGAR, null),
+        new HistorialEstado(LocalDateTime.now(), NombreEstado.LISTA_PARA_ENTREGAR, null),
         new ListaParaEntregar());
   }
 
@@ -44,7 +44,7 @@ public class AsignacionRealizada extends EstadoDonacion {
   @Override
   public void marcarVencida(Donacion donacion) {
     donacion.cambiarEstado(
-        new HistorialEstado(LocalDate.now(), NombreEstado.VENCIDA, null), new Vencida());
+        new HistorialEstado(LocalDateTime.now(), NombreEstado.VENCIDA, null), new Vencida());
   }
 
   @Override
