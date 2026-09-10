@@ -53,4 +53,13 @@ public class RutaRepository {
   public List<Ruta> listarTodas() {
     return new ArrayList<>(rutas.values());
   }
+
+  /**
+   * Elimina una ruta por su identificador único.
+   *
+   * @param id el identificador de la ruta a eliminar
+   */
+  public void eliminar(UUID id) {
+    rutas.remove(id);
+  }
 }

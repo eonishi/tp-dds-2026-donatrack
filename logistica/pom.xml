@@ -17,4 +17,13 @@
       flota de camiones, rutas y destinos, monitoreo en tiempo real y
       planificación de rutas.
     -->
+
+    <dependencies>
+      <!-- Javalin Bundle (Core + Jackson + Logback + TestTools) -->
+    <dependency>
+        <groupId>io.javalin</groupId>
+        <artifactId>javalin-bundle</artifactId>
+        <version>6.3.0</version>
+    </dependency>
+    </dependencies>
 </project>
