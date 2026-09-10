@@ -44,4 +44,13 @@ public class CamionRepository {
   public Optional<Camion> buscarPorPatente(String patente) {
     return camiones.stream().filter(c -> c.getPatente().equals(patente)).findFirst();
   }
+
+  /**
+   * Elimina un camión por su patente.
+   *
+   * @param patente la patente del camión a eliminar
+   */
+  public void eliminar(String patente) {
+    camiones.removeIf(c -> c.getPatente().equals(patente));
+  }
 }
