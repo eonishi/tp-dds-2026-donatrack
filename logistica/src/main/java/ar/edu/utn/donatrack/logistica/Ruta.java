@@ -12,8 +12,8 @@ import java.util.UUID;
  * <p>Agrupa un {@link Camion} y una lista de {@link Destino} con un ciclo de vida de {@code
  * enCurso}. Su identidad es sintética mediante {@link UUID}.
  *
- * <p>La validación de duplicados en la lista de destinos se basaba en la igualdad de las entidades
- * beneficiarias de cada destino (microservicio de donaciones); no está migrada (ver constructor).
+ * <p>La lista de destinos no admite entidades beneficiarias repetidas: la validación se apoya en la
+ * identidad declarada por {@link Destino#entidadId()}.
  */
 public class Ruta {
 
@@ -31,25 +31,19 @@ public class Ruta {
    * @param camion el camión asignado a la ruta (no nulo)
    * @param destinos la lista de destinos a visitar (no nula)
    * @throws NullPointerException si {@code camion} o {@code destinos} es {@code null}
+   * @throws IllegalArgumentException si la lista de destinos contiene entidades beneficiarias
+   *     duplicadas
    */
   public Ruta(Camion camion, List<Destino> destinos) {
     this.id = UUID.randomUUID();
     this.camion = Objects.requireNonNull(camion, "camion no debe ser nulo");
     Objects.requireNonNull(destinos, "destinos no debe ser nula");
 
-    // ── LÓGICA FALTANTE — microservicio de DONACIONES ──────────────────────
-    // La validación de destinos duplicados se apoyaba en la identidad de
-    // EntidadBeneficiaria (microservicio de donaciones). No migrada: al
-    // integrar, la entidad debe llegar identificada desde el microservicio
-    // de donaciones.
-    //
-    //   long entidadesDistintas =
-    //       destinos.stream().map(Destino::getEntidadBeneficiaria).distinct().count();
-    //   if (entidadesDistintas != destinos.size()) {
-    //     throw new IllegalArgumentException(
-    //         "la lista de destinos contiene entidades beneficiarias duplicadas");
-    //   }
-    //
+    long entidadesDistintas = destinos.stream().map(Destino::entidadId).distinct().count();
+    if (entidadesDistintas != destinos.size()) {
+      throw new IllegalArgumentException(
+          "la lista de destinos contiene entidades beneficiarias duplicadas");
+    }
 
     this.destinos = new ArrayList<>(destinos);
     this.enCurso = false;

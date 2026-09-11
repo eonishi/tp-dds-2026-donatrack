@@ -3,6 +3,8 @@ package ar.edu.utn.donatrack.monitoreo;
 import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.logistica.Camion;
+import ar.edu.utn.donatrack.logistica.Destino;
+import ar.edu.utn.donatrack.logistica.EntidadBeneficiariaId;
 import ar.edu.utn.donatrack.logistica.Ruta;
 import ar.edu.utn.donatrack.logistica.RutaRepository;
 import ar.edu.utn.donatrack.logistica.monitoreo.Coordenada;
@@ -25,16 +27,8 @@ class MonitoreoTest {
   }
 
   private static Ruta crearRutaConCamion(Camion camion) {
-    // ── LÓGICA FALTANTE — microservicio de DONACIONES ──────────────────────
-    // La ruta original se armaba con un Destino de una EntidadBeneficiaria
-    // (microservicio de donaciones); no está migrada. Hoy la ruta se crea
-    // sin destinos (ver Destino y Ruta).
-    //
-    //   return new Ruta(
-    //       camion,
-    //       List.of(new Destino(new EntidadBeneficiaria("Fundación A", "Calle A", "555-0000"))));
-    //
-    return new Ruta(camion, List.of());
+    return new Ruta(
+        camion, List.of(new Destino(new EntidadBeneficiariaId(1L), "Calle A", List.of())));
   }
 
   private static Coordenada coordValida() {

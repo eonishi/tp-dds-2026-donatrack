@@ -15,25 +15,21 @@ class RutaTest {
     return new Camion("ABC123", 45.0, 2.5, 5000.0);
   }
 
-  /*
-   * ── LÓGICA FALTANTE — microservicio de DONACIONES ──────────────────────
-   * El helper original construía un Destino con su EntidadBeneficiaria
-   * (microservicio de donaciones); no está migrado. Los destinos que se
-   * crean hoy son cascarones vacíos (ver Destino).
-   *
-   *   private static Destino crearDestino(String razonSocial) {
-   *     return new Destino(new EntidadBeneficiaria(razonSocial, "Calle " + razonSocial, "555-0000"));
-   *   }
-   */
+  private static Destino crearDestino(long entidadId) {
+    return new Destino(
+        new EntidadBeneficiariaId(entidadId),
+        "Calle " + entidadId,
+        List.of(new DonacionId(UUID.randomUUID())));
+  }
 
   // ── TDD Cycle 1: Creation + Validation ──────────────────────────
 
   @Test
   void crearRuta_ConDatosValidos_DebeTenerAtributosCorrectos() {
     Camion camion = crearCamionDummy();
-    Destino d1 = new Destino();
-    Destino d2 = new Destino();
-    Destino d3 = new Destino();
+    Destino d1 = crearDestino(1);
+    Destino d2 = crearDestino(2);
+    Destino d3 = crearDestino(3);
     List<Destino> destinos = List.of(d1, d2, d3);
 
     Ruta ruta = new Ruta(camion, destinos);
@@ -60,18 +56,32 @@ class RutaTest {
     assertThrows(NullPointerException.class, () -> new Ruta(camion, null));
   }
 
-  // ── LÓGICA FALTANTE — microservicio de DONACIONES ──────────────────────
-  // La validación de destinos duplicados dependía de la identidad de la
-  // EntidadBeneficiaria y no está migrada (ver Ruta). Test comentado.
-  //
-  //   @Test
-  //   void crearRuta_ConDestinosDuplicados_DebeLanzarIllegalArgumentException() {
-  //     Camion camion = crearCamionDummy();
-  //     Destino repetido = crearDestino("Fundación A");
-  //     List<Destino> destinos = List.of(repetido, repetido);
-  //
-  //     assertThrows(IllegalArgumentException.class, () -> new Ruta(camion, destinos));
-  //   }
+  @Test
+  void crearRuta_ConDestinosDuplicados_DebeLanzarIllegalArgumentException() {
+    Camion camion = crearCamionDummy();
+    Destino repetido = new Destino(new EntidadBeneficiariaId(1L), "Calle A", List.of());
+    Destino mismoEntidadOtraDireccion =
+        new Destino(new EntidadBeneficiariaId(1L), "Calle B", List.of());
+    List<Destino> destinos = List.of(repetido, mismoEntidadOtraDireccion);
+
+    assertThrows(IllegalArgumentException.class, () -> new Ruta(camion, destinos));
+  }
+
+  @Test
+  void crearRuta_ConDestinosDeDistintaEntidad_MantieneElOrden() {
+    Camion camion = crearCamionDummy();
+    Destino d7 = crearDestino(7);
+    Destino d3 = crearDestino(3);
+    Destino d5 = crearDestino(5);
+
+    Ruta ruta = new Ruta(camion, List.of(d7, d3, d5));
+
+    List<Destino> obtenidos = ruta.getDestinos();
+    assertEquals(3, obtenidos.size());
+    assertSame(d7, obtenidos.get(0));
+    assertSame(d3, obtenidos.get(1));
+    assertSame(d5, obtenidos.get(2));
+  }
 
   @Test
   void getDestinos_AlModificarLista_DebeLanzarUnsupportedOperationException() {

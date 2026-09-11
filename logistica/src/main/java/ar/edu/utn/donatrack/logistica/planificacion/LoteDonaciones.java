@@ -4,31 +4,26 @@ import ar.edu.utn.donatrack.logistica.Camion;
 import java.util.List;
 import java.util.Objects;
 
-/*
- * ── LÓGICA FALTANTE — microservicio de DONACIONES ──────────────────────
- * El lote original agrupaba las donaciones a planificar (microservicio de
- * donaciones) junto con los camiones disponibles. La parte de donaciones no
- * está migrada: al integrar los servicios, las donaciones deben llegar
- * identificadas desde el microservicio de donaciones.
+/**
+ * Lote de donaciones a planificar junto con los camiones disponibles.
  *
- *   public record LoteDonaciones(List<Donacion> donaciones, List<Camion> camiones) {
- *     public LoteDonaciones {
- *       Objects.requireNonNull(donaciones, "donaciones no debe ser null");
- *       Objects.requireNonNull(camiones, "camiones no debe ser null");
- *       if (camiones.isEmpty()) {
- *         throw new IllegalArgumentException("lote debe tener al menos un camión");
- *       }
- *       if (donaciones.size() > 100) {
- *         throw new IllegalArgumentException("lote no puede exceder 100 donaciones");
- *       }
- *     }
- *   }
+ * @param donaciones donaciones a planificar (no nulas, máximo {@value #MAXIMO_DONACIONES})
+ * @param camiones camiones disponibles para el lote (no nulos, al menos uno)
  */
-public record LoteDonaciones(List<Camion> camiones) {
+public record LoteDonaciones(List<DonacionPlanificable> donaciones, List<Camion> camiones) {
+
+  /** Tope de donaciones por envío al planificador externo. */
+  public static final int MAXIMO_DONACIONES = 100;
+
   public LoteDonaciones {
+    Objects.requireNonNull(donaciones, "donaciones no debe ser null");
     Objects.requireNonNull(camiones, "camiones no debe ser null");
     if (camiones.isEmpty()) {
       throw new IllegalArgumentException("lote debe tener al menos un camión");
+    }
+    if (donaciones.size() > MAXIMO_DONACIONES) {
+      throw new IllegalArgumentException(
+          "lote no puede exceder " + MAXIMO_DONACIONES + " donaciones");
     }
   }
 }

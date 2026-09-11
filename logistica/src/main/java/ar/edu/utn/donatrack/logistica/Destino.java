@@ -1,118 +1,32 @@
 package ar.edu.utn.donatrack.logistica;
 
-/*
- * ── LÓGICA FALTANTE — microservicio de DONACIONES ──────────────────────
- * Un Destino agrupa las donaciones asignadas a una misma entidad beneficiaria
- * dentro de una ruta logística. La entidad beneficiaria y las donaciones viven
- * en el microservicio de donaciones; por eso el cuerpo completo de esta clase
- * queda comentado y no migrado: al integrar los servicios, el Destino debe
- * reconstruirse a partir de la información que el microservicio de donaciones
- * exponga por REST (entidad beneficiaria y donaciones asignadas a la ruta).
- * Su identidad (equals/hashCode) se basaba en la EntidadBeneficiaria.
+import java.util.List;
+import java.util.Objects;
+
+/**
+ * Parada de una {@link Ruta}: agrupa las donaciones que se entregan en una misma entidad
+ * beneficiaria.
  *
- * El código original queda comentado abajo, sin migrar.
+ * <p>Value object inmutable. {@code entidadId} identifica a la parada dentro de la ruta — una ruta
+ * no puede repetir entidad beneficiaria (ver {@link Ruta}); {@code direccion} es una foto de la
+ * dirección tomada al planificar y {@code donaciones} son las donaciones a entregar en ese orden.
+ *
+ * <p>Como value object, dos destinos son iguales cuando coinciden todos sus componentes: la
+ * dirección y las donaciones son parte del valor, no de la identidad.
+ *
+ * <p>La entidad y la dirección viven en el microservicio de donaciones: acá llegan como valores del
+ * contrato de integración, no se revalidan.
+ *
+ * @param entidadId entidad beneficiaria que recibe la entrega (no nula)
+ * @param direccion dirección de la entrega (no nula)
+ * @param donaciones donaciones a entregar en esta parada (no nula)
  */
-public class Destino {
-  //
-  // import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-  // import ar.edu.utn.donatrack.donaciones.Donacion;
-  // import java.util.ArrayList;
-  // import java.util.Collections;
-  // import java.util.List;
-  // import java.util.Objects;
-  //
-  // /**
-  //  * Agrupa Donaciones asignadas a una misma EntidadBeneficiaria dentro de una Ruta logística.
-  //  *
-  //  * <p>Value Object mutable sin identidad global — su identidad es contextual dentro del
-  // agregado
-  //  * Ruta. Cada Destino pertenece a una única EntidadBeneficiaria y contiene la lista de
-  // Donaciones
-  //  * asignadas a ese destino.
-  //  *
-  //  * <p>Las Donaciones se agregan mediante {@code agregarDonacion}, que valida que la entidad
-  //  * beneficiaria de la donación coincida con la de este Destino. La lista de donaciones se
-  // expone
-  //  * como copia inmodificable para proteger la integridad interna.
-  //  */
-  // public class Destino {
-  //
-  //   private final EntidadBeneficiaria entidadBeneficiaria;
-  //   private final List<Donacion> donaciones;
-  //
-  //   /**
-  //    * Crea un nuevo Destino para la entidad beneficiaria especificada.
-  //    *
-  //    * @param entidadBeneficiaria entidad beneficiaria asociada a este destino (no nula)
-  //    * @throws NullPointerException si {@code entidadBeneficiaria} es {@code null}
-  //    */
-  //   public Destino(EntidadBeneficiaria entidadBeneficiaria) {
-  //     this.entidadBeneficiaria =
-  //         Objects.requireNonNull(entidadBeneficiaria, "entidadBeneficiaria no debe ser nula");
-  //     this.donaciones = new ArrayList<>();
-  //   }
-  //
-  //   /**
-  //    * Agrega una donación a este destino.
-  //    *
-  //    * <p>La donación debe pertenecer a la misma entidad beneficiaria que este destino
-  // (comparación
-  //    * mediante {@link Objects#equals}). Si la entidad no coincide, se rechaza la operación.
-  //    *
-  //    * <p>No se realiza ninguna guarda contra donaciones duplicadas — la consistencia contra
-  //    * duplicados se maneja a nivel del agregado Ruta.
-  //    *
-  //    * @param donacion la donación a agregar (no nula)
-  //    * @throws NullPointerException si {@code donacion} es {@code null}
-  //    * @throws IllegalArgumentException si {@code donacion.getEntidadBeneficiaria()} no es {@code
-  //    *     equals} a la entidad de este destino
-  //    */
-  //   public void agregarDonacion(Donacion donacion) {
-  //     Objects.requireNonNull(donacion, "donacion no debe ser nula");
-  //     if (!Objects.equals(donacion.getEntidadBeneficiaria(), this.entidadBeneficiaria)) {
-  //       throw new IllegalArgumentException(
-  //           "la donación no pertenece a la entidad beneficiaria: esperada="
-  //               + entidadBeneficiaria.getRazonSocial()
-  //               + ", recibida="
-  //               + (donacion.getEntidadBeneficiaria() != null
-  //                   ? donacion.getEntidadBeneficiaria().getRazonSocial()
-  //                   : "null"));
-  //     }
-  //     this.donaciones.add(donacion);
-  //   }
-  //
-  //   /**
-  //    * @return la entidad beneficiaria asociada a este destino
-  //    */
-  //   public EntidadBeneficiaria getEntidadBeneficiaria() {
-  //     return entidadBeneficiaria;
-  //   }
-  //
-  //   /**
-  //    * @return copia inmodificable de la lista de donaciones asignadas a este destino
-  //    */
-  //   public List<Donacion> getDonaciones() {
-  //     return Collections.unmodifiableList(new ArrayList<>(donaciones));
-  //   }
-  //
-  //   // ── Identity based on EntidadBeneficiaria ──────────────
-  //
-  //   @Override
-  //   public boolean equals(Object o) {
-  //     if (this == o) {
-  //       return true;
-  //     }
-  //     if (o == null || getClass() != o.getClass()) {
-  //       return false;
-  //     }
-  //     Destino that = (Destino) o;
-  //     return Objects.equals(entidadBeneficiaria, that.entidadBeneficiaria);
-  //   }
-  //
-  //   @Override
-  //   public int hashCode() {
-  //     return Objects.hash(entidadBeneficiaria);
-  //   }
-  // }
-  //
+public record Destino(
+    EntidadBeneficiariaId entidadId, String direccion, List<DonacionId> donaciones) {
+  public Destino {
+    Objects.requireNonNull(entidadId, "entidadId no debe ser null");
+    Objects.requireNonNull(direccion, "direccion no debe ser null");
+    Objects.requireNonNull(donaciones, "donaciones no debe ser null");
+    donaciones = List.copyOf(donaciones);
+  }
 }
