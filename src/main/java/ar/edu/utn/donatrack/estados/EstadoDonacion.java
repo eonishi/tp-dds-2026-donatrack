@@ -1,22 +1,56 @@
 package ar.edu.utn.donatrack.estados;
 
 import ar.edu.utn.donatrack.donaciones.Donacion;
+import ar.edu.utn.donatrack.donaciones.HistorialEstado;
 import ar.edu.utn.donatrack.donaciones.NombreEstado;
+import java.time.LocalDate;
 
 public abstract class EstadoDonacion {
-  public abstract NombreEstado getNombreEstado();
+  private final NombreEstado nombre;
 
-  public abstract void asignar(Donacion donacion);
+  protected EstadoDonacion(NombreEstado nombre) {
+    this.nombre = nombre;
+  }
 
-  public abstract void planificarRuta(Donacion donacion);
+  public NombreEstado getNombreEstado() {
+    return nombre;
+  }
 
-  public abstract void iniciarTraslado(Donacion donacion);
+  public void asignar(Donacion donacion) {
+    noPermitido("asignar");
+  }
 
-  public abstract void confirmarEntrega(Donacion donacion);
+  public void planificarRuta(Donacion donacion) {
+    noPermitido("planificar la ruta");
+  }
 
-  public abstract void reportarFalla(Donacion donacion, String justificacion);
+  public void iniciarTraslado(Donacion donacion) {
+    noPermitido("iniciar el traslado");
+  }
 
-  public abstract void marcarVencida(Donacion donacion);
+  public void confirmarEntrega(Donacion donacion) {
+    noPermitido("confirmar la entrega");
+  }
 
-  public abstract void retornarAlDeposito(Donacion donacion);
+  public void reportarFalla(Donacion donacion, String justificacion) {
+    noPermitido("reportar una falla");
+  }
+
+  public void marcarVencida(Donacion donacion) {
+    noPermitido("marcar como vencida");
+  }
+
+  public void retornarAlDeposito(Donacion donacion) {
+    noPermitido("retornar al depósito");
+  }
+
+  protected final void transicionar(
+      Donacion donacion, EstadoDonacion destino, String justificacion) {
+    donacion.cambiarEstado(
+        new HistorialEstado(LocalDate.now(), destino.getNombreEstado(), justificacion), destino);
+  }
+
+  private void noPermitido(String operacion) {
+    throw new IllegalStateException("No se puede " + operacion + " en estado " + nombre);
+  }
 }
