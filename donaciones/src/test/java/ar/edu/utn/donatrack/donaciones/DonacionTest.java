@@ -16,8 +16,14 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
+import ar.edu.utn.donatrack.estados.EnDeposito;
+import ar.edu.utn.donatrack.estados.EntregaFallida;
 import ar.edu.utn.donatrack.estados.Entregada;
+import ar.edu.utn.donatrack.notificaciones.Notificacion;
+import ar.edu.utn.donatrack.notificaciones.eventos.EventoEntregaExitosa;
+import ar.edu.utn.donatrack.notificaciones.payloads.ComprobanteEntrega;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -163,70 +169,97 @@ class DonacionTest {
     assertFalse(necesidad.estaSatisfecha(), "Necesidad no debe quedar satisfecha");
   }
 
-  // ── TDD Phase 1: RED — Camion lifecycle tests ─────────────────────
-  // ── LÓGICA FALTANTE — microservicio de LOGÍSTICA ──────────────────
-  // Los tests del ciclo de vida del camión dependen de logistica.Camion,
-  // que vive en el microservicio de logística. No migrados: reintroducirlos
-  // cuando exista la integración REST con el microservicio de logística.
-  //
-  //   @Test
-  //   void nuevaDonacion_GetCamionRetornaEmpty() {
-  //     Donacion donacion = new Donacion(crearDonanteDummy(), List.of(crearBienDummy()));
-  //     assertTrue(donacion.getCamion().isEmpty(), "Nueva donación no debe tener camión asignado");
-  //   }
-  //
-  //   @Test
-  //   void asignarCamion_GetCamionRetornaElCamion() {
-  //     Donacion donacion = new Donacion(crearDonanteDummy(), List.of(crearBienDummy()));
-  //     Camion camion = new Camion("ABC123", 10.0, 2.5, 1000.0);
-  //     donacion.asignarCamion(camion);
-  //     assertTrue(donacion.getCamion().isPresent(), "getCamion() debe devolver un Optional con
-  // valor");
-  //     assertSame(camion, donacion.getCamion().get(), "El camion devuelto debe ser el mismo
-  // asignado");
-  //   }
-  //
-  //   @Test
-  //   void asignarCamionNull_LanzaNullPointerException() {
-  //     Donacion donacion = new Donacion(crearDonanteDummy(), List.of(crearBienDummy()));
-  //     assertThrows(
-  //         NullPointerException.class,
-  //         () -> donacion.asignarCamion(null),
-  //         "asignarCamion(null) debe lanzar NullPointerException");
-  //   }
-  //
-  //   @Test
-  //   void limpiarCamion_GetCamionRetornaEmpty() {
-  //     Donacion donacion = new Donacion(crearDonanteDummy(), List.of(crearBienDummy()));
-  //     Camion camion = new Camion("ABC123", 10.0, 2.5, 1000.0);
-  //     donacion.asignarCamion(camion);
-  //     donacion.limpiarCamion();
-  //     assertTrue(donacion.getCamion().isEmpty(), "limpiarCamion() debe dejar getCamion() vacío");
-  //   }
-  //
-  //   @Test
-  //   void retornarAlDeposito_LimpiaCamion() {
-  //     Donacion donacion = new Donacion(crearDonanteDummy(), List.of(crearBienDummy()));
-  //     Camion camion = new Camion("XYZ789", 15.0, 3.0, 2000.0);
-  //     donacion.asignarCamion(camion);
-  //
-  //     // Walk through: EnDeposito → Asignada → ListaParaEntregar → EnTraslado → EntregaFallida
-  //     donacion.confirmarEntidadBeneficiaria(new EntidadBeneficiaria("Hogar", "Dir", "Tel"));
-  //     donacion.planificarRuta();
-  //     donacion.iniciarTraslado();
-  //     donacion.reportarFalla("Dirección incorrecta");
-  //
-  //     assertInstanceOf(
-  //         ar.edu.utn.donatrack.estados.EntregaFallida.class,
-  //         donacion.getEstado(),
-  //         "Debe estar en estado EntregaFallida antes de retornar");
-  //
-  //     donacion.retornarAlDeposito();
-  //
-  //     assertTrue(donacion.getCamion().isEmpty(), "retornarAlDeposito() debe limpiar el camión");
-  //     assertInstanceOf(EnDeposito.class, donacion.getEstado(), "Debe volver a EnDeposito");
-  //   }
-  //
+  // ── Camión (patente de logística) ─────────────────────────────────
+
+  @Test
+  void nuevaDonacion_IdCamionVacio() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+
+    assertTrue(donacion.getIdCamion().isEmpty(), "Nueva donación no debe tener camión registrado");
+  }
+
+  @Test
+  void registrarCamion_GetIdCamionRetornaLaPatente() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+
+    donacion.registrarCamion("ABC123");
+
+    assertEquals("ABC123", donacion.getIdCamion().orElseThrow());
+  }
+
+  @Test
+  void registrarCamionNull_LanzaNullPointerException() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+
+    assertThrows(
+        NullPointerException.class,
+        () -> donacion.registrarCamion(null),
+        "registrarCamion(null) debe lanzar NullPointerException");
+  }
+
+  @Test
+  void limpiarCamion_GetIdCamionVacio() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.registrarCamion("ABC123");
+
+    donacion.limpiarCamion();
+
+    assertTrue(donacion.getIdCamion().isEmpty(), "limpiarCamion() debe dejar el camión vacío");
+  }
+
+  @Test
+  void retornarAlDeposito_LimpiaCamion() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"));
+    donacion.planificarRuta();
+    donacion.registrarCamion("XYZ789");
+    donacion.iniciarTraslado();
+    donacion.reportarFalla("Dirección incorrecta");
+
+    assertInstanceOf(
+        EntregaFallida.class,
+        donacion.getEstado(),
+        "Debe estar en estado EntregaFallida antes de retornar");
+
+    donacion.retornarAlDeposito();
+
+    assertTrue(donacion.getIdCamion().isEmpty(), "retornarAlDeposito() debe limpiar el camión");
+    assertInstanceOf(EnDeposito.class, donacion.getEstado(), "Debe volver a EnDeposito");
+  }
+
+  @Test
+  void confirmarEntrega_GeneraComprobanteConFechaDelHistorialYPatente() {
+    Donante donante = crearDonanteDummy();
+    EntidadBeneficiaria entidad = nuevaEntidad("Hogar");
+    Donacion donacion = nuevaDonacion(donante, List.of(crearBienDummy()));
+
+    donacion.confirmarEntidadBeneficiaria(entidad);
+    donacion.planificarRuta();
+    donacion.registrarCamion("AF123ZZ");
+    donacion.iniciarTraslado();
+    donacion.confirmarEntrega();
+
+    LocalDateTime fechaEntrega =
+        donacion.getHistorialEstado().stream()
+            .filter(h -> h.getEstadoAlcanzado() == NombreEstado.ENTREGADA)
+            .findFirst()
+            .orElseThrow()
+            .getFecha();
+    EventoEntregaExitosa evento =
+        new EventoEntregaExitosa(
+            donante, entidad, fechaEntrega, donacion.getIdCamion().orElseThrow());
+
+    ComprobanteEntrega comprobante =
+        evento.generarNotificaciones().stream()
+            .map(Notificacion::getPayload)
+            .filter(ComprobanteEntrega.class::isInstance)
+            .map(ComprobanteEntrega.class::cast)
+            .findFirst()
+            .orElseThrow();
+
+    assertEquals(fechaEntrega, comprobante.fechaEntrega());
+    assertEquals("AF123ZZ", comprobante.idCamion());
+  }
 
   // ── Matchmaking + PropuestaDeAsignacion tests ─────────────────────
 

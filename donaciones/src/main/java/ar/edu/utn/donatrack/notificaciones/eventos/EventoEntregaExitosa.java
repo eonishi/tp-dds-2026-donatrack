@@ -11,33 +11,40 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Evento de entrega exitosa: notifica al donante y a la entidad beneficiaria con un {@link
+ * ComprobanteEntrega} que incluye la fecha de entrega y la patente del camión.
+ */
 public class EventoEntregaExitosa extends EventoNotificable {
   private final Donante donante;
   private final EntidadBeneficiaria entidad;
   private final LocalDateTime fechaEntrega;
+  private final String idCamion;
 
-  /*
-   * ── LÓGICA FALTANTE — microservicio de LOGÍSTICA ──────────────────────
-   * El camión que realizó la entrega lo conoce el microservicio de
-   * logística. No migrada: al integrar, el evento de entrega exitosa debe
-   * recibir el camión desde el microservicio de logística.
+  /**
+   * Crea el evento de entrega exitosa.
    *
-   *   private final Camion camion;
+   * <p>La patente llega registrada desde el inicio del traslado (PATCH de transición a {@code
+   * EN_TRASLADO}); no se vuelve a pedir al confirmar la entrega.
+   *
+   * @param donante donante de la donación entregada
+   * @param entidad entidad beneficiaria que recibió la donación
+   * @param fechaEntrega fecha y hora de la entrega (la del historial de la transición a {@code
+   *     ENTREGADA})
+   * @param idCamion patente del camión que realizó la entrega (no nula)
+   * @throws NullPointerException si {@code idCamion} es {@code null}
    */
-
   public EventoEntregaExitosa(
-      Donante donante, EntidadBeneficiaria entidad, LocalDateTime fechaEntrega) {
+      Donante donante, EntidadBeneficiaria entidad, LocalDateTime fechaEntrega, String idCamion) {
     this.donante = Objects.requireNonNull(donante);
     this.entidad = Objects.requireNonNull(entidad);
     this.fechaEntrega = Objects.requireNonNull(fechaEntrega);
+    this.idCamion = Objects.requireNonNull(idCamion, "idCamion no debe ser null");
   }
 
   @Override
   public List<Notificacion> generarNotificaciones() {
-    // ── LÓGICA FALTANTE — microservicio de LOGÍSTICA ──────────────────────
-    // El comprobante original incluía el camión (ver ComprobanteEntrega).
-    // No migrada: el camión llegará por integración con logística.
-    ComprobanteEntrega comprobante = new ComprobanteEntrega(fechaEntrega);
+    ComprobanteEntrega comprobante = new ComprobanteEntrega(fechaEntrega, idCamion);
     List<Notificacion> notificaciones = new ArrayList<>();
     String mensajeDonante =
         "Tu donación fue entregada exitosamente a " + entidad.getRazonSocial() + ".";

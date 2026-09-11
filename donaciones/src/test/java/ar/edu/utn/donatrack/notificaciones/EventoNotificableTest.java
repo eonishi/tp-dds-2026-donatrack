@@ -61,13 +61,7 @@ class EventoNotificableTest {
     entidad.agregarCorreo(new CorreoElectronico("entidad@test.com"));
     entidad.agregarCorreo(new CorreoElectronico("otro@test.com"));
     LocalDateTime fecha = LocalDateTime.of(2026, 7, 10, 15, 0);
-    // ── LÓGICA FALTANTE — microservicio de LOGÍSTICA ──────────────────────
-    // El evento original recibía también el Camion; la verificación del
-    // camión en el comprobante no está migrada.
-    //
-    //   EventoEntregaExitosa evento = new EventoEntregaExitosa(donante, entidad, fecha, camion);
-    //
-    EventoEntregaExitosa evento = new EventoEntregaExitosa(donante, entidad, fecha);
+    EventoEntregaExitosa evento = new EventoEntregaExitosa(donante, entidad, fecha, "ABC123");
 
     List<Notificacion> notificaciones = evento.generarNotificaciones();
 
@@ -76,10 +70,24 @@ class EventoNotificableTest {
       NotificacionPayload payload = n.getPayload();
       assertInstanceOf(ComprobanteEntrega.class, payload);
       ComprobanteEntrega comprobante = (ComprobanteEntrega) payload;
-      assertEquals(fecha, comprobante.fecha());
-      // ── LÓGICA FALTANTE — microservicio de LOGÍSTICA ──────────────────────
-      //   assertEquals(camion, comprobante.camion());
+      assertEquals(fecha, comprobante.fechaEntrega());
+      assertEquals("ABC123", comprobante.idCamion());
     }
+  }
+
+  @Test
+  void eventoEntregaExitosa_SinCamion_DebeLanzarNullPointerException() {
+    LocalDateTime fecha = LocalDateTime.of(2026, 7, 10, 15, 0);
+
+    assertThrows(
+        NullPointerException.class, () -> new EventoEntregaExitosa(donante, entidad, fecha, null));
+  }
+
+  @Test
+  void comprobanteEntrega_SinCamion_DebeLanzarNullPointerException() {
+    LocalDateTime fecha = LocalDateTime.of(2026, 7, 10, 15, 0);
+
+    assertThrows(NullPointerException.class, () -> new ComprobanteEntrega(fecha, null));
   }
 
   @Test

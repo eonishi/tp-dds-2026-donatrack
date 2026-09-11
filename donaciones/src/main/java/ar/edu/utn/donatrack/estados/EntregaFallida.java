@@ -47,13 +47,7 @@ public class EntregaFallida extends EstadoDonacion {
   @Override
   public void retornarAlDeposito(Donacion donacion) {
     donacion.limpiarEntidadBeneficiaria();
-    // ── LÓGICA FALTANTE — microservicio de LOGÍSTICA ──────────────────────
-    // Antes de volver al depósito, el camión asignado debe desvincularse en
-    // el microservicio de logística. No migrada: requiere integración REST
-    // con el microservicio de logística.
-    //
-    //   donacion.limpiarCamion();
-    //
+    donacion.limpiarCamion();
     donacion.cambiarEstado(
         new HistorialEstado(LocalDateTime.now(), NombreEstado.EN_DEPOSITO, null), new EnDeposito());
   }

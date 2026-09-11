@@ -21,46 +21,27 @@ public class Donacion {
   private final List<Bien> bienes = new ArrayList<>();
   private final List<String> fotos = new ArrayList<>();
   private EntidadBeneficiaria entidadBeneficiaria;
-  /*
-   * ── LÓGICA FALTANTE — microservicio de LOGÍSTICA ──────────────────────
-   * La asignación de un camión a la donación vive en el microservicio de
-   * logística. No migrada: la integración REST entre servicios debe
-   * actualizar el estado de la donación (planificarRuta/iniciarTraslado)
-   * a partir de los eventos del microservicio de logística.
-   *
-   *   private Camion camion;
-   */
+  private String idCamion;
   private final Donante donante;
 
-  public Donacion(Donante donante, List<Bien> bienes) {
-    this(UUID.randomUUID(), donante, bienes);
-  }
-
-  public Donacion(UUID id, Donante donante, List<Bien> bienes) {
+  public Donacion(DonacionId id, Donante donante, List<Bien> bienes) {
     this.id = Objects.requireNonNull(id, "id no puede ser null");
     this.donante = Objects.requireNonNull(donante, "donante no puede ser null");
-    reemplazarBienes(bienes);
+    this.bienes.addAll(bienes);
   }
 
+  /**
+   * Devuelve el identificador de la donación.
+   *
+   * @return el identificador de la donación
+   */
   public UUID getId() {
     return id;
   }
 
-  public synchronized void cambiarEstado(
-      HistorialEstado nuevoHistorial, EstadoDonacion nuevoEstado) {
-    Objects.requireNonNull(nuevoHistorial, "historial no puede ser null");
-    Objects.requireNonNull(nuevoEstado, "estado no puede ser null");
-    historialEstado.add(
-        nuevoHistorial.contextualizar(historialEstado.size() + 1L, estado.getNombreEstado()));
+  public void cambiarEstado(HistorialEstado nuevoHistorial, EstadoDonacion nuevoEstado) {
+    historialEstado.add(nuevoHistorial);
     estado = nuevoEstado;
-  }
-
-  public void reemplazarBienes(List<Bien> nuevosBienes) {
-    if (nuevosBienes == null || nuevosBienes.isEmpty() || nuevosBienes.stream().anyMatch(Objects::isNull)) {
-      throw new IllegalArgumentException("La donación debe contener al menos un bien válido.");
-    }
-    this.bienes.clear();
-    this.bienes.addAll(nuevosBienes);
   }
 
   public SubCategoria getSubcategoria() {
@@ -122,24 +103,32 @@ public class Donacion {
     this.entidadBeneficiaria = null;
   }
 
-  /*
-   * ── LÓGICA FALTANTE — microservicio de LOGÍSTICA ──────────────────────
-   * El camión asignado a la donación lo conoce el microservicio de
-   * logística (Ruta/Camion). No migrada: el microservicio de donaciones
-   * debe consultar/recibir el camión por integración REST o eventos.
+  /**
+   * Registra la patente del camión que retira la donación.
    *
-   *   public Optional<Camion> getCamion() {
-   *     return Optional.ofNullable(this.camion);
-   *   }
+   * <p>La patente llega como referencia de valor desde el microservicio de logística (la flota es
+   * de logística); se registra al iniciar el traslado y no se vuelve a pedir al confirmar la
+   * entrega.
    *
-   *   public void asignarCamion(Camion camion) {
-   *     this.camion = Objects.requireNonNull(camion, "camion no debe ser null");
-   *   }
-   *
-   *   public void limpiarCamion() {
-   *     this.camion = null;
-   *   }
+   * @param patente patente del camión (no nula)
+   * @throws NullPointerException si {@code patente} es {@code null}
    */
+  public void registrarCamion(String patente) {
+    this.idCamion = Objects.requireNonNull(patente, "idCamion no debe ser null");
+  }
+
+  /**
+   * @return la patente del camión asignado, o {@link Optional#empty()} si la donación no tiene
+   *     camión
+   */
+  public Optional<String> getIdCamion() {
+    return Optional.ofNullable(idCamion);
+  }
+
+  /** Desvincula el camión asignado, cuando la donación vuelve al depósito. */
+  public void limpiarCamion() {
+    this.idCamion = null;
+  }
 
   public void setEntidadBeneficiaria(EntidadBeneficiaria entidadBeneficiaria) {
     this.entidadBeneficiaria = entidadBeneficiaria;
