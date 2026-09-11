@@ -1,5 +1,7 @@
 package ar.edu.utn.donatrack.donaciones;
 
+import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaDonacion;
+import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaEntidad;
 import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.bienes.Bien;
@@ -41,15 +43,14 @@ class DonacionesRepositoryTest {
   }
 
   private Donacion crearDonacionConEstado(NombreEstado estado) {
-    Donacion donacion = new Donacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
     // Force the internal estado field via reflection or state machine walk
     // Walk: EnDeposito → asignar → AsignacionRealizada
     if (estado == NombreEstado.EN_DEPOSITO) {
       return donacion; // default state
     }
     if (estado == NombreEstado.ASIGNACION_REALIZADA) {
-      donacion.confirmarEntidadBeneficiaria(
-          new ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria("Ent", "Dir", "Tel"));
+      donacion.confirmarEntidadBeneficiaria(nuevaEntidad("Ent"));
       return donacion;
     }
     throw new IllegalArgumentException("Estado no soportado en helper: " + estado);

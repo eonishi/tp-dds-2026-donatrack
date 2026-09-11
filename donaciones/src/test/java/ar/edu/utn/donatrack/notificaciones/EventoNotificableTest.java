@@ -1,5 +1,6 @@
 package ar.edu.utn.donatrack.notificaciones;
 
+import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaEntidad;
 import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
@@ -39,16 +40,7 @@ class EventoNotificableTest {
           Genero.MASCULINO,
           "Calle Falsa 123");
 
-  private final EntidadBeneficiaria entidad =
-      new EntidadBeneficiaria("Fundación Test", "Av. Siempre Viva 742", "011-1234-5678");
-
-  /*
-   * ── LÓGICA FALTANTE — microservicio de LOGÍSTICA ──────────────────────
-   * El camión que realizó la entrega vive en el microservicio de logística.
-   * No migrado: reintroducir cuando exista la integración REST.
-   *
-   *   private final Camion camion = new Camion("ABC123", 45.0, 2.5, 5000.0);
-   */
+  private final EntidadBeneficiaria entidad = nuevaEntidad("Fundación Test");
 
   @Test
   void eventoBienvenida_generaNotificaciones_conSinPayload() {

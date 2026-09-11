@@ -1,5 +1,7 @@
 package ar.edu.utn.donatrack.donaciones;
 
+import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaDonacion;
+import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaEntidad;
 import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
@@ -44,7 +46,7 @@ class PropuestaRepositoryTest {
   @Test
   void findPendingByDonacion_PropuestaConfirmada_RetornaEmpty() {
     repository.save(propuesta);
-    propuesta.confirmar(new EntidadBeneficiaria("Hogar", "Dir", "Tel"));
+    propuesta.confirmar(nuevaEntidad("Hogar"));
 
     var encontrada = repository.findPendingByDonacion(donacion);
 
@@ -60,7 +62,7 @@ class PropuestaRepositoryTest {
     repository.save(propuestaB);
 
     // Confirmar la primera
-    propuesta.confirmar(new EntidadBeneficiaria("Hogar", "Dir", "Tel"));
+    propuesta.confirmar(nuevaEntidad("Hogar"));
 
     List<PropuestaDeAsignacion> pendientes = repository.findAllPending();
 
@@ -119,11 +121,11 @@ class PropuestaRepositoryTest {
             null,
             EstadoUso.NO_APLICA,
             new SubCategoria("X", Categoria.ALIMENTO));
-    return new Donacion(crearDonanteDummy(), List.of(bien));
+    return nuevaDonacion(crearDonanteDummy(), List.of(bien));
   }
 
   private static List<RankingMatchmaking> crearRankingsDummy() {
-    EntidadBeneficiaria entidad = new EntidadBeneficiaria("Entidad", "Dir", "Tel");
+    EntidadBeneficiaria entidad = nuevaEntidad("Entidad");
     RankingMatchmaking ranking1 =
         new RankingMatchmaking("algoritmo-1", List.of(new MatchCandidato(entidad, 50)));
     RankingMatchmaking ranking2 =

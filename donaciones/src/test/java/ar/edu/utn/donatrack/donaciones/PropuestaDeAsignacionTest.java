@@ -1,5 +1,7 @@
 package ar.edu.utn.donatrack.donaciones;
 
+import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaDonacion;
+import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaEntidad;
 import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
@@ -109,11 +111,11 @@ class PropuestaDeAsignacionTest {
             null,
             EstadoUso.NO_APLICA,
             new SubCategoria("X", Categoria.ALIMENTO));
-    return new Donacion(crearDonanteDummy(), List.of(bien));
+    return nuevaDonacion(crearDonanteDummy(), List.of(bien));
   }
 
   private static List<RankingMatchmaking> crearRankingsDummy() {
-    EntidadBeneficiaria entidad = new EntidadBeneficiaria("Entidad", "Dir", "Tel");
+    EntidadBeneficiaria entidad = nuevaEntidad("Entidad");
     RankingMatchmaking ranking1 =
         new RankingMatchmaking("algoritmo-1", List.of(new MatchCandidato(entidad, 50)));
     RankingMatchmaking ranking2 =

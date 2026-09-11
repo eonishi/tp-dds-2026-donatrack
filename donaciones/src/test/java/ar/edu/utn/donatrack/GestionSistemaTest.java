@@ -1,5 +1,7 @@
 package ar.edu.utn.donatrack;
 
+import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaDonacion;
+import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaEntidad;
 import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.beneficiarios.*;
@@ -122,7 +124,7 @@ class DonaTrackTest {
             hoy.plusYears(1),
             EstadoUso.NO_APLICA,
             subcatFideos);
-    Donacion donacion = new Donacion(donanteDummy, List.of(fideos));
+    Donacion donacion = nuevaDonacion(donanteDummy, List.of(fideos));
 
     // Act & Assert
     // Estado inicial
@@ -163,7 +165,7 @@ class DonaTrackTest {
             hoy.plusYears(1),
             EstadoUso.NO_APLICA,
             subcatFideos);
-    Donacion donacion = new Donacion(donanteDummy, List.of(fideos));
+    Donacion donacion = nuevaDonacion(donanteDummy, List.of(fideos));
 
     // Act & Assert
     // Intentar iniciar un traslado desde el depósito sin asignar ni planificar
@@ -183,23 +185,23 @@ class DonaTrackTest {
             new SubCategoria("Test", Categoria.ALIMENTO));
 
     // EnDeposito — estado inicial
-    Donacion enDeposito = new Donacion(donanteDummy, List.of(fideos));
+    Donacion enDeposito = nuevaDonacion(donanteDummy, List.of(fideos));
     assertThrows(
         IllegalStateException.class,
         enDeposito::retornarAlDeposito,
         "EnDeposito no debería permitir retornarAlDeposito");
 
     // AsignacionRealizada
-    Donacion asignada = new Donacion(donanteDummy, List.of(fideos));
-    asignada.confirmarEntidadBeneficiaria(new EntidadBeneficiaria("Hogar", "Dir", "Tel"));
+    Donacion asignada = nuevaDonacion(donanteDummy, List.of(fideos));
+    asignada.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"));
     assertThrows(
         IllegalStateException.class,
         asignada::retornarAlDeposito,
         "AsignacionRealizada no debería permitir retornarAlDeposito");
 
     // ListaParaEntregar
-    Donacion lista = new Donacion(donanteDummy, List.of(fideos));
-    lista.confirmarEntidadBeneficiaria(new EntidadBeneficiaria("Hogar", "Dir", "Tel"));
+    Donacion lista = nuevaDonacion(donanteDummy, List.of(fideos));
+    lista.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"));
     lista.planificarRuta();
     assertThrows(
         IllegalStateException.class,
@@ -207,8 +209,8 @@ class DonaTrackTest {
         "ListaParaEntregar no debería permitir retornarAlDeposito");
 
     // EnTraslado
-    Donacion traslado = new Donacion(donanteDummy, List.of(fideos));
-    traslado.confirmarEntidadBeneficiaria(new EntidadBeneficiaria("Hogar", "Dir", "Tel"));
+    Donacion traslado = nuevaDonacion(donanteDummy, List.of(fideos));
+    traslado.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"));
     traslado.planificarRuta();
     traslado.iniciarTraslado();
     assertThrows(
@@ -217,8 +219,8 @@ class DonaTrackTest {
         "EnTraslado no debería permitir retornarAlDeposito");
 
     // Entregada
-    Donacion entregada = new Donacion(donanteDummy, List.of(fideos));
-    entregada.confirmarEntidadBeneficiaria(new EntidadBeneficiaria("Hogar", "Dir", "Tel"));
+    Donacion entregada = nuevaDonacion(donanteDummy, List.of(fideos));
+    entregada.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"));
     entregada.planificarRuta();
     entregada.iniciarTraslado();
     entregada.confirmarEntrega();
@@ -228,7 +230,7 @@ class DonaTrackTest {
         "Entregada no debería permitir retornarAlDeposito");
 
     // Vencida
-    Donacion vencida = new Donacion(donanteDummy, List.of(fideos));
+    Donacion vencida = nuevaDonacion(donanteDummy, List.of(fideos));
     vencida.marcarVencida();
     assertThrows(
         IllegalStateException.class,
@@ -239,7 +241,7 @@ class DonaTrackTest {
   @Test
   void alRetornarAlDeposito_DespuesDeEntregaFallida_LimpiaEntidadBeneficiaria() {
     // Arrange
-    EntidadBeneficiaria entidad = new EntidadBeneficiaria("Hogar Test", "Dir", "Tel");
+    EntidadBeneficiaria entidad = nuevaEntidad("Hogar Test");
     Bien fideos =
         new Bien(
             "Fideos",
@@ -249,7 +251,7 @@ class DonaTrackTest {
             hoy.plusYears(1),
             EstadoUso.NO_APLICA,
             subcatFideos);
-    Donacion donacion = new Donacion(donanteDummy, List.of(fideos));
+    Donacion donacion = nuevaDonacion(donanteDummy, List.of(fideos));
 
     // Llevar la donacion hasta EntregaFallida con entidad beneficiaria asignada
     donacion.confirmarEntidadBeneficiaria(
@@ -291,8 +293,8 @@ class DonaTrackTest {
             hoy.plusYears(1),
             EstadoUso.NO_APLICA,
             subcatFideos);
-    Donacion donacion = new Donacion(donanteDummy, List.of(fideos));
-    EntidadBeneficiaria entidad = new EntidadBeneficiaria("Hogar", "Dir", "Tel");
+    Donacion donacion = nuevaDonacion(donanteDummy, List.of(fideos));
+    EntidadBeneficiaria entidad = nuevaEntidad("Hogar");
 
     // Llevar la donacion hasta EntregaFallida
     donacion.confirmarEntidadBeneficiaria(entidad);

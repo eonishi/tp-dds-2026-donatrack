@@ -125,11 +125,11 @@ public class EntidadBeneficiaria implements Notificable {
     if (!(o instanceof EntidadBeneficiaria that)) {
       return false;
     }
-    return Objects.equals(razonSocial, that.razonSocial);
+    return Objects.equals(id, that.id);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(razonSocial);
+    return Objects.hash(id);
   }
 }

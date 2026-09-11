@@ -1,5 +1,7 @@
 package ar.edu.utn.donatrack.donaciones;
 
+import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaDonacion;
+import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaEntidad;
 import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
@@ -35,14 +37,14 @@ class AlgoritmoCompatibilidadSemanticaTest {
   @Test
   void puntajeMaximo_ConTodosLosCriterios_NoSupera75() {
     SubCategoria fideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
-    EntidadBeneficiaria entidad = new EntidadBeneficiaria("Comedor", "Dir", "Tel");
+    EntidadBeneficiaria entidad = nuevaEntidad("Comedor");
     entidad.agregarNecesidadExtraordinaria(
         new Necesidad(fideos, 10.0, UnidadMedida.KILOGRAMOS, "Fideos"));
 
     // Una donación que cumple subcategoria, unidad y cantidad suficiente
     Bien bienFideos =
         new Bien("Fideos", "", 15.0, UnidadMedida.KILOGRAMOS, null, EstadoUso.NO_APLICA, fideos);
-    Donacion donacion = new Donacion(crearDonanteDummy(), List.of(bienFideos));
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(bienFideos));
 
     var algoritmo = new AlgoritmoCompatibilidadSemantica();
 
@@ -60,7 +62,7 @@ class AlgoritmoCompatibilidadSemanticaTest {
   void rankear_ConMasDe10Entidades_RetornaMaximo10Candidatos() {
     SubCategoria fideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     Donacion donacion =
-        new Donacion(
+        nuevaDonacion(
             crearDonanteDummy(),
             List.of(
                 new Bien(
@@ -77,7 +79,7 @@ class AlgoritmoCompatibilidadSemanticaTest {
         java.util.stream.IntStream.range(0, 15)
             .mapToObj(
                 i -> {
-                  EntidadBeneficiaria e = new EntidadBeneficiaria("Entidad " + i, "Dir", "Tel");
+                  EntidadBeneficiaria e = nuevaEntidad("Entidad " + i);
                   e.agregarNecesidadExtraordinaria(
                       new Necesidad(fideos, 5.0, UnidadMedida.KILOGRAMOS, "Fideos"));
                   return e;
@@ -108,13 +110,13 @@ class AlgoritmoCompatibilidadSemanticaTest {
   void puntaje_SubcategoriaDiferente_RetornaCero() {
     SubCategoria fideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     SubCategoria sillas = new SubCategoria("Sillas", Categoria.MOBILIARIO);
-    EntidadBeneficiaria entidad = new EntidadBeneficiaria("Comedor", "Dir", "Tel");
+    EntidadBeneficiaria entidad = nuevaEntidad("Comedor");
     entidad.agregarNecesidadExtraordinaria(
         new Necesidad(fideos, 10.0, UnidadMedida.KILOGRAMOS, "Fideos"));
 
     Bien bienSillas =
         new Bien("Silla", "", 1.0, UnidadMedida.UNIDADES, null, EstadoUso.NUEVO, sillas);
-    Donacion donacion = new Donacion(crearDonanteDummy(), List.of(bienSillas));
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(bienSillas));
 
     var ranking =
         new AlgoritmoCompatibilidadSemantica()
@@ -126,13 +128,13 @@ class AlgoritmoCompatibilidadSemanticaTest {
   @Test
   void puntaje_SubcategoriaUnidadYCantidad_Suma75() {
     SubCategoria fideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
-    EntidadBeneficiaria entidad = new EntidadBeneficiaria("Comedor", "Dir", "Tel");
+    EntidadBeneficiaria entidad = nuevaEntidad("Comedor");
     entidad.agregarNecesidadExtraordinaria(
         new Necesidad(fideos, 10.0, UnidadMedida.KILOGRAMOS, "Fideos"));
 
     Bien bienFideos =
         new Bien("Fideos", "", 15.0, UnidadMedida.KILOGRAMOS, null, EstadoUso.NO_APLICA, fideos);
-    Donacion donacion = new Donacion(crearDonanteDummy(), List.of(bienFideos));
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(bienFideos));
 
     var algoritmo = new AlgoritmoCompatibilidadSemantica();
 

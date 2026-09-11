@@ -1,5 +1,7 @@
 package ar.edu.utn.donatrack.donaciones;
 
+import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaDonacion;
+import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaEntidad;
 import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
@@ -33,7 +35,7 @@ class DonacionTest {
             null,
             EstadoUso.NO_APLICA,
             new SubCategoria("X", Categoria.ALIMENTO));
-    Donacion donacion = new Donacion(donante, List.of(bien));
+    Donacion donacion = nuevaDonacion(donante, List.of(bien));
     assertSame(donante, donacion.getDonante());
   }
 
@@ -48,7 +50,14 @@ class DonacionTest {
             null,
             EstadoUso.NO_APLICA,
             new SubCategoria("X", Categoria.ALIMENTO));
-    assertThrows(NullPointerException.class, () -> new Donacion(null, List.of(bien)));
+    assertThrows(NullPointerException.class, () -> nuevaDonacion(null, List.of(bien)));
+  }
+
+  @Test
+  void donacionSinId_LanzaNullPointerException() {
+    assertThrows(
+        NullPointerException.class,
+        () -> new Donacion(null, crearDonanteDummy(), List.of(crearBienDummy())));
   }
 
   @Test
@@ -63,9 +72,9 @@ class DonacionTest {
             null,
             EstadoUso.NO_APLICA,
             new SubCategoria("X", Categoria.ALIMENTO));
-    Donacion donacion = new Donacion(donante, List.of(bien));
+    Donacion donacion = nuevaDonacion(donante, List.of(bien));
 
-    donacion.confirmarEntidadBeneficiaria(new EntidadBeneficiaria("Hogar", "Dir", "Tel"));
+    donacion.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"));
     donacion.planificarRuta();
     donacion.iniciarTraslado();
     donacion.reportarFalla("Dirección incorrecta");
@@ -82,7 +91,7 @@ class DonacionTest {
     SubCategoria subcatFideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     Necesidad necesidad = new Necesidad(subcatFideos, 5.0, UnidadMedida.KILOGRAMOS, "Fideos");
 
-    EntidadBeneficiaria entidad = new EntidadBeneficiaria("Hogar Test", "Dir", "Tel");
+    EntidadBeneficiaria entidad = nuevaEntidad("Hogar Test");
     entidad.agregarNecesidadExtraordinaria(necesidad);
 
     Bien fideos =
@@ -94,7 +103,7 @@ class DonacionTest {
             LocalDate.now().plusYears(1),
             EstadoUso.NO_APLICA,
             subcatFideos);
-    Donacion donacion = new Donacion(crearDonanteDummy(), List.of(fideos));
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(fideos));
 
     // Walk through state machine: EnDeposito → Asignada → ListaParaEntregar → EnTraslado
     donacion.confirmarEntidadBeneficiaria(entidad);
@@ -127,13 +136,13 @@ class DonacionTest {
     SubCategoria subcatSillas = new SubCategoria("Sillas", Categoria.MOBILIARIO);
     Necesidad necesidad = new Necesidad(subcatFideos, 10.0, UnidadMedida.KILOGRAMOS, "Fideos");
 
-    EntidadBeneficiaria entidad = new EntidadBeneficiaria("Hogar Test", "Dir", "Tel");
+    EntidadBeneficiaria entidad = nuevaEntidad("Hogar Test");
     entidad.agregarNecesidadExtraordinaria(necesidad);
 
     // Donación de sillas — subcategoría NO coincide con la necesidad de fideos
     Bien silla =
         new Bien("Silla", "", 2.0, UnidadMedida.UNIDADES, null, EstadoUso.NO_APLICA, subcatSillas);
-    Donacion donacion = new Donacion(crearDonanteDummy(), List.of(silla));
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(silla));
 
     donacion.confirmarEntidadBeneficiaria(entidad);
     donacion.planificarRuta();
@@ -223,8 +232,8 @@ class DonacionTest {
 
   @Test
   void setEntidadBeneficiaria_AsignaEntidad() {
-    Donacion donacion = new Donacion(crearDonanteDummy(), List.of(crearBienDummy()));
-    EntidadBeneficiaria entidad = new EntidadBeneficiaria("Hogar", "Dir", "Tel");
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    EntidadBeneficiaria entidad = nuevaEntidad("Hogar");
 
     donacion.setEntidadBeneficiaria(entidad);
 
@@ -236,8 +245,8 @@ class DonacionTest {
 
   @Test
   void confirmarEntidadBeneficiaria_SinInstanceOf_TransicionaCorrectamente() {
-    Donacion donacion = new Donacion(crearDonanteDummy(), List.of(crearBienDummy()));
-    EntidadBeneficiaria entidad = new EntidadBeneficiaria("Hogar", "Dir", "Tel");
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    EntidadBeneficiaria entidad = nuevaEntidad("Hogar");
 
     donacion.confirmarEntidadBeneficiaria(entidad);
 
@@ -247,8 +256,8 @@ class DonacionTest {
 
   @Test
   void confirmarEntidadBeneficiaria_EnAsignacionRealizada_LanzaException() {
-    Donacion donacion = new Donacion(crearDonanteDummy(), List.of(crearBienDummy()));
-    EntidadBeneficiaria entidad = new EntidadBeneficiaria("Hogar", "Dir", "Tel");
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    EntidadBeneficiaria entidad = nuevaEntidad("Hogar");
 
     // Transition to AsignacionRealizada first
     donacion.confirmarEntidadBeneficiaria(entidad);
@@ -256,8 +265,7 @@ class DonacionTest {
     // Second call should throw because AsignacionRealizada.asignar() throws
     assertThrows(
         IllegalStateException.class,
-        () ->
-            donacion.confirmarEntidadBeneficiaria(new EntidadBeneficiaria("Otro", "Dir2", "Tel2")),
+        () -> donacion.confirmarEntidadBeneficiaria(nuevaEntidad("Otro")),
         "Llamar confirmarEntidadBeneficiaria desde AsignacionRealizada debe lanzar excepción");
   }
 

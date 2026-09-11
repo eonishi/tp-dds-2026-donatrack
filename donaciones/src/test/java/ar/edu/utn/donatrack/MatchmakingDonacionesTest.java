@@ -1,5 +1,7 @@
 package ar.edu.utn.donatrack;
 
+import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaDonacion;
+import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaEntidad;
 import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
@@ -73,7 +75,7 @@ public class MatchmakingDonacionesTest {
     SubCategoria alimentos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     Donante donante = crearDonanteDummy();
     Donacion donacion =
-        new Donacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+        nuevaDonacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     donacionesRepository.addDonacion(donacion);
 
@@ -117,7 +119,7 @@ public class MatchmakingDonacionesTest {
     SubCategoria ropa = new SubCategoria("Abrigos", Categoria.VESTIMENTA);
     Donante donante = crearDonanteDummy();
     Donacion donacion =
-        new Donacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+        nuevaDonacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     donacionesRepository.addDonacion(donacion);
 
@@ -171,7 +173,7 @@ public class MatchmakingDonacionesTest {
     SubCategoria alimentos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     Donante donante = crearDonanteDummy();
     Donacion donacion =
-        new Donacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+        nuevaDonacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     donacionesRepository.addDonacion(donacion);
     BeneficiariosRepository beneficiariosRepository = new BeneficiariosRepository();
@@ -208,7 +210,7 @@ public class MatchmakingDonacionesTest {
     SubCategoria alimentos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     Donante donante = crearDonanteDummy();
     Donacion donacion =
-        new Donacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+        nuevaDonacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     donacionesRepository.addDonacion(donacion);
     BeneficiariosRepository beneficiariosRepository = new BeneficiariosRepository();
@@ -254,7 +256,7 @@ public class MatchmakingDonacionesTest {
     SubCategoria alimentos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     Donante donante = crearDonanteDummy();
     Donacion donacion =
-        new Donacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+        nuevaDonacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
     EntidadBeneficiaria entidad =
         crearEntidadConNecesidad("Hogar", alimentos, 5, fecha.plusMonths(4));
     Necesidad necesidad = entidad.getNecesidadesExtraordinarias().get(0);
@@ -274,7 +276,7 @@ public class MatchmakingDonacionesTest {
     EntidadBeneficiaria entidadMasAtendida =
         crearEntidadConNecesidad("Mas Atendida", alimentos, 5, fecha.plusMonths(4));
     Donacion donacion =
-        new Donacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+        nuevaDonacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
     DonacionesRepository donacionesRepository = new DonacionesRepository();
 
     donacionesRepository.addDonacion(
@@ -316,7 +318,7 @@ public class MatchmakingDonacionesTest {
   private static Donacion crearDonacionEntregada(
       EntidadBeneficiaria entidad, SubCategoria subCategoria, LocalDateTime fechaEntrega) {
     Donacion donacion =
-        new Donacion(crearDonanteDummy(), List.of(crearBien("Entregada", 1, subCategoria, null)));
+        nuevaDonacion(crearDonanteDummy(), List.of(crearBien("Entregada", 1, subCategoria, null)));
     donacion.confirmarEntidadBeneficiaria(entidad);
     donacion.cambiarEstado(
         new HistorialEstado(fechaEntrega, NombreEstado.ENTREGADA, null), new Entregada());
@@ -325,7 +327,7 @@ public class MatchmakingDonacionesTest {
 
   private static EntidadBeneficiaria crearEntidadConNecesidad(
       String razonSocial, SubCategoria subCategoria, double cantidad, LocalDate fechaVencimiento) {
-    EntidadBeneficiaria entidad = new EntidadBeneficiaria(razonSocial, "Direccion", "Telefono");
+    EntidadBeneficiaria entidad = nuevaEntidad(razonSocial);
     entidad.agregarNecesidadExtraordinaria(
         new Necesidad(subCategoria, cantidad, UnidadMedida.KILOGRAMOS, "Necesidad"));
     return entidad;
@@ -333,7 +335,7 @@ public class MatchmakingDonacionesTest {
 
   private static EntidadBeneficiaria crearEntidadConNecesidadNoPerecedera(
       String razonSocial, SubCategoria subCategoria, double cantidad) {
-    EntidadBeneficiaria entidad = new EntidadBeneficiaria(razonSocial, "Direccion", "Telefono");
+    EntidadBeneficiaria entidad = nuevaEntidad(razonSocial);
     entidad.agregarNecesidadExtraordinaria(
         new Necesidad(subCategoria, cantidad, UnidadMedida.UNIDADES, "Necesidad"));
     return entidad;
