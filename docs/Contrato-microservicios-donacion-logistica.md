@@ -38,9 +38,7 @@ Para mantener el bajo acoplamiento, no se comparten entidades de base de datos. 
         "coordenadas": {
           "lat": -34.662,
           "lng": -58.365
-        },
-        "volumenM3": 1.5,
-        "pesoKg": 25.0
+        }
       }
     ]
     ```
@@ -60,8 +58,8 @@ Para mantener el bajo acoplamiento, no se comparten entidades de base de datos. 
 
 **3. Inicio de la ruta por parte del chofer**
 * **Situación:** El chofer indica en el sistema el inicio de su recorrido.
-* **Cruce:** Logística avisa a Donaciones que la ruta comenzó. Donaciones pasa los estados a "En traslado".
-* **Cruce derivado:** Donaciones debe enviar la notificación del evento incluyendo el enlace al mapa interactivo.
+* **Cruce:** Logística avisa a Donaciones que la ruta comenzó, enviando la patente del camión (`idCamion`).
+* **Cruce derivado:** Con este `idCamion`, Donaciones construye la URL única del mapa interactivo (ej: `/monitoreo/{idCamion}`) y envía la notificación a los usuarios.
 * **Contrato API:**
   * **Endpoint:** `PATCH /api/donaciones/{idDonacion}/estado`
   * **Payload Request:**
@@ -73,26 +71,7 @@ Para mantener el bajo acoplamiento, no se comparten entidades de base de datos. 
     ```
   * **Payload Response:** `200 OK` | `400 Bad Request`
 
-**4. Monitoreo en tiempo real**
-* **Situación:** El sistema debe mostrar la localización de los camiones en tiempo real a las personas donantes y entidades beneficiarias.
-* **Cruce:** Donaciones necesita consultar la ubicación actual del camión gestionado por Logística para mostrarla a sus usuarios.
-* **Contrato API:**
-  * **Endpoint:** `GET /api/logistica/camiones/{idCamion}/posicion`
-  * **Payload Request:** N/A
-  * **Payload Response (200 OK):**
-    ```json
-    {
-      "idCamion": "AF123ZZ",
-      "idRutaActiva": "r9f01234-a1b2",
-      "coordenadas": {
-        "lat": -34.665,
-        "lng": -58.370
-      },
-      "timestamp": "2026-09-09T18:15:00Z"
-    }
-    ```
-
-**5. Confirmación de entrega exitosa**
+**4. Confirmación de entrega exitosa**
 * **Situación:** La entidad beneficiaria confirma la recepción de la donación.
 * **Cruce:** Donaciones pasa el estado a "Entregada" y necesita registrar en su sistema qué camión (dato de Logística) realizó la entrega.
 * **Contrato API:**
@@ -106,7 +85,7 @@ Para mantener el bajo acoplamiento, no se comparten entidades de base de datos. 
     ```
   * **Payload Response:** `200 OK` | `400 Bad Request`
 
-**6. Notificación de entrega no satisfactoria (en campo)**
+**5. Notificación de entrega no satisfactoria (en campo)**
 * **Situación:** La entrega no puede concretarse por un incidente logístico o problemas en el domicilio.
 * **Cruce:** Logística informa el problema a Donaciones para que este cambie el estado a "Entrega fallida", registre la justificación y envíe las notificaciones correspondientes.
 * **Contrato API:**
@@ -120,7 +99,7 @@ Para mantener el bajo acoplamiento, no se comparten entidades de base de datos. 
     ```
   * **Payload Response:** `200 OK` | `400 Bad Request`
 
-**7. Reclamo por entrega no recibida**
+**6. Reclamo por entrega no recibida**
 * **Situación:** La entidad informa en la plataforma que no recibió la entrega en el día estipulado.
 * **Cruce:** El sistema marca la entrega como "No recibida" y, si se determina que vuelve al depósito, la entrega debe volver al estado "Pendiente". Esto requiere coordinar el cambio de estado entre la ruta de Logística y la donación en Donaciones.
 * **Contrato API:**
@@ -131,6 +110,30 @@ Para mantener el bajo acoplamiento, no se comparten entidades de base de datos. 
       "nuevoEstado": "PENDIENTE",
       "justificacion": "Reclamo administrativo: no se recibió en la fecha estipulada"
     }
+    ```
+  * **Payload Response:** `200 OK` | `400 Bad Request`
+
+**7. Actualización masiva de estados (Múltiples donaciones)**
+* **Situación:** Para modificar el estado de múltiples donaciones en una única petición (por ejemplo, al recibir lotes de asignación de rutas del planificador) previniendo múltiples llamadas HTTP.
+* **Cruce:** Logística envía un listado de actualizaciones de estado hacia Donaciones.
+* **Contrato API:**
+  * **Endpoint:** `PATCH /api/donaciones/estado`
+  * **Payload Request:**
+    ```json
+    [
+      {
+        "idDonacion": "aaa-123-bbb",
+        "nuevoEstado": "LISTA_PARA_ENTREGAR"
+      },
+      {
+        "idDonacion": "ccc-567-bbb",
+        "nuevoEstado": "LISTA_PARA_ENTREGAR"
+      },
+      {
+        "idDonacion": "ddd-890-ccc",
+        "nuevoEstado": "LISTA_PARA_ENTREGAR"
+      }
+    ]
     ```
   * **Payload Response:** `200 OK` | `400 Bad Request`
 
