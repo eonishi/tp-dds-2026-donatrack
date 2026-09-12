@@ -12,6 +12,7 @@ import io.javalin.http.Context;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+// Será llamado por el usuario y no por MS donaciones
 public class PosicionController {
 
   private final MonitorRutas monitor;
@@ -37,7 +38,6 @@ public class PosicionController {
     try {
       IngestaDTO dto = ctx.bodyAsClass(IngestaDTO.class);
 
-      // Acá usamos tu record Coordenada tal cual está
       Coordenada coordenada = new Coordenada(dto.lat, dto.lng);
 
       LecturaPosicion lectura = new LecturaPosicion(
@@ -58,7 +58,7 @@ public class PosicionController {
     }
   }
 
-  // GET /api/logistica/camiones/{patente}/posicion (Contrato de Integración #4)
+  // GET /api/logistica/camiones/{patente}/posicion (Publica para usuario)
   public void leerPosicion(Context ctx) {
     String patente = ctx.pathParam("patente");
     Optional<Camion> camionOpt = camionRepo.buscarPorPatente(patente);

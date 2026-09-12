@@ -78,6 +78,10 @@ public class RutaController {
         Ruta ruta = rutaOpt.get();
         try {
             ruta.iniciar(); // Usa tu lógica de dominio
+
+            // TODO: (Integración S2S - Issue #9) 
+            // Hacer petición PATCH a /api/donaciones/estado para pasar 
+            // las donaciones a EN_TRASLADO y enviar el idCamion.
             ctx.status(200).json(ruta);
         } catch (IllegalStateException e) {
             ctx.status(400).result(e.getMessage());
