@@ -1,11 +1,15 @@
 package ar.edu.utn.donatrack.donantes;
+import javax.persistence.Entity;
 
+@Entity 
 public class PersonaHumana extends Donante {
   private String nombre;
   private String apellido;
   private Integer edad;
-  private final Genero genero;
+  private Genero genero;
   private String direccion;
+
+  protected PersonaHumana() {}
 
   public PersonaHumana(
       CorreoElectronico medioDeContacto,

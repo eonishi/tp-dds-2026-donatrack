@@ -9,6 +9,13 @@ import java.util.Comparator;
 import java.util.List;
 
 public class AlgoritmoPrioridadSubAtendidos implements AlgoritmoMatchmaking {
+
+  private final DonacionesRepository donacionesRepository;
+
+  public AlgoritmoPrioridadSubAtendidos(DonacionesRepository donacionesRepository){
+    this.donacionesRepository = donacionesRepository;
+  }
+  
   @Override
   public String getNombre() {
     return "prioridad-sub-atendidos";
@@ -27,8 +34,8 @@ public class AlgoritmoPrioridadSubAtendidos implements AlgoritmoMatchmaking {
         continue;
       }
 
-      long recibidas = entidad.cantidadDonacionesRecibidasDesde(fechaDesde);
-      int puntaje = (int) Math.max(0, 100 - recibidas);
+      long asignadas = donacionesRepository.contarDonacionesAsignadas(entidad, fechaDesde);
+      int puntaje = (int) Math.max(0, 100 - asignadas);
       candidatos.add(new MatchCandidato(entidad, puntaje));
     }
 

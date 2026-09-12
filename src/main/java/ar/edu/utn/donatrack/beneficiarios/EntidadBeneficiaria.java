@@ -4,21 +4,43 @@ import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.notificaciones.Notificable;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.CascadeType;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+@Entity 
 public class EntidadBeneficiaria implements Notificable {
+  @Id 
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
   private String razonSocial;
   private String direccion;
   private String telefono;
 
-  private final List<Necesidad> necesidadesExtraordinarias = new ArrayList<>();
-  private final List<NecesidadRecurrente> necesidadesRecurrentes = new ArrayList<>();
-  private final List<CorreoElectronico> correos = new ArrayList<>();
-  private final List<RecepcionDonacion> recepciones = new ArrayList<>();
+  @OneToMany(cascade = CascadeType.ALL)
+  @JoinColumn(name = "entidad_id")
+  private List<Necesidad> necesidadesExtraordinarias = new ArrayList<>();
+  @OneToMany(cascade = CascadeType.ALL)
+  @JoinColumn(name = "entidad_id")
+  private List<NecesidadRecurrente> necesidadesRecurrentes = new ArrayList<>();
+  @OneToMany(cascade = CascadeType.ALL)
+  @JoinColumn(name = "entidad_id")
+  private List<CorreoElectronico> correos = new ArrayList<>();
+  @OneToMany(cascade = CascadeType.ALL)
+  @JoinColumn(name = "entidad_id")
+  private List<RecepcionDonacion> recepciones = new ArrayList<>();
+
+  protected EntidadBeneficiaria() {}
 
   public EntidadBeneficiaria(String razonSocial, String direccion, String telefono) {
     this.razonSocial = razonSocial;
@@ -76,11 +98,6 @@ public class EntidadBeneficiaria implements Notificable {
     this.actualizarNecesidadesCon(donacion);
   }
 
-  public long cantidadDonacionesRecibidasDesde(LocalDate fechaDesde) {
-    return recepciones.stream()
-        .filter(recepcion -> !recepcion.getFechaRecepcion().isBefore(fechaDesde))
-        .count();
-  }
 
   private void actualizarNecesidadesCon(Donacion donacion) {
     necesidadesExtraordinarias.forEach(necesidad -> aplicarSiCoincide(necesidad, donacion));

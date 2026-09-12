@@ -1,8 +1,18 @@
 package ar.edu.utn.donatrack.donantes;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 
+@Entity
 public class Representante {
-  private final String nombre;
-  private final String apellido;
+  @Id 
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  protected Representante() {}
+  private String nombre;
+  private String apellido;
 
   public Representante(String nombre, String apellido) {
     this.nombre = nombre;

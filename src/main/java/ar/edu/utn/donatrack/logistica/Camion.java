@@ -1,4 +1,8 @@
 package ar.edu.utn.donatrack.logistica;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 
 import java.util.Objects;
 
@@ -8,12 +12,17 @@ import java.util.Objects;
  * <p>Entidad inmutable identificada por su patente. Cada camión tiene dimensiones físicas (volumen,
  * altura) y capacidad de carga necesarias para planificar rutas y asignar donaciones.
  */
+@Entity
 public class Camion {
+  @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-  private final String patente;
-  private final double volumenM3;
-  private final double alturaM;
-  private final double capacidadCargaKg;
+  protected Camion() {}
+
+  private String patente;
+  private double volumenM3;
+  private double alturaM;
+  private double capacidadCargaKg;
 
   /**
    * Crea un nuevo camión con los atributos especificados.

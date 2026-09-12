@@ -1,15 +1,28 @@
 package ar.edu.utn.donatrack.bienes;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 
 import java.time.LocalDate;
 
+@Entity
 public class Bien {
-  private final String descripcion;
-  private final String foto;
-  private final double cantidad;
-  private final UnidadMedida unidad;
-  private final LocalDate fechaVencimiento;
-  private final EstadoUso estadoDeUso;
-  private final SubCategoria subcategoria;
+  @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  protected Bien() {}
+  private String descripcion;
+  private String foto;
+  private double cantidad;
+  private UnidadMedida unidad;
+  private LocalDate fechaVencimiento;
+  private EstadoUso estadoDeUso;
+  @ManyToOne
+  @JoinColumn(name = "subcategoria_id")
+  private SubCategoria subcategoria;
 
   public Bien(
       String descripcion,

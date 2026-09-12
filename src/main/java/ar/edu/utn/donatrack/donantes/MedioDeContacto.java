@@ -1,9 +1,21 @@
 package ar.edu.utn.donatrack.donantes;
+import javax.persistence.Entity;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 
 import ar.edu.utn.donatrack.notificaciones.Notificador;
 
+@Entity
+@Inheritance(strategy = InheritanceType.JOINED)
 public abstract class MedioDeContacto {
-  private final String contacto;
+  @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  protected MedioDeContacto() {}
+  private String contacto;
 
   public MedioDeContacto(String contacto) {
     this.contacto = contacto;

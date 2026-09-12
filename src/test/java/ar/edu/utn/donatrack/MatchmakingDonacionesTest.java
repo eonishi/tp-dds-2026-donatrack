@@ -35,6 +35,9 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.*;
+import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 
 public class MatchmakingDonacionesTest {
 
@@ -91,7 +94,7 @@ public class MatchmakingDonacionesTest {
             donacionesRepository,
             beneficiariosRepository,
             propuestaRepository,
-            List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos()));
+            List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos(mock(DonacionesRepository.class))));
 
     servicio.ejecutarMatchmakingDiario(fecha);
 
@@ -179,7 +182,7 @@ public class MatchmakingDonacionesTest {
             donacionesRepository,
             beneficiariosRepository,
             propuestaRepository,
-            List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos()));
+            List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos(mock(DonacionesRepository.class))));
 
     // First execution creates Propuesta
     servicio.ejecutarMatchmakingDiario(fecha);
@@ -214,7 +217,7 @@ public class MatchmakingDonacionesTest {
             donacionesRepository,
             beneficiariosRepository,
             propuestaRepository,
-            List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos()));
+            List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos(mock(DonacionesRepository.class))));
 
     // Run matchmaking to create Propuesta first
     servicio.ejecutarMatchmakingDiario(fecha);
@@ -278,8 +281,12 @@ public class MatchmakingDonacionesTest {
             donante, List.of(crearBien("Fuera trimestre", 1, alimentos, fecha.plusMonths(1)))),
         fecha.minusMonths(4));
 
+    DonacionesRepository repo = mock(DonacionesRepository.class);
+    when(repo.contarDonacionesAsignadas(eq(entidadMasAtendida), any())).thenReturn(2L);
+    when(repo.contarDonacionesAsignadas(eq(entidadMenosAtendida), any())).thenReturn(0L);
+
     var ranking =
-        new AlgoritmoPrioridadSubAtendidos()
+        new AlgoritmoPrioridadSubAtendidos(repo)
             .rankear(donacion, List.of(entidadMasAtendida, entidadMenosAtendida), fecha);
 
     assertEquals(

@@ -17,6 +17,9 @@ import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.*;
+import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 
 class AlgoritmoPrioridadSubAtendidosTest {
 
@@ -61,7 +64,7 @@ class AlgoritmoPrioridadSubAtendidosTest {
             .toList();
 
     var ranking =
-        new AlgoritmoPrioridadSubAtendidos()
+        new AlgoritmoPrioridadSubAtendidos(mock(DonacionesRepository.class))
             .rankear(donacion, entidades, LocalDate.of(2026, 7, 11));
 
     assertTrue(
@@ -107,7 +110,7 @@ class AlgoritmoPrioridadSubAtendidosTest {
         new Necesidad(fideos, 8.0, UnidadMedida.KILOGRAMOS, "Fideos"));
 
     var ranking =
-        new AlgoritmoPrioridadSubAtendidos()
+        new AlgoritmoPrioridadSubAtendidos(mock(DonacionesRepository.class))
             .rankear(donacion, List.of(e1, e2, e3), LocalDate.of(2026, 7, 11));
 
     assertEquals(3, ranking.getCandidatos().size(), "Con 3 entidades debe retornar las 3");
@@ -128,7 +131,7 @@ class AlgoritmoPrioridadSubAtendidosTest {
         new Necesidad(fideos, 5.0, UnidadMedida.KILOGRAMOS, "Fideos"));
 
     var ranking =
-        new AlgoritmoPrioridadSubAtendidos()
+        new AlgoritmoPrioridadSubAtendidos(mock(DonacionesRepository.class))
             .rankear(donacion, List.of(entidad), LocalDate.of(2026, 7, 11));
 
     assertTrue(
@@ -164,8 +167,10 @@ class AlgoritmoPrioridadSubAtendidosTest {
       conMuchas.registrarRecepcion(donacion, LocalDate.of(2026, 6, 1));
     }
 
+    DonacionesRepository repo = mock(DonacionesRepository.class);
+    when(repo.contarDonacionesAsignadas(eq(conMuchas), any())).thenReturn(50L);
     var ranking =
-        new AlgoritmoPrioridadSubAtendidos()
+        new AlgoritmoPrioridadSubAtendidos(repo)
             .rankear(donacion, List.of(sinRecepciones, conMuchas), LocalDate.of(2026, 7, 11));
 
     assertEquals(2, ranking.getCandidatos().size());
