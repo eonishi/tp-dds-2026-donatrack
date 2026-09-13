@@ -25,7 +25,7 @@ public class PosicionController {
     this.rutaRepo = rutaRepo;
   }
 
-  // POST /api/logistica/camiones/{patente}/posicion (Ingesta desde el GPS/App)
+  // POST /logistica/camiones/{patente}/posicion (Ingesta desde el GPS/App)
   public void ingestar(Context ctx) {
     String patente = ctx.pathParam("patente");
     Optional<Camion> camionOpt = camionRepo.buscarPorPatente(patente);
@@ -58,7 +58,7 @@ public class PosicionController {
     }
   }
 
-  // GET /api/logistica/camiones/{patente}/posicion (Publica para usuario)
+  // GET /logistica/camiones/{patente}/posicion (Publica para usuario)
   public void leerPosicion(Context ctx) {
     String patente = ctx.pathParam("patente");
     Optional<Camion> camionOpt = camionRepo.buscarPorPatente(patente);

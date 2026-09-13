@@ -15,24 +15,24 @@ public class CamionController {
         this.repositorio = repositorio;
     }
 
-    // GET /api/logistica/camiones
+    // GET /logistica/camiones
     public void listar(Context ctx) {
         ctx.json(repositorio.listarTodos());
     }
 
-    // GET /api/logistica/camiones/{patente}
+    // GET /logistica/camiones/{patente}
     public void buscar(Context ctx) {
         String patente = ctx.pathParam("patente");
-        Optional<Camion> camionOpt = repositorio.buscarPorPatente(patente);
-
-        if (camionOpt.isPresent()) {
-            ctx.json(camionOpt.get());
-        } else {
-            ctx.status(404).result("Camión no encontrado");
-        }
+        
+        repositorio.buscarPorPatente(patente).ifPresentOrElse(
+            ctx::json,
+            () -> ctx.status(404).result("Camión no encontrado")
+        );
     }
 
-    // POST /api/logistica/camiones
+
+
+    // POST /logistica/camiones
     public void crear(Context ctx) {
         try {
             // 1. Mapeamos el JSON entrante a un DTO simple
@@ -51,7 +51,7 @@ public class CamionController {
         }
     }
 
-    // PUT /api/logistica/camiones/{patente}
+    // PUT /logistica/camiones/{patente}
     public void actualizar(Context ctx) {
         String patente = ctx.pathParam("patente");
         
@@ -80,16 +80,17 @@ public class CamionController {
         }
     }
 
-    // DELETE /api/logistica/camiones/{patente}
+    // DELETE /logistica/camiones/{patente}
     public void eliminar(Context ctx) {
         String patente = ctx.pathParam("patente");
         
-        if (repositorio.buscarPorPatente(patente).isPresent()) {
-            repositorio.eliminar(patente);
-            ctx.status(204); // 204 No Content (se borró con éxito y no hay cuerpo que devolver)
-        } else {
-            ctx.status(404).result("Camión no encontrado");
-        }
+        repositorio.buscarPorPatente(patente).ifPresentOrElse(
+            camion -> {
+                repositorio.eliminar(patente);
+                ctx.status(204); // 204 No Content
+            },
+            () -> ctx.status(404).result("Camión no encontrado")
+        );
     }
 
     // --- DTO Interno para recibir el JSON ---
