@@ -38,7 +38,7 @@ public class PosicionControllerTest {
     controlador = new PosicionController(monitorMock, camionRepoMock, rutaRepoMock);
 
     app = Javalin.create()
-        .get("/api/logistica/camiones/{patente}/posicion", controlador::leerPosicion);
+        .get("/logistica/camiones/{patente}/posicion", controlador::leerPosicion);
   }
 
   @Test
@@ -61,7 +61,7 @@ public class PosicionControllerTest {
     // --- EJECUCIÓN Y VERIFICACIÓN ---
     JavalinTest.test(app, (server, client) -> {
 
-      var response = client.get("/api/logistica/camiones/AF123ZZ/posicion");
+      var response = client.get("/logistica/camiones/AF123ZZ/posicion");
 
       assertEquals(200, response.code());
       String responseBody = response.body().string();

@@ -21,28 +21,25 @@ public class RutaController {
         this.camionRepo = camionRepo;
     }
 
-    // GET /api/logistica/rutas
+    // GET /logistica/rutas
     public void listar(Context ctx) {
         ctx.json(rutaRepo.listarTodas());
     }
 
-    // GET /api/logistica/rutas/{id}
+    // GET /logistica/rutas/{id}
     public void buscar(Context ctx) {
         try {
             UUID id = UUID.fromString(ctx.pathParam("id"));
-            Optional<Ruta> rutaOpt = rutaRepo.buscarPorId(id);
-
-            if (rutaOpt.isPresent()) {
-                ctx.json(rutaOpt.get());
-            } else {
-                ctx.status(404).result("Ruta no encontrada");
-            }
+            rutaRepo.buscarPorId(id).ifPresentOrElse(
+                ctx::json,
+                () -> ctx.status(404).result("Ruta no encontrada")
+            );
         } catch (IllegalArgumentException e) {
             ctx.status(400).result("Formato de UUID inválido");
         }
     }
 
-    // POST /api/logistica/rutas
+    // POST /logistica/rutas
     public void crear(Context ctx) {
         RutaDTO dto = ctx.bodyAsClass(RutaDTO.class);
 
@@ -65,62 +62,103 @@ public class RutaController {
         }
     }
 
-    // PATCH /api/logistica/rutas/{id}/iniciar
-    public void iniciar(Context ctx) {
-        UUID id = UUID.fromString(ctx.pathParam("id"));
-        Optional<Ruta> rutaOpt = rutaRepo.buscarPorId(id);
+    // // PATCH /api/logistica/rutas/{id}/iniciar
+    // public void iniciar(Context ctx) {
+    //     UUID id = UUID.fromString(ctx.pathParam("id"));
+    //     Optional<Ruta> rutaOpt = rutaRepo.buscarPorId(id);
 
-        if (rutaOpt.isEmpty()) {
-            ctx.status(404).result("Ruta no encontrada");
-            return;
-        }
+    //     if (rutaOpt.isEmpty()) {
+    //         ctx.status(404).result("Ruta no encontrada");
+    //         return;
+    //     }
 
-        Ruta ruta = rutaOpt.get();
-        try {
-            ruta.iniciar(); // Usa tu lógica de dominio
+    //     Ruta ruta = rutaOpt.get();
+    //     try {
+    //         ruta.iniciar(); // Usa tu lógica de dominio
 
-            // TODO: (Integración S2S - Issue #9) 
-            // Hacer petición PATCH a /api/donaciones/estado para pasar 
-            // las donaciones a EN_TRASLADO y enviar el idCamion.
-            ctx.status(200).json(ruta);
-        } catch (IllegalStateException e) {
-            ctx.status(400).result(e.getMessage());
-        }
-    }
+    //         // TODO: (Integración S2S - Issue #9) 
+    //         // Hacer petición PATCH a /api/donaciones/estado para pasar 
+    //         // las donaciones a EN_TRASLADO y enviar el idCamion.
+    //         ctx.status(200).json(ruta);
+    //     } catch (IllegalStateException e) {
+    //         ctx.status(400).result(e.getMessage());
+    //     }
+    // }
 
-    // PATCH /api/logistica/rutas/{id}/finalizar
-    public void finalizar(Context ctx) {
-        UUID id = UUID.fromString(ctx.pathParam("id"));
-        Optional<Ruta> rutaOpt = rutaRepo.buscarPorId(id);
+    // // PATCH /api/logistica/rutas/{id}/finalizar
+    // public void finalizar(Context ctx) {
+    //     UUID id = UUID.fromString(ctx.pathParam("id"));
+    //     Optional<Ruta> rutaOpt = rutaRepo.buscarPorId(id);
 
-        if (rutaOpt.isEmpty()) {
-            ctx.status(404).result("Ruta no encontrada");
-            return;
-        }
+    //     if (rutaOpt.isEmpty()) {
+    //         ctx.status(404).result("Ruta no encontrada");
+    //         return;
+    //     }
 
-        Ruta ruta = rutaOpt.get();
-        try {
-            ruta.finalizar(); // Usa tu lógica de dominio
-            ctx.status(200).json(ruta);
-        } catch (IllegalStateException e) {
-            ctx.status(400).result(e.getMessage());
-        }
-    }
+    //     Ruta ruta = rutaOpt.get();
+    //     try {
+    //         ruta.finalizar(); // Usa tu lógica de dominio
+    //         ctx.status(200).json(ruta);
+    //     } catch (IllegalStateException e) {
+    //         ctx.status(400).result(e.getMessage());
+    //     }
+    // }
 
-    // DELETE /api/logistica/rutas/{id}
+    // DELETE /logistica/rutas/{id}
     public void eliminar(Context ctx) {
         UUID id = UUID.fromString(ctx.pathParam("id"));
-        if (rutaRepo.buscarPorId(id).isPresent()) {
-            rutaRepo.eliminar(id);
-            ctx.status(204);
-        } else {
-            ctx.status(404).result("Ruta no encontrada");
+        rutaRepo.buscarPorId(id).ifPresentOrElse(
+            ruta -> {
+                rutaRepo.eliminar(id);
+                ctx.status(204);
+            },
+            () -> ctx.status(404).result("Ruta no encontrada")
+        );
+    }
+
+    // PATCH /logistica/rutas/{id}
+    public void actualizar(Context ctx) {
+        try {
+            UUID id = UUID.fromString(ctx.pathParam("id"));
+            
+            rutaRepo.buscarPorId(id).ifPresentOrElse(
+                ruta -> {
+                    // Leemos la actualización desde el body
+                    RutaUpdateDTO dto = ctx.bodyAsClass(RutaUpdateDTO.class);
+                    
+                    if (dto.estado != null) {
+                        try {
+                            if ("EN_CURSO".equalsIgnoreCase(dto.estado)) {
+                                ruta.iniciar(); 
+                                // TODO: (Integración S2S - Issue #9) Avisar a Donaciones
+                            } else if ("FINALIZADA".equalsIgnoreCase(dto.estado)) {
+                                ruta.finalizar();
+                            } else {
+                                ctx.status(400).result("Estado inválido. Valores permitidos: EN_CURSO, FINALIZADA");
+                                return;
+                            }
+                        } catch (IllegalStateException e) {
+                            ctx.status(400).result(e.getMessage());
+                            return; 
+                        }
+                    }
+                    
+                    ctx.status(200).json(ruta);
+                },
+                () -> ctx.status(404).result("Ruta no encontrada")
+            );
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).result("Formato de UUID inválido");
         }
     }
 
-    // --- DTO Interno ---
+    // --- DTOs Internos ---
     public static class RutaDTO {
         public String patenteCamion;
         public List<Destino> destinos;
+    }
+
+    public static class RutaUpdateDTO {
+        public String estado;
     }
 }

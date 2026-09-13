@@ -29,8 +29,8 @@ public class RutaControllerTest {
     camionRepo.agregar(camionPrueba);
 
     app = Javalin.create()
-        .post("/api/logistica/rutas", controlador::crear)
-        .get("/api/logistica/rutas", controlador::listar);
+        .post("/logistica/rutas", controlador::crear)
+        .get("/logistica/rutas", controlador::listar);
   }
 
   @Test
@@ -45,7 +45,7 @@ public class RutaControllerTest {
                     }
                     """;
 
-      var response = client.post("/api/logistica/rutas", jsonRequest);
+      var response = client.post("/logistica/rutas", jsonRequest);
 
 // Verificamos que el servidor haya respondido 201 Created
       assertEquals(201, response.code());
@@ -74,7 +74,7 @@ public class RutaControllerTest {
                     }
                     """;
 
-      var response = client.post("/api/logistica/rutas", jsonRequest);
+      var response = client.post("/logistica/rutas", jsonRequest);
 
       // Verificamos que tu regla de negocio ataje el error y devuelva Bad Request
       assertEquals(400, response.code());

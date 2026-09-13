@@ -24,8 +24,8 @@ public class CamionControllerTest {
         
         // Configuramos una app Javalin "falsa" solo con los endpoints que queremos testear
         app = Javalin.create()
-                .get("/api/logistica/camiones", controlador::listar)
-                .post("/api/logistica/camiones", controlador::crear);
+                .get("/logistica/camiones", controlador::listar)
+                .post("/logistica/camiones", controlador::crear);
     }
 
     @Test
@@ -42,7 +42,7 @@ public class CamionControllerTest {
                     """;
 
             // Act: Simulamos un POST
-            var response = client.post("/api/logistica/camiones", jsonRequest);
+            var response = client.post("/logistica/camiones", jsonRequest);
 
             // Assert 1: Código HTTP
             assertEquals(201, response.code(), "Debería devolver 201 Created");
@@ -68,7 +68,7 @@ public class CamionControllerTest {
         JavalinTest.test(app, (server, client) -> {
             
             // Act: Hacemos un GET
-            var response = client.get("/api/logistica/camiones");
+            var response = client.get("/logistica/camiones");
 
             // Assert: Verificamos que responda OK y una lista vacía
             assertEquals(200, response.code());
