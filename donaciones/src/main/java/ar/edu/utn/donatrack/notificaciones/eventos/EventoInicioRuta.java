@@ -1,6 +1,7 @@
 package ar.edu.utn.donatrack.notificaciones.eventos;
 
 import ar.edu.utn.donatrack.notificaciones.EstadoNotificacion;
+import ar.edu.utn.donatrack.notificaciones.DestinatariosNotificacion;
 import ar.edu.utn.donatrack.notificaciones.Notificable;
 import ar.edu.utn.donatrack.notificaciones.Notificacion;
 import ar.edu.utn.donatrack.notificaciones.payloads.InfoMapa;
@@ -22,7 +23,7 @@ public class EventoInicioRuta extends EventoNotificable {
     InfoMapa payload = new InfoMapa(urlMapa);
     List<Notificacion> notificaciones = new ArrayList<>();
     for (var notificable : destinatarios) {
-      for (var medio : notificable.getMediosDeContacto()) {
+      for (var medio : DestinatariosNotificacion.predeterminado(notificable)) {
         notificaciones.add(
             new Notificacion(
                 medio,

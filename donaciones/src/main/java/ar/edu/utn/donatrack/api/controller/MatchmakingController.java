@@ -1,0 +1,105 @@
+package ar.edu.utn.donatrack.api.controller;
+
+import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.path;
+import static io.javalin.apibuilder.ApiBuilder.post;
+import static io.javalin.apibuilder.ApiBuilder.put;
+
+import ar.edu.utn.donatrack.api.mappers.ApiMapper;
+import ar.edu.utn.donatrack.api.dto.DonacionDtos.SeleccionEntidadRequest;
+import ar.edu.utn.donatrack.api.error.ApiException;
+import ar.edu.utn.donatrack.api.validation.DtoValidator;
+import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
+import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
+import ar.edu.utn.donatrack.donaciones.Donacion;
+import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
+import ar.edu.utn.donatrack.donaciones.PropuestaDeAsignacion;
+import ar.edu.utn.donatrack.donaciones.ServicioMatchmakingDonaciones;
+import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
+import ar.edu.utn.donatrack.notificaciones.eventos.EventoAsignacion;
+import io.javalin.http.Context;
+import java.time.Clock;
+import java.time.LocalDate;
+import java.util.UUID;
+
+public final class MatchmakingController {
+  private final ServicioMatchmakingDonaciones matchmaking;
+  private final DonacionesRepository donaciones;
+  private final BeneficiariosRepository entidades;
+  private final ServicioNotificaciones notificaciones;
+  private final Clock clock;
+
+  public MatchmakingController(
+      ServicioMatchmakingDonaciones matchmaking,
+      DonacionesRepository donaciones,
+      BeneficiariosRepository entidades,
+      ServicioNotificaciones notificaciones,
+      Clock clock) {
+    this.matchmaking = matchmaking;
+    this.donaciones = donaciones;
+    this.entidades = entidades;
+    this.notificaciones = notificaciones;
+    this.clock = clock;
+  }
+
+  public void routes() {
+    path(
+        "/api/v1/donaciones/{donacionId}",
+        () -> {
+          post("/propuesta-asignacion", this::ejecutar);
+          get("/propuesta-asignacion", this::ranking);
+          put("/asignacion", this::seleccionar);
+        });
+  }
+
+  private void ejecutar(Context ctx) {
+    ctx.status(201)
+        .json(
+            ApiMapper.propuesta(
+                matchmaking.ejecutarMatchmakingParaDonacion(
+                    donacion(HttpSupport.id(ctx, "donacionId")), LocalDate.now(clock))));
+  }
+
+  private void ranking(Context ctx) {
+    ctx.json(ApiMapper.propuesta(ranking(HttpSupport.id(ctx, "donacionId"))));
+  }
+
+  private void seleccionar(Context ctx) {
+    SeleccionEntidadRequest request = ctx.bodyAsClass(SeleccionEntidadRequest.class);
+    ctx.json(
+        ApiMapper.donacion(
+            seleccionar(HttpSupport.id(ctx, "donacionId"), DtoValidator.validate(request).entidadBeneficiariaId())));
+  }
+
+  private Donacion seleccionar(UUID donacionId, UUID entidadId) {
+    Donacion donacion = donacion(donacionId);
+    EntidadBeneficiaria entidad =
+        entidades
+            .findById(entidadId)
+            .orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", entidadId));
+    if (donacion.getEntidadBeneficiaria() != null) {
+      if (donacion.getEntidadBeneficiaria().getId().equals(entidadId)) {
+        return donacion;
+      }
+      throw ApiException.conflict("La donación ya tiene una entidad beneficiaria asignada.");
+    }
+    PropuestaDeAsignacion propuesta = ranking(donacionId);
+    boolean candidata = propuesta.getRankings().stream().flatMap(r -> r.getCandidatos().stream()).anyMatch(c -> c.getEntidadBeneficiaria().getId().equals(entidadId));
+    if (!candidata) throw ApiException.conflict("La entidad no pertenece al ranking vigente.");
+    matchmaking.confirmarAsignacionAdministrativa(donacion, entidad, LocalDate.now(clock));
+    notificaciones.enviar(new EventoAsignacion(donacion.getDonante(), entidad).generarNotificaciones());
+    return donacion;
+  }
+
+  private PropuestaDeAsignacion ranking(UUID donacionId) {
+    try {
+      return matchmaking.obtenerRankingVigente(donacion(donacionId));
+    } catch (IllegalStateException error) {
+      throw ApiException.notFound("Ranking de la donación", donacionId);
+    }
+  }
+
+  private Donacion donacion(UUID id) {
+    return donaciones.findById(id).orElseThrow(() -> ApiException.notFound("Donación", id));
+  }
+}

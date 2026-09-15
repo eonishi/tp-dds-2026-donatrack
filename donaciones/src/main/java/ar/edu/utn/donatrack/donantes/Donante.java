@@ -6,19 +6,32 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 public abstract class Donante implements Notificable {
+  private final UUID id;
   protected String numDocumento;
   protected TipoDocumento documento;
   protected List<MedioDeContacto> mediosDeContacto = new ArrayList<>();
   protected MedioDeContacto contactoPredeterminado;
 
   public Donante(MedioDeContacto medioDeContacto, String numDocumento, TipoDocumento documento) {
+    this(UUID.randomUUID(), medioDeContacto, numDocumento, documento);
+  }
+
+  protected Donante(
+      UUID id, MedioDeContacto medioDeContacto, String numDocumento, TipoDocumento documento) {
+    this.id = Objects.requireNonNull(id, "id no puede ser null");
     Objects.requireNonNull(medioDeContacto);
     this.numDocumento = numDocumento;
     this.documento = documento;
     this.mediosDeContacto.add(medioDeContacto);
     this.contactoPredeterminado = medioDeContacto;
+    // Aca agregaria el enviar el mail de bienvenida
+  }
+
+  public UUID getId() {
+    return id;
   }
 
   public void addMedioDeContacto(MedioDeContacto medioDeContacto) {
@@ -54,6 +67,23 @@ public abstract class Donante implements Notificable {
         .filter(CorreoElectronico.class::isInstance)
         .map(MedioDeContacto::getContacto)
         .findFirst();
+  }
+
+  public void actualizarIdentificacion(String numDocumento, TipoDocumento documento) {
+    this.numDocumento = numDocumento;
+    this.documento = documento;
+  }
+
+  public void reemplazarMediosDeContacto(
+      List<MedioDeContacto> nuevosMedios, int indicePredeterminado) {
+    if (nuevosMedios == null || nuevosMedios.isEmpty()) {
+      throw new IllegalArgumentException("Debe informar al menos un medio de contacto.");
+    }
+    if (indicePredeterminado < 0 || indicePredeterminado >= nuevosMedios.size()) {
+      throw new IllegalArgumentException("El contacto predeterminado no existe.");
+    }
+    this.mediosDeContacto = new ArrayList<>(nuevosMedios);
+    this.contactoPredeterminado = this.mediosDeContacto.get(indicePredeterminado);
   }
 
   void merge(Donante entrante) {

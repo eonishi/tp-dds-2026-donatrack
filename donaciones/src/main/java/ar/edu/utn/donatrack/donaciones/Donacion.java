@@ -12,11 +12,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 public class Donacion {
+  private final UUID id;
   private EstadoDonacion estado = new EnDeposito();
   private final List<HistorialEstado> historialEstado = new ArrayList<>();
   private final List<Bien> bienes = new ArrayList<>();
+  private final List<String> fotos = new ArrayList<>();
   private EntidadBeneficiaria entidadBeneficiaria;
   /*
    * ── LÓGICA FALTANTE — microservicio de LOGÍSTICA ──────────────────────
@@ -30,13 +33,34 @@ public class Donacion {
   private final Donante donante;
 
   public Donacion(Donante donante, List<Bien> bienes) {
-    this.donante = Objects.requireNonNull(donante, "donante no puede ser null");
-    this.bienes.addAll(bienes);
+    this(UUID.randomUUID(), donante, bienes);
   }
 
-  public void cambiarEstado(HistorialEstado nuevoHistorial, EstadoDonacion nuevoEstado) {
-    historialEstado.add(nuevoHistorial);
+  public Donacion(UUID id, Donante donante, List<Bien> bienes) {
+    this.id = Objects.requireNonNull(id, "id no puede ser null");
+    this.donante = Objects.requireNonNull(donante, "donante no puede ser null");
+    reemplazarBienes(bienes);
+  }
+
+  public UUID getId() {
+    return id;
+  }
+
+  public synchronized void cambiarEstado(
+      HistorialEstado nuevoHistorial, EstadoDonacion nuevoEstado) {
+    Objects.requireNonNull(nuevoHistorial, "historial no puede ser null");
+    Objects.requireNonNull(nuevoEstado, "estado no puede ser null");
+    historialEstado.add(
+        nuevoHistorial.contextualizar(historialEstado.size() + 1L, estado.getNombreEstado()));
     estado = nuevoEstado;
+  }
+
+  public void reemplazarBienes(List<Bien> nuevosBienes) {
+    if (nuevosBienes == null || nuevosBienes.isEmpty() || nuevosBienes.stream().anyMatch(Objects::isNull)) {
+      throw new IllegalArgumentException("La donación debe contener al menos un bien válido.");
+    }
+    this.bienes.clear();
+    this.bienes.addAll(nuevosBienes);
   }
 
   public SubCategoria getSubcategoria() {
@@ -57,6 +81,17 @@ public class Donacion {
 
   public List<Bien> getBienes() {
     return Collections.unmodifiableList(bienes);
+  }
+
+  public List<String> getFotos() {
+    return Collections.unmodifiableList(fotos);
+  }
+
+  public void agregarFoto(String referencia) {
+    if (referencia == null || referencia.isBlank()) {
+      throw new IllegalArgumentException("La referencia de la foto es obligatoria.");
+    }
+    fotos.add(referencia.trim());
   }
 
   public double getCantidadTotal() {
@@ -111,8 +146,9 @@ public class Donacion {
   }
 
   public void confirmarEntidadBeneficiaria(EntidadBeneficiaria entidadBeneficiaria) {
-    this.setEntidadBeneficiaria(entidadBeneficiaria);
+    Objects.requireNonNull(entidadBeneficiaria, "entidadBeneficiaria no puede ser null");
     this.asignar();
+    this.setEntidadBeneficiaria(entidadBeneficiaria);
   }
 
   public void asignar() {
@@ -132,6 +168,9 @@ public class Donacion {
   }
 
   public void reportarFalla(String justificacion) {
+    if (justificacion == null || justificacion.isBlank()) {
+      throw new IllegalArgumentException("La justificación es obligatoria.");
+    }
     this.estado.reportarFalla(this, justificacion);
   }
 

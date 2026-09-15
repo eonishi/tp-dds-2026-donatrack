@@ -35,7 +35,7 @@ class NotificacionTest {
     Notificacion notif =
         new Notificacion(medio, "msg", SinPayload.INSTANCE, EstadoNotificacion.PENDIENTE);
 
-    notif.marcarFallida();
+    notif.marcarFallida("El proveedor rechazó el envío.");
 
     assertEquals(EstadoNotificacion.FALLIDA, notif.getEstado());
   }

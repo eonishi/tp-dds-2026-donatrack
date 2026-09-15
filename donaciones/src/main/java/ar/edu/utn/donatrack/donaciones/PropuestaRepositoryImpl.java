@@ -6,11 +6,11 @@ import java.util.Map;
 import java.util.Optional;
 
 public class PropuestaRepositoryImpl implements PropuestaRepository {
-  private final Map<Donacion, PropuestaDeAsignacion> propuestas = new HashMap<>();
+  private final Map<java.util.UUID, PropuestaDeAsignacion> propuestas = new HashMap<>();
 
   @Override
   public Optional<PropuestaDeAsignacion> findPendingByDonacion(Donacion donacion) {
-    PropuestaDeAsignacion propuesta = propuestas.get(donacion);
+    PropuestaDeAsignacion propuesta = propuestas.get(donacion.getId());
     if (propuesta != null && propuesta.isPendiente()) {
       return Optional.of(propuesta);
     }
@@ -24,11 +24,11 @@ public class PropuestaRepositoryImpl implements PropuestaRepository {
 
   @Override
   public void save(PropuestaDeAsignacion propuesta) {
-    propuestas.put(propuesta.getDonacion(), propuesta);
+    propuestas.put(propuesta.getDonacion().getId(), propuesta);
   }
 
   @Override
   public void remove(Donacion donacion) {
-    propuestas.remove(donacion);
+    propuestas.remove(donacion.getId());
   }
 }

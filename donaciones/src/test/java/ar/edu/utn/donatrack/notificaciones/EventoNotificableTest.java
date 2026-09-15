@@ -6,6 +6,7 @@ import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
+import ar.edu.utn.donatrack.donantes.Sms;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoAsignacion;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoAusenciaDonante;
@@ -101,6 +102,18 @@ class EventoNotificableTest {
       assertInstanceOf(SinPayload.class, n.getPayload());
       assertEquals(EstadoNotificacion.PENDIENTE, n.getEstado());
     }
+  }
+
+  @Test
+  void eventoAsignacion_usaSoloElContactoPredeterminadoDelDonante() {
+    donante.addMedioDeContacto(new Sms("+541112345678"));
+    donante.setContactoPredeterminado(new Sms("+541112345678"));
+    entidad.agregarCorreo(new CorreoElectronico("entidad@test.com"));
+
+    List<Notificacion> notificaciones = new EventoAsignacion(donante, entidad).generarNotificaciones();
+
+    assertEquals(2, notificaciones.size());
+    assertInstanceOf(Sms.class, notificaciones.get(0).getDestinatario());
   }
 
   @Test

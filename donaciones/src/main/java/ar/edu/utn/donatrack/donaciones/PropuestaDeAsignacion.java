@@ -18,9 +18,8 @@ public class PropuestaDeAsignacion {
     if (!pendiente) {
       return; // no-op on double-confirm
     }
+    this.donacion.confirmarEntidadBeneficiaria(elegida);
     this.pendiente = false;
-    this.donacion.setEntidadBeneficiaria(elegida);
-    this.donacion.asignar();
   }
 
   public Donacion getDonacion() {
