@@ -7,27 +7,31 @@ import ar.edu.utn.donatrack.donantes.Whatsapp;
 
 public class NotificadorSimulado implements Notificador {
   @Override
-  public void enviarNotificacion(MedioDeContacto destinatario, String mensaje) {
+  public ResultadoEnvio enviarNotificacion(MedioDeContacto destinatario, String mensaje) {
     if (destinatario != null) {
-      destinatario.aceptar(this, mensaje);
+      return destinatario.aceptar(this, mensaje);
     }
+    return ResultadoEnvio.fallido("El destinatario es obligatorio.");
   }
 
   @Override
-  public void enviar(CorreoElectronico destinatario, String mensaje) {
+  public ResultadoEnvio enviar(CorreoElectronico destinatario, String mensaje) {
     System.out.println(
         "[SIMULADO][EMAIL] Para: " + destinatario.getContacto() + " | Msg: " + mensaje);
+    return ResultadoEnvio.aceptado();
   }
 
   @Override
-  public void enviar(Whatsapp destinatario, String mensaje) {
+  public ResultadoEnvio enviar(Whatsapp destinatario, String mensaje) {
     System.out.println(
         "[SIMULADO][WHATSAPP] Para: " + destinatario.getContacto() + " | Msg: " + mensaje);
+    return ResultadoEnvio.aceptado();
   }
 
   @Override
-  public void enviar(Sms destinatario, String mensaje) {
+  public ResultadoEnvio enviar(Sms destinatario, String mensaje) {
     System.out.println(
         "[SIMULADO][SMS] Para: " + destinatario.getContacto() + " | Msg: " + mensaje);
+    return ResultadoEnvio.aceptado();
   }
 }

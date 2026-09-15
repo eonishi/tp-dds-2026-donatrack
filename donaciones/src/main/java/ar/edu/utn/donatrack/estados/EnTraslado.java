@@ -29,6 +29,10 @@ public class EnTraslado extends EstadoDonacion {
 
   @Override
   public void confirmarEntrega(Donacion donacion) {
+    if (donacion.getEntidadBeneficiaria() == null) {
+      throw new IllegalStateException(
+          "No se puede confirmar la entrega sin una entidad beneficiaria asignada.");
+    }
     donacion.cambiarEstado(
         new HistorialEstado(LocalDate.now(), NombreEstado.ENTREGADA, null), new Entregada());
     donacion.getEntidadBeneficiaria().registrarRecepcion(donacion, LocalDate.now());

@@ -9,8 +9,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
 public class EntidadBeneficiaria implements Notificable {
+  private final UUID id;
   private String razonSocial;
   private String direccion;
   private String telefono;
@@ -18,12 +21,22 @@ public class EntidadBeneficiaria implements Notificable {
   private final List<Necesidad> necesidadesExtraordinarias = new ArrayList<>();
   private final List<NecesidadRecurrente> necesidadesRecurrentes = new ArrayList<>();
   private final List<CorreoElectronico> correos = new ArrayList<>();
-  private final List<RecepcionDonacion> recepciones = new ArrayList<>();
+  private final List<Recepcion> recepciones = new ArrayList<>();
 
   public EntidadBeneficiaria(String razonSocial, String direccion, String telefono) {
+    this(UUID.randomUUID(), razonSocial, direccion, telefono);
+  }
+
+  public EntidadBeneficiaria(
+      UUID id, String razonSocial, String direccion, String telefono) {
+    this.id = Objects.requireNonNull(id, "id no puede ser null");
     this.razonSocial = razonSocial;
     this.direccion = direccion;
     this.telefono = telefono;
+  }
+
+  public UUID getId() {
+    return id;
   }
 
   public String getRazonSocial() {
@@ -55,7 +68,7 @@ public class EntidadBeneficiaria implements Notificable {
     return Collections.unmodifiableList(new ArrayList<>(correos));
   }
 
-  public List<RecepcionDonacion> getRecepciones() {
+  public List<Recepcion> getRecepciones() {
     return Collections.unmodifiableList(recepciones);
   }
 
@@ -67,12 +80,38 @@ public class EntidadBeneficiaria implements Notificable {
     this.necesidadesRecurrentes.add(n);
   }
 
+  public Optional<Necesidad> buscarNecesidad(UUID necesidadId) {
+    return necesidades().stream().filter(n -> n.getId().equals(necesidadId)).findFirst();
+  }
+
+  public List<Necesidad> necesidades() {
+    List<Necesidad> todas = new ArrayList<>(necesidadesExtraordinarias);
+    todas.addAll(necesidadesRecurrentes);
+    return Collections.unmodifiableList(todas);
+  }
+
+  public void eliminarNecesidad(UUID necesidadId) {
+    necesidadesExtraordinarias.removeIf(n -> n.getId().equals(necesidadId));
+    necesidadesRecurrentes.removeIf(n -> n.getId().equals(necesidadId));
+  }
+
   public void agregarCorreo(CorreoElectronico correo) {
     this.correos.add(correo);
   }
 
+  public void actualizarDatos(
+      String razonSocial, String direccion, String telefono, List<CorreoElectronico> correos) {
+    this.razonSocial = razonSocial;
+    this.direccion = direccion;
+    this.telefono = telefono;
+    this.correos.clear();
+    if (correos != null) {
+      correos.forEach(this::agregarCorreo);
+    }
+  }
+
   public void registrarRecepcion(Donacion donacion, LocalDate fechaRecepcion) {
-    this.recepciones.add(new RecepcionDonacion(donacion, fechaRecepcion));
+    this.recepciones.add(new Recepcion(donacion, fechaRecepcion));
     this.actualizarNecesidadesCon(donacion);
   }
 

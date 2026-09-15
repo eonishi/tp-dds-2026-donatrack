@@ -31,3 +31,25 @@ La integración REST entre servicios está pendiente; la lógica que requiere el
 - **En `logistica`** (depende de donaciones): el destino con su entidad beneficiaria y donaciones (`Destino`), la validación de destinos duplicados (`Ruta`), las donaciones del lote (`LoteDonaciones`), el resultado de planificación (`ResultadoPlanificacion`), el servicio de planificación completo (`ServicioPlanificacionRutas`) y sus tests.
 
 Para completar la separación falta lo que el enunciado pide como siguiente paso: exponer los endpoints REST de cada servicio y que se integren por HTTP.
+
+## Notificaciones reales para la demo
+
+El microservicio `donaciones` usa Resend para correo y Twilio Trial para SMS y WhatsApp. Las
+credenciales se leen exclusivamente desde variables de entorno:
+
+```bash
+export RESEND_API_KEY="re_..."
+export RESEND_FROM="DonaTrack <onboarding@resend.dev>"
+export TWILIO_ACCOUNT_SID="AC..."
+export TWILIO_AUTH_TOKEN="..."
+export TWILIO_SMS_FROM="+1..."
+export TWILIO_WHATSAPP_FROM="whatsapp:+14155238886"
+```
+
+En Twilio Trial, cada destinatario telefónico debe estar verificado y el trial dura 30 días. Para
+WhatsApp, las personas destinatarias primero deben unirse al sandbox de Twilio. Los números se
+guardan en formato E.164, por ejemplo `+541112345678`.
+
+Si falta la configuración de un canal, sus notificaciones quedan registradas como `FALLIDA` y se
+reintentan hasta tres veces. Las pruebas usan dobles de gateway, por lo que no invocan proveedores
+externos.

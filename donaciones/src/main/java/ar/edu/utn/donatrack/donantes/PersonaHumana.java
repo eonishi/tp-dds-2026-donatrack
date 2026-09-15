@@ -1,10 +1,12 @@
 package ar.edu.utn.donatrack.donantes;
 
+import java.util.UUID;
+
 public class PersonaHumana extends Donante {
   private String nombre;
   private String apellido;
   private Integer edad;
-  private final Genero genero;
+  private Genero genero;
   private String direccion;
 
   public PersonaHumana(
@@ -16,7 +18,29 @@ public class PersonaHumana extends Donante {
       TipoDocumento documento,
       Genero genero,
       String direccion) {
-    super(medioDeContacto, numDocumento, documento);
+    this(
+        UUID.randomUUID(),
+        medioDeContacto,
+        nombre,
+        apellido,
+        edad,
+        numDocumento,
+        documento,
+        genero,
+        direccion);
+  }
+
+  public PersonaHumana(
+      UUID id,
+      CorreoElectronico medioDeContacto,
+      String nombre,
+      String apellido,
+      Integer edad,
+      String numDocumento,
+      TipoDocumento documento,
+      Genero genero,
+      String direccion) {
+    super(id, medioDeContacto, numDocumento, documento);
     this.nombre = nombre;
     this.apellido = apellido;
     this.edad = edad;
@@ -32,7 +56,7 @@ public class PersonaHumana extends Donante {
     return apellido;
   }
 
-  public int getEdad() {
+  public Integer getEdad() {
     return edad;
   }
 
@@ -40,11 +64,24 @@ public class PersonaHumana extends Donante {
     return genero;
   }
 
+  public String getDireccion() {
+    return direccion;
+  }
+
   public void setEdad(int edad) {
     this.edad = edad;
   }
 
   public void setDireccion(String direccion) {
+    this.direccion = direccion;
+  }
+
+  public void actualizarDatosPersonales(
+      String nombre, String apellido, Integer edad, Genero genero, String direccion) {
+    this.nombre = nombre;
+    this.apellido = apellido;
+    this.edad = edad;
+    this.genero = genero;
     this.direccion = direccion;
   }
 

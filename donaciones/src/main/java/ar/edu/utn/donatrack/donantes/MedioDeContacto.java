@@ -1,6 +1,7 @@
 package ar.edu.utn.donatrack.donantes;
 
 import ar.edu.utn.donatrack.notificaciones.Notificador;
+import ar.edu.utn.donatrack.notificaciones.ResultadoEnvio;
 
 public abstract class MedioDeContacto {
   private final String contacto;
@@ -30,5 +31,5 @@ public abstract class MedioDeContacto {
     return java.util.Objects.hash(contacto);
   }
 
-  public abstract void aceptar(Notificador notificador, String mensaje);
+  public abstract ResultadoEnvio aceptar(Notificador notificador, String mensaje);
 }

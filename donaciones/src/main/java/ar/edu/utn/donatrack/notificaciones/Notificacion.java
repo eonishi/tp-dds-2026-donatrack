@@ -11,6 +11,8 @@ public class Notificacion {
   private final NotificacionPayload payload;
   private final LocalDateTime fechaCreacion;
   private EstadoNotificacion estado;
+  private int intentos;
+  private String ultimoError;
 
   public Notificacion(
       MedioDeContacto destinatario,
@@ -46,9 +48,23 @@ public class Notificacion {
 
   public void marcarEnviada() {
     this.estado = EstadoNotificacion.ENVIADA;
+    this.ultimoError = null;
   }
 
-  public void marcarFallida() {
+  public void marcarFallida(String detalle) {
     this.estado = EstadoNotificacion.FALLIDA;
+    this.ultimoError = Objects.requireNonNull(detalle);
+  }
+
+  public void registrarIntento() {
+    this.intentos++;
+  }
+
+  public int getIntentos() {
+    return intentos;
+  }
+
+  public String getUltimoError() {
+    return ultimoError;
   }
 }

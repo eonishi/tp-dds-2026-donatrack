@@ -2,6 +2,7 @@ package ar.edu.utn.donatrack.notificaciones.eventos;
 
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.notificaciones.EstadoNotificacion;
+import ar.edu.utn.donatrack.notificaciones.DestinatariosNotificacion;
 import ar.edu.utn.donatrack.notificaciones.Notificacion;
 import ar.edu.utn.donatrack.notificaciones.payloads.SinPayload;
 import java.util.List;
@@ -16,7 +17,7 @@ public class EventoBienvenida extends EventoNotificable {
 
   @Override
   public List<Notificacion> generarNotificaciones() {
-    return donante.getMediosDeContacto().stream()
+    return DestinatariosNotificacion.predeterminado(donante).stream()
         .map(
             medio ->
                 new Notificacion(

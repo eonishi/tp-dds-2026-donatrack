@@ -6,11 +6,11 @@ import ar.edu.utn.donatrack.donantes.Sms;
 import ar.edu.utn.donatrack.donantes.Whatsapp;
 
 public interface Notificador {
-  void enviarNotificacion(MedioDeContacto destinatario, String mensaje);
+  ResultadoEnvio enviarNotificacion(MedioDeContacto destinatario, String mensaje);
 
-  void enviar(CorreoElectronico destinatario, String mensaje);
+  ResultadoEnvio enviar(CorreoElectronico destinatario, String mensaje);
 
-  void enviar(Whatsapp destinatario, String mensaje);
+  ResultadoEnvio enviar(Whatsapp destinatario, String mensaje);
 
-  void enviar(Sms destinatario, String mensaje);
+  ResultadoEnvio enviar(Sms destinatario, String mensaje);
 }

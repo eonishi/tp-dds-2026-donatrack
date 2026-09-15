@@ -29,6 +29,28 @@ public class ServicioMatchmakingDonaciones {
         .forEach(donacion -> recalcular(donacion, fechaReferencia));
   }
 
+  public PropuestaDeAsignacion ejecutarMatchmakingParaDonacion(
+      Donacion donacion, LocalDate fechaReferencia) {
+    if (donacion.getNombreEstado() != NombreEstado.EN_DEPOSITO) {
+      throw new IllegalStateException(
+          "El matchmaking sólo puede ejecutarse para donaciones en depósito.");
+    }
+    propuestaRepository.remove(donacion);
+    return calcularYGuardar(donacion, fechaReferencia);
+  }
+
+  public List<PropuestaDeAsignacion> ejecutarMatchmakingTotal(LocalDate fechaReferencia) {
+    return donacionesRepository.getDonacionesEnDeposito().stream()
+        .map(donacion -> ejecutarMatchmakingParaDonacion(donacion, fechaReferencia))
+        .toList();
+  }
+
+  public PropuestaDeAsignacion obtenerRankingVigente(Donacion donacion) {
+    return propuestaRepository
+        .findPendingByDonacion(donacion)
+        .orElseThrow(() -> new IllegalStateException("No hay un ranking vigente para la donación."));
+  }
+
   public void confirmarAsignacionAdministrativa(
       Donacion donacion, EntidadBeneficiaria entidadBeneficiaria, LocalDate fechaConfirmacion) {
     PropuestaDeAsignacion propuesta =
@@ -46,6 +68,11 @@ public class ServicioMatchmakingDonaciones {
       return; // skip Donaciones with existing pending Propuesta
     }
 
+    calcularYGuardar(donacion, fechaReferencia);
+  }
+
+  private PropuestaDeAsignacion calcularYGuardar(
+      Donacion donacion, LocalDate fechaReferencia) {
     List<RankingMatchmaking> rankings =
         algoritmos.stream()
             .map(
@@ -53,6 +80,8 @@ public class ServicioMatchmakingDonaciones {
                     algoritmo.rankear(
                         donacion, beneficiariosRepository.getBeneficiarios(), fechaReferencia))
             .toList();
-    propuestaRepository.save(new PropuestaDeAsignacion(donacion, rankings));
+    PropuestaDeAsignacion propuesta = new PropuestaDeAsignacion(donacion, rankings);
+    propuestaRepository.save(propuesta);
+    return propuesta;
   }
 }
