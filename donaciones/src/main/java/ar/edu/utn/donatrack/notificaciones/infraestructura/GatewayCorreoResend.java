@@ -32,6 +32,7 @@ public class GatewayCorreoResend implements GatewayCorreo {
         HttpRequest.newBuilder(EMAILS_URI)
             .header("Authorization", "Bearer " + apiKey)
             .header("Content-Type", "application/json")
+            .header("User-Agent", "DonaTrack/1.0")
             .timeout(Duration.ofSeconds(10))
             .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
             .build();
