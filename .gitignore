@@ -58,3 +58,5 @@ opencode.jsonc
 
 # checkstyle
 *.iml
+
+secrets.local.sh
