@@ -95,6 +95,7 @@ public class Ruta {
       throw new IllegalStateException("la ruta ya está en curso");
     }
     this.enCurso = true;
+    // Aca faltaria que se comunique con la parte de las donaciones para cambiar el estado a en curso
   }
 
   /**
