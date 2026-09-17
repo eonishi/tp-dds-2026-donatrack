@@ -2,6 +2,7 @@ package ar.edu.utn.donatrack.donaciones;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.Categoria;
 import ar.edu.utn.donatrack.bienes.EstadoUso;
@@ -12,10 +13,30 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
+import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
+import java.time.LocalDate;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class DonacionesRepositoryTest {
+class DonacionesRepositoryTest implements SimplePersistenceTest {
+
+  private Donante donante;
+  private SubCategoria subCategoria;
+  private EntidadBeneficiaria entidadBeneficiaria;
+
+  @BeforeEach
+  void persistPrerequisites() {
+    donante = crearDonanteDummy();
+    subCategoria = new SubCategoria("X", Categoria.ALIMENTO);
+    entidadBeneficiaria = new EntidadBeneficiaria("Ent", "Dir", "Tel");
+    // Donacion cascades to its Bien and HistorialEstado, but not to the donor, the subcategoria of
+    // each bien, or the beneficiary entity: those must already be stored when a donation is
+    // persisted.
+    persist(donante);
+    persist(subCategoria);
+    persist(entidadBeneficiaria);
+  }
 
   private static Donante crearDonanteDummy() {
     return new PersonaHumana(
@@ -29,27 +50,20 @@ class DonacionesRepositoryTest {
         "Calle Falsa 123");
   }
 
-  private static Bien crearBienDummy() {
+  private Bien crearBienDummy() {
     return new Bien(
-        "Test",
-        "",
-        1.0,
-        UnidadMedida.UNIDADES,
-        null,
-        EstadoUso.NO_APLICA,
-        new SubCategoria("X", Categoria.ALIMENTO));
+        "Test", "", 1.0, UnidadMedida.UNIDADES, null, EstadoUso.NO_APLICA, subCategoria);
   }
 
   private Donacion crearDonacionConEstado(NombreEstado estado) {
-    Donacion donacion = new Donacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    Donacion donacion = new Donacion(donante, List.of(crearBienDummy()));
     // Force the internal estado field via reflection or state machine walk
     // Walk: EnDeposito → asignar → AsignacionRealizada
     if (estado == NombreEstado.EN_DEPOSITO) {
       return donacion; // default state
     }
     if (estado == NombreEstado.ASIGNACION_REALIZADA) {
-      donacion.confirmarEntidadBeneficiaria(
-          new ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria("Ent", "Dir", "Tel"));
+      donacion.confirmarEntidadBeneficiaria(entidadBeneficiaria);
       return donacion;
     }
     throw new IllegalArgumentException("Estado no soportado en helper: " + estado);
@@ -91,5 +105,77 @@ class DonacionesRepositoryTest {
     List<Donacion> resultado = repo.getDonacionesEnAsignacionRealizada();
 
     assertThrows(UnsupportedOperationException.class, () -> resultado.add(null));
+  }
+
+  @Test
+  void registeredDonations_RoundTripThroughTheDatabase() {
+    DonacionesRepository repo = new DonacionesRepository();
+    repo.addDonacion(crearDonacionConEstado(NombreEstado.EN_DEPOSITO));
+    repo.addDonacion(crearDonacionConEstado(NombreEstado.ASIGNACION_REALIZADA));
+    entityManager().flush();
+    entityManager().clear();
+
+    DonacionesRepository reloaded = new DonacionesRepository();
+
+    assertEquals(
+        2,
+        reloaded.getDonaciones().size(),
+        "Las donaciones registradas deben leerse de la base, no de una colección en memoria");
+    List<Donacion> enDeposito = reloaded.getDonacionesEnDeposito();
+    List<Donacion> asignadas = reloaded.getDonacionesEnAsignacionRealizada();
+    assertEquals(1, enDeposito.size(), "Una donación en depósito debe recuperarse como tal");
+    assertEquals(1, asignadas.size(), "Una donación asignada debe recuperarse como asignada");
+    // After clearing the entity manager the instances are new, so the loaded donation is compared
+    // by its business data.
+    Donacion recargada = asignadas.get(0);
+    assertEquals(
+        subCategoria.getNombre(),
+        recargada.getSubcategoria().getNombre(),
+        "La donación recargada debe conservar su subcategoría");
+    assertEquals(
+        "Test",
+        recargada.getBienes().get(0).getDescripcion(),
+        "La donación recargada debe conservar su bien");
+  }
+
+  @Test
+  void getDonacionesEnDeposito_ReflejaLaUltimaTransicion() {
+    DonacionesRepository repo = new DonacionesRepository();
+    Donacion donacion = crearDonacionConEstado(NombreEstado.EN_DEPOSITO);
+    repo.addDonacion(donacion);
+
+    assertTrue(
+        repo.getDonacionesEnDeposito().contains(donacion),
+        "Una donación recién registrada debe estar en depósito");
+
+    // The donation now has two history entries: the initial EN_DEPOSITO and this
+    // ASIGNACION_REALIZADA. Only the latest one decides the state.
+    donacion.asignar();
+    entityManager().flush();
+    entityManager().clear();
+
+    DonacionesRepository reloaded = new DonacionesRepository();
+
+    assertTrue(
+        reloaded.getDonacionesEnDeposito().isEmpty(),
+        "Una donación asignada no debe seguir apareciendo en depósito");
+    List<Donacion> asignadas = reloaded.getDonacionesEnAsignacionRealizada();
+    assertEquals(
+        1, asignadas.size(), "La donación asignada debe aparecer como asignación realizada");
+    assertEquals(
+        NombreEstado.ASIGNACION_REALIZADA,
+        asignadas.get(0).getNombreEstado(),
+        "El estado derivado debe ser la última transición");
+  }
+
+  @Test
+  void contarDonacionesAsignadas_CuentaLasAsignadasDeLaEntidad() {
+    DonacionesRepository repo = new DonacionesRepository();
+    repo.addDonacion(crearDonacionConEstado(NombreEstado.EN_DEPOSITO));
+    repo.addDonacion(crearDonacionConEstado(NombreEstado.ASIGNACION_REALIZADA));
+
+    long asignadas = repo.contarDonacionesAsignadas(entidadBeneficiaria, LocalDate.now());
+
+    assertEquals(1, asignadas, "Solo la donación asignada debe contarse");
   }
 }

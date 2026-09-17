@@ -58,10 +58,15 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
     SubCategoria subCategoria = new SubCategoria("Sillas", Categoria.MOBILIARIO);
     Bien silla =
         new Bien("Silla", "", 1, UnidadMedida.UNIDADES, null, EstadoUso.USADO, subCategoria);
+    Donante donante = crearDonanteDummy();
+    // CargaDonacion persists every segmented donation, and a donation only cascades to its bienes:
+    // the donor and the subcategoria of the bien must already be stored.
+    persist(subCategoria);
+    persist(donante);
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     CargaDonacion cargaDonacion = new CargaDonacion(LocalDate.now(), donacionesRepository);
 
-    cargaDonacion.cargarDonacion(crearDonanteDummy(), List.of(silla));
+    cargaDonacion.cargarDonacion(donante, List.of(silla));
 
     assertEquals(1, donacionesRepository.getDonaciones().size());
   }
@@ -73,14 +78,13 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
     Donante donante = crearDonanteDummy();
     Donacion donacion =
         new Donacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
-    DonacionesRepository donacionesRepository = new DonacionesRepository();
-    donacionesRepository.addDonacion(donacion);
-
-    // The beneficiary repository persists the graph it receives, so the prerequisites of that
-    // graph — the subcategoria each need references, the donor, and the received donation — must
-    // already exist when it is called.
+    // The repository persists the donation it receives, which only cascades to its bienes: the
+    // donor and the subcategoria the bien references must already be stored. The same holds for the
+    // graph the beneficiary repository persists, plus the received donation.
     persist(alimentos);
     persist(donante);
+    DonacionesRepository donacionesRepository = new DonacionesRepository();
+    donacionesRepository.addDonacion(donacion);
 
     EntidadBeneficiaria hogarA =
         crearEntidadConNecesidad("Hogar A", alimentos, 5, fecha.plusMonths(4));
@@ -125,12 +129,13 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
     Donante donante = crearDonanteDummy();
     Donacion donacion =
         new Donacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
-    DonacionesRepository donacionesRepository = new DonacionesRepository();
-    donacionesRepository.addDonacion(donacion);
-
-    // The beneficiary repository persists the needs' subcategorias along with the entities.
+    // The repository persists the donation it receives: its donor and the subcategoria of its bien,
+    // as well as the subcategorias of the needs, must already be stored.
     persist(alimentos);
     persist(ropa);
+    persist(donante);
+    DonacionesRepository donacionesRepository = new DonacionesRepository();
+    donacionesRepository.addDonacion(donacion);
 
     EntidadBeneficiaria compatible =
         crearEntidadConNecesidad("Compatible", alimentos, 5, fecha.plusMonths(4));
@@ -183,10 +188,12 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
     Donante donante = crearDonanteDummy();
     Donacion donacion =
         new Donacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+    // The repository persists the donation it receives, and the beneficiary repository persists the
+    // need's subcategoria along with the entity.
+    persist(alimentos);
+    persist(donante);
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     donacionesRepository.addDonacion(donacion);
-    // The beneficiary repository persists the need's subcategoria along with the entity.
-    persist(alimentos);
 
     BeneficiariosRepository beneficiariosRepository = new BeneficiariosRepository();
     beneficiariosRepository.addBeneficiario(
@@ -223,6 +230,10 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
     Donante donante = crearDonanteDummy();
     Donacion donacion =
         new Donacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+    // The repository persists the donation it receives: its donor and the subcategoria of its bien
+    // must already be stored.
+    persist(alimentos);
+    persist(donante);
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     donacionesRepository.addDonacion(donacion);
     BeneficiariosRepository beneficiariosRepository = new BeneficiariosRepository();

@@ -11,13 +11,14 @@ import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.estados.*;
+import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class DonaTrackTest {
+class DonaTrackTest implements SimplePersistenceTest {
 
   private SubCategoria subcatSillas;
   private SubCategoria subcatFideos;
@@ -84,6 +85,12 @@ class DonaTrackTest {
         Arrays.asList(sillaNueva, sillaUsada, fideos2026, fideos2027, masFideos2026);
     DonacionesRepository repo = new DonacionesRepository();
     CargaDonacion carga = new CargaDonacion(hoy, repo);
+
+    // CargaDonacion persists every donation it segments, and a donation only cascades to its
+    // bienes: the donor and the shared subcategorias must already be stored.
+    persist(donanteDummy);
+    persist(subcatSillas);
+    persist(subcatFideos);
 
     // Act
     carga.cargarDonacion(donanteDummy, bienesDonados);
