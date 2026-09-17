@@ -52,6 +52,7 @@ AGENTS.md
 docs/agents/
 .codegraph/
 opencode.jsonc
+odd/
 
 # vscode
 .vscode/
