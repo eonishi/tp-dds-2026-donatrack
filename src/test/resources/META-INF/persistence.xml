@@ -7,8 +7,7 @@
     <persistence-unit name="simple-persistence-unit" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 
-        <!-- The test persistence unit lives on a different classpath root than the entities, so
-             Hibernate cannot auto-detect them: they are listed explicitly. -->
+        <!-- La unidad de persistencia de test vive en una raíz de classpath distinta a la de las entidades, así que Hibernate no puede autodetectarlas: se listan explícitamente. -->
         <class>ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria</class>
         <class>ar.edu.utn.donatrack.beneficiarios.Necesidad</class>
         <class>ar.edu.utn.donatrack.beneficiarios.NecesidadRecurrente</class>

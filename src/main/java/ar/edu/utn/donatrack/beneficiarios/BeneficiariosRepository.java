@@ -4,12 +4,13 @@ import ar.edu.utn.donatrack.persistencia.JpaRepository;
 import java.util.Set;
 
 /**
- * JPA-backed repository of beneficiary entities: reads query the database and writes persist there.
+ * Repositorio de entidades beneficiarias respaldado por JPA: las lecturas consultan la base y las
+ * escrituras persisten en ella.
  */
 public class BeneficiariosRepository implements JpaRepository {
 
   /**
-   * @return an immutable snapshot of every stored beneficiary entity.
+   * @return una instantánea inmutable de todas las entidades beneficiarias almacenadas.
    */
   public Set<EntidadBeneficiaria> getBeneficiarios() {
     return Set.copyOf(
@@ -18,11 +19,11 @@ public class BeneficiariosRepository implements JpaRepository {
   }
 
   /**
-   * Registers a beneficiary entity. If one with the same {@code razonSocial} — which is what {@link
-   * EntidadBeneficiaria#equals} compares — is already stored, the stored one is kept and the new
-   * instance is ignored, as the previous in-memory {@code HashSet} did.
+   * Registra una entidad beneficiaria. Si ya hay una almacenada con la misma {@code razonSocial}
+   * —que es lo que compara {@link EntidadBeneficiaria#equals}—, se conserva la almacenada y se
+   * ignora la instancia nueva, como hacía el {@code HashSet} en memoria anterior.
    *
-   * @param nuevo the beneficiary entity to register
+   * @param nuevo la entidad beneficiaria a registrar
    */
   public void addBeneficiario(EntidadBeneficiaria nuevo) {
     inTransaction(

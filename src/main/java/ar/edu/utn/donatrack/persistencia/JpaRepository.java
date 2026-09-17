@@ -4,18 +4,21 @@ import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import java.util.function.Supplier;
 
 /**
- * JPA-backed repository base.
+ * Base para repositorios respaldados por JPA.
  *
- * <p>{@code TransactionalOps#withTransaction} commits whatever transaction is active, so a
- * repository method that blindly wrapped itself in a transaction would commit the caller's
- * transaction. That breaks the per-test rollback of {@code
- * io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest} and silently detaches entities the
- * caller still intends to use. These helpers join the active transaction when there is one and open
- * their own only when there is none.
+ * <p>{@code TransactionalOps#withTransaction} confirma la transacción que esté activa, así que un
+ * método de repositorio que se envolviera ciegamente en una transacción confirmaría la transacción
+ * del llamador. Eso rompe el rollback por test de {@code
+ * io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest} y desasocia silenciosamente
+ * entidades que el llamador todavía pretende usar. Estos métodos auxiliares se unen a la
+ * transacción activa cuando existe y abren la propia solo cuando no hay ninguna.
  */
 public interface JpaRepository extends WithSimplePersistenceUnit {
 
-  /** Runs an action in a transaction, joining the caller's active transaction when there is one. */
+  /**
+   * Ejecuta una acción en una transacción, uniéndose a la transacción activa del llamador cuando
+   * existe.
+   */
   default void inTransaction(Runnable action) {
     if (getTransaction().isActive()) {
       action.run();
@@ -25,7 +28,8 @@ public interface JpaRepository extends WithSimplePersistenceUnit {
   }
 
   /**
-   * Runs a supplier in a transaction, joining the caller's active transaction when there is one.
+   * Ejecuta un proveedor en una transacción, uniéndose a la transacción activa del llamador cuando
+   * existe.
    */
   default <T> T inTransaction(Supplier<T> action) {
     if (getTransaction().isActive()) {

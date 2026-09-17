@@ -6,21 +6,21 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * JPA-backed repository for truck management.
+ * Repositorio de gestión de camiones respaldado por JPA.
  *
- * <p>Deduplication relies on the patente, which is the identity of {@link Camion#equals}: a truck
- * whose patente is already registered does not replace the stored one, it is discarded.
+ * <p>La deduplicación se apoya en la patente, que es la identidad de {@link Camion#equals}: un
+ * camión cuya patente ya está registrada no reemplaza al almacenado, sino que se descarta.
  */
 public class CamionRepository implements JpaRepository {
 
   /**
-   * Registers a truck.
+   * Registra un camión.
    *
-   * <p>When a truck with the same patente (according to {@link Camion#equals}) is already stored,
-   * the stored truck is kept and the new instance is ignored — the semantics of {@link
+   * <p>Cuando ya hay almacenado un camión con la misma patente (según {@link Camion#equals}), se
+   * conserva el camión almacenado y se ignora la instancia nueva —la semántica de {@link
    * HashSet#add}.
    *
-   * @param camion the truck to register (non-null)
+   * @param camion el camión a registrar (no nulo)
    */
   public void agregar(Camion camion) {
     inTransaction(
@@ -32,18 +32,17 @@ public class CamionRepository implements JpaRepository {
   }
 
   /**
-   * @return an unmodifiable copy of every stored truck
+   * @return copia inmodificable de todos los camiones almacenados
    */
   public List<Camion> listarTodos() {
     return List.copyOf(createQuery("select c from Camion c", Camion.class).getResultList());
   }
 
   /**
-   * Finds a truck by its patente.
+   * Busca un camión por su patente.
    *
-   * @param patente the patente to look up (non-null)
-   * @return an {@link Optional} with the truck when it exists, or {@link Optional#empty()} when it
-   *     does not
+   * @param patente la patente a buscar (no nula)
+   * @return un {@link Optional} con el camión si existe, o {@link Optional#empty()} si no existe
    */
   public Optional<Camion> buscarPorPatente(String patente) {
     return createQuery("select c from Camion c where c.patente = :patente", Camion.class)

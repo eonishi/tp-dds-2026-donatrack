@@ -30,9 +30,9 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
     donante = crearDonanteDummy();
     subCategoria = new SubCategoria("X", Categoria.ALIMENTO);
     entidadBeneficiaria = new EntidadBeneficiaria("Ent", "Dir", "Tel");
-    // Donacion cascades to its Bien and HistorialEstado, but not to the donor, the subcategoria of
-    // each bien, or the beneficiary entity: those must already be stored when a donation is
-    // persisted.
+    // Donacion cascadea a su Bien y a su HistorialEstado, pero no al donante, a la subcategoría de
+    // cada bien ni a la entidad beneficiaria: esos ya deben estar almacenados al persistir una
+    // donación.
     persist(donante);
     persist(subCategoria);
     persist(entidadBeneficiaria);
@@ -125,8 +125,8 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
     List<Donacion> asignadas = reloaded.getDonacionesEnAsignacionRealizada();
     assertEquals(1, enDeposito.size(), "Una donación en depósito debe recuperarse como tal");
     assertEquals(1, asignadas.size(), "Una donación asignada debe recuperarse como asignada");
-    // After clearing the entity manager the instances are new, so the loaded donation is compared
-    // by its business data.
+    // Tras limpiar el entity manager las instancias son nuevas, así que la donación recargada se
+    // compara por sus datos de negocio.
     Donacion recargada = asignadas.get(0);
     assertEquals(
         subCategoria.getNombre(),
@@ -148,8 +148,8 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
         repo.getDonacionesEnDeposito().contains(donacion),
         "Una donación recién registrada debe estar en depósito");
 
-    // The donation now has two history entries: the initial EN_DEPOSITO and this
-    // ASIGNACION_REALIZADA. Only the latest one decides the state.
+    // La donación ahora tiene dos entradas de historial: la inicial EN_DEPOSITO y esta
+    // ASIGNACION_REALIZADA. Solo la última decide el estado.
     donacion.asignar();
     entityManager().flush();
     entityManager().clear();
@@ -173,7 +173,7 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
     DonacionesRepository repo = new DonacionesRepository();
     repo.addDonacion(crearDonacionConEstado(NombreEstado.EN_DEPOSITO));
     repo.addDonacion(crearDonacionConEstado(NombreEstado.ASIGNACION_REALIZADA));
-    // Assigned and later delivered: two qualifying transitions for a single donation.
+    // Asignada y luego entregada: dos transiciones que califican para una única donación.
     Donacion entregada = crearDonacionConEstado(NombreEstado.EN_DEPOSITO);
     entregada.confirmarEntidadBeneficiaria(entidadBeneficiaria);
     entregada.planificarRuta();

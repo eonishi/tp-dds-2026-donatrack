@@ -59,8 +59,8 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
     Bien silla =
         new Bien("Silla", "", 1, UnidadMedida.UNIDADES, null, EstadoUso.USADO, subCategoria);
     Donante donante = crearDonanteDummy();
-    // CargaDonacion persists every segmented donation, and a donation only cascades to its bienes:
-    // the donor and the subcategoria of the bien must already be stored.
+    // CargaDonacion persiste cada donación segmentada, y una donación solo cascadea a sus bienes:
+    // el donante y la subcategoría del bien ya deben estar almacenados.
     persist(subCategoria);
     persist(donante);
     DonacionesRepository donacionesRepository = new DonacionesRepository();
@@ -78,9 +78,9 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
     Donante donante = crearDonanteDummy();
     Donacion donacion =
         new Donacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
-    // The repository persists the donation it receives, which only cascades to its bienes: the
-    // donor and the subcategoria the bien references must already be stored. The same holds for the
-    // graph the beneficiary repository persists, plus the received donation.
+    // El repositorio persiste la donación que recibe, la cual solo cascadea a sus bienes: el
+    // donante y la subcategoría a la que referencia el bien ya deben estar almacenados. Lo mismo
+    // vale para el grafo que persiste el repositorio de beneficiarios, más la donación recibida.
     persist(alimentos);
     persist(donante);
     DonacionesRepository donacionesRepository = new DonacionesRepository();
@@ -129,8 +129,8 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
     Donante donante = crearDonanteDummy();
     Donacion donacion =
         new Donacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
-    // The repository persists the donation it receives: its donor and the subcategoria of its bien,
-    // as well as the subcategorias of the needs, must already be stored.
+    // El repositorio persiste la donación que recibe: su donante y la subcategoría de su bien, así
+    // como las subcategorías de las necesidades, ya deben estar almacenadas.
     persist(alimentos);
     persist(ropa);
     persist(donante);
@@ -188,8 +188,8 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
     Donante donante = crearDonanteDummy();
     Donacion donacion =
         new Donacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
-    // The repository persists the donation it receives, and the beneficiary repository persists the
-    // need's subcategoria along with the entity.
+    // El repositorio persiste la donación que recibe, y el repositorio de beneficiarios persiste la
+    // subcategoría de la necesidad junto con la entidad.
     persist(alimentos);
     persist(donante);
     DonacionesRepository donacionesRepository = new DonacionesRepository();
@@ -230,8 +230,8 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
     Donante donante = crearDonanteDummy();
     Donacion donacion =
         new Donacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
-    // The repository persists the donation it receives: its donor and the subcategoria of its bien
-    // must already be stored.
+    // El repositorio persiste la donación que recibe: su donante y la subcategoría de su bien ya
+    // deben estar almacenados.
     persist(alimentos);
     persist(donante);
     DonacionesRepository donacionesRepository = new DonacionesRepository();

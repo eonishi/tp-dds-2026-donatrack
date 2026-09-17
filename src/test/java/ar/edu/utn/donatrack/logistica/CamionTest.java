@@ -107,7 +107,7 @@ class CamionTest implements SimplePersistenceTest {
     assertTrue(resultado.isPresent());
     assertEquals("ABC123", resultado.get().getPatente());
 
-    // Round trip: a fresh repository must find the camion in the database.
+    // Ida y vuelta: un repositorio nuevo debe encontrar el camión en la base.
     entityManager().clear();
     Optional<Camion> recargado = new CamionRepository().buscarPorPatente("ABC123");
     assertTrue(recargado.isPresent(), "El camión debe leerse de la base");
@@ -142,7 +142,7 @@ class CamionTest implements SimplePersistenceTest {
     assertTrue(todos.contains(b));
     assertTrue(todos.contains(c));
 
-    // Round trip: all three camiones must be listed from the database.
+    // Ida y vuelta: los tres camiones deben listarse desde la base.
     entityManager().clear();
     List<Camion> recargados = new CamionRepository().listarTodos();
     assertEquals(3, recargados.size(), "Los tres camiones deben persistir");
@@ -184,8 +184,8 @@ class CamionTest implements SimplePersistenceTest {
     assertEquals("ABC123", resultado.get().getPatente());
     assertEquals(1, repo.listarTodos().size(), "El camión duplicado no debe aumentar la colección");
 
-    // Round trip: the database must keep one single row for the duplicated patente, holding the
-    // first registered camion (HashSet#add does not replace an equal element).
+    // Ida y vuelta: la base debe conservar una sola fila para la patente duplicada, con el primer
+    // camión registrado (HashSet#add no reemplaza un elemento igual).
     entityManager().clear();
     List<Camion> recargados = new CamionRepository().listarTodos();
     assertEquals(1, recargados.size(), "La patente duplicada no debe duplicarse en la base");

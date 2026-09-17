@@ -4,7 +4,7 @@ import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
 import javax.persistence.Entity;
 
-// The identifier is inherited from Necesidad; redeclaring it here duplicated the mapped id.
+// El identificador se hereda de Necesidad; volver a declararlo aquí duplicaba el id mapeado.
 @Entity
 public class NecesidadRecurrente extends Necesidad {
 

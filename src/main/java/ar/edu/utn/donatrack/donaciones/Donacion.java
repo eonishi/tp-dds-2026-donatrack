@@ -35,8 +35,8 @@ public class Donacion {
 
   @Transient private EstadoDonacion estado = new EnDeposito();
 
-  // Eager and non-final on purpose: the state is derived from this collection once the donation is
-  // loaded, so it must already be there, and Hibernate must be able to replace the field.
+  // Eager y no final a propósito: el estado se deriva de esta colección una vez cargada la
+  // donación, así que ya debe estar ahí, y Hibernate debe poder reemplazar el campo.
   @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   @JoinColumn(name = "donacion_id")
   private List<HistorialEstado> historialEstado = new ArrayList<>();
@@ -70,11 +70,11 @@ public class Donacion {
   }
 
   /**
-   * Records the initial EN_DEPOSITO transition when the donation is registered.
+   * Asienta la transición inicial a EN_DEPOSITO cuando se registra la donación.
    *
-   * <p>It is idempotent on purpose: a donation that already transitioned before being registered
-   * keeps its own history, so the repository may call this on every registration without adding a
-   * spurious entry that would become the latest one.
+   * <p>Es idempotente a propósito: una donación que ya transitó antes de ser registrada conserva su
+   * propio historial, así que el repositorio puede llamar a este método en cada registro sin
+   * agregar una entrada espuria que pasaría a ser la última.
    */
   public void registrarEnDeposito(LocalDate fecha) {
     if (!historialEstado.isEmpty()) {
@@ -84,10 +84,10 @@ public class Donacion {
   }
 
   /**
-   * The state is not persisted: it is derived from the latest transition recorded in the historial,
-   * understood as the entry with the highest id. Ordering by {@code fecha} would be wrong, since it
-   * is a date and two transitions can share the same day. Without history entries the state keeps
-   * its current value.
+   * El estado no se persiste: se deriva de la última transición registrada en el historial,
+   * entendida como la entrada de mayor id. Ordenar por {@code fecha} sería incorrecto, ya que es
+   * una fecha y dos transiciones pueden compartir el mismo día. Sin entradas de historial el estado
+   * conserva su valor actual.
    */
   @PostLoad
   private void derivarEstadoDelHistorial() {

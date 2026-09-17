@@ -3,7 +3,7 @@ package ar.edu.utn.donatrack.donantes;
 import ar.edu.utn.donatrack.notificaciones.Notificador;
 import javax.persistence.Entity;
 
-// The identifier is inherited from MedioDeContacto; redeclaring it here duplicated the mapped id.
+// El identificador se hereda de MedioDeContacto; volver a declararlo aquí duplicaba el id mapeado.
 @Entity
 public class CorreoElectronico extends MedioDeContacto {
 

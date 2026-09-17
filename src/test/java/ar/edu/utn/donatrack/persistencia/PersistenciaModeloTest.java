@@ -33,11 +33,12 @@ import java.util.function.Predicate;
 import org.junit.jupiter.api.Test;
 
 /**
- * Proves that the domain model of the four JPA-backed aggregates can actually be persisted and
- * re-read from the database.
+ * Demuestra que el modelo de dominio de los cuatro agregados respaldados por JPA realmente puede
+ * persistirse y releerse desde la base.
  *
- * <p>The entity manager is cleared before re-querying, so every assertion runs against a fresh
- * instance loaded from HSQLDB rather than against the first-level cache of the entity manager.
+ * <p>El entity manager se limpia antes de volver a consultar, de modo que cada aserción corre
+ * contra una instancia nueva cargada desde HSQLDB y no contra la caché de primer nivel del entity
+ * manager.
  */
 class PersistenciaModeloTest implements SimplePersistenceTest {
 
@@ -59,10 +60,10 @@ class PersistenciaModeloTest implements SimplePersistenceTest {
 
     Donacion enDeposito = new Donacion(donante, List.of(crearBien(fideos, 5.0, "Fideos comunes")));
     Donacion asignada = new Donacion(donante, List.of(crearBien(fideos, 3.0, "Fideos integrales")));
-    // The donation transitions before being persisted, as the current application flow does.
+    // La donación transiciona antes de ser persistida, como hace el flujo actual de la aplicación.
     asignada.asignar();
-    // Registration records the initial transition; it must not add a second entry to a donation
-    // that already transitioned before being registered.
+    // El registro asienta la transición inicial; no debe agregar una segunda entrada a una donación
+    // que ya transitó antes de ser registrada.
     enDeposito.registrarEnDeposito(LocalDate.now());
     asignada.registrarEnDeposito(LocalDate.now());
 
@@ -134,7 +135,7 @@ class PersistenciaModeloTest implements SimplePersistenceTest {
     SubCategoria fideos = new SubCategoria("Arroz", Categoria.ALIMENTO);
     Donante donante = crearDonanteHumano();
     Donacion donacion = new Donacion(donante, List.of(crearBien(fideos, 2.0, "Arroz")));
-    // Two transitions that share the same date: the latest one is the one with the highest id.
+    // Dos transiciones que comparten la misma fecha: la última es la de mayor id.
     donacion.asignar();
     donacion.planificarRuta();
 

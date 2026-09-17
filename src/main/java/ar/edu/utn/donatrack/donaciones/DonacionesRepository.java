@@ -6,16 +6,17 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * JPA-backed repository of donations: reads query the database and writes persist there.
+ * Repositorio de donaciones respaldado por JPA: las lecturas consultan la base y las escrituras
+ * persisten en ella.
  *
- * <p>The donation state is not a column: it is derived from the historial, both when the entity is
- * loaded ({@link Donacion}'s {@code @PostLoad}) and in the queries below, which resolve the latest
- * historial entry.
+ * <p>El estado de la donación no es una columna: se deriva del historial, tanto al cargar la
+ * entidad (el {@code @PostLoad} de {@link Donacion}) como en las consultas de abajo, que resuelven
+ * la última entrada del historial.
  */
 public class DonacionesRepository implements JpaRepository {
 
   public long contarDonacionesAsignadas(EntidadBeneficiaria entidad, LocalDate fechaDesde) {
-    // DISTINCT: one donation can qualify twice in the window (assigned and later delivered).
+    // DISTINCT: una donación puede calificar dos veces en la ventana (asignada y luego entregada).
     String jpql =
         "SELECT COUNT(DISTINCT d) FROM Donacion d "
             + "JOIN d.historialEstado h "
@@ -32,21 +33,22 @@ public class DonacionesRepository implements JpaRepository {
   }
 
   /**
-   * @return an immutable snapshot of every stored donation.
+   * @return una instantánea inmutable de todas las donaciones almacenadas.
    */
   public List<Donacion> getDonaciones() {
     return List.copyOf(createQuery("select d from Donacion d", Donacion.class).getResultList());
   }
 
   /**
-   * @return an immutable snapshot of the stored donations whose latest transition is EN_DEPOSITO.
+   * @return una instantánea inmutable de las donaciones almacenadas cuya última transición es
+   *     EN_DEPOSITO.
    */
   public List<Donacion> getDonacionesEnDeposito() {
     return donationsWithLatestState(NombreEstado.EN_DEPOSITO);
   }
 
   /**
-   * @return an immutable snapshot of the stored donations whose latest transition is
+   * @return una instantánea inmutable de las donaciones almacenadas cuya última transición es
    *     ASIGNACION_REALIZADA.
    */
   public List<Donacion> getDonacionesEnAsignacionRealizada() {
@@ -54,10 +56,10 @@ public class DonacionesRepository implements JpaRepository {
   }
 
   /**
-   * Selects the donations whose latest historial entry is {@code estado}.
+   * Selecciona las donaciones cuya última entrada del historial es {@code estado}.
    *
-   * <p>The latest entry is the one with the highest id: {@code fecha} is a date, so two transitions
-   * of the same donation can share it and ordering by it would be wrong.
+   * <p>La última entrada es la de mayor id: {@code fecha} es una fecha, así que dos transiciones de
+   * la misma donación pueden compartirla y ordenar por ella sería incorrecto.
    */
   private List<Donacion> donationsWithLatestState(NombreEstado estado) {
     String jpql =
@@ -71,14 +73,14 @@ public class DonacionesRepository implements JpaRepository {
   }
 
   /**
-   * Registers a donation and records its initial EN_DEPOSITO transition.
+   * Registra una donación y asienta su transición inicial EN_DEPOSITO.
    *
-   * <p>Invariant: every donation registered through this repository has at least the initial
-   * EN_DEPOSITO transition in the database. Without it the donation would have no historial to
-   * derive its state from, and the state queries would never see it. The call is idempotent, so a
-   * donation that already transitioned before being registered keeps its own history.
+   * <p>Invariante: toda donación registrada a través de este repositorio tiene al menos la
+   * transición inicial EN_DEPOSITO en la base. Sin ella la donación no tendría historial del cual
+   * derivar su estado, y las consultas por estado nunca la verían. La llamada es idempotente, así
+   * que una donación que ya transitó antes de ser registrada conserva su propio historial.
    *
-   * @param donacion the donation to register
+   * @param donacion la donación a registrar
    */
   public void addDonacion(Donacion donacion) {
     inTransaction(

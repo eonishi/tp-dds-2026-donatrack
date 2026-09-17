@@ -3,7 +3,8 @@ package ar.edu.utn.donatrack.donantes;
 import ar.edu.utn.donatrack.notificaciones.Notificador;
 import javax.persistence.Entity;
 
-// See Sms: Whatsapp must be a mapped entity to survive the polymorphic mediosDeContacto list.
+// Ver Sms: Whatsapp debe ser una entidad mapeada para sobrevivir a la lista polimórfica
+// mediosDeContacto.
 @Entity
 public class Whatsapp extends MedioDeContacto {
 

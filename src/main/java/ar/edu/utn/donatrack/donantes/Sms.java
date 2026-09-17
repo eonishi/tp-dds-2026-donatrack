@@ -3,8 +3,9 @@ package ar.edu.utn.donatrack.donantes;
 import ar.edu.utn.donatrack.notificaciones.Notificador;
 import javax.persistence.Entity;
 
-// Sms is persisted as part of the MedioDeContacto JOINED hierarchy: a donor stores a polymorphic
-// list of contact means, so every concrete mean must be a mapped entity of that hierarchy.
+// Sms se persiste como parte de la jerarquía JOINED de MedioDeContacto: un donante almacena una
+// lista polimórfica de medios de contacto, así que cada medio concreto debe ser una entidad mapeada
+// de esa jerarquía.
 @Entity
 public class Sms extends MedioDeContacto {
 

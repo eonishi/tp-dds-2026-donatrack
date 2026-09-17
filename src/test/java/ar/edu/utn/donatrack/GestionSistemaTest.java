@@ -86,8 +86,8 @@ class DonaTrackTest implements SimplePersistenceTest {
     DonacionesRepository repo = new DonacionesRepository();
     CargaDonacion carga = new CargaDonacion(hoy, repo);
 
-    // CargaDonacion persists every donation it segments, and a donation only cascades to its
-    // bienes: the donor and the shared subcategorias must already be stored.
+    // CargaDonacion persiste cada donación que segmenta, y una donación solo cascadea a sus bienes:
+    // el donante y las subcategorías compartidas ya deben estar almacenados.
     persist(donanteDummy);
     persist(subcatSillas);
     persist(subcatFideos);

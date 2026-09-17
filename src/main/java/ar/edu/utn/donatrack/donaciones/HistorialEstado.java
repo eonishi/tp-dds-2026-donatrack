@@ -18,8 +18,9 @@ public class HistorialEstado {
   private NombreEstado estadoAlcanzado;
   private String justificacion;
 
-  // Read-only back reference: the foreign key keeps being written by Donacion.historialEstado, so
-  // the state machine needs no change. It exists so a history entry can navigate to its donation.
+  // Referencia inversa de solo lectura: la clave foránea la sigue escribiendo
+  // Donacion.historialEstado, así que la máquina de estados no necesita cambios. Existe para que
+  // una entrada del historial pueda navegar a su donación.
   @ManyToOne
   @JoinColumn(name = "donacion_id", insertable = false, updatable = false)
   private Donacion donacion;
@@ -32,7 +33,7 @@ public class HistorialEstado {
     this.justificacion = justificacion;
   }
 
-  // The generated id orders the history: it is the only monotonic datum, since fecha is a date.
+  // El id generado ordena el historial: es el único dato monotónico, ya que fecha es una fecha.
   Long getId() {
     return id;
   }

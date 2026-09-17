@@ -19,10 +19,10 @@ public enum NombreEstado {
   VENCIDA;
 
   /**
-   * Builds the behavior object that matches this name.
+   * Construye el objeto de comportamiento que corresponde a este nombre.
    *
-   * <p>States are not persisted: only their name is stored in the historial, so the state object
-   * has to be rebuilt from the name when a donation is loaded from the database.
+   * <p>Los estados no se persisten: solo su nombre se guarda en el historial, así que el objeto de
+   * estado debe reconstruirse a partir del nombre cuando una donación se carga desde la base.
    */
   public EstadoDonacion crearEstado() {
     return switch (this) {

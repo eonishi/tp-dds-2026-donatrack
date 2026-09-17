@@ -27,7 +27,7 @@ public class RepositoriosTest implements SimplePersistenceTest {
         repo.getDonantes().size(),
         "la cantidad de donantes en el repo debe ser igual que el csv");
 
-    // Round trip: a fresh repository only sees what actually reached the database.
+    // Ida y vuelta: un repositorio nuevo solo ve lo que realmente llegó a la base.
     entityManager().clear();
     DonantesRepository recargado = new DonantesRepository();
     assertEquals(
@@ -80,7 +80,7 @@ public class RepositoriosTest implements SimplePersistenceTest {
         2, fundacion.getMediosDeContacto().size(), "Fundidos debería tener dos medios de contacto");
     assertEquals(1, fundacion.getRepresentantes().size(), "Fundidos debería tener 1 representante");
 
-    // Round trip: both donors and their cascaded data must come back from the database.
+    // Ida y vuelta: tanto los donantes como sus datos en cascada deben volver desde la base.
     entityManager().clear();
     Set<Donante> recargados = new DonantesRepository().getDonantes();
     assertEquals(2, recargados.size(), "Los dos donantes deben persistir");
@@ -158,7 +158,8 @@ public class RepositoriosTest implements SimplePersistenceTest {
         juridicaResultado.getRazonSocial(),
         "La razon social debe ser la actualizada");
 
-    // Round trip: the update must have reached the database, not only the in-memory instance.
+    // Ida y vuelta: la actualización debe haber llegado a la base, no solo a la instancia en
+    // memoria.
     entityManager().clear();
     Set<Donante> recargados = new DonantesRepository().getDonantes();
     assertEquals(1, recargados.size(), "El upsert no debe duplicar al donante en la base");
@@ -186,7 +187,7 @@ public class RepositoriosTest implements SimplePersistenceTest {
     assertEquals(1, repo.getDonantes().size(), "Debe insertar el nuevo donante");
     assertTrue(repo.getDonantes().contains(nuevo), "El donante debe estar en el repo");
 
-    // Round trip: the inserted donor must be readable from the database by a fresh repository.
+    // Ida y vuelta: el donante insertado debe poder leerse desde la base con un repositorio nuevo.
     entityManager().clear();
     Set<Donante> recargados = new DonantesRepository().getDonantes();
     assertEquals(1, recargados.size(), "El donante insertado debe persistir");
@@ -216,7 +217,7 @@ public class RepositoriosTest implements SimplePersistenceTest {
     repo.addMany(List.of(b));
     assertEquals(2, repo.getDonantes().size(), "addMany debe seguir funcionando con otro donante");
 
-    // Round trip: both batches must persist across two separate addMany calls.
+    // Ida y vuelta: ambos lotes deben persistir a lo largo de dos llamadas separadas a addMany.
     entityManager().clear();
     Set<Donante> recargados = new DonantesRepository().getDonantes();
     assertEquals(2, recargados.size(), "Los donantes de ambos lotes deben persistir");
@@ -242,8 +243,8 @@ public class RepositoriosTest implements SimplePersistenceTest {
         contarPorRazonSocial(repo.getBeneficiarios(), "Hogar Repositorio"),
         "Un beneficiario con la misma razon social no debe duplicarse");
 
-    // Round trip: exactly one entity with that razon social must exist in the database, and it
-    // must be the first one registered.
+    // Ida y vuelta: debe existir exactamente una entidad con esa razón social en la base, y debe
+    // ser la primera registrada.
     entityManager().clear();
     Set<EntidadBeneficiaria> recargados = new BeneficiariosRepository().getBeneficiarios();
     assertEquals(
