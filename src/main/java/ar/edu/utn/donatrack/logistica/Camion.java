@@ -1,10 +1,10 @@
 package ar.edu.utn.donatrack.logistica;
+
+import java.util.Objects;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-
-import java.util.Objects;
 
 /**
  * Representa un camión en el sistema de gestión de flota.
@@ -14,7 +14,8 @@ import java.util.Objects;
  */
 @Entity
 public class Camion {
-  @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
   protected Camion() {}

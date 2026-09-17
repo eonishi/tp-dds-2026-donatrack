@@ -8,44 +8,46 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.estados.EnDeposito;
 import ar.edu.utn.donatrack.estados.EstadoDonacion;
 import ar.edu.utn.donatrack.logistica.Camion;
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Transient;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.Transient;
 
-@Entity 
+@Entity
 public class Donacion {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
-  @Transient
-  private EstadoDonacion estado = new EnDeposito();
+
+  @Transient private EstadoDonacion estado = new EnDeposito();
+
   @OneToMany(cascade = CascadeType.ALL)
-  @JoinColumn(name ="donacion_id")
+  @JoinColumn(name = "donacion_id")
   private final List<HistorialEstado> historialEstado = new ArrayList<>();
+
   @OneToMany(cascade = CascadeType.ALL)
   @JoinColumn(name = "donacion_id")
   private List<Bien> bienes = new ArrayList<>();
+
   @ManyToOne
   @JoinColumn(name = "entidad_id")
   private EntidadBeneficiaria entidadBeneficiaria;
+
   @ManyToOne
   @JoinColumn(name = "camion_id")
   private Camion camion;
+
   @ManyToOne
   @JoinColumn(name = "donante_id")
   private Donante donante;

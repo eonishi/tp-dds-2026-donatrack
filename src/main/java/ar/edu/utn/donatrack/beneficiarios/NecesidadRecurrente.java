@@ -1,18 +1,20 @@
 package ar.edu.utn.donatrack.beneficiarios;
+
+import ar.edu.utn.donatrack.bienes.SubCategoria;
+import ar.edu.utn.donatrack.bienes.UnidadMedida;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 
-import ar.edu.utn.donatrack.bienes.SubCategoria;
-import ar.edu.utn.donatrack.bienes.UnidadMedida;
-
 @Entity
 public class NecesidadRecurrente extends Necesidad {
-  @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
   protected NecesidadRecurrente() {}
+
   private TipoPeriodo periodo;
 
   public NecesidadRecurrente(

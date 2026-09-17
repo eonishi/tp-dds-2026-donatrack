@@ -1,6 +1,8 @@
 package ar.edu.utn.donatrack;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
@@ -35,9 +37,6 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import static org.mockito.Mockito.*;
-import static org.mockito.ArgumentMatchers.*;
-import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 
 public class MatchmakingDonacionesTest {
 
@@ -94,7 +93,9 @@ public class MatchmakingDonacionesTest {
             donacionesRepository,
             beneficiariosRepository,
             propuestaRepository,
-            List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos(mock(DonacionesRepository.class))));
+            List.of(
+                new AlgoritmoCompatibilidadSemantica(),
+                new AlgoritmoPrioridadSubAtendidos(mock(DonacionesRepository.class))));
 
     servicio.ejecutarMatchmakingDiario(fecha);
 
@@ -182,7 +183,9 @@ public class MatchmakingDonacionesTest {
             donacionesRepository,
             beneficiariosRepository,
             propuestaRepository,
-            List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos(mock(DonacionesRepository.class))));
+            List.of(
+                new AlgoritmoCompatibilidadSemantica(),
+                new AlgoritmoPrioridadSubAtendidos(mock(DonacionesRepository.class))));
 
     // First execution creates Propuesta
     servicio.ejecutarMatchmakingDiario(fecha);
@@ -217,7 +220,9 @@ public class MatchmakingDonacionesTest {
             donacionesRepository,
             beneficiariosRepository,
             propuestaRepository,
-            List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos(mock(DonacionesRepository.class))));
+            List.of(
+                new AlgoritmoCompatibilidadSemantica(),
+                new AlgoritmoPrioridadSubAtendidos(mock(DonacionesRepository.class))));
 
     // Run matchmaking to create Propuesta first
     servicio.ejecutarMatchmakingDiario(fecha);

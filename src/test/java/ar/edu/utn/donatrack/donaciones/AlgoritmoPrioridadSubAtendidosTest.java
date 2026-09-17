@@ -1,6 +1,8 @@
 package ar.edu.utn.donatrack.donaciones;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.beneficiarios.Necesidad;
@@ -17,9 +19,6 @@ import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import static org.mockito.Mockito.*;
-import static org.mockito.ArgumentMatchers.*;
-import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 
 class AlgoritmoPrioridadSubAtendidosTest {
 

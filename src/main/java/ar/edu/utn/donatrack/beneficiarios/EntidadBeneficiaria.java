@@ -4,25 +4,25 @@ import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.notificaciones.Notificable;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.CascadeType;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToMany;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
 
-@Entity 
+@Entity
 public class EntidadBeneficiaria implements Notificable {
-  @Id 
+  @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
+
   private String razonSocial;
   private String direccion;
   private String telefono;
@@ -30,12 +30,15 @@ public class EntidadBeneficiaria implements Notificable {
   @OneToMany(cascade = CascadeType.ALL)
   @JoinColumn(name = "entidad_id")
   private List<Necesidad> necesidadesExtraordinarias = new ArrayList<>();
+
   @OneToMany(cascade = CascadeType.ALL)
   @JoinColumn(name = "entidad_id")
   private List<NecesidadRecurrente> necesidadesRecurrentes = new ArrayList<>();
+
   @OneToMany(cascade = CascadeType.ALL)
   @JoinColumn(name = "entidad_id")
   private List<CorreoElectronico> correos = new ArrayList<>();
+
   @OneToMany(cascade = CascadeType.ALL)
   @JoinColumn(name = "entidad_id")
   private List<RecepcionDonacion> recepciones = new ArrayList<>();
@@ -97,7 +100,6 @@ public class EntidadBeneficiaria implements Notificable {
     this.recepciones.add(new RecepcionDonacion(donacion, fechaRecepcion));
     this.actualizarNecesidadesCon(donacion);
   }
-
 
   private void actualizarNecesidadesCon(Donacion donacion) {
     necesidadesExtraordinarias.forEach(necesidad -> aplicarSiCoincide(necesidad, donacion));

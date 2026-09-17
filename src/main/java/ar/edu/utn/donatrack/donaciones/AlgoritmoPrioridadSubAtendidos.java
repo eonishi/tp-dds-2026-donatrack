@@ -12,10 +12,10 @@ public class AlgoritmoPrioridadSubAtendidos implements AlgoritmoMatchmaking {
 
   private final DonacionesRepository donacionesRepository;
 
-  public AlgoritmoPrioridadSubAtendidos(DonacionesRepository donacionesRepository){
+  public AlgoritmoPrioridadSubAtendidos(DonacionesRepository donacionesRepository) {
     this.donacionesRepository = donacionesRepository;
   }
-  
+
   @Override
   public String getNombre() {
     return "prioridad-sub-atendidos";

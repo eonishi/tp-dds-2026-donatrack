@@ -1,18 +1,19 @@
 package ar.edu.utn.donatrack.donantes;
-import javax.persistence.CascadeType;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToMany;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
 
-@Entity 
+@Entity
 public class PersonajeJuridica extends Donante {
   private String razonSocial;
   private TipoOrganizacion tipoOrganizacion;
   private String rubro;
+
   @OneToMany(cascade = CascadeType.ALL)
   @JoinColumn(name = "donante_id")
   private List<Representante> representantes = new ArrayList<>();

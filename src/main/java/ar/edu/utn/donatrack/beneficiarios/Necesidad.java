@@ -1,4 +1,7 @@
 package ar.edu.utn.donatrack.beneficiarios;
+
+import ar.edu.utn.donatrack.bienes.SubCategoria;
+import ar.edu.utn.donatrack.bienes.UnidadMedida;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -6,20 +9,21 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
-import ar.edu.utn.donatrack.bienes.SubCategoria;
-import ar.edu.utn.donatrack.bienes.UnidadMedida;
-
 @Entity
 public class Necesidad {
-  @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
   protected Necesidad() {}
+
   private String descripcion;
   private double cantidadRecibida = 0.0;
+
   @ManyToOne
   @JoinColumn(name = "subcategoria_id")
   private SubCategoria subcategoria;
+
   private double cantidadObjetivo;
   private UnidadMedida unidad;
 

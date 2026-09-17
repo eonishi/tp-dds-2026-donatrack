@@ -1,4 +1,5 @@
 package ar.edu.utn.donatrack.bienes;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -6,10 +7,12 @@ import javax.persistence.Id;
 
 @Entity
 public class SubCategoria {
-  @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
   protected SubCategoria() {}
+
   private String nombre;
   private Categoria categoria;
 
