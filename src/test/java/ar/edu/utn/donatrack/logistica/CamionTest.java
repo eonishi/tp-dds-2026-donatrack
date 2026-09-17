@@ -2,12 +2,14 @@ package ar.edu.utn.donatrack.logistica;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
-class CamionTest {
+class CamionTest implements SimplePersistenceTest {
 
   // ── Entity Creation Tests ──────────────────────────────────────────
 
@@ -104,6 +106,12 @@ class CamionTest {
 
     assertTrue(resultado.isPresent());
     assertEquals("ABC123", resultado.get().getPatente());
+
+    // Round trip: a fresh repository must find the camion in the database.
+    entityManager().clear();
+    Optional<Camion> recargado = new CamionRepository().buscarPorPatente("ABC123");
+    assertTrue(recargado.isPresent(), "El camión debe leerse de la base");
+    assertEquals(45.0, recargado.get().getVolumenM3(), 0.001, "El camión debe conservar sus datos");
   }
 
   @Test
@@ -133,6 +141,14 @@ class CamionTest {
     assertTrue(todos.contains(a));
     assertTrue(todos.contains(b));
     assertTrue(todos.contains(c));
+
+    // Round trip: all three camiones must be listed from the database.
+    entityManager().clear();
+    List<Camion> recargados = new CamionRepository().listarTodos();
+    assertEquals(3, recargados.size(), "Los tres camiones deben persistir");
+    assertTrue(contienePatente(recargados, "ABC123"), "Falta ABC123 en la base");
+    assertTrue(contienePatente(recargados, "XYZ789"), "Falta XYZ789 en la base");
+    assertTrue(contienePatente(recargados, "DEF456"), "Falta DEF456 en la base");
   }
 
   @Test
@@ -166,5 +182,21 @@ class CamionTest {
     Optional<Camion> resultado = repo.buscarPorPatente("ABC123");
     assertTrue(resultado.isPresent());
     assertEquals("ABC123", resultado.get().getPatente());
+    assertEquals(1, repo.listarTodos().size(), "El camión duplicado no debe aumentar la colección");
+
+    // Round trip: the database must keep one single row for the duplicated patente, holding the
+    // first registered camion (HashSet#add does not replace an equal element).
+    entityManager().clear();
+    List<Camion> recargados = new CamionRepository().listarTodos();
+    assertEquals(1, recargados.size(), "La patente duplicada no debe duplicarse en la base");
+    assertEquals(
+        45.0,
+        recargados.get(0).getVolumenM3(),
+        0.001,
+        "El camión existente debe conservarse sin reemplazo");
+  }
+
+  private static boolean contienePatente(List<Camion> camiones, String patente) {
+    return camiones.stream().anyMatch(c -> patente.equals(c.getPatente()));
   }
 }

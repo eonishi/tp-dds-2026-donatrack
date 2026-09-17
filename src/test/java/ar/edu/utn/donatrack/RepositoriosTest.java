@@ -2,13 +2,17 @@ package ar.edu.utn.donatrack;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
+import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donantes.*;
 import ar.edu.utn.donatrack.utilidades.ImportadorDonantesCsv;
+import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
-public class RepositoriosTest {
+public class RepositoriosTest implements SimplePersistenceTest {
   @Test
   public void agregarDonantesDesdeCsv() throws IOException {
     DonantesRepository repo = new DonantesRepository();
@@ -22,6 +26,14 @@ public class RepositoriosTest {
         donantesCsv.size(),
         repo.getDonantes().size(),
         "la cantidad de donantes en el repo debe ser igual que el csv");
+
+    // Round trip: a fresh repository only sees what actually reached the database.
+    entityManager().clear();
+    DonantesRepository recargado = new DonantesRepository();
+    assertEquals(
+        donantesCsv.size(),
+        recargado.getDonantes().size(),
+        "los donantes importados deben leerse de la base, no de una colección en memoria");
   }
 
   @Test
@@ -67,6 +79,25 @@ public class RepositoriosTest {
     assertEquals(
         2, fundacion.getMediosDeContacto().size(), "Fundidos debería tener dos medios de contacto");
     assertEquals(1, fundacion.getRepresentantes().size(), "Fundidos debería tener 1 representante");
+
+    // Round trip: both donors and their cascaded data must come back from the database.
+    entityManager().clear();
+    Set<Donante> recargados = new DonantesRepository().getDonantes();
+    assertEquals(2, recargados.size(), "Los dos donantes deben persistir");
+    Donante humanaRecargada = buscarPorDocumento(recargados, "111222333");
+    Donante juridicaRecargada = buscarPorDocumento(recargados, "90-111222333-1");
+    assertEquals(
+        3,
+        humanaRecargada.getMediosDeContacto().size(),
+        "Elsa Pato debería recuperar sus tres medios de contacto");
+    assertEquals(
+        2,
+        juridicaRecargada.getMediosDeContacto().size(),
+        "Fundidos debería recuperar sus dos medios de contacto");
+    assertEquals(
+        1,
+        ((PersonajeJuridica) juridicaRecargada).getRepresentantes().size(),
+        "Fundidos debería recuperar su representante");
   }
 
   @Test
@@ -126,6 +157,15 @@ public class RepositoriosTest {
         "Actualizada SRL",
         juridicaResultado.getRazonSocial(),
         "La razon social debe ser la actualizada");
+
+    // Round trip: the update must have reached the database, not only the in-memory instance.
+    entityManager().clear();
+    Set<Donante> recargados = new DonantesRepository().getDonantes();
+    assertEquals(1, recargados.size(), "El upsert no debe duplicar al donante en la base");
+    assertEquals(
+        "Actualizada SRL",
+        ((PersonajeJuridica) recargados.iterator().next()).getRazonSocial(),
+        "La razon social actualizada debe recuperarse desde la base");
   }
 
   @Test
@@ -145,6 +185,15 @@ public class RepositoriosTest {
 
     assertEquals(1, repo.getDonantes().size(), "Debe insertar el nuevo donante");
     assertTrue(repo.getDonantes().contains(nuevo), "El donante debe estar en el repo");
+
+    // Round trip: the inserted donor must be readable from the database by a fresh repository.
+    entityManager().clear();
+    Set<Donante> recargados = new DonantesRepository().getDonantes();
+    assertEquals(1, recargados.size(), "El donante insertado debe persistir");
+    assertEquals(
+        "nuevo@mail.com",
+        recargados.iterator().next().extraerEmail().orElseThrow(),
+        "El correo del donante insertado debe recuperarse desde la base");
   }
 
   @Test
@@ -166,5 +215,64 @@ public class RepositoriosTest {
 
     repo.addMany(List.of(b));
     assertEquals(2, repo.getDonantes().size(), "addMany debe seguir funcionando con otro donante");
+
+    // Round trip: both batches must persist across two separate addMany calls.
+    entityManager().clear();
+    Set<Donante> recargados = new DonantesRepository().getDonantes();
+    assertEquals(2, recargados.size(), "Los donantes de ambos lotes deben persistir");
+    assertEquals(
+        "a@mail.com", buscarPorDocumento(recargados, "30-111").extraerEmail().orElseThrow());
+    assertEquals(
+        "b@mail.com", buscarPorDocumento(recargados, "30-222").extraerEmail().orElseThrow());
+  }
+
+  @Test
+  public void agregarBeneficiario_DeduplicaPorRazonSocial() {
+    BeneficiariosRepository repo = new BeneficiariosRepository();
+    EntidadBeneficiaria primera =
+        new EntidadBeneficiaria("Hogar Repositorio", "Direccion Original", "1145550001");
+    EntidadBeneficiaria duplicada =
+        new EntidadBeneficiaria("Hogar Repositorio", "Direccion Nueva", "1145550002");
+
+    repo.addBeneficiario(primera);
+    repo.addBeneficiario(duplicada);
+
+    assertEquals(
+        1,
+        contarPorRazonSocial(repo.getBeneficiarios(), "Hogar Repositorio"),
+        "Un beneficiario con la misma razon social no debe duplicarse");
+
+    // Round trip: exactly one entity with that razon social must exist in the database, and it
+    // must be the first one registered.
+    entityManager().clear();
+    Set<EntidadBeneficiaria> recargados = new BeneficiariosRepository().getBeneficiarios();
+    assertEquals(
+        1,
+        contarPorRazonSocial(recargados, "Hogar Repositorio"),
+        "El beneficiario debe leerse de la base, sin duplicarse");
+    assertEquals(
+        "Direccion Original",
+        buscarPorRazonSocial(recargados, "Hogar Repositorio").getDireccion(),
+        "El beneficiario existente debe conservarse");
+  }
+
+  private static long contarPorRazonSocial(
+      Set<EntidadBeneficiaria> beneficiarios, String razonSocial) {
+    return beneficiarios.stream().filter(e -> razonSocial.equals(e.getRazonSocial())).count();
+  }
+
+  private static EntidadBeneficiaria buscarPorRazonSocial(
+      Set<EntidadBeneficiaria> beneficiarios, String razonSocial) {
+    return beneficiarios.stream()
+        .filter(e -> razonSocial.equals(e.getRazonSocial()))
+        .findFirst()
+        .orElseThrow(() -> new AssertionError("No se recargó el beneficiario " + razonSocial));
+  }
+
+  private static Donante buscarPorDocumento(Set<Donante> donantes, String numDocumento) {
+    return donantes.stream()
+        .filter(d -> numDocumento.equals(d.getNumDocumento()))
+        .findFirst()
+        .orElseThrow(() -> new AssertionError("No se recargó el donante " + numDocumento));
   }
 }

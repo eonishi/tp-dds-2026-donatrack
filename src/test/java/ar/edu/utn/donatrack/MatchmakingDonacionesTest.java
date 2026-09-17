@@ -31,6 +31,7 @@ import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.estados.AsignacionRealizada;
+import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -38,7 +39,7 @@ import java.time.ZoneId;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-public class MatchmakingDonacionesTest {
+public class MatchmakingDonacionesTest implements SimplePersistenceTest {
 
   private static Donante crearDonanteDummy() {
     return new PersonaHumana(
@@ -75,13 +76,20 @@ public class MatchmakingDonacionesTest {
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     donacionesRepository.addDonacion(donacion);
 
+    // The beneficiary repository persists the graph it receives, so the prerequisites of that
+    // graph — the subcategoria each need references, the donor, and the received donation — must
+    // already exist when it is called.
+    persist(alimentos);
+    persist(donante);
+
     EntidadBeneficiaria hogarA =
         crearEntidadConNecesidad("Hogar A", alimentos, 5, fecha.plusMonths(4));
     EntidadBeneficiaria hogarB =
         crearEntidadConNecesidad("Hogar B", alimentos, 5, fecha.plusMonths(4));
-    hogarB.registrarRecepcion(
-        new Donacion(donante, List.of(crearBien("Vieja", 1, alimentos, fecha.plusMonths(1)))),
-        fecha.minusDays(10));
+    Donacion donacionRecibida =
+        new Donacion(donante, List.of(crearBien("Vieja", 1, alimentos, fecha.plusMonths(1))));
+    persist(donacionRecibida);
+    hogarB.registrarRecepcion(donacionRecibida, fecha.minusDays(10));
 
     BeneficiariosRepository beneficiariosRepository = new BeneficiariosRepository();
     beneficiariosRepository.addBeneficiario(hogarA);
@@ -119,6 +127,10 @@ public class MatchmakingDonacionesTest {
         new Donacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     donacionesRepository.addDonacion(donacion);
+
+    // The beneficiary repository persists the needs' subcategorias along with the entities.
+    persist(alimentos);
+    persist(ropa);
 
     EntidadBeneficiaria compatible =
         crearEntidadConNecesidad("Compatible", alimentos, 5, fecha.plusMonths(4));
@@ -173,6 +185,9 @@ public class MatchmakingDonacionesTest {
         new Donacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     donacionesRepository.addDonacion(donacion);
+    // The beneficiary repository persists the need's subcategoria along with the entity.
+    persist(alimentos);
+
     BeneficiariosRepository beneficiariosRepository = new BeneficiariosRepository();
     beneficiariosRepository.addBeneficiario(
         crearEntidadConNecesidad("Entidad", alimentos, 5, fecha.plusMonths(4)));

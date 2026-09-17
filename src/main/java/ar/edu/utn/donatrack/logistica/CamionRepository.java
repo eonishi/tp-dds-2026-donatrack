@@ -1,47 +1,55 @@
 package ar.edu.utn.donatrack.logistica;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import ar.edu.utn.donatrack.persistencia.JpaRepository;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Repositorio en memoria para la gestión de camiones.
+ * JPA-backed repository for truck management.
  *
- * <p>Almacena instancias de {@link Camion} en un {@link HashSet}, utilizando la identidad basada en
- * patente para la deduplicación. Sigue el patrón de {@code BeneficiariosRepository}.
+ * <p>Deduplication relies on the patente, which is the identity of {@link Camion#equals}: a truck
+ * whose patente is already registered does not replace the stored one, it is discarded.
  */
-public class CamionRepository {
-
-  private final HashSet<Camion> camiones = new HashSet<>();
+public class CamionRepository implements JpaRepository {
 
   /**
-   * Agrega un camión al repositorio.
+   * Registers a truck.
    *
-   * <p>Si ya existe un camión con la misma patente (según {@link Camion#equals}), el camión
-   * existente es reemplazado (semántica de {@link HashSet#add}).
+   * <p>When a truck with the same patente (according to {@link Camion#equals}) is already stored,
+   * the stored truck is kept and the new instance is ignored — the semantics of {@link
+   * HashSet#add}.
    *
-   * @param camion el camión a agregar (no nulo)
+   * @param camion the truck to register (non-null)
    */
   public void agregar(Camion camion) {
-    this.camiones.add(camion);
+    inTransaction(
+        () -> {
+          if (buscarPorPatente(camion.getPatente()).isEmpty()) {
+            persist(camion);
+          }
+        });
   }
 
   /**
-   * @return copia inmodificable de todos los camiones almacenados
+   * @return an unmodifiable copy of every stored truck
    */
   public List<Camion> listarTodos() {
-    return Collections.unmodifiableList(new ArrayList<>(camiones));
+    return List.copyOf(createQuery("select c from Camion c", Camion.class).getResultList());
   }
 
   /**
-   * Busca un camión por su patente.
+   * Finds a truck by its patente.
    *
-   * @param patente la patente a buscar (no nula)
-   * @return un {@link Optional} con el camión si existe, o {@link Optional#empty()} si no
+   * @param patente the patente to look up (non-null)
+   * @return an {@link Optional} with the truck when it exists, or {@link Optional#empty()} when it
+   *     does not
    */
   public Optional<Camion> buscarPorPatente(String patente) {
-    return camiones.stream().filter(c -> c.getPatente().equals(patente)).findFirst();
+    return createQuery("select c from Camion c where c.patente = :patente", Camion.class)
+        .setParameter("patente", patente)
+        .getResultList()
+        .stream()
+        .findFirst();
   }
 }
