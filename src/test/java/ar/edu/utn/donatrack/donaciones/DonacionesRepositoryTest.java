@@ -173,9 +173,17 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
     DonacionesRepository repo = new DonacionesRepository();
     repo.addDonacion(crearDonacionConEstado(NombreEstado.EN_DEPOSITO));
     repo.addDonacion(crearDonacionConEstado(NombreEstado.ASIGNACION_REALIZADA));
+    // Assigned and later delivered: two qualifying transitions for a single donation.
+    Donacion entregada = crearDonacionConEstado(NombreEstado.EN_DEPOSITO);
+    entregada.confirmarEntidadBeneficiaria(entidadBeneficiaria);
+    entregada.planificarRuta();
+    entregada.iniciarTraslado();
+    entregada.confirmarEntrega();
+    repo.addDonacion(entregada);
 
     long asignadas = repo.contarDonacionesAsignadas(entidadBeneficiaria, LocalDate.now());
 
-    assertEquals(1, asignadas, "Solo la donación asignada debe contarse");
+    assertEquals(
+        2, asignadas, "Cada donación debe contarse una sola vez, aunque tenga varias transiciones");
   }
 }

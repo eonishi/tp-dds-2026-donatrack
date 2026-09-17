@@ -15,8 +15,9 @@ import java.util.List;
 public class DonacionesRepository implements JpaRepository {
 
   public long contarDonacionesAsignadas(EntidadBeneficiaria entidad, LocalDate fechaDesde) {
+    // DISTINCT: one donation can qualify twice in the window (assigned and later delivered).
     String jpql =
-        "SELECT COUNT(d) FROM Donacion d "
+        "SELECT COUNT(DISTINCT d) FROM Donacion d "
             + "JOIN d.historialEstado h "
             + "WHERE d.entidadBeneficiaria = :entidad "
             + "AND h.estadoAlcanzado IN (:estados) "
