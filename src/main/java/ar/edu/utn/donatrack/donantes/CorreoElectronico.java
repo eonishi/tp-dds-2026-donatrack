@@ -2,15 +2,10 @@ package ar.edu.utn.donatrack.donantes;
 
 import ar.edu.utn.donatrack.notificaciones.Notificador;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
 
+// The identifier is inherited from MedioDeContacto; redeclaring it here duplicated the mapped id.
 @Entity
 public class CorreoElectronico extends MedioDeContacto {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
 
   protected CorreoElectronico() {}
 

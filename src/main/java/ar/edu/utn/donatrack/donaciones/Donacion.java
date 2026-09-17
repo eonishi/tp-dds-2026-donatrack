@@ -11,17 +11,20 @@ import ar.edu.utn.donatrack.logistica.Camion;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.PostLoad;
 import javax.persistence.Transient;
 
 @Entity
@@ -32,9 +35,11 @@ public class Donacion {
 
   @Transient private EstadoDonacion estado = new EnDeposito();
 
-  @OneToMany(cascade = CascadeType.ALL)
+  // Eager and non-final on purpose: the state is derived from this collection once the donation is
+  // loaded, so it must already be there, and Hibernate must be able to replace the field.
+  @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   @JoinColumn(name = "donacion_id")
-  private final List<HistorialEstado> historialEstado = new ArrayList<>();
+  private List<HistorialEstado> historialEstado = new ArrayList<>();
 
   @OneToMany(cascade = CascadeType.ALL)
   @JoinColumn(name = "donacion_id")
@@ -62,6 +67,33 @@ public class Donacion {
   public void cambiarEstado(HistorialEstado nuevoHistorial, EstadoDonacion nuevoEstado) {
     historialEstado.add(nuevoHistorial);
     estado = nuevoEstado;
+  }
+
+  /**
+   * Records the initial EN_DEPOSITO transition when the donation is registered.
+   *
+   * <p>It is idempotent on purpose: a donation that already transitioned before being registered
+   * keeps its own history, so the repository may call this on every registration without adding a
+   * spurious entry that would become the latest one.
+   */
+  public void registrarEnDeposito(LocalDate fecha) {
+    if (!historialEstado.isEmpty()) {
+      return;
+    }
+    historialEstado.add(new HistorialEstado(fecha, NombreEstado.EN_DEPOSITO, null));
+  }
+
+  /**
+   * The state is not persisted: it is derived from the latest transition recorded in the historial,
+   * understood as the entry with the highest id. Ordering by {@code fecha} would be wrong, since it
+   * is a date and two transitions can share the same day. Without history entries the state keeps
+   * its current value.
+   */
+  @PostLoad
+  private void derivarEstadoDelHistorial() {
+    historialEstado.stream()
+        .max(Comparator.comparing(HistorialEstado::getId))
+        .ifPresent(ultimo -> estado = ultimo.getEstadoAlcanzado().crearEstado());
   }
 
   public SubCategoria getSubcategoria() {
