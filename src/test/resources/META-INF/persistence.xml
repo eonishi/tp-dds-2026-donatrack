@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://xmlns.jcp.org/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence
+                                 http://xmlns.jcp.org/xml/ns/persistence/persistence_2_2.xsd"
+             version="2.2">
+    <persistence-unit name="simple-persistence-unit" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+
+        <!-- The test persistence unit lives on a different classpath root than the entities, so
+             Hibernate cannot auto-detect them: they are listed explicitly. -->
+        <class>ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria</class>
+        <class>ar.edu.utn.donatrack.beneficiarios.Necesidad</class>
+        <class>ar.edu.utn.donatrack.beneficiarios.NecesidadRecurrente</class>
+        <class>ar.edu.utn.donatrack.beneficiarios.RecepcionDonacion</class>
+        <class>ar.edu.utn.donatrack.bienes.Bien</class>
+        <class>ar.edu.utn.donatrack.bienes.SubCategoria</class>
+        <class>ar.edu.utn.donatrack.donaciones.Donacion</class>
+        <class>ar.edu.utn.donatrack.donaciones.HistorialEstado</class>
+        <class>ar.edu.utn.donatrack.donantes.CorreoElectronico</class>
+        <class>ar.edu.utn.donatrack.donantes.Donante</class>
+        <class>ar.edu.utn.donatrack.donantes.MedioDeContacto</class>
+        <class>ar.edu.utn.donatrack.donantes.PersonaHumana</class>
+        <class>ar.edu.utn.donatrack.donantes.PersonajeJuridica</class>
+        <class>ar.edu.utn.donatrack.donantes.Representante</class>
+        <class>ar.edu.utn.donatrack.logistica.Camion</class>
+
+        <properties>
+            <property name="javax.persistence.jdbc.url" value="jdbc:hsqldb:mem:donatrack-test"/>
+            <property name="javax.persistence.jdbc.user" value="sa"/>
+            <property name="javax.persistence.jdbc.password" value=""/>
+            <property name="javax.persistence.jdbc.driver" value="org.hsqldb.jdbc.JDBCDriver"/>
+
+            <property name="hibernate.dialect" value="org.hibernate.dialect.HSQLDialect"/>
+            <property name="hibernate.show_sql" value="false"/>
+            <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+        </properties>
+    </persistence-unit>
+</persistence>
