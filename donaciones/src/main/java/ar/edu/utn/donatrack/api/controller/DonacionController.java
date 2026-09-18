@@ -8,21 +8,19 @@ import static io.javalin.apibuilder.ApiBuilder.path;
 import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
-import ar.edu.utn.donatrack.api.mappers.ApiMapper;
-import ar.edu.utn.donatrack.api.dto.DonacionDtos.DonacionCreateRequest;
-import ar.edu.utn.donatrack.api.dto.DonacionDtos.DonacionUpdateRequest;
+import ar.edu.utn.donatrack.api.dto.DonacionDtos.CargaDonacionRequest;
 import ar.edu.utn.donatrack.api.dto.DonacionDtos.BienRequest;
+import ar.edu.utn.donatrack.api.dto.DonacionDtos.DonacionUpdateRequest;
 import ar.edu.utn.donatrack.api.dto.DonacionDtos.FotoRequest;
 import ar.edu.utn.donatrack.api.dto.DonacionDtos.FotoResponse;
-import ar.edu.utn.donatrack.api.dto.DonacionDtos.RecepcionRequest;
 import ar.edu.utn.donatrack.api.dto.DonacionDtos.TransicionEstadoRequest;
 import ar.edu.utn.donatrack.api.error.ApiException;
+import ar.edu.utn.donatrack.api.mappers.ApiMapper;
 import ar.edu.utn.donatrack.api.validation.DtoValidator;
-import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
-import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.EstadoUso;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
+import ar.edu.utn.donatrack.donaciones.CargaDonacion;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donaciones.NombreEstado;
@@ -36,19 +34,23 @@ import java.util.UUID;
 public final class DonacionController {
   private final DonacionesRepository donaciones;
   private final DonantesRepository donantes;
-  private final BeneficiariosRepository entidades;
   private final PropuestaRepository propuestas;
+  private final CargaDonacion cargaDonacion;
 
-  public DonacionController(DonacionesRepository donaciones, DonantesRepository donantes, BeneficiariosRepository entidades, PropuestaRepository propuestas) {
+  public DonacionController(
+      DonacionesRepository donaciones,
+      DonantesRepository donantes,
+      PropuestaRepository propuestas,
+      CargaDonacion cargaDonacion) {
     this.donaciones = donaciones;
     this.donantes = donantes;
-    this.entidades = entidades;
     this.propuestas = propuestas;
+    this.cargaDonacion = cargaDonacion;
   }
 
   public void routes() {
     path(
-        "/api/v1/donaciones",
+        "/donaciones",
         () -> {
           get(this::listar);
           post(this::crear);
@@ -60,7 +62,6 @@ public final class DonacionController {
                 delete(this::eliminar);
                 patch("/estado", this::transicionar);
                 get("/historial-estados", this::historial);
-                patch("/recepcion", this::recibir);
                 post("/fotos", this::agregarFoto);
               });
         });
@@ -75,9 +76,17 @@ public final class DonacionController {
   }
 
   private void crear(Context ctx) {
-    DonacionCreateRequest request = DtoValidator.validate(ctx.bodyAsClass(DonacionCreateRequest.class));
-    Donante donante = donantes.findById(request.donanteId()).orElseThrow(() -> ApiException.notFound("Donante", request.donanteId()));
-    ctx.status(201).json(donacion(donaciones.save(new Donacion(donante, bienes(request.bienes())))));
+    CargaDonacionRequest request =
+        DtoValidator.validate(ctx.bodyAsClass(CargaDonacionRequest.class));
+    Donante donante =
+        donantes
+            .findById(request.donanteId())
+            .orElseThrow(() -> ApiException.notFound("Donante", request.donanteId()));
+    ctx.status(201)
+        .json(
+            cargaDonacion.cargarDonacion(donante, bienes(request.bienes())).stream()
+                .map(ApiMapper::donacion)
+                .toList());
   }
 
   private void actualizar(Context ctx) {
@@ -98,9 +107,10 @@ public final class DonacionController {
   }
 
   private void transicionar(Context ctx) {
-    ctx.json(
-        donacion(
-            cambiarEstado(buscar(HttpSupport.id(ctx, "id")), DtoValidator.validate(ctx.bodyAsClass(TransicionEstadoRequest.class)))));
+    TransicionEstadoRequest request =
+        DtoValidator.validate(ctx.bodyAsClass(TransicionEstadoRequest.class));
+    Donacion donacion = buscar(HttpSupport.id(ctx, "id"));
+    ctx.json(donacion(cambiarEstado(donacion, request)));
   }
 
   private void historial(Context ctx) {
@@ -108,12 +118,6 @@ public final class DonacionController {
         buscar(HttpSupport.id(ctx, "id")).getHistorialEstado().stream()
             .map(ApiMapper::historial)
             .toList());
-  }
-
-  private void recibir(Context ctx) {
-    ctx.json(
-        donacion(
-            recibir(buscar(HttpSupport.id(ctx, "id")), DtoValidator.validate(ctx.bodyAsClass(RecepcionRequest.class)))));
   }
 
   private void agregarFoto(Context ctx) {
@@ -129,31 +133,15 @@ public final class DonacionController {
     return items.stream().map(b -> new Bien(b.descripcion(), b.foto(), b.cantidad(), b.unidad(), b.fechaVencimiento(), b.estadoDeUso() == null ? EstadoUso.NO_APLICA : b.estadoDeUso(), new SubCategoria(b.subcategoria(), b.categoria()))).toList();
   }
 
-  private Donacion asignar(Donacion donacion, UUID entidadId) {
-    EntidadBeneficiaria entidad = entidades.findById(entidadId).orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", entidadId));
-    donacion.confirmarEntidadBeneficiaria(entidad);
-    propuestas.remove(donacion);
-    return donacion;
-  }
-
-  private Donacion recibir(Donacion donacion, RecepcionRequest request) {
-    if (request.recibido()) donacion.confirmarEntrega();
-    else {
-      if (request.justificacion() == null || request.justificacion().isBlank()) throw new IllegalArgumentException("justificacion es obligatoria si no fue recibida.");
-      donacion.reportarFalla(request.justificacion());
-    }
-    return donacion;
-  }
-
   private Donacion cambiarEstado(Donacion donacion, TransicionEstadoRequest request) {
     return switch (request.estado()) {
-      case ASIGNACION_REALIZADA -> asignar(donacion, request.entidadBeneficiariaId());
       case LISTA_PARA_ENTREGAR -> { donacion.planificarRuta(); yield donacion; }
       case EN_TRASLADO -> { donacion.iniciarTraslado(); yield donacion; }
-      case ENTREGADA -> recibir(donacion, new RecepcionRequest(true, null));
-      case ENTREGA_FALLIDA -> recibir(donacion, new RecepcionRequest(false, request.justificacion()));
+      case ENTREGADA -> { donacion.confirmarEntrega(); yield donacion; }
+      case ENTREGA_FALLIDA -> { donacion.reportarFalla(request.justificacion()); yield donacion; }
       case VENCIDA -> { donacion.marcarVencida(); propuestas.remove(donacion); yield donacion; }
       case EN_DEPOSITO -> { donacion.retornarAlDeposito(); yield donacion; }
+      case ASIGNACION_REALIZADA -> throw new IllegalArgumentException("Estado no permitido.");
     };
   }
 }

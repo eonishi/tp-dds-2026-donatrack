@@ -13,6 +13,7 @@ import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
+import ar.edu.utn.donatrack.donaciones.EntidadFueraDeRankingException;
 import ar.edu.utn.donatrack.donaciones.PropuestaDeAsignacion;
 import ar.edu.utn.donatrack.donaciones.ServicioMatchmakingDonaciones;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
@@ -43,13 +44,18 @@ public final class MatchmakingController {
   }
 
   public void routes() {
+    get("/propuestas-asignacion", this::listar);
     path(
-        "/api/v1/donaciones/{donacionId}",
+        "/donaciones/{donacionId}",
         () -> {
           post("/propuesta-asignacion", this::ejecutar);
           get("/propuesta-asignacion", this::ranking);
-          put("/asignacion", this::seleccionar);
+          put("/propuesta-asignacion", this::seleccionar);
         });
+  }
+
+  private void listar(Context ctx) {
+    ctx.json(matchmaking.obtenerPropuestasPendientes().stream().map(ApiMapper::propuesta).toList());
   }
 
   private void ejecutar(Context ctx) {
@@ -68,10 +74,10 @@ public final class MatchmakingController {
     SeleccionEntidadRequest request = ctx.bodyAsClass(SeleccionEntidadRequest.class);
     ctx.json(
         ApiMapper.donacion(
-            seleccionar(HttpSupport.id(ctx, "donacionId"), DtoValidator.validate(request).entidadBeneficiariaId())));
+            confirmarSeleccion(HttpSupport.id(ctx, "donacionId"), DtoValidator.validate(request).entidadBeneficiariaId())));
   }
 
-  private Donacion seleccionar(UUID donacionId, UUID entidadId) {
+  private Donacion confirmarSeleccion(UUID donacionId, UUID entidadId) {
     Donacion donacion = donacion(donacionId);
     EntidadBeneficiaria entidad =
         entidades
@@ -83,10 +89,11 @@ public final class MatchmakingController {
       }
       throw ApiException.conflict("La donación ya tiene una entidad beneficiaria asignada.");
     }
-    PropuestaDeAsignacion propuesta = ranking(donacionId);
-    boolean candidata = propuesta.getRankings().stream().flatMap(r -> r.getCandidatos().stream()).anyMatch(c -> c.getEntidadBeneficiaria().getId().equals(entidadId));
-    if (!candidata) throw ApiException.conflict("La entidad no pertenece al ranking vigente.");
-    matchmaking.confirmarAsignacionAdministrativa(donacion, entidad, LocalDate.now(clock));
+    try {
+      matchmaking.confirmarAsignacionAdministrativa(donacion, entidad, LocalDate.now(clock));
+    } catch (EntidadFueraDeRankingException error) {
+      throw ApiException.conflict(error.getMessage());
+    }
     notificaciones.enviar(new EventoAsignacion(donacion.getDonante(), entidad).generarNotificaciones());
     return donacion;
   }

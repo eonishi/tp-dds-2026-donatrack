@@ -43,6 +43,7 @@ class DonacionesApiHttpTest {
   void crudsCompletosRespetanCodigosHttpYErrores() throws Exception {
     UUID donanteId = crearDonante();
     assertEquals(200, request("GET", "/api/v1/donantes", null).statusCode());
+    assertEquals(404, request("GET", "/donantes", null).statusCode());
     assertEquals(
         200, request("GET", "/api/v1/donantes/" + donanteId, null).statusCode());
 
@@ -66,12 +67,14 @@ class DonacionesApiHttpTest {
     assertEquals(200, entidadActualizada.statusCode());
 
     UUID necesidadId = crearNecesidad(entidadId, "Fideos");
-    assertEquals(200, request("GET", "/api/v1/necesidades", null).statusCode());
+    assertEquals(
+        200,
+        request("GET", "/api/v1/entidades/" + entidadId + "/necesidades", null).statusCode());
     HttpResponse<String> necesidadActualizada =
         request(
             "PUT",
-            "/api/v1/necesidades/" + necesidadId,
-            necesidadJson(entidadId, "Fideos", 20));
+            "/api/v1/entidades/" + entidadId + "/necesidades/" + necesidadId,
+            necesidadJson("Fideos", 20));
     assertEquals(200, necesidadActualizada.statusCode());
     assertEquals(20, json(necesidadActualizada).get("cantidadObjetivo").asInt());
 
@@ -87,7 +90,13 @@ class DonacionesApiHttpTest {
     assertEquals(200, donacionActualizada.statusCode());
 
     assertEquals(204, request("DELETE", "/api/v1/donaciones/" + donacionId, null).statusCode());
-    assertEquals(204, request("DELETE", "/api/v1/necesidades/" + necesidadId, null).statusCode());
+    assertEquals(
+        204,
+        request(
+                "DELETE",
+                "/api/v1/entidades/" + entidadId + "/necesidades/" + necesidadId,
+                null)
+            .statusCode());
     assertEquals(
         204,
         request("DELETE", "/api/v1/beneficiarias/" + entidadId, null)
@@ -106,19 +115,46 @@ class DonacionesApiHttpTest {
   }
 
   @Test
-  void transicionesRecepcionYFotosQuedanAuditadas() throws Exception {
+  void necesidadesSoloSeResuelvenDentroDeSuEntidad() throws Exception {
+    UUID entidadId = crearEntidad("Comedor Propietario");
+    UUID otraEntidadId = crearEntidad("Comedor Ajeno");
+    UUID necesidadId = crearNecesidad(entidadId, "Harina");
+
+    String rutaAjena =
+        "/api/v1/entidades/" + otraEntidadId + "/necesidades/" + necesidadId;
+    assertEquals(404, request("GET", rutaAjena, null).statusCode());
+    assertEquals(404, request("PUT", rutaAjena, necesidadJson("Harina", 20)).statusCode());
+    assertEquals(404, request("DELETE", rutaAjena, null).statusCode());
+    assertEquals(
+        404,
+        request(
+                "GET", "/api/v1/entidades/" + UUID.randomUUID() + "/necesidades", null)
+            .statusCode());
+    assertEquals(
+        404,
+        request(
+                "POST",
+                "/api/v1/entidades/" + UUID.randomUUID() + "/necesidades",
+                necesidadJson("Harina", 10))
+            .statusCode());
+    assertEquals(404, request("GET", "/api/v1/necesidades/" + necesidadId, null).statusCode());
+
+    assertEquals(
+        200,
+        request(
+                "GET", "/api/v1/entidades/" + entidadId + "/necesidades/" + necesidadId,
+                null)
+            .statusCode());
+  }
+
+  @Test
+  void transicionesDeEntregaYFotosQuedanAuditadas() throws Exception {
     UUID donanteId = crearDonante();
     UUID entidadId = crearEntidad("Hogar Auditada");
     crearNecesidad(entidadId, "Leche");
     UUID donacionId = crearDonacion(donanteId, "Leche");
 
-    assertEquals(
-        200,
-        request(
-                "PATCH",
-                "/api/v1/donaciones/" + donacionId + "/estado",
-                "{\"estado\":\"ASIGNACION_REALIZADA\",\"entidadBeneficiariaId\":\"" + entidadId + "\"}")
-            .statusCode());
+    asignarDesdePropuesta(donacionId, entidadId);
     assertEquals(
         200,
         request(
@@ -137,8 +173,8 @@ class DonacionesApiHttpTest {
     HttpResponse<String> noRecibida =
         request(
             "PATCH",
-            "/api/v1/donaciones/" + donacionId + "/recepcion",
-            "{\"recibido\":false,\"justificacion\":\"No había responsables\"}");
+            "/api/v1/donaciones/" + donacionId + "/estado",
+            "{\"estado\":\"ENTREGA_FALLIDA\",\"justificacion\":\"No había responsables\"}");
     assertEquals(200, noRecibida.statusCode());
     assertEquals("ENTREGA_FALLIDA", json(noRecibida).get("estado").asText());
 
@@ -164,10 +200,18 @@ class DonacionesApiHttpTest {
     HttpResponse<String> recibida =
         request(
             "PATCH",
-            "/api/v1/donaciones/" + donacionRecibidaId + "/recepcion",
-            "{\"recibido\":true}");
+            "/api/v1/donaciones/" + donacionRecibidaId + "/estado",
+            "{\"estado\":\"ENTREGADA\"}");
     assertEquals(200, recibida.statusCode());
     assertEquals("ENTREGADA", json(recibida).get("estado").asText());
+
+    assertEquals(
+        404,
+        request(
+                "PATCH",
+                "/api/v1/donaciones/" + donacionRecibidaId + "/recepcion",
+                "{\"recibido\":true}")
+            .statusCode());
 
     HttpResponse<String> entidad =
         request("GET", "/api/v1/beneficiarias/" + entidadId, null);
@@ -180,6 +224,7 @@ class DonacionesApiHttpTest {
     UUID entidadId = crearEntidad("Comedor Match");
     crearNecesidad(entidadId, "Arroz");
     UUID donacionId = crearDonacion(donanteId, "Arroz");
+    UUID otraDonacionId = crearDonacion(donanteId, "Arroz");
 
     HttpResponse<String> ejecucion =
         request(
@@ -187,6 +232,17 @@ class DonacionesApiHttpTest {
     assertEquals(201, ejecucion.statusCode());
     assertEquals(donacionId.toString(), json(ejecucion).get("donacionId").asText());
     assertFalse(json(ejecucion).get("rankings").isEmpty());
+    assertEquals(
+        201,
+        request(
+                "POST", "/api/v1/donaciones/" + otraDonacionId + "/propuesta-asignacion", null)
+            .statusCode());
+
+    HttpResponse<String> propuestas = request("GET", "/api/v1/propuestas-asignacion", null);
+    assertEquals(200, propuestas.statusCode());
+    assertEquals(2, json(propuestas).size());
+    assertTrue(propuestas.body().contains(donacionId.toString()));
+    assertTrue(propuestas.body().contains(otraDonacionId.toString()));
 
     HttpResponse<String> ranking =
         request("GET", "/api/v1/donaciones/" + donacionId + "/propuesta-asignacion", null);
@@ -196,11 +252,91 @@ class DonacionesApiHttpTest {
     HttpResponse<String> seleccion =
         request(
             "PUT",
-            "/api/v1/donaciones/" + donacionId + "/asignacion",
+            "/api/v1/donaciones/" + donacionId + "/propuesta-asignacion",
             "{\"entidadBeneficiariaId\":\"" + entidadId + "\"}");
     assertEquals(200, seleccion.statusCode());
     assertEquals("ASIGNACION_REALIZADA", json(seleccion).get("estado").asText());
     assertEquals(entidadId.toString(), json(seleccion).get("entidadBeneficiariaId").asText());
+    HttpResponse<String> pendientes = request("GET", "/api/v1/propuestas-asignacion", null);
+    assertEquals(200, pendientes.statusCode());
+    assertEquals(1, json(pendientes).size());
+    assertEquals(otraDonacionId.toString(), json(pendientes).get(0).get("donacionId").asText());
+    assertEquals(
+        404,
+        request("PUT", "/api/v1/donaciones/" + donacionId + "/asignacion", null).statusCode());
+    assertEquals(404, request("POST", "/api/v1/propuestas-asignacion", null).statusCode());
+    assertEquals(404, request("PUT", "/api/v1/propuestas-asignacion", null).statusCode());
+    assertEquals(404, request("DELETE", "/api/v1/propuestas-asignacion", null).statusCode());
+  }
+
+  @Test
+  void seleccionDeEntidadFueraDelRankingDevuelveConflict() throws Exception {
+    UUID donanteId = crearDonante();
+    UUID entidadRankeadaId = crearEntidad("Comedor Match");
+    UUID entidadNoRankeadaId = crearEntidad("Comedor Sin Match");
+    crearNecesidad(entidadRankeadaId, "Arroz");
+    UUID donacionId = crearDonacion(donanteId, "Arroz");
+
+    assertEquals(
+        201,
+        request("POST", "/api/v1/donaciones/" + donacionId + "/propuesta-asignacion", null)
+            .statusCode());
+
+    HttpResponse<String> seleccion =
+        request(
+            "PUT",
+            "/api/v1/donaciones/" + donacionId + "/propuesta-asignacion",
+            "{\"entidadBeneficiariaId\":\"" + entidadNoRankeadaId + "\"}");
+
+    assertEquals(409, seleccion.statusCode());
+    assertEquals("CONFLICT", json(seleccion).get("code").asText());
+    assertEquals(
+        "La entidad no pertenece al ranking vigente.", json(seleccion).get("message").asText());
+  }
+
+  @Test
+  void patchNoPermiteBypassearLaAsignacionAdministrativa() throws Exception {
+    UUID donanteId = crearDonante();
+    UUID entidadRankeadaId = crearEntidad("Comedor Match");
+    crearNecesidad(entidadRankeadaId, "Arroz");
+    UUID donacionId = crearDonacion(donanteId, "Arroz");
+
+    HttpResponse<String> respuesta =
+        request(
+            "PATCH",
+            "/api/v1/donaciones/" + donacionId + "/estado",
+            "{\"estado\":\"ASIGNACION_REALIZADA\"}");
+
+    assertEquals(400, respuesta.statusCode());
+    assertEquals("VALIDATION_ERROR", json(respuesta).get("code").asText());
+    assertEquals(
+        "EN_DEPOSITO",
+        json(request("GET", "/api/v1/donaciones/" + donacionId, null)).get("estado").asText());
+  }
+
+  @Test
+  void cargaUnaDonacionLaSegmentaYDevuelveLasDonacionesCreadas() throws Exception {
+    UUID donanteId = crearDonante();
+
+    HttpResponse<String> response =
+        request(
+            "POST",
+            "/api/v1/donaciones",
+            """
+            {"donanteId":"%s","bienes":[
+              {"descripcion":"Silla nueva","cantidad":2,"unidad":"UNIDADES","estadoDeUso":"NUEVO","subcategoria":"Sillas","categoria":"MOBILIARIO"},
+              {"descripcion":"Silla usada","cantidad":3,"unidad":"UNIDADES","estadoDeUso":"USADO","subcategoria":"Sillas","categoria":"MOBILIARIO"},
+              {"descripcion":"Mesa nueva","cantidad":1,"unidad":"UNIDADES","estadoDeUso":"NUEVO","subcategoria":"Mesas","categoria":"MOBILIARIO"}
+            ]}
+            """.formatted(donanteId));
+
+    assertEquals(201, response.statusCode(), response.body());
+    JsonNode donaciones = json(response);
+    assertEquals(3, donaciones.size());
+    for (JsonNode donacion : donaciones) {
+      assertEquals(donanteId.toString(), donacion.get("donanteId").asText());
+      assertEquals(1, donacion.get("bienes").size());
+    }
   }
 
   private UUID crearDonante() throws Exception {
@@ -227,7 +363,10 @@ class DonacionesApiHttpTest {
 
   private UUID crearNecesidad(UUID entidadId, String subcategoria) throws Exception {
     HttpResponse<String> response =
-        request("POST", "/api/v1/necesidades", necesidadJson(entidadId, subcategoria, 10));
+        request(
+            "POST",
+            "/api/v1/entidades/" + entidadId + "/necesidades",
+            necesidadJson(subcategoria, 10));
     assertEquals(201, response.statusCode(), response.body());
     return UUID.fromString(json(response).get("id").asText());
   }
@@ -243,17 +382,11 @@ class DonacionesApiHttpTest {
                 + subcategoria
                 + "\",\"categoria\":\"ALIMENTO\"}]}");
     assertEquals(201, response.statusCode(), response.body());
-    return UUID.fromString(json(response).get("id").asText());
+    return UUID.fromString(json(response).get(0).get("id").asText());
   }
 
   private void llevarATraslado(UUID donacionId, UUID entidadId) throws Exception {
-    assertEquals(
-        200,
-        request(
-                "PATCH",
-                "/api/v1/donaciones/" + donacionId + "/estado",
-                "{\"estado\":\"ASIGNACION_REALIZADA\",\"entidadBeneficiariaId\":\"" + entidadId + "\"}")
-            .statusCode());
+    asignarDesdePropuesta(donacionId, entidadId);
     assertEquals(
         200,
         request(
@@ -270,6 +403,20 @@ class DonacionesApiHttpTest {
             .statusCode());
   }
 
+  private void asignarDesdePropuesta(UUID donacionId, UUID entidadId) throws Exception {
+    assertEquals(
+        201,
+        request("POST", "/api/v1/donaciones/" + donacionId + "/propuesta-asignacion", null)
+            .statusCode());
+    assertEquals(
+        200,
+        request(
+                "PUT",
+                "/api/v1/donaciones/" + donacionId + "/propuesta-asignacion",
+                "{\"entidadBeneficiariaId\":\"" + entidadId + "\"}")
+            .statusCode());
+  }
+
   private String donanteJson(String nombre, String apellido, String email) {
     return "{\"tipoPersona\":\"HUMANA\",\"numeroDocumento\":\"30111222\",\"tipoDocumento\":\"DNI\",\"mediosDeContacto\":[{\"tipo\":\"EMAIL\",\"contacto\":\""
         + email
@@ -280,10 +427,8 @@ class DonacionesApiHttpTest {
         + "\",\"edad\":30,\"genero\":\"FEMENINO\",\"direccion\":\"Calle 123\"}";
   }
 
-  private String necesidadJson(UUID entidadId, String subcategoria, int cantidad) {
-    return "{\"entidadBeneficiariaId\":\""
-        + entidadId
-        + "\",\"tipo\":\"EXTRAORDINARIA\",\"descripcion\":\"Alimentos\",\"cantidadObjetivo\":"
+  private String necesidadJson(String subcategoria, int cantidad) {
+    return "{\"tipo\":\"EXTRAORDINARIA\",\"descripcion\":\"Alimentos\",\"cantidadObjetivo\":"
         + cantidad
         + ",\"unidad\":\"KILOGRAMOS\",\"subcategoria\":\""
         + subcategoria

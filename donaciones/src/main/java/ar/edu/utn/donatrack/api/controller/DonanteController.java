@@ -9,6 +9,7 @@ import static io.javalin.apibuilder.ApiBuilder.put;
 
 import ar.edu.utn.donatrack.api.dto.DonanteDtos.DonanteRequest;
 import ar.edu.utn.donatrack.api.error.ApiException;
+import ar.edu.utn.donatrack.api.mappers.ApiMapper;
 import ar.edu.utn.donatrack.api.validation.DtoValidator;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
@@ -37,7 +38,7 @@ public final class DonanteController {
 
   public void routes() {
     path(
-        "/api/v1/donantes",
+        "/donantes",
         () -> {
           get(this::listar);
           post(this::crear);
@@ -52,7 +53,7 @@ public final class DonanteController {
   }
 
   private void listar(Context ctx) {
-    ctx.json(donantes.getDonantes().stream().map(ar.edu.utn.donatrack.api.mappers.ApiMapper::donante).toList());
+    ctx.json(donantes.getDonantes().stream().map(ApiMapper::donante).toList());
   }
 
   private void obtener(Context ctx) {
@@ -62,7 +63,7 @@ public final class DonanteController {
   private void crear(Context ctx) {
     DonanteRequest request = DtoValidator.validate(ctx.bodyAsClass(DonanteRequest.class));
     validar(request, null);
-    ctx.status(201).json(donante(donantes.save(crear(request))));
+    ctx.status(201).json(donante(donantes.save(construirDonante(request))));
   }
 
   private void actualizar(Context ctx) {
@@ -73,7 +74,7 @@ public final class DonanteController {
     if ((actual instanceof PersonaHumana) != (request.tipoPersona() == TipoPersona.HUMANA)) {
       throw ApiException.conflict("No se puede cambiar el tipo de persona del donante.");
     }
-    actualizar(actual, request);
+    aplicarCambios(actual, request);
     ctx.json(donante(donantes.save(actual)));
   }
 
@@ -91,7 +92,7 @@ public final class DonanteController {
     return donantes.findById(id).orElseThrow(() -> ApiException.notFound("Donante", id));
   }
 
-  private Donante crear(DonanteRequest request) {
+  private Donante construirDonante(DonanteRequest request) {
     CorreoElectronico email =
         medios(request).stream()
             .filter(CorreoElectronico.class::isInstance)
@@ -101,19 +102,19 @@ public final class DonanteController {
     if (request.tipoPersona() == TipoPersona.HUMANA) {
       PersonaHumana persona =
           new PersonaHumana(email, request.nombre(), request.apellido(), request.edad(), request.numeroDocumento(), request.tipoDocumento(), request.genero(), request.direccion());
-      contactos(persona, request);
+      actualizarMediosDeContacto(persona, request);
       return persona;
     }
     PersonajeJuridica persona =
         new PersonajeJuridica(email, request.numeroDocumento(), request.tipoDocumento(), request.razonSocial(), request.tipoOrganizacion(), request.rubro());
     persona.actualizarDatosJuridicos(request.razonSocial(), request.tipoOrganizacion(), request.rubro(), representantes(request));
-    contactos(persona, request);
+    actualizarMediosDeContacto(persona, request);
     return persona;
   }
 
-  private void actualizar(Donante donante, DonanteRequest request) {
+  private void aplicarCambios(Donante donante, DonanteRequest request) {
     donante.actualizarIdentificacion(request.numeroDocumento(), request.tipoDocumento());
-    contactos(donante, request);
+    actualizarMediosDeContacto(donante, request);
     if (donante instanceof PersonaHumana persona) {
       persona.actualizarDatosPersonales(request.nombre(), request.apellido(), request.edad(), request.genero(), request.direccion());
     } else {
@@ -139,7 +140,7 @@ public final class DonanteController {
     }
   }
 
-  private void contactos(Donante donante, DonanteRequest request) {
+  private void actualizarMediosDeContacto(Donante donante, DonanteRequest request) {
     donante.reemplazarMediosDeContacto(medios(request), request.contactoPredeterminado() == null ? 0 : request.contactoPredeterminado());
   }
 

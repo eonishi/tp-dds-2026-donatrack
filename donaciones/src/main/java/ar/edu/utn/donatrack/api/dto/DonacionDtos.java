@@ -5,6 +5,7 @@ import ar.edu.utn.donatrack.bienes.EstadoUso;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
 import ar.edu.utn.donatrack.donaciones.NombreEstado;
 import com.fasterxml.jackson.annotation.JsonAlias;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -17,7 +18,7 @@ import java.util.UUID;
 public final class DonacionDtos {
   private DonacionDtos() {}
 
-  public record DonacionCreateRequest(
+  public record CargaDonacionRequest(
       @NotNull UUID donanteId, @NotEmpty List<@Valid BienRequest> bienes) {}
 
   public record DonacionUpdateRequest(@NotEmpty List<@Valid BienRequest> bienes) {}
@@ -50,13 +51,15 @@ public final class DonacionDtos {
       List<BienResponse> bienes,
       List<String> fotos) {}
 
-  public record TransicionEstadoRequest(
-      @NotNull NombreEstado estado, String justificacion, UUID entidadBeneficiariaId) {}
+  public record TransicionEstadoRequest(@NotNull NombreEstado estado, String justificacion) {
+    @AssertTrue(message = "no admite ASIGNACION_REALIZADA")
+    public boolean isEstadoPermitido() {
+      return estado != NombreEstado.ASIGNACION_REALIZADA;
+    }
+  }
 
   public record SeleccionEntidadRequest(
       @NotNull @JsonAlias({"beneficiarioId", "entidadId"}) UUID entidadBeneficiariaId) {}
-
-  public record RecepcionRequest(boolean recibido, String justificacion) {}
 
   public record FotoRequest(@NotBlank @JsonAlias({"referencia", "foto"}) String url) {}
 

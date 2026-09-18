@@ -9,6 +9,7 @@ import ar.edu.utn.donatrack.api.error.ApiExceptionHandler;
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.donaciones.AlgoritmoCompatibilidadSemantica;
 import ar.edu.utn.donatrack.donaciones.AlgoritmoPrioridadSubAtendidos;
+import ar.edu.utn.donatrack.donaciones.CargaDonacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donaciones.PropuestaRepository;
 import ar.edu.utn.donatrack.donaciones.PropuestaRepositoryImpl;
@@ -44,7 +45,11 @@ public final class DonacionesApi {
     NecesidadController necesidadController =
         new NecesidadController(entidades);
     DonacionController donacionController =
-        new DonacionController(donaciones, donantes, entidades, propuestas);
+        new DonacionController(
+            donaciones,
+            donantes,
+            propuestas,
+            new CargaDonacion(java.time.LocalDate.now(clock), donaciones));
 
     ServicioMatchmakingDonaciones matchmakingDomain =
         new ServicioMatchmakingDonaciones(
@@ -62,13 +67,16 @@ public final class DonacionesApi {
             config -> {
               config.showJavalinBanner = false;
               config.router.apiBuilder(
-                  () -> {
-                    donanteController.routes();
-                    entidadController.routes("/api/v1/beneficiarias");
-                    necesidadController.routes();
-                    donacionController.routes();
-                    matchmakingController.routes();
-                  });
+                  () ->
+                      io.javalin.apibuilder.ApiBuilder.path(
+                          "/api/v1",
+                          () -> {
+                            donanteController.routes();
+                            entidadController.routes();
+                            necesidadController.routes();
+                            donacionController.routes();
+                            matchmakingController.routes();
+                          }));
             });
     ApiExceptionHandler.register(app, clock);
     return app;

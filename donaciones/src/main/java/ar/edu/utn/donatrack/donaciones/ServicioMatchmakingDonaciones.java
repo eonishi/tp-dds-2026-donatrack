@@ -51,6 +51,10 @@ public class ServicioMatchmakingDonaciones {
         .orElseThrow(() -> new IllegalStateException("No hay un ranking vigente para la donación."));
   }
 
+  public List<PropuestaDeAsignacion> obtenerPropuestasPendientes() {
+    return propuestaRepository.findAllPending();
+  }
+
   public void confirmarAsignacionAdministrativa(
       Donacion donacion, EntidadBeneficiaria entidadBeneficiaria, LocalDate fechaConfirmacion) {
     PropuestaDeAsignacion propuesta =
