@@ -9,9 +9,8 @@ import java.util.List;
  * Repositorio de donaciones respaldado por JPA: las lecturas consultan la base y las escrituras
  * persisten en ella.
  *
- * <p>El estado de la donación no es una columna: se deriva del historial, tanto al cargar la
- * entidad (el {@code @PostLoad} de {@link Donacion}) como en las consultas de abajo, que resuelven
- * la última entrada del historial.
+ * <p>El estado de la donación se guarda en una columna: las consultas de abajo filtran por el
+ * estado actual sin recorrer el historial.
  */
 public class DonacionesRepository implements JpaRepository {
 
@@ -41,7 +40,7 @@ public class DonacionesRepository implements JpaRepository {
   }
 
   /**
-   * @return una instantánea inmutable de las donaciones almacenadas cuya última transición es
+   * @return una instantánea inmutable de las donaciones almacenadas cuyo estado actual es
    *     EN_DEPOSITO.
    */
   public List<Donacion> getDonacionesEnDeposito() {
@@ -49,7 +48,7 @@ public class DonacionesRepository implements JpaRepository {
   }
 
   /**
-   * @return una instantánea inmutable de las donaciones almacenadas cuya última transición es
+   * @return una instantánea inmutable de las donaciones almacenadas cuyo estado actual es
    *     ASIGNACION_REALIZADA.
    */
   public List<Donacion> getDonacionesEnAsignacionRealizada() {
@@ -57,29 +56,25 @@ public class DonacionesRepository implements JpaRepository {
   }
 
   /**
-   * Selecciona las donaciones cuya última entrada del historial es {@code estado}.
+   * Selecciona las donaciones cuyo estado actual es {@code estado}.
    *
-   * <p>La última entrada es la de mayor id: {@code fecha} es una fecha, así que dos transiciones de
-   * la misma donación pueden compartirla y ordenar por ella sería incorrecto.
+   * <p>Consulta directa sobre la columna materializada: el historial queda como trazabilidad de
+   * auditoría, no como fuente del estado.
    */
   private List<Donacion> donationsWithLatestState(EstadoDonacion estado) {
-    String jpql =
-        "SELECT d FROM Donacion d "
-            + "JOIN d.historialEstado h "
-            + "WHERE h.estadoAlcanzado = :estado "
-            + "AND h.id = (SELECT MAX(h2.id) FROM HistorialEstado h2 WHERE h2.donacion = d)";
-
     return List.copyOf(
-        createQuery(jpql, Donacion.class).setParameter("estado", estado).getResultList());
+        createQuery("SELECT d FROM Donacion d WHERE d.estado = :estado", Donacion.class)
+            .setParameter("estado", estado)
+            .getResultList());
   }
 
   /**
    * Registra una donación y asienta su transición inicial EN_DEPOSITO.
    *
    * <p>Invariante: toda donación registrada a través de este repositorio tiene al menos la
-   * transición inicial EN_DEPOSITO en la base. Sin ella la donación no tendría historial del cual
-   * derivar su estado, y las consultas por estado nunca la verían. La llamada es idempotente, así
-   * que una donación que ya transitó antes de ser registrada conserva su propio historial.
+   * transición inicial EN_DEPOSITO en la base, que documenta cómo empezó su historial. La llamada
+   * es idempotente, así que una donación que ya transitó antes de ser registrada conserva su propio
+   * historial.
    *
    * @param donacion la donación a registrar
    */

@@ -130,7 +130,7 @@ class PersistenciaModeloTest implements SimplePersistenceTest {
   }
 
   @Test
-  void historialConVariasTransiciones_RecargaLaUltimaPorId() {
+  void historialConVariasTransiciones_ConservaElEstadoAlcanzado() {
     SubCategoria fideos = new SubCategoria("Arroz", Categoria.ALIMENTO);
     Donante donante = crearDonanteHumano();
     Donacion donacion = new Donacion(donante, List.of(crearBien(fideos, 2.0, "Arroz")));
@@ -149,7 +149,63 @@ class PersistenciaModeloTest implements SimplePersistenceTest {
     assertEquals(
         EstadoDonacion.LISTA_PARA_ENTREGAR,
         recargada.getEstado(),
-        "Debe derivarse la última transición, no la primera");
+        "El estado actual debe ser la última transición, no la primera");
+  }
+
+  @Test
+  void lasColumnasDeEstadoGuardanElNombreYNoElIndice() {
+    SubCategoria arroz = new SubCategoria("Quinoa", Categoria.ALIMENTO);
+    Donante donante = crearDonanteHumano();
+    Donacion donacion = new Donacion(donante, List.of(crearBien(arroz, 1.0, "Quinoa")));
+    donacion.asignar();
+
+    persist(arroz);
+    persist(donante);
+    persist(donacion);
+    entityManager().flush();
+
+    // Consultas nativas: esquivan el mapeo de Hibernate y leen el valor crudo de cada columna.
+    Object crudoHistorial =
+        entityManager()
+            .createNativeQuery("SELECT estadoAlcanzado FROM HistorialEstado")
+            .getSingleResult();
+    Object crudoDonacion =
+        entityManager().createNativeQuery("SELECT estado FROM Donacion").getSingleResult();
+
+    assertEquals(
+        "ASIGNACION_REALIZADA",
+        crudoHistorial,
+        "La columna del historial debe guardar el nombre del enum, no su índice");
+    assertEquals(
+        "ASIGNACION_REALIZADA",
+        crudoDonacion,
+        "La columna de la donación debe guardar el nombre del enum, no su índice");
+  }
+
+  @Test
+  void elEstadoActualSobreviveSinElHistorial() {
+    SubCategoria fideos = new SubCategoria("Lentejas", Categoria.ALIMENTO);
+    Donante donante = crearDonanteHumano();
+    Donacion donacion = new Donacion(donante, List.of(crearBien(fideos, 4.0, "Lentejas")));
+    donacion.asignar();
+
+    persist(fideos);
+    persist(donante);
+    persist(donacion);
+    entityManager().flush();
+
+    entityManager().createQuery("DELETE FROM HistorialEstado").executeUpdate();
+    entityManager().flush();
+    entityManager().clear();
+
+    Donacion recargada = buscarPorBien(recargarDonaciones(), "Lentejas");
+    assertTrue(
+        recargada.getHistorialEstado().isEmpty(),
+        "El historial debe quedar vacío tras el borrado masivo");
+    assertEquals(
+        EstadoDonacion.ASIGNACION_REALIZADA,
+        recargada.getEstado(),
+        "El estado actual debe estar materializado: sobrevive sin historial del cual derivarlo");
   }
 
   private static boolean esUnMedio(List<MedioDeContacto> medios, Predicate<MedioDeContacto> tipo) {

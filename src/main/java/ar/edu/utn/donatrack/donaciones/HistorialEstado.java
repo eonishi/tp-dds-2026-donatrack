@@ -2,11 +2,11 @@ package ar.edu.utn.donatrack.donaciones;
 
 import java.time.LocalDate;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 
 @Entity
 public class HistorialEstado {
@@ -15,15 +15,11 @@ public class HistorialEstado {
   private Long id;
 
   private LocalDate fecha;
-  private EstadoDonacion estadoAlcanzado;
-  private String justificacion;
 
-  // Referencia inversa de solo lectura: la clave foránea la sigue escribiendo
-  // Donacion.historialEstado, así que la máquina de estados no necesita cambios. Existe para que
-  // una entrada del historial pueda navegar a su donación.
-  @ManyToOne
-  @JoinColumn(name = "donacion_id", insertable = false, updatable = false)
-  private Donacion donacion;
+  @Enumerated(EnumType.STRING)
+  private EstadoDonacion estadoAlcanzado;
+
+  private String justificacion;
 
   protected HistorialEstado() {}
 
@@ -31,11 +27,6 @@ public class HistorialEstado {
     this.fecha = fecha;
     this.estadoAlcanzado = estadoAlcanzado;
     this.justificacion = justificacion;
-  }
-
-  // El id generado ordena el historial: es el único dato monotónico, ya que fecha es una fecha.
-  Long getId() {
-    return id;
   }
 
   public LocalDate getFecha() {

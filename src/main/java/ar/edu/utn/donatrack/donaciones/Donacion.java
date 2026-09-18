@@ -9,21 +9,19 @@ import ar.edu.utn.donatrack.logistica.Camion;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
-import javax.persistence.PostLoad;
-import javax.persistence.Transient;
 
 @Entity
 public class Donacion {
@@ -31,11 +29,10 @@ public class Donacion {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Transient private EstadoDonacion estado = EstadoDonacion.EN_DEPOSITO;
+  @Enumerated(EnumType.STRING)
+  private EstadoDonacion estado = EstadoDonacion.EN_DEPOSITO;
 
-  // Eager y no final a propósito: el estado se deriva de esta colección una vez cargada la
-  // donación, así que ya debe estar ahí, y Hibernate debe poder reemplazar el campo.
-  @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+  @OneToMany(cascade = CascadeType.ALL)
   @JoinColumn(name = "donacion_id")
   private List<HistorialEstado> historialEstado = new ArrayList<>();
 
@@ -79,19 +76,6 @@ public class Donacion {
       return;
     }
     historialEstado.add(new HistorialEstado(fecha, EstadoDonacion.EN_DEPOSITO, null));
-  }
-
-  /**
-   * El estado no se persiste: se deriva de la última transición registrada en el historial,
-   * entendida como la entrada de mayor id. Ordenar por {@code fecha} sería incorrecto, ya que es
-   * una fecha y dos transiciones pueden compartir el mismo día. Sin entradas de historial el estado
-   * conserva su valor actual.
-   */
-  @PostLoad
-  private void derivarEstadoDelHistorial() {
-    historialEstado.stream()
-        .max(Comparator.comparing(HistorialEstado::getId))
-        .ifPresent(ultimo -> estado = ultimo.getEstadoAlcanzado());
   }
 
   public SubCategoria getSubcategoria() {

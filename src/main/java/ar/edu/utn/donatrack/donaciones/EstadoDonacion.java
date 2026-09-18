@@ -9,9 +9,11 @@ import java.time.LocalDate;
  * constante declara el comportamiento que le corresponde, y las operaciones no soportadas heredan
  * el comportamiento por defecto, que lanza {@link IllegalStateException}.
  *
- * <p>El orden de declaración es el contrato persistido: {@link HistorialEstado} todavía mapea el
- * estado de forma ordinal, así que reordenar o renombrar estas constantes reinterpreta en silencio
- * las filas ya almacenadas.
+ * <p>El estado se persiste por nombre y no por índice, así que el orden de declaración no es un
+ * contrato de almacenamiento: reordenar las constantes no afecta a las filas ya guardadas. Lo que
+ * sí las afecta es renombrar una constante, porque deja a esas filas sin constante a la que mapear.
+ *
+ * @see HistorialEstado#getEstadoAlcanzado()
  */
 public enum EstadoDonacion {
   EN_DEPOSITO {
