@@ -25,6 +25,9 @@ import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.donantes.TipoOrganizacion;
 import ar.edu.utn.donatrack.donantes.Whatsapp;
 import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.function.Predicate;
@@ -41,6 +44,8 @@ import org.junit.jupiter.api.Test;
 class PersistenciaModeloTest implements SimplePersistenceTest {
 
   private static final String DONANTE_EMAIL = "juan@test.com";
+  private static final String MIGRACION =
+      "db/migrations/2026-09-19-estado-de-donacion-a-nombre.sql";
 
   @Test
   void modeloCompleto_SobreviveAlViajeDeIdaYVueltaPorLaBase() {
@@ -260,6 +265,48 @@ class PersistenciaModeloTest implements SimplePersistenceTest {
         RuntimeException.class,
         () -> createQuery("select h from HistorialEstado h", HistorialEstado.class).getResultList(),
         "Un estado legado guardado como ordinal debe fallar, no reinterpretarse");
+  }
+
+  @Test
+  void laMigracionConvierteElOrdinalGuardadoEnNombre() throws IOException {
+    SubCategoria maiz = new SubCategoria("Maíz", Categoria.ALIMENTO);
+    Donante donante = crearDonanteHumano();
+    Donacion donacion = new Donacion(donante, List.of(crearBien(maiz, 1.0, "Maíz")));
+    persist(maiz);
+    persist(donante);
+    persist(donacion);
+    entityManager().flush();
+
+    // La misma fila legada que el test anterior: el esquema viejo guardaba el índice.
+    Long donacionId = createQuery("select d.id from Donacion d", Long.class).getSingleResult();
+    entityManager()
+        .createNativeQuery(
+            "INSERT INTO HistorialEstado (fecha, estadoAlcanzado, justificacion, donacion_id) "
+                + "VALUES (CURRENT_DATE, '1', 'fila legada', :id)")
+        .setParameter("id", donacionId)
+        .executeUpdate();
+    entityManager().clear();
+
+    // La migración se ejecuta tal como se entrega: las sentencias salen del archivo.
+    List<String> sentencias =
+        List.of(Files.readString(Path.of(MIGRACION)).replaceAll("(?m)^--.*$", "").split(";"))
+            .stream()
+            .map(String::trim)
+            .filter(sentencia -> sentencia.startsWith("UPDATE"))
+            .toList();
+    assertFalse(sentencias.isEmpty(), "La migración debe traer las sentencias de conversión");
+    for (String sentencia : sentencias) {
+      entityManager().createNativeQuery(sentencia).executeUpdate();
+    }
+    entityManager().flush();
+    entityManager().clear();
+
+    HistorialEstado migrada =
+        createQuery("select h from HistorialEstado h", HistorialEstado.class).getSingleResult();
+    assertEquals(
+        EstadoDonacion.ASIGNACION_REALIZADA,
+        migrada.getEstadoAlcanzado(),
+        "La migración debe convertir el ordinal guardado en el nombre de la constante");
   }
 
   private static boolean esUnMedio(List<MedioDeContacto> medios, Predicate<MedioDeContacto> tipo) {
