@@ -1,6 +1,7 @@
 package ar.edu.utn.donatrack.donaciones;
 
 import java.time.LocalDate;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -16,6 +17,8 @@ public class HistorialEstado {
 
   private LocalDate fecha;
 
+  // Obligatorio a propósito: toda entrada del historial registra la transición que la produjo.
+  @Column(nullable = false)
   @Enumerated(EnumType.STRING)
   private EstadoDonacion estadoAlcanzado;
 

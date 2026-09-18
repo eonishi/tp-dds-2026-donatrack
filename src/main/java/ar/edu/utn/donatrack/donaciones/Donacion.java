@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -29,6 +30,8 @@ public class Donacion {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
+  // Obligatorio a propósito: sin estado, sería invisible para los filtros y nula al cargar.
+  @Column(nullable = false)
   @Enumerated(EnumType.STRING)
   private EstadoDonacion estado = EstadoDonacion.EN_DEPOSITO;
 

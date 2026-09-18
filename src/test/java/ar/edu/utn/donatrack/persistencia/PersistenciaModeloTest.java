@@ -208,6 +208,60 @@ class PersistenciaModeloTest implements SimplePersistenceTest {
         "El estado actual debe estar materializado: sobrevive sin historial del cual derivarlo");
   }
 
+  @Test
+  void lasColumnasDeEstadoSonObligatoriasYDeTexto() {
+    // El estado decide qué donaciones devuelve un filtro: una fila sin estado quedaría invisible en
+    // silencio, y columnas numéricas volverían a admitir el índice como si fuera un estado.
+    assertColumnaDeEstado("Donacion", "estado");
+    assertColumnaDeEstado("HistorialEstado", "estadoAlcanzado");
+  }
+
+  private void assertColumnaDeEstado(String tabla, String columna) {
+    Object[] fila =
+        (Object[])
+            entityManager()
+                .createNativeQuery(
+                    "SELECT is_nullable, data_type FROM information_schema.columns "
+                        + "WHERE upper(table_name) = upper(:tabla) "
+                        + "AND upper(column_name) = upper(:columna)")
+                .setParameter("tabla", tabla)
+                .setParameter("columna", columna)
+                .getSingleResult();
+    String donde = tabla + "." + columna;
+    assertEquals("NO", fila[0], "La columna " + donde + " no debe admitir null");
+    assertTrue(
+        String.valueOf(fila[1]).contains("CHAR"),
+        "La columna " + donde + " debe ser de texto y no numérica, pero es " + fila[1]);
+  }
+
+  @Test
+  void unaFilaLegadaConOrdinalFallaEnVozAlta() {
+    SubCategoria trigo = new SubCategoria("Trigo", Categoria.ALIMENTO);
+    Donante donante = crearDonanteHumano();
+    Donacion donacion = new Donacion(donante, List.of(crearBien(trigo, 1.0, "Trigo")));
+
+    persist(trigo);
+    persist(donante);
+    persist(donacion);
+    entityManager().flush();
+
+    // El esquema anterior guardaba el estado como índice. Esa fila no se corresponde con ningún
+    // nombre de constante, así que debe fallar al hidratar en vez de reinterpretarse en silencio.
+    Long donacionId = createQuery("select d.id from Donacion d", Long.class).getSingleResult();
+    entityManager()
+        .createNativeQuery(
+            "INSERT INTO HistorialEstado (fecha, estadoAlcanzado, justificacion, donacion_id) "
+                + "VALUES (CURRENT_DATE, '1', 'fila legada', :id)")
+        .setParameter("id", donacionId)
+        .executeUpdate();
+    entityManager().clear();
+
+    assertThrows(
+        RuntimeException.class,
+        () -> createQuery("select h from HistorialEstado h", HistorialEstado.class).getResultList(),
+        "Un estado legado guardado como ordinal debe fallar, no reinterpretarse");
+  }
+
   private static boolean esUnMedio(List<MedioDeContacto> medios, Predicate<MedioDeContacto> tipo) {
     return medios.stream().anyMatch(tipo);
   }
