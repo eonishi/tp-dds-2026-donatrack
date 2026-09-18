@@ -8,6 +8,7 @@ import static io.javalin.apibuilder.ApiBuilder.put;
 
 import ar.edu.utn.donatrack.api.mappers.ApiMapper;
 import ar.edu.utn.donatrack.api.dto.NecesidadDtos.NecesidadRequest;
+import ar.edu.utn.donatrack.api.dto.NecesidadDtos.NecesidadResponse;
 import ar.edu.utn.donatrack.api.error.ApiException;
 import ar.edu.utn.donatrack.api.validation.DtoValidator;
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
@@ -28,12 +29,12 @@ public final class NecesidadController {
 
   public void routes() {
     path(
-        "/api/v1/necesidades",
+        "/entidades/{entidadId}/necesidades",
         () -> {
           get(this::listar);
           post(this::crear);
           path(
-              "/{id}",
+              "/{necesidadId}",
               () -> {
                 get(this::obtener);
                 put(this::actualizar);
@@ -43,67 +44,69 @@ public final class NecesidadController {
   }
 
   private void listar(Context ctx) {
-    ctx.json(todas().stream().map(this::response).toList());
+    EntidadBeneficiaria entidad = entidad(HttpSupport.id(ctx, "entidadId"));
+    ctx.json(
+        entidad.necesidades().stream()
+            .map(necesidad -> response(necesidad, entidad))
+            .toList());
   }
 
   private void obtener(Context ctx) {
-    ctx.json(response(buscar(HttpSupport.id(ctx, "id"))));
+    EntidadBeneficiaria entidad = entidad(HttpSupport.id(ctx, "entidadId"));
+    ctx.json(response(necesidad(entidad, HttpSupport.id(ctx, "necesidadId")), entidad));
   }
 
   private void crear(Context ctx) {
     NecesidadRequest request = DtoValidator.validate(ctx.bodyAsClass(NecesidadRequest.class));
     validar(request);
-    EntidadBeneficiaria entidad = entidad(request.entidadBeneficiariaId());
-    Necesidad necesidad = crear(request);
+    EntidadBeneficiaria entidad = entidad(HttpSupport.id(ctx, "entidadId"));
+    Necesidad necesidad = construirNecesidad(request);
     agregar(entidad, necesidad);
     ctx.status(201).json(ApiMapper.necesidad(necesidad, entidad));
   }
 
   private void actualizar(Context ctx) {
-    Ubicada actual = buscar(HttpSupport.id(ctx, "id"));
+    EntidadBeneficiaria entidad = entidad(HttpSupport.id(ctx, "entidadId"));
+    Necesidad actual = necesidad(entidad, HttpSupport.id(ctx, "necesidadId"));
     NecesidadRequest request = DtoValidator.validate(ctx.bodyAsClass(NecesidadRequest.class));
     validar(request);
-    boolean esRecurrente = actual.necesidad() instanceof NecesidadRecurrente;
+    boolean esRecurrente = actual instanceof NecesidadRecurrente;
     if (esRecurrente != recurrente(request)) {
       throw ApiException.conflict("No se puede cambiar el tipo de una necesidad.");
     }
-    actual.necesidad().actualizar(new SubCategoria(request.subcategoria(), request.categoria()), request.cantidadObjetivo(), request.unidad(), request.descripcion());
+    actual.actualizar(
+        new SubCategoria(request.subcategoria(), request.categoria()),
+        request.cantidadObjetivo(),
+        request.unidad(),
+        request.descripcion());
     if (esRecurrente) {
-      ((NecesidadRecurrente) actual.necesidad()).setPeriodo(request.periodo());
+      ((NecesidadRecurrente) actual).setPeriodo(request.periodo());
     }
-    EntidadBeneficiaria destino = entidad(request.entidadBeneficiariaId());
-    if (!actual.entidad().getId().equals(destino.getId())) {
-      actual.entidad().eliminarNecesidad(actual.necesidad().getId());
-      agregar(destino, actual.necesidad());
-    }
-    ctx.json(ApiMapper.necesidad(actual.necesidad(), destino));
+    ctx.json(ApiMapper.necesidad(actual, entidad));
   }
 
   private void eliminar(Context ctx) {
-    Ubicada ubicada = buscar(HttpSupport.id(ctx, "id"));
-    ubicada.entidad().eliminarNecesidad(ubicada.necesidad().getId());
+    EntidadBeneficiaria entidad = entidad(HttpSupport.id(ctx, "entidadId"));
+    Necesidad necesidad = necesidad(entidad, HttpSupport.id(ctx, "necesidadId"));
+    entidad.eliminarNecesidad(necesidad.getId());
     ctx.status(204);
   }
 
-  private ar.edu.utn.donatrack.api.dto.NecesidadDtos.NecesidadResponse response(Ubicada ubicada) {
-    return ApiMapper.necesidad(ubicada.necesidad(), ubicada.entidad());
+  private NecesidadResponse response(Necesidad necesidad, EntidadBeneficiaria entidad) {
+    return ApiMapper.necesidad(necesidad, entidad);
   }
 
-  private record Ubicada(Necesidad necesidad, EntidadBeneficiaria entidad) {}
-
-  private java.util.List<Ubicada> todas() {
-    return entidades.getBeneficiarios().stream().flatMap(e -> e.necesidades().stream().map(n -> new Ubicada(n, e))).toList();
-  }
-
-  private Ubicada buscar(UUID id) {
-    return todas().stream().filter(n -> n.necesidad().getId().equals(id)).findFirst().orElseThrow(() -> ApiException.notFound("Necesidad", id));
+  private Necesidad necesidad(EntidadBeneficiaria entidad, UUID necesidadId) {
+    return entidad
+        .buscarNecesidad(necesidadId)
+        .orElseThrow(() -> ApiException.notFound("Necesidad", necesidadId));
   }
 
   private EntidadBeneficiaria entidad(UUID id) {
     return entidades.findById(id).orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", id));
   }
 
-  private Necesidad crear(NecesidadRequest request) {
+  private Necesidad construirNecesidad(NecesidadRequest request) {
     SubCategoria subcategoria = new SubCategoria(request.subcategoria(), request.categoria());
     if (!recurrente(request)) {
       return new Necesidad(subcategoria, request.cantidadObjetivo(), request.unidad(), request.descripcion());

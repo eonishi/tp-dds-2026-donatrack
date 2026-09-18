@@ -9,6 +9,7 @@ import static io.javalin.apibuilder.ApiBuilder.put;
 
 import ar.edu.utn.donatrack.api.dto.EntidadDtos.EntidadRequest;
 import ar.edu.utn.donatrack.api.error.ApiException;
+import ar.edu.utn.donatrack.api.mappers.ApiMapper;
 import ar.edu.utn.donatrack.api.validation.DtoValidator;
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
@@ -27,9 +28,9 @@ public final class EntidadController {
     this.donaciones = donaciones;
   }
 
-  public void routes(String basePath) {
+  public void routes() {
     path(
-        basePath,
+        "/beneficiarias",
         () -> {
           get(this::listar);
           post(this::crear);
@@ -44,7 +45,7 @@ public final class EntidadController {
   }
 
   private void listar(Context ctx) {
-    ctx.json(entidades.getBeneficiarios().stream().map(ar.edu.utn.donatrack.api.mappers.ApiMapper::entidad).toList());
+    ctx.json(entidades.getBeneficiarios().stream().map(ApiMapper::entidad).toList());
   }
 
   private void obtener(Context ctx) {

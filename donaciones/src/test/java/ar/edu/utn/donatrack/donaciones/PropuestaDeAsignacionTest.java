@@ -35,7 +35,7 @@ class PropuestaDeAsignacionTest {
   void confirmar_TransicionaPendienteYAsignaDonacion() {
     Donacion donacion = crearDonacionDummy();
     PropuestaDeAsignacion propuesta = new PropuestaDeAsignacion(donacion, crearRankingsDummy());
-    EntidadBeneficiaria entidad = new EntidadBeneficiaria("Hogar Test", "Dir", "Tel");
+    EntidadBeneficiaria entidad = entidadRankeada(propuesta);
 
     propuesta.confirmar(entidad);
 
@@ -51,10 +51,24 @@ class PropuestaDeAsignacionTest {
   }
 
   @Test
+  void confirmar_EntidadFueraDelRanking_LanzaExcepcionDeDominio() {
+    Donacion donacion = crearDonacionDummy();
+    PropuestaDeAsignacion propuesta = new PropuestaDeAsignacion(donacion, crearRankingsDummy());
+    EntidadBeneficiaria entidadNoRankeada = new EntidadBeneficiaria("Otra Entidad", "Dir", "Tel");
+
+    EntidadFueraDeRankingException error =
+        assertThrows(EntidadFueraDeRankingException.class, () -> propuesta.confirmar(entidadNoRankeada));
+
+    assertEquals("La entidad no pertenece al ranking vigente.", error.getMessage());
+    assertTrue(propuesta.isPendiente());
+    assertNull(donacion.getEntidadBeneficiaria());
+  }
+
+  @Test
   void confirmar_DobleConfirmacion_EsNoOp() {
     Donacion donacion = crearDonacionDummy();
     PropuestaDeAsignacion propuesta = new PropuestaDeAsignacion(donacion, crearRankingsDummy());
-    EntidadBeneficiaria entidad = new EntidadBeneficiaria("Hogar Test", "Dir", "Tel");
+    EntidadBeneficiaria entidad = entidadRankeada(propuesta);
     EntidadBeneficiaria otraEntidad = new EntidadBeneficiaria("Otro Hogar", "Dir2", "Tel2");
 
     // First confirm
@@ -105,5 +119,9 @@ class PropuestaDeAsignacionTest {
     RankingMatchmaking ranking2 =
         new RankingMatchmaking("algoritmo-2", List.of(new MatchCandidato(entidad, 80)));
     return List.of(ranking1, ranking2);
+  }
+
+  private static EntidadBeneficiaria entidadRankeada(PropuestaDeAsignacion propuesta) {
+    return propuesta.getRankings().get(0).getCandidatos().get(0).getEntidadBeneficiaria();
   }
 }

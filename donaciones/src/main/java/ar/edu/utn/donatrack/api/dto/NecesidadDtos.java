@@ -3,7 +3,6 @@ package ar.edu.utn.donatrack.api.dto;
 import ar.edu.utn.donatrack.beneficiarios.TipoPeriodo;
 import ar.edu.utn.donatrack.bienes.Categoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
-import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -13,7 +12,6 @@ public final class NecesidadDtos {
   private NecesidadDtos() {}
 
   public record NecesidadRequest(
-      @NotNull @JsonAlias({"entidadId", "beneficiarioId"}) UUID entidadBeneficiariaId,
       @NotBlank String tipo,
       TipoPeriodo periodo,
       @NotBlank String descripcion,

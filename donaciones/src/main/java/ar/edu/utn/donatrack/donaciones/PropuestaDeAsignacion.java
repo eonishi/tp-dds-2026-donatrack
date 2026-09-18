@@ -18,8 +18,17 @@ public class PropuestaDeAsignacion {
     if (!pendiente) {
       return; // no-op on double-confirm
     }
+    if (!incluye(elegida)) {
+      throw new EntidadFueraDeRankingException();
+    }
     this.donacion.confirmarEntidadBeneficiaria(elegida);
     this.pendiente = false;
+  }
+
+  private boolean incluye(EntidadBeneficiaria entidad) {
+    return rankings.stream()
+        .flatMap(ranking -> ranking.getCandidatos().stream())
+        .anyMatch(candidato -> candidato.getEntidadBeneficiaria().getId().equals(entidad.getId()));
   }
 
   public Donacion getDonacion() {
