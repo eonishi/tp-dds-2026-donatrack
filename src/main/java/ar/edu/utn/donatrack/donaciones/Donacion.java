@@ -5,8 +5,6 @@ import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
 import ar.edu.utn.donatrack.donantes.Donante;
-import ar.edu.utn.donatrack.estados.EnDeposito;
-import ar.edu.utn.donatrack.estados.EstadoDonacion;
 import ar.edu.utn.donatrack.logistica.Camion;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -33,7 +31,7 @@ public class Donacion {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Transient private EstadoDonacion estado = new EnDeposito();
+  @Transient private EstadoDonacion estado = EstadoDonacion.EN_DEPOSITO;
 
   // Eager y no final a propósito: el estado se deriva de esta colección una vez cargada la
   // donación, así que ya debe estar ahí, y Hibernate debe poder reemplazar el campo.
@@ -64,8 +62,8 @@ public class Donacion {
     this.bienes.addAll(bienes);
   }
 
-  public void cambiarEstado(HistorialEstado nuevoHistorial, EstadoDonacion nuevoEstado) {
-    historialEstado.add(nuevoHistorial);
+  public void cambiarEstado(EstadoDonacion nuevoEstado, String justificacion) {
+    historialEstado.add(new HistorialEstado(LocalDate.now(), nuevoEstado, justificacion));
     estado = nuevoEstado;
   }
 
@@ -80,7 +78,7 @@ public class Donacion {
     if (!historialEstado.isEmpty()) {
       return;
     }
-    historialEstado.add(new HistorialEstado(fecha, NombreEstado.EN_DEPOSITO, null));
+    historialEstado.add(new HistorialEstado(fecha, EstadoDonacion.EN_DEPOSITO, null));
   }
 
   /**
@@ -93,7 +91,7 @@ public class Donacion {
   private void derivarEstadoDelHistorial() {
     historialEstado.stream()
         .max(Comparator.comparing(HistorialEstado::getId))
-        .ifPresent(ultimo -> estado = ultimo.getEstadoAlcanzado().crearEstado());
+        .ifPresent(ultimo -> estado = ultimo.getEstadoAlcanzado());
   }
 
   public SubCategoria getSubcategoria() {
@@ -102,10 +100,6 @@ public class Donacion {
 
   public EstadoDonacion getEstado() {
     return estado;
-  }
-
-  public NombreEstado getNombreEstado() {
-    return estado.getNombreEstado();
   }
 
   public List<HistorialEstado> getHistorialEstado() {

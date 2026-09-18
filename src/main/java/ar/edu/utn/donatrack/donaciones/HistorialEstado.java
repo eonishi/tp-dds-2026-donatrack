@@ -15,7 +15,7 @@ public class HistorialEstado {
   private Long id;
 
   private LocalDate fecha;
-  private NombreEstado estadoAlcanzado;
+  private EstadoDonacion estadoAlcanzado;
   private String justificacion;
 
   // Referencia inversa de solo lectura: la clave foránea la sigue escribiendo
@@ -27,7 +27,7 @@ public class HistorialEstado {
 
   protected HistorialEstado() {}
 
-  public HistorialEstado(LocalDate fecha, NombreEstado estadoAlcanzado, String justificacion) {
+  public HistorialEstado(LocalDate fecha, EstadoDonacion estadoAlcanzado, String justificacion) {
     this.fecha = fecha;
     this.estadoAlcanzado = estadoAlcanzado;
     this.justificacion = justificacion;
@@ -42,7 +42,7 @@ public class HistorialEstado {
     return fecha;
   }
 
-  public NombreEstado getEstadoAlcanzado() {
+  public EstadoDonacion getEstadoAlcanzado() {
     return estadoAlcanzado;
   }
 

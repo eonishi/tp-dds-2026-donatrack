@@ -3,8 +3,8 @@
 %% Generado a partir de src/main/java — 2026-08-18
 %%
 %% Alcance: clases del dominio (entidades, value objects, enums y patrones de
-%% diseño: State en Donacion, Strategy en matchmaking, double dispatch en
-%% notificaciones).
+%% diseño: máquina de estados en Donacion, Strategy en matchmaking, double
+%% dispatch en notificaciones).
 %% Excluye a propósito: repositorios, servicios de aplicación, schedulers,
 %% importadores CSV y utilidades (infraestructura).
 %%
@@ -170,7 +170,7 @@ classDiagram
         }
         class HistorialEstado {
             -fecha: LocalDate
-            -estadoAlcanzado: NombreEstado
+            -estadoAlcanzado: EstadoDonacion
             -justificacion: String
         }
         class PropuestaDeAsignacion {
@@ -194,7 +194,7 @@ classDiagram
         }
         class AlgoritmoCompatibilidadSemantica
         class AlgoritmoPrioridadSubAtendidos
-        class NombreEstado {
+        class EstadoDonacion {
             <<enumeration>>
             EN_DEPOSITO
             ASIGNACION_REALIZADA
@@ -203,14 +203,6 @@ classDiagram
             ENTREGADA
             ENTREGA_FALLIDA
             VENCIDA
-        }
-    }
-
-    %% ─────────────────────────── Estados (State) ───────────────────────────
-    namespace estados {
-        class EstadoDonacion {
-            <<abstract>>
-            +getNombreEstado() NombreEstado
             +asignar(donacion: Donacion)
             +planificarRuta(donacion: Donacion)
             +iniciarTraslado(donacion: Donacion)
@@ -219,13 +211,6 @@ classDiagram
             +marcarVencida(donacion: Donacion)
             +retornarAlDeposito(donacion: Donacion)
         }
-        class EnDeposito
-        class AsignacionRealizada
-        class ListaParaEntregar
-        class EnTraslado
-        class Entregada
-        class EntregaFallida
-        class Vencida
     }
 
     %% ─────────────────────────── Logística ───────────────────────────
@@ -375,7 +360,7 @@ classDiagram
     Donacion --> Donante : donante
     Donacion --> "0..1" EntidadBeneficiaria : asignada a
     Donacion --> "0..1" Camion : asignado a
-    HistorialEstado --> NombreEstado : estadoAlcanzado
+    HistorialEstado --> EstadoDonacion : estadoAlcanzado
     PropuestaDeAsignacion *-- Donacion : donacion
     PropuestaDeAsignacion *-- "*" RankingMatchmaking : rankings
     RankingMatchmaking *-- "*" MatchCandidato : candidatos
@@ -385,13 +370,6 @@ classDiagram
     AlgoritmoMatchmaking ..> RankingMatchmaking : genera
 
     %% estados
-    EstadoDonacion <|-- EnDeposito
-    EstadoDonacion <|-- AsignacionRealizada
-    EstadoDonacion <|-- ListaParaEntregar
-    EstadoDonacion <|-- EnTraslado
-    EstadoDonacion <|-- Entregada
-    EstadoDonacion <|-- EntregaFallida
-    EstadoDonacion <|-- Vencida
     EstadoDonacion ..> Donacion : opera sobre
 
     %% logística

@@ -10,7 +10,6 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
-import ar.edu.utn.donatrack.estados.*;
 import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -133,24 +132,24 @@ class DonaTrackTest implements SimplePersistenceTest {
 
     // Act & Assert
     // Estado inicial
-    assertInstanceOf(EnDeposito.class, donacion.getEstado());
+    assertEquals(EstadoDonacion.EN_DEPOSITO, donacion.getEstado());
 
     // Transición: En Depósito -> Asignada
     donacion.asignar();
-    assertInstanceOf(AsignacionRealizada.class, donacion.getEstado());
+    assertEquals(EstadoDonacion.ASIGNACION_REALIZADA, donacion.getEstado());
 
     // Transición: Asignada -> Lista para entregar
     donacion.planificarRuta();
-    assertInstanceOf(ListaParaEntregar.class, donacion.getEstado());
+    assertEquals(EstadoDonacion.LISTA_PARA_ENTREGAR, donacion.getEstado());
 
     // Transición: Lista para entregar -> En traslado
     donacion.iniciarTraslado();
-    assertInstanceOf(EnTraslado.class, donacion.getEstado());
+    assertEquals(EstadoDonacion.EN_TRASLADO, donacion.getEstado());
 
     // Transición: En traslado -> Entrega fallida (Único estado que requiere justificación según
     // enunciado)
     donacion.reportarFalla("Tocamos timbre pero nadie respondió");
-    assertInstanceOf(EntregaFallida.class, donacion.getEstado());
+    assertEquals(EstadoDonacion.ENTREGA_FALLIDA, donacion.getEstado());
 
     // Verificamos el historial para asegurar la trazabilidad
     List<HistorialEstado> historial = donacion.getHistorialEstado();
@@ -267,14 +266,14 @@ class DonaTrackTest implements SimplePersistenceTest {
     donacion.planificarRuta(); // → ListaParaEntregar
     donacion.iniciarTraslado(); // → EnTraslado
     donacion.reportarFalla("Dirección incorrecta"); // → EntregaFallida
-    assertInstanceOf(EntregaFallida.class, donacion.getEstado());
+    assertEquals(EstadoDonacion.ENTREGA_FALLIDA, donacion.getEstado());
 
     // Act
     donacion.retornarAlDeposito();
 
     // Assert
-    assertInstanceOf(
-        EnDeposito.class,
+    assertEquals(
+        EstadoDonacion.EN_DEPOSITO,
         donacion.getEstado(),
         "Tras retornar al depósito, el estado debe ser EnDeposito");
     assertNull(
@@ -306,7 +305,7 @@ class DonaTrackTest implements SimplePersistenceTest {
     donacion.planificarRuta();
     donacion.iniciarTraslado();
     donacion.reportarFalla("No respondieron");
-    assertInstanceOf(EntregaFallida.class, donacion.getEstado());
+    assertEquals(EstadoDonacion.ENTREGA_FALLIDA, donacion.getEstado());
 
     // Act & Assert — planificarRuta desde EntregaFallida debe lanzar excepción
     assertThrows(

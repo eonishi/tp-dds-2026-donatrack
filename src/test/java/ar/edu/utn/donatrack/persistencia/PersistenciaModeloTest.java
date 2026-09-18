@@ -11,8 +11,8 @@ import ar.edu.utn.donatrack.bienes.EstadoUso;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
 import ar.edu.utn.donatrack.donaciones.Donacion;
+import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
 import ar.edu.utn.donatrack.donaciones.HistorialEstado;
-import ar.edu.utn.donatrack.donaciones.NombreEstado;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
@@ -24,8 +24,6 @@ import ar.edu.utn.donatrack.donantes.Sms;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.donantes.TipoOrganizacion;
 import ar.edu.utn.donatrack.donantes.Whatsapp;
-import ar.edu.utn.donatrack.estados.AsignacionRealizada;
-import ar.edu.utn.donatrack.estados.EnDeposito;
 import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.time.LocalDate;
 import java.util.List;
@@ -113,21 +111,22 @@ class PersistenciaModeloTest implements SimplePersistenceTest {
         "El bien debe seguir referenciando la misma subcategoría");
 
     assertEquals(
-        NombreEstado.EN_DEPOSITO,
-        depositoRecargada.getNombreEstado(),
+        EstadoDonacion.EN_DEPOSITO,
+        depositoRecargada.getEstado(),
         "Una donación en depósito debe recargarse en depósito");
-    assertInstanceOf(EnDeposito.class, depositoRecargada.getEstado());
+    assertEquals(EstadoDonacion.EN_DEPOSITO, depositoRecargada.getEstado());
     List<HistorialEstado> historialDeposito = depositoRecargada.getHistorialEstado();
     assertEquals(1, historialDeposito.size(), "El registro inicial debe dejar una transición");
-    assertEquals(NombreEstado.EN_DEPOSITO, historialDeposito.get(0).getEstadoAlcanzado());
+    assertEquals(EstadoDonacion.EN_DEPOSITO, historialDeposito.get(0).getEstadoAlcanzado());
     assertEquals(
-        NombreEstado.ASIGNACION_REALIZADA,
-        asignadaRecargada.getNombreEstado(),
+        EstadoDonacion.ASIGNACION_REALIZADA,
+        asignadaRecargada.getEstado(),
         "El estado asignado debe derivarse del historial persistido");
-    assertInstanceOf(AsignacionRealizada.class, asignadaRecargada.getEstado());
+    assertEquals(EstadoDonacion.ASIGNACION_REALIZADA, asignadaRecargada.getEstado());
     List<HistorialEstado> historialAsignada = asignadaRecargada.getHistorialEstado();
     assertEquals(1, historialAsignada.size(), "La asignación debe dejar una única transición");
-    assertEquals(NombreEstado.ASIGNACION_REALIZADA, historialAsignada.get(0).getEstadoAlcanzado());
+    assertEquals(
+        EstadoDonacion.ASIGNACION_REALIZADA, historialAsignada.get(0).getEstadoAlcanzado());
   }
 
   @Test
@@ -148,8 +147,8 @@ class PersistenciaModeloTest implements SimplePersistenceTest {
     Donacion recargada = buscarPorBien(recargarDonaciones(), "Arroz");
     assertEquals(2, recargada.getHistorialEstado().size(), "Ambas transiciones deben persistirse");
     assertEquals(
-        NombreEstado.LISTA_PARA_ENTREGAR,
-        recargada.getNombreEstado(),
+        EstadoDonacion.LISTA_PARA_ENTREGAR,
+        recargada.getEstado(),
         "Debe derivarse la última transición, no la primera");
   }
 

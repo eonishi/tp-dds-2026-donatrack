@@ -97,22 +97,13 @@ package "Registro y Segmentación de Donaciones" {
     }
 
     class Donacion {
-        + cambiarEstado(nuevoHistorial: HistorialEstado, nuevoEstado: EstadoDonacion)
+        + cambiarEstado(nuevoEstado: EstadoDonacion, justificacion: String)
     }
 
     class HistorialEstado {
         - fecha: LocalDateTime
-        - estadoAlcanzado: NombreEstado
+        - estadoAlcanzado: EstadoDonacion
         - justificacion: String [0..1]
-    }
-    enum NombreEstado {
-        EN_DEPOSITO
-        ASIGNACION_REALIZADA
-        LISTA_PAR_ENTREGAR
-        EN_TRASLADO
-        ENTREGADA
-        ENTREGA_FALLIDA
-        VENCIDA
     }
     class Camion {
         - volumen: Float 
@@ -123,25 +114,25 @@ package "Registro y Segmentación de Donaciones" {
 }
 
 ' ==========================================
-' PACKAGE: Estados de Donación (State Pattern)
+' PACKAGE: Estados de Donación
 ' ==========================================
-package "Estados de Donación (State Pattern)" {
-    abstract class EstadoDonacion {
+package "Estados de Donación" {
+    enum EstadoDonacion {
+        EN_DEPOSITO
+        ASIGNACION_REALIZADA
+        LISTA_PARA_ENTREGAR
+        EN_TRASLADO
+        ENTREGADA
+        ENTREGA_FALLIDA
+        VENCIDA
         + asignar(donacion: Donacion)
         + planificarRuta(donacion: Donacion)
         + iniciarTraslado(donacion: Donacion)
         + confirmarEntrega(donacion: Donacion)
         + reportarFalla(donacion: Donacion, justificacion: String)
         + marcarVencida(donacion: Donacion)
+        + retornarAlDeposito(donacion: Donacion)
     }
-
-    class EnDeposito
-    class AsignacionRealizada
-    class ListaParaEntregar
-    class EnTraslado
-    class Entregada
-    class EntregaFallida
-    class Vencida
 }
 
 ' ==========================================
@@ -241,19 +232,12 @@ EntidadBeneficiaria ..> ServicioUbicacion: "usa"
 CargaDonacion "*" --> "1" Donante : "realizada por"
 CargaDonacion "1" o-- "1..*" Donacion : "contiene"
 Donacion "1" *--> "*" HistorialEstado : "auditoria"
-HistorialEstado "*" --> "1" NombreEstado : "registra"
+HistorialEstado "*" --> "1" EstadoDonacion : "registra"
 Camion "1" <-- "0..*" CargaDonacion: "entrega"
 Camion "1" --> "0..*" Coordenadas: "provee"
 
-' Relaciones de Estado (State Pattern)
+' Relaciones de Estado
 Donacion --> EstadoDonacion : "estadoActual"
-EstadoDonacion <|-- EnDeposito
-EstadoDonacion <|-- AsignacionRealizada
-EstadoDonacion <|-- ListaParaEntregar
-EstadoDonacion <|-- EnTraslado
-EstadoDonacion <|-- Entregada
-EstadoDonacion <|-- EntregaFallida
-EstadoDonacion <|-- Vencida
 
 ' Relaciones de Bienes y Categorías
 Categoria "1" *--> "*" Subcategoria : "contiene"

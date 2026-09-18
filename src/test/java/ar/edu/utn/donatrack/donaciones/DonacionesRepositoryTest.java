@@ -55,14 +55,14 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
         "Test", "", 1.0, UnidadMedida.UNIDADES, null, EstadoUso.NO_APLICA, subCategoria);
   }
 
-  private Donacion crearDonacionConEstado(NombreEstado estado) {
+  private Donacion crearDonacionConEstado(EstadoDonacion estado) {
     Donacion donacion = new Donacion(donante, List.of(crearBienDummy()));
     // Force the internal estado field via reflection or state machine walk
     // Walk: EnDeposito → asignar → AsignacionRealizada
-    if (estado == NombreEstado.EN_DEPOSITO) {
+    if (estado == EstadoDonacion.EN_DEPOSITO) {
       return donacion; // default state
     }
-    if (estado == NombreEstado.ASIGNACION_REALIZADA) {
+    if (estado == EstadoDonacion.ASIGNACION_REALIZADA) {
       donacion.confirmarEntidadBeneficiaria(entidadBeneficiaria);
       return donacion;
     }
@@ -72,9 +72,9 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
   @Test
   void getDonacionesEnAsignacionRealizada_ConMezcla_DebeFiltrarCorrectamente() {
     DonacionesRepository repo = new DonacionesRepository();
-    Donacion enDeposito = crearDonacionConEstado(NombreEstado.EN_DEPOSITO);
-    Donacion asignada1 = crearDonacionConEstado(NombreEstado.ASIGNACION_REALIZADA);
-    Donacion asignada2 = crearDonacionConEstado(NombreEstado.ASIGNACION_REALIZADA);
+    Donacion enDeposito = crearDonacionConEstado(EstadoDonacion.EN_DEPOSITO);
+    Donacion asignada1 = crearDonacionConEstado(EstadoDonacion.ASIGNACION_REALIZADA);
+    Donacion asignada2 = crearDonacionConEstado(EstadoDonacion.ASIGNACION_REALIZADA);
     repo.addDonacion(enDeposito);
     repo.addDonacion(asignada1);
     repo.addDonacion(asignada2);
@@ -89,7 +89,7 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
   @Test
   void getDonacionesEnAsignacionRealizada_SinCoincidencias_DebeRetornarListaVacia() {
     DonacionesRepository repo = new DonacionesRepository();
-    Donacion enDeposito = crearDonacionConEstado(NombreEstado.EN_DEPOSITO);
+    Donacion enDeposito = crearDonacionConEstado(EstadoDonacion.EN_DEPOSITO);
     repo.addDonacion(enDeposito);
 
     List<Donacion> resultado = repo.getDonacionesEnAsignacionRealizada();
@@ -100,7 +100,7 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
   @Test
   void getDonacionesEnAsignacionRealizada_DevuelveListaInmodificable() {
     DonacionesRepository repo = new DonacionesRepository();
-    repo.addDonacion(crearDonacionConEstado(NombreEstado.ASIGNACION_REALIZADA));
+    repo.addDonacion(crearDonacionConEstado(EstadoDonacion.ASIGNACION_REALIZADA));
 
     List<Donacion> resultado = repo.getDonacionesEnAsignacionRealizada();
 
@@ -110,8 +110,8 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
   @Test
   void registeredDonations_RoundTripThroughTheDatabase() {
     DonacionesRepository repo = new DonacionesRepository();
-    repo.addDonacion(crearDonacionConEstado(NombreEstado.EN_DEPOSITO));
-    repo.addDonacion(crearDonacionConEstado(NombreEstado.ASIGNACION_REALIZADA));
+    repo.addDonacion(crearDonacionConEstado(EstadoDonacion.EN_DEPOSITO));
+    repo.addDonacion(crearDonacionConEstado(EstadoDonacion.ASIGNACION_REALIZADA));
     entityManager().flush();
     entityManager().clear();
 
@@ -141,7 +141,7 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
   @Test
   void getDonacionesEnDeposito_ReflejaLaUltimaTransicion() {
     DonacionesRepository repo = new DonacionesRepository();
-    Donacion donacion = crearDonacionConEstado(NombreEstado.EN_DEPOSITO);
+    Donacion donacion = crearDonacionConEstado(EstadoDonacion.EN_DEPOSITO);
     repo.addDonacion(donacion);
 
     assertTrue(
@@ -163,18 +163,18 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
     assertEquals(
         1, asignadas.size(), "La donación asignada debe aparecer como asignación realizada");
     assertEquals(
-        NombreEstado.ASIGNACION_REALIZADA,
-        asignadas.get(0).getNombreEstado(),
+        EstadoDonacion.ASIGNACION_REALIZADA,
+        asignadas.get(0).getEstado(),
         "El estado derivado debe ser la última transición");
   }
 
   @Test
   void contarDonacionesAsignadas_CuentaLasAsignadasDeLaEntidad() {
     DonacionesRepository repo = new DonacionesRepository();
-    repo.addDonacion(crearDonacionConEstado(NombreEstado.EN_DEPOSITO));
-    repo.addDonacion(crearDonacionConEstado(NombreEstado.ASIGNACION_REALIZADA));
+    repo.addDonacion(crearDonacionConEstado(EstadoDonacion.EN_DEPOSITO));
+    repo.addDonacion(crearDonacionConEstado(EstadoDonacion.ASIGNACION_REALIZADA));
     // Asignada y luego entregada: dos transiciones que califican para una única donación.
-    Donacion entregada = crearDonacionConEstado(NombreEstado.EN_DEPOSITO);
+    Donacion entregada = crearDonacionConEstado(EstadoDonacion.EN_DEPOSITO);
     entregada.confirmarEntidadBeneficiaria(entidadBeneficiaria);
     entregada.planificarRuta();
     entregada.iniciarTraslado();

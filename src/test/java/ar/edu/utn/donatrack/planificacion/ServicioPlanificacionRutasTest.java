@@ -11,7 +11,7 @@ import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
-import ar.edu.utn.donatrack.donaciones.NombreEstado;
+import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
@@ -73,13 +73,13 @@ class ServicioPlanificacionRutasTest {
     return new EntidadBeneficiaria(razonSocial, "Dir " + razonSocial, "Tel");
   }
 
-  private Donacion crearDonacion(NombreEstado estado, EntidadBeneficiaria entidad) {
+  private Donacion crearDonacion(EstadoDonacion estado, EntidadBeneficiaria entidad) {
     Donacion donacion = new Donacion(crearDonanteDummy(), List.of(crearBienDummy()));
     // Walk through state machine to reach desired state
-    if (estado == NombreEstado.EN_DEPOSITO) {
+    if (estado == EstadoDonacion.EN_DEPOSITO) {
       return donacion;
     }
-    if (estado == NombreEstado.ASIGNACION_REALIZADA) {
+    if (estado == EstadoDonacion.ASIGNACION_REALIZADA) {
       donacion.confirmarEntidadBeneficiaria(entidad);
       return donacion;
     }
@@ -101,7 +101,7 @@ class ServicioPlanificacionRutasTest {
     EntidadBeneficiaria entidad = crearEntidad("Entidad A");
     List<Donacion> donaciones = new ArrayList<>();
     for (int i = 0; i < 50; i++) {
-      donaciones.add(crearDonacion(NombreEstado.ASIGNACION_REALIZADA, entidad));
+      donaciones.add(crearDonacion(EstadoDonacion.ASIGNACION_REALIZADA, entidad));
     }
     when(donacionesRepository.getDonacionesEnAsignacionRealizada()).thenReturn(donaciones);
     when(camionRepository.listarTodos()).thenReturn(List.of(camion));
@@ -126,7 +126,7 @@ class ServicioPlanificacionRutasTest {
     EntidadBeneficiaria entidad = crearEntidad("Entidad A");
     List<Donacion> donaciones = new ArrayList<>();
     for (int i = 0; i < 250; i++) {
-      donaciones.add(crearDonacion(NombreEstado.ASIGNACION_REALIZADA, entidad));
+      donaciones.add(crearDonacion(EstadoDonacion.ASIGNACION_REALIZADA, entidad));
     }
     when(donacionesRepository.getDonacionesEnAsignacionRealizada()).thenReturn(donaciones);
     when(camionRepository.listarTodos()).thenReturn(List.of(camion));
@@ -153,7 +153,7 @@ class ServicioPlanificacionRutasTest {
   void planificar_SinCamiones_NoEnviaNingunLote() {
     EntidadBeneficiaria entidad = crearEntidad("Entidad A");
     List<Donacion> donaciones = new ArrayList<>();
-    donaciones.add(crearDonacion(NombreEstado.ASIGNACION_REALIZADA, entidad));
+    donaciones.add(crearDonacion(EstadoDonacion.ASIGNACION_REALIZADA, entidad));
     when(donacionesRepository.getDonacionesEnAsignacionRealizada()).thenReturn(donaciones);
     when(camionRepository.listarTodos()).thenReturn(List.of());
 
@@ -173,12 +173,12 @@ class ServicioPlanificacionRutasTest {
     EntidadBeneficiaria entC = crearEntidad("Entidad C");
 
     // 2 donations per entity, 6 total
-    Donacion dA1 = crearDonacion(NombreEstado.ASIGNACION_REALIZADA, entA);
-    Donacion dA2 = crearDonacion(NombreEstado.ASIGNACION_REALIZADA, entA);
-    Donacion dB1 = crearDonacion(NombreEstado.ASIGNACION_REALIZADA, entB);
-    Donacion dB2 = crearDonacion(NombreEstado.ASIGNACION_REALIZADA, entB);
-    Donacion dC1 = crearDonacion(NombreEstado.ASIGNACION_REALIZADA, entC);
-    Donacion dC2 = crearDonacion(NombreEstado.ASIGNACION_REALIZADA, entC);
+    Donacion dA1 = crearDonacion(EstadoDonacion.ASIGNACION_REALIZADA, entA);
+    Donacion dA2 = crearDonacion(EstadoDonacion.ASIGNACION_REALIZADA, entA);
+    Donacion dB1 = crearDonacion(EstadoDonacion.ASIGNACION_REALIZADA, entB);
+    Donacion dB2 = crearDonacion(EstadoDonacion.ASIGNACION_REALIZADA, entB);
+    Donacion dC1 = crearDonacion(EstadoDonacion.ASIGNACION_REALIZADA, entC);
+    Donacion dC2 = crearDonacion(EstadoDonacion.ASIGNACION_REALIZADA, entC);
     List<Donacion> todas = List.of(dA1, dA2, dB1, dB2, dC1, dC2);
 
     when(donacionesRepository.getDonacionesEnAsignacionRealizada()).thenReturn(todas);
@@ -213,7 +213,7 @@ class ServicioPlanificacionRutasTest {
 
     // All donations transitioned to ListaParaEntregar
     for (Donacion d : todas) {
-      assertEquals(NombreEstado.LISTA_PARA_ENTREGAR, d.getNombreEstado());
+      assertEquals(EstadoDonacion.LISTA_PARA_ENTREGAR, d.getEstado());
     }
   }
 
@@ -224,8 +224,8 @@ class ServicioPlanificacionRutasTest {
     EntidadBeneficiaria entA = crearEntidad("Entidad A");
     EntidadBeneficiaria entB = crearEntidad("Entidad B");
 
-    Donacion d1 = crearDonacion(NombreEstado.ASIGNACION_REALIZADA, entA);
-    Donacion d2 = crearDonacion(NombreEstado.ASIGNACION_REALIZADA, entB);
+    Donacion d1 = crearDonacion(EstadoDonacion.ASIGNACION_REALIZADA, entA);
+    Donacion d2 = crearDonacion(EstadoDonacion.ASIGNACION_REALIZADA, entB);
     List<Donacion> todas = List.of(d1, d2);
 
     when(donacionesRepository.getDonacionesEnAsignacionRealizada()).thenReturn(todas);
@@ -253,8 +253,8 @@ class ServicioPlanificacionRutasTest {
     EntidadBeneficiaria entA = crearEntidad("Entidad A");
     EntidadBeneficiaria entB = crearEntidad("Entidad B");
 
-    Donacion planificada = crearDonacion(NombreEstado.ASIGNACION_REALIZADA, entA);
-    Donacion noPlanificada = crearDonacion(NombreEstado.ASIGNACION_REALIZADA, entB);
+    Donacion planificada = crearDonacion(EstadoDonacion.ASIGNACION_REALIZADA, entA);
+    Donacion noPlanificada = crearDonacion(EstadoDonacion.ASIGNACION_REALIZADA, entB);
     List<Donacion> todas = List.of(planificada, noPlanificada);
 
     when(donacionesRepository.getDonacionesEnAsignacionRealizada()).thenReturn(todas);
@@ -271,16 +271,16 @@ class ServicioPlanificacionRutasTest {
     servicio.procesarResultado(resultado);
 
     // planificada transitioned
-    assertEquals(NombreEstado.LISTA_PARA_ENTREGAR, planificada.getNombreEstado());
+    assertEquals(EstadoDonacion.LISTA_PARA_ENTREGAR, planificada.getEstado());
     // noPlanificada stays
-    assertEquals(NombreEstado.ASIGNACION_REALIZADA, noPlanificada.getNombreEstado());
+    assertEquals(EstadoDonacion.ASIGNACION_REALIZADA, noPlanificada.getEstado());
   }
 
   @Test
   void procesarResultado_ResultadoVacio_NoCreaRutas() {
     Camion camion = crearCamionDummy("ABC123");
     EntidadBeneficiaria entA = crearEntidad("Entidad A");
-    Donacion donacion = crearDonacion(NombreEstado.ASIGNACION_REALIZADA, entA);
+    Donacion donacion = crearDonacion(EstadoDonacion.ASIGNACION_REALIZADA, entA);
 
     when(donacionesRepository.getDonacionesEnAsignacionRealizada()).thenReturn(List.of(donacion));
     when(camionRepository.listarTodos()).thenReturn(List.of(camion));
@@ -295,6 +295,6 @@ class ServicioPlanificacionRutasTest {
     servicio.procesarResultado(resultado);
 
     verify(rutaRepository, never()).agregar(any());
-    assertEquals(NombreEstado.ASIGNACION_REALIZADA, donacion.getNombreEstado());
+    assertEquals(EstadoDonacion.ASIGNACION_REALIZADA, donacion.getEstado());
   }
 }

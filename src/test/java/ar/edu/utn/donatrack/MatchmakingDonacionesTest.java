@@ -18,6 +18,7 @@ import ar.edu.utn.donatrack.donaciones.AlgoritmoPrioridadSubAtendidos;
 import ar.edu.utn.donatrack.donaciones.CargaDonacion;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
+import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
 import ar.edu.utn.donatrack.donaciones.MatchCandidato;
 import ar.edu.utn.donatrack.donaciones.MatchmakingScheduler;
 import ar.edu.utn.donatrack.donaciones.PropuestaDeAsignacion;
@@ -30,7 +31,6 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
-import ar.edu.utn.donatrack.estados.AsignacionRealizada;
 import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.time.Clock;
 import java.time.Instant;
@@ -262,8 +262,8 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
         "Propuesta debe ser removida del repositorio tras confirmar");
     assertEquals(
         entidad, donacion.getEntidadBeneficiaria(), "Donacion debe tener la entidad beneficiaria");
-    assertInstanceOf(
-        AsignacionRealizada.class,
+    assertEquals(
+        EstadoDonacion.ASIGNACION_REALIZADA,
         donacion.getEstado(),
         "Donacion debe estar en AsignacionRealizada");
     assertEquals(

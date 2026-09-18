@@ -27,7 +27,8 @@ public class DonacionesRepository implements JpaRepository {
     return entityManager()
         .createQuery(jpql, Long.class)
         .setParameter("entidad", entidad)
-        .setParameter("estados", List.of(NombreEstado.ASIGNACION_REALIZADA, NombreEstado.ENTREGADA))
+        .setParameter(
+            "estados", List.of(EstadoDonacion.ASIGNACION_REALIZADA, EstadoDonacion.ENTREGADA))
         .setParameter("fechaDesde", fechaDesde)
         .getSingleResult();
   }
@@ -44,7 +45,7 @@ public class DonacionesRepository implements JpaRepository {
    *     EN_DEPOSITO.
    */
   public List<Donacion> getDonacionesEnDeposito() {
-    return donationsWithLatestState(NombreEstado.EN_DEPOSITO);
+    return donationsWithLatestState(EstadoDonacion.EN_DEPOSITO);
   }
 
   /**
@@ -52,7 +53,7 @@ public class DonacionesRepository implements JpaRepository {
    *     ASIGNACION_REALIZADA.
    */
   public List<Donacion> getDonacionesEnAsignacionRealizada() {
-    return donationsWithLatestState(NombreEstado.ASIGNACION_REALIZADA);
+    return donationsWithLatestState(EstadoDonacion.ASIGNACION_REALIZADA);
   }
 
   /**
@@ -61,7 +62,7 @@ public class DonacionesRepository implements JpaRepository {
    * <p>La última entrada es la de mayor id: {@code fecha} es una fecha, así que dos transiciones de
    * la misma donación pueden compartirla y ordenar por ella sería incorrecto.
    */
-  private List<Donacion> donationsWithLatestState(NombreEstado estado) {
+  private List<Donacion> donationsWithLatestState(EstadoDonacion estado) {
     String jpql =
         "SELECT d FROM Donacion d "
             + "JOIN d.historialEstado h "
