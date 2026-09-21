@@ -55,8 +55,10 @@ public final class EntidadController {
   private void crear(Context ctx) {
     EntidadRequest request = DtoValidator.validate(ctx.bodyAsClass(EntidadRequest.class));
     validarRazonSocial(request.razonSocial(), null);
-    EntidadBeneficiaria nueva = new EntidadBeneficiaria(request.razonSocial(), request.direccion(), request.telefono());
-    nueva.actualizarDatos(request.razonSocial(), request.direccion(), request.telefono(), correos(request));
+    EntidadBeneficiaria nueva =
+        new EntidadBeneficiaria(request.razonSocial(), request.direccion(), request.telefono());
+    nueva.actualizarDatos(
+        request.razonSocial(), request.direccion(), request.telefono(), correos(request));
     ctx.status(201).json(entidad(entidades.save(nueva)));
   }
 
@@ -65,14 +67,19 @@ public final class EntidadController {
     EntidadBeneficiaria entidad = buscar(id);
     EntidadRequest request = DtoValidator.validate(ctx.bodyAsClass(EntidadRequest.class));
     validarRazonSocial(request.razonSocial(), id);
-    entidad.actualizarDatos(request.razonSocial(), request.direccion(), request.telefono(), correos(request));
+    entidad.actualizarDatos(
+        request.razonSocial(), request.direccion(), request.telefono(), correos(request));
     ctx.json(entidad(entidades.save(entidad)));
   }
 
   private void eliminar(Context ctx) {
     UUID id = HttpSupport.id(ctx, "id");
     buscar(id);
-    if (donaciones.getDonaciones().stream().anyMatch(d -> d.getEntidadBeneficiaria() != null && d.getEntidadBeneficiaria().getId().equals(id))) {
+    if (donaciones.getDonaciones().stream()
+        .anyMatch(
+            d ->
+                d.getEntidadBeneficiaria() != null
+                    && d.getEntidadBeneficiaria().getId().equals(id))) {
       throw ApiException.conflict("No se puede eliminar una entidad con donaciones asignadas.");
     }
     entidades.deleteById(id);
@@ -80,16 +87,22 @@ public final class EntidadController {
   }
 
   private EntidadBeneficiaria buscar(UUID id) {
-    return entidades.findById(id).orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", id));
+    return entidades
+        .findById(id)
+        .orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", id));
   }
 
   private void validarRazonSocial(String razonSocial, UUID actual) {
-    if (entidades.getBeneficiarios().stream().anyMatch(e -> !e.getId().equals(actual) && e.getRazonSocial().equalsIgnoreCase(razonSocial))) {
+    if (entidades.getBeneficiarios().stream()
+        .anyMatch(
+            e -> !e.getId().equals(actual) && e.getRazonSocial().equalsIgnoreCase(razonSocial))) {
       throw ApiException.conflict("Ya existe una entidad con esa razón social.");
     }
   }
 
   private List<CorreoElectronico> correos(EntidadRequest request) {
-    return request.correos() == null ? List.of() : request.correos().stream().map(CorreoElectronico::new).toList();
+    return request.correos() == null
+        ? List.of()
+        : request.correos().stream().map(CorreoElectronico::new).toList();
   }
 }

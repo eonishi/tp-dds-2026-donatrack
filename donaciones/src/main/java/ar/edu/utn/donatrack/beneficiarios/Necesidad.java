@@ -69,10 +69,7 @@ public class Necesidad {
   }
 
   public void actualizar(
-      SubCategoria subcategoria,
-      double cantidadObjetivo,
-      UnidadMedida unidad,
-      String descripcion) {
+      SubCategoria subcategoria, double cantidadObjetivo, UnidadMedida unidad, String descripcion) {
     if (!Double.isFinite(cantidadObjetivo) || cantidadObjetivo <= 0) {
       throw new IllegalArgumentException("cantidadObjetivo debe ser mayor a cero");
     }

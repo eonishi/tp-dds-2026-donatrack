@@ -21,7 +21,6 @@ import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
-import ar.edu.utn.donatrack.donantes.Sms;
 import ar.edu.utn.donatrack.donantes.Whatsapp;
 import ar.edu.utn.donatrack.utilidades.TipoPersona;
 import java.util.List;
@@ -77,10 +76,8 @@ public final class ApiMapper {
         entidad.getRecepciones().size());
   }
 
-  public static NecesidadResponse necesidad(
-      Necesidad necesidad, EntidadBeneficiaria entidad) {
-    NecesidadRecurrente recurrente =
-        necesidad instanceof NecesidadRecurrente valor ? valor : null;
+  public static NecesidadResponse necesidad(Necesidad necesidad, EntidadBeneficiaria entidad) {
+    NecesidadRecurrente recurrente = necesidad instanceof NecesidadRecurrente valor ? valor : null;
     return new NecesidadResponse(
         necesidad.getId(),
         entidad.getId(),

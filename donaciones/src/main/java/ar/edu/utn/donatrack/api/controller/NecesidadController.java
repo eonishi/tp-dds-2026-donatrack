@@ -6,10 +6,10 @@ import static io.javalin.apibuilder.ApiBuilder.path;
 import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
-import ar.edu.utn.donatrack.api.mappers.ApiMapper;
 import ar.edu.utn.donatrack.api.dto.NecesidadDtos.NecesidadRequest;
 import ar.edu.utn.donatrack.api.dto.NecesidadDtos.NecesidadResponse;
 import ar.edu.utn.donatrack.api.error.ApiException;
+import ar.edu.utn.donatrack.api.mappers.ApiMapper;
 import ar.edu.utn.donatrack.api.validation.DtoValidator;
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
@@ -46,9 +46,7 @@ public final class NecesidadController {
   private void listar(Context ctx) {
     EntidadBeneficiaria entidad = entidad(HttpSupport.id(ctx, "entidadId"));
     ctx.json(
-        entidad.necesidades().stream()
-            .map(necesidad -> response(necesidad, entidad))
-            .toList());
+        entidad.necesidades().stream().map(necesidad -> response(necesidad, entidad)).toList());
   }
 
   private void obtener(Context ctx) {
@@ -103,26 +101,33 @@ public final class NecesidadController {
   }
 
   private EntidadBeneficiaria entidad(UUID id) {
-    return entidades.findById(id).orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", id));
+    return entidades
+        .findById(id)
+        .orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", id));
   }
 
   private Necesidad construirNecesidad(NecesidadRequest request) {
     SubCategoria subcategoria = new SubCategoria(request.subcategoria(), request.categoria());
     if (!recurrente(request)) {
-      return new Necesidad(subcategoria, request.cantidadObjetivo(), request.unidad(), request.descripcion());
+      return new Necesidad(
+          subcategoria, request.cantidadObjetivo(), request.unidad(), request.descripcion());
     }
-    NecesidadRecurrente necesidad = new NecesidadRecurrente(subcategoria, request.cantidadObjetivo(), request.unidad(), request.descripcion());
+    NecesidadRecurrente necesidad =
+        new NecesidadRecurrente(
+            subcategoria, request.cantidadObjetivo(), request.unidad(), request.descripcion());
     necesidad.setPeriodo(request.periodo());
     return necesidad;
   }
 
   private void agregar(EntidadBeneficiaria entidad, Necesidad necesidad) {
-    if (necesidad instanceof NecesidadRecurrente recurrente) entidad.agregarNecesidadRecurrente(recurrente);
+    if (necesidad instanceof NecesidadRecurrente recurrente)
+      entidad.agregarNecesidadRecurrente(recurrente);
     else entidad.agregarNecesidadExtraordinaria(necesidad);
   }
 
   private void validar(NecesidadRequest request) {
-    if (!request.tipo().equalsIgnoreCase("EXTRAORDINARIA") && !request.tipo().equalsIgnoreCase("RECURRENTE")) {
+    if (!request.tipo().equalsIgnoreCase("EXTRAORDINARIA")
+        && !request.tipo().equalsIgnoreCase("RECURRENTE")) {
       throw new IllegalArgumentException("tipo debe ser EXTRAORDINARIA o RECURRENTE.");
     }
     if (recurrente(request) && request.periodo() == null) {

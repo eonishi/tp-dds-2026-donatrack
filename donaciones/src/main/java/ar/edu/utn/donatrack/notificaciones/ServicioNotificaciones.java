@@ -42,7 +42,8 @@ public class ServicioNotificaciones {
       return notificador.enviarNotificacion(
           notificacion.getDestinatario(), notificacion.getMensaje());
     } catch (RuntimeException error) {
-      return ResultadoEnvio.fallido(error.getMessage() == null ? "Error inesperado." : error.getMessage());
+      return ResultadoEnvio.fallido(
+          error.getMessage() == null ? "Error inesperado." : error.getMessage());
     }
   }
 }

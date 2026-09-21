@@ -35,7 +35,8 @@ class ServicioNotificacionesTest {
 
   @Test
   void envioFallido_registraElErrorYReintenta() {
-    GatewaySms sms = (destinatario, mensaje) -> ResultadoEnvio.fallido("Número no verificado en trial.");
+    GatewaySms sms =
+        (destinatario, mensaje) -> ResultadoEnvio.fallido("Número no verificado en trial.");
     ServicioNotificaciones servicio =
         new ServicioNotificaciones(
             new NotificadorPorCanal(

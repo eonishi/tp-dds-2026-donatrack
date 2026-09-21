@@ -17,7 +17,8 @@ public final class NotificadorDesdeEntorno {
     HttpClient client = HttpClient.newHttpClient();
     GatewayCorreo correo =
         configurado(entorno, "RESEND_API_KEY", "RESEND_FROM")
-            ? new GatewayCorreoResend(client, entorno.get("RESEND_API_KEY"), entorno.get("RESEND_FROM"))
+            ? new GatewayCorreoResend(
+                client, entorno.get("RESEND_API_KEY"), entorno.get("RESEND_FROM"))
             : (destinatario, asunto, mensaje) -> sinConfig("Resend");
     GatewaySms sms =
         configurado(entorno, "TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_SMS_FROM")
@@ -28,11 +29,7 @@ public final class NotificadorDesdeEntorno {
                 entorno.get("TWILIO_SMS_FROM"))
             : (destinatario, mensaje) -> sinConfig("Twilio SMS");
     GatewayWhatsapp whatsapp =
-        configurado(
-                entorno,
-                "TWILIO_ACCOUNT_SID",
-                "TWILIO_AUTH_TOKEN",
-                "TWILIO_WHATSAPP_FROM")
+        configurado(entorno, "TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_WHATSAPP_FROM")
             ? new GatewayWhatsappTwilio(
                 client,
                 entorno.get("TWILIO_ACCOUNT_SID"),

@@ -25,8 +25,7 @@ public class EntidadBeneficiaria implements Notificable {
     this(UUID.randomUUID(), razonSocial, direccion, telefono);
   }
 
-  public EntidadBeneficiaria(
-      UUID id, String razonSocial, String direccion, String telefono) {
+  public EntidadBeneficiaria(UUID id, String razonSocial, String direccion, String telefono) {
     this.id = Objects.requireNonNull(id, "id no puede ser null");
     this.razonSocial = razonSocial;
     this.direccion = direccion;
@@ -103,7 +102,6 @@ public class EntidadBeneficiaria implements Notificable {
       correos.forEach(this::agregarCorreo);
     }
   }
-
 
   public void aplicarDonacionRecibida(Donacion donacion) {
     Objects.requireNonNull(donacion, "donacion no puede ser null");

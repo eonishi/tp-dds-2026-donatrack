@@ -15,8 +15,8 @@ import ar.edu.utn.donatrack.donaciones.PropuestaRepository;
 import ar.edu.utn.donatrack.donaciones.PropuestaRepositoryImpl;
 import ar.edu.utn.donatrack.donaciones.ServicioMatchmakingDonaciones;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
-import ar.edu.utn.donatrack.notificaciones.NotificadorDesdeEntorno;
 import ar.edu.utn.donatrack.notificaciones.NotificacionesRepository;
+import ar.edu.utn.donatrack.notificaciones.NotificadorDesdeEntorno;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import io.javalin.Javalin;
 import java.time.Clock;
@@ -38,12 +38,9 @@ public final class DonacionesApi {
         new ServicioNotificaciones(
             NotificadorDesdeEntorno.crear(), new NotificacionesRepository(), 3);
 
-    DonanteController donanteController =
-        new DonanteController(donantes, donaciones);
-    EntidadController entidadController =
-        new EntidadController(entidades, donaciones);
-    NecesidadController necesidadController =
-        new NecesidadController(entidades);
+    DonanteController donanteController = new DonanteController(donantes, donaciones);
+    EntidadController entidadController = new EntidadController(entidades, donaciones);
+    NecesidadController necesidadController = new NecesidadController(entidades);
     DonacionController donacionController =
         new DonacionController(
             donaciones,
@@ -56,9 +53,7 @@ public final class DonacionesApi {
             donaciones,
             entidades,
             propuestas,
-            List.of(
-                new AlgoritmoCompatibilidadSemantica(),
-                new AlgoritmoPrioridadSubAtendidos()));
+            List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos()));
     MatchmakingController matchmakingController =
         new MatchmakingController(matchmakingDomain, donaciones, entidades, notificaciones, clock);
 

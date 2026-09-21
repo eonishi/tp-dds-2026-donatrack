@@ -26,7 +26,9 @@ public class GatewayWhatsappTwilio implements GatewayWhatsapp {
     this.authorization =
         "Basic "
             + Base64.getEncoder()
-                .encodeToString((accountSid + ":" + Objects.requireNonNull(authToken)).getBytes(StandardCharsets.UTF_8));
+                .encodeToString(
+                    (accountSid + ":" + Objects.requireNonNull(authToken))
+                        .getBytes(StandardCharsets.UTF_8));
     this.remitente = Objects.requireNonNull(remitente);
   }
 
@@ -38,9 +40,7 @@ public class GatewayWhatsappTwilio implements GatewayWhatsapp {
     HttpRequest request =
         HttpRequest.newBuilder(
                 URI.create(
-                    "https://api.twilio.com/2010-04-01/Accounts/"
-                        + accountSid
-                        + "/Messages.json"))
+                    "https://api.twilio.com/2010-04-01/Accounts/" + accountSid + "/Messages.json"))
             .header("Authorization", authorization)
             .header("Content-Type", "application/x-www-form-urlencoded")
             .timeout(Duration.ofSeconds(10))

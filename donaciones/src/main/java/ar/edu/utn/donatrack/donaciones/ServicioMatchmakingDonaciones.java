@@ -48,7 +48,8 @@ public class ServicioMatchmakingDonaciones {
   public PropuestaDeAsignacion obtenerRankingVigente(Donacion donacion) {
     return propuestaRepository
         .findPendingByDonacion(donacion)
-        .orElseThrow(() -> new IllegalStateException("No hay un ranking vigente para la donación."));
+        .orElseThrow(
+            () -> new IllegalStateException("No hay un ranking vigente para la donación."));
   }
 
   public List<PropuestaDeAsignacion> obtenerPropuestasPendientes() {
@@ -75,8 +76,7 @@ public class ServicioMatchmakingDonaciones {
     calcularYGuardar(donacion, fechaReferencia);
   }
 
-  private PropuestaDeAsignacion calcularYGuardar(
-      Donacion donacion, LocalDate fechaReferencia) {
+  private PropuestaDeAsignacion calcularYGuardar(Donacion donacion, LocalDate fechaReferencia) {
     List<RankingMatchmaking> rankings =
         algoritmos.stream()
             .map(

@@ -5,7 +5,8 @@ import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 
 public final class DtoValidator {
-  private static final Validator VALIDATOR = Validation.buildDefaultValidatorFactory().getValidator();
+  private static final Validator VALIDATOR =
+      Validation.buildDefaultValidatorFactory().getValidator();
 
   private DtoValidator() {}
 

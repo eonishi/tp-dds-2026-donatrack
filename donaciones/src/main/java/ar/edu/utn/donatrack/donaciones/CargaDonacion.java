@@ -27,7 +27,9 @@ public class CargaDonacion {
                     new SegmentacionKey(
                         bien.getSubcategoria(),
                         bien.getFechaVencimiento(),
-                        bien.getEstadoDeUso() != null ? bien.getEstadoDeUso() : EstadoUso.NO_APLICA),
+                        bien.getEstadoDeUso() != null
+                            ? bien.getEstadoDeUso()
+                            : EstadoUso.NO_APLICA),
                 LinkedHashMap::new,
                 Collectors.toList()))
         .values()

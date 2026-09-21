@@ -8,8 +8,8 @@ import static io.javalin.apibuilder.ApiBuilder.path;
 import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
-import ar.edu.utn.donatrack.api.dto.DonacionDtos.CargaDonacionRequest;
 import ar.edu.utn.donatrack.api.dto.DonacionDtos.BienRequest;
+import ar.edu.utn.donatrack.api.dto.DonacionDtos.CargaDonacionRequest;
 import ar.edu.utn.donatrack.api.dto.DonacionDtos.DonacionUpdateRequest;
 import ar.edu.utn.donatrack.api.dto.DonacionDtos.FotoRequest;
 import ar.edu.utn.donatrack.api.dto.DonacionDtos.FotoResponse;
@@ -91,8 +91,10 @@ public final class DonacionController {
 
   private void actualizar(Context ctx) {
     Donacion donacion = buscar(HttpSupport.id(ctx, "id"));
-    if (donacion.getNombreEstado() != NombreEstado.EN_DEPOSITO) throw ApiException.conflict("Sólo se puede modificar una donación en depósito.");
-    DonacionUpdateRequest request = DtoValidator.validate(ctx.bodyAsClass(DonacionUpdateRequest.class));
+    if (donacion.getNombreEstado() != NombreEstado.EN_DEPOSITO)
+      throw ApiException.conflict("Sólo se puede modificar una donación en depósito.");
+    DonacionUpdateRequest request =
+        DtoValidator.validate(ctx.bodyAsClass(DonacionUpdateRequest.class));
     donacion.reemplazarBienes(bienes(request.bienes()));
     propuestas.remove(donacion);
     ctx.json(donacion(donaciones.save(donacion)));
@@ -100,7 +102,8 @@ public final class DonacionController {
 
   private void eliminar(Context ctx) {
     Donacion donacion = buscar(HttpSupport.id(ctx, "id"));
-    if (donacion.getNombreEstado() != NombreEstado.EN_DEPOSITO) throw ApiException.conflict("Sólo se puede eliminar una donación en depósito.");
+    if (donacion.getNombreEstado() != NombreEstado.EN_DEPOSITO)
+      throw ApiException.conflict("Sólo se puede eliminar una donación en depósito.");
     propuestas.remove(donacion);
     donaciones.deleteById(donacion.getId());
     ctx.status(204);
@@ -127,20 +130,52 @@ public final class DonacionController {
     ctx.status(201).json(new FotoResponse(id, request.url()));
   }
 
-  private Donacion buscar(UUID id) { return donaciones.findById(id).orElseThrow(() -> ApiException.notFound("Donación", id)); }
+  private Donacion buscar(UUID id) {
+    return donaciones.findById(id).orElseThrow(() -> ApiException.notFound("Donación", id));
+  }
 
   private List<Bien> bienes(List<BienRequest> items) {
-    return items.stream().map(b -> new Bien(b.descripcion(), b.foto(), b.cantidad(), b.unidad(), b.fechaVencimiento(), b.estadoDeUso() == null ? EstadoUso.NO_APLICA : b.estadoDeUso(), new SubCategoria(b.subcategoria(), b.categoria()))).toList();
+    return items.stream()
+        .map(
+            b ->
+                new Bien(
+                    b.descripcion(),
+                    b.foto(),
+                    b.cantidad(),
+                    b.unidad(),
+                    b.fechaVencimiento(),
+                    b.estadoDeUso() == null ? EstadoUso.NO_APLICA : b.estadoDeUso(),
+                    new SubCategoria(b.subcategoria(), b.categoria())))
+        .toList();
   }
 
   private Donacion cambiarEstado(Donacion donacion, TransicionEstadoRequest request) {
     return switch (request.estado()) {
-      case LISTA_PARA_ENTREGAR -> { donacion.planificarRuta(); yield donacion; }
-      case EN_TRASLADO -> { donacion.iniciarTraslado(); yield donacion; }
-      case ENTREGADA -> { donacion.confirmarEntrega(); yield donacion; }
-      case ENTREGA_FALLIDA -> { donacion.reportarFalla(request.justificacion()); yield donacion; }
-      case VENCIDA -> { donacion.marcarVencida(); propuestas.remove(donacion); yield donacion; }
-      case EN_DEPOSITO -> { donacion.retornarAlDeposito(); yield donacion; }
+      case LISTA_PARA_ENTREGAR -> {
+        donacion.planificarRuta();
+        yield donacion;
+      }
+      case EN_TRASLADO -> {
+        donacion.iniciarTraslado();
+        yield donacion;
+      }
+      case ENTREGADA -> {
+        donacion.confirmarEntrega();
+        yield donacion;
+      }
+      case ENTREGA_FALLIDA -> {
+        donacion.reportarFalla(request.justificacion());
+        yield donacion;
+      }
+      case VENCIDA -> {
+        donacion.marcarVencida();
+        propuestas.remove(donacion);
+        yield donacion;
+      }
+      case EN_DEPOSITO -> {
+        donacion.retornarAlDeposito();
+        yield donacion;
+      }
       case ASIGNACION_REALIZADA -> throw new IllegalArgumentException("Estado no permitido.");
     };
   }

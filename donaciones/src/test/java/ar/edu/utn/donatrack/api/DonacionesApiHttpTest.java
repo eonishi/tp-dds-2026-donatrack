@@ -44,8 +44,7 @@ class DonacionesApiHttpTest {
     UUID donanteId = crearDonante();
     assertEquals(200, request("GET", "/api/v1/donantes", null).statusCode());
     assertEquals(404, request("GET", "/donantes", null).statusCode());
-    assertEquals(
-        200, request("GET", "/api/v1/donantes/" + donanteId, null).statusCode());
+    assertEquals(200, request("GET", "/api/v1/donantes/" + donanteId, null).statusCode());
 
     HttpResponse<String> donanteActualizado =
         request(
@@ -68,8 +67,7 @@ class DonacionesApiHttpTest {
 
     UUID necesidadId = crearNecesidad(entidadId, "Fideos");
     assertEquals(
-        200,
-        request("GET", "/api/v1/entidades/" + entidadId + "/necesidades", null).statusCode());
+        200, request("GET", "/api/v1/entidades/" + entidadId + "/necesidades", null).statusCode());
     HttpResponse<String> necesidadActualizada =
         request(
             "PUT",
@@ -92,15 +90,9 @@ class DonacionesApiHttpTest {
     assertEquals(204, request("DELETE", "/api/v1/donaciones/" + donacionId, null).statusCode());
     assertEquals(
         204,
-        request(
-                "DELETE",
-                "/api/v1/entidades/" + entidadId + "/necesidades/" + necesidadId,
-                null)
+        request("DELETE", "/api/v1/entidades/" + entidadId + "/necesidades/" + necesidadId, null)
             .statusCode());
-    assertEquals(
-        204,
-        request("DELETE", "/api/v1/beneficiarias/" + entidadId, null)
-            .statusCode());
+    assertEquals(204, request("DELETE", "/api/v1/beneficiarias/" + entidadId, null).statusCode());
     assertEquals(204, request("DELETE", "/api/v1/donantes/" + donanteId, null).statusCode());
 
     HttpResponse<String> inexistente =
@@ -120,15 +112,13 @@ class DonacionesApiHttpTest {
     UUID otraEntidadId = crearEntidad("Comedor Ajeno");
     UUID necesidadId = crearNecesidad(entidadId, "Harina");
 
-    String rutaAjena =
-        "/api/v1/entidades/" + otraEntidadId + "/necesidades/" + necesidadId;
+    String rutaAjena = "/api/v1/entidades/" + otraEntidadId + "/necesidades/" + necesidadId;
     assertEquals(404, request("GET", rutaAjena, null).statusCode());
     assertEquals(404, request("PUT", rutaAjena, necesidadJson("Harina", 20)).statusCode());
     assertEquals(404, request("DELETE", rutaAjena, null).statusCode());
     assertEquals(
         404,
-        request(
-                "GET", "/api/v1/entidades/" + UUID.randomUUID() + "/necesidades", null)
+        request("GET", "/api/v1/entidades/" + UUID.randomUUID() + "/necesidades", null)
             .statusCode());
     assertEquals(
         404,
@@ -141,9 +131,7 @@ class DonacionesApiHttpTest {
 
     assertEquals(
         200,
-        request(
-                "GET", "/api/v1/entidades/" + entidadId + "/necesidades/" + necesidadId,
-                null)
+        request("GET", "/api/v1/entidades/" + entidadId + "/necesidades/" + necesidadId, null)
             .statusCode());
   }
 
@@ -213,8 +201,7 @@ class DonacionesApiHttpTest {
                 "{\"recibido\":true}")
             .statusCode());
 
-    HttpResponse<String> entidad =
-        request("GET", "/api/v1/beneficiarias/" + entidadId, null);
+    HttpResponse<String> entidad = request("GET", "/api/v1/beneficiarias/" + entidadId, null);
     assertEquals(1, json(entidad).get("recepciones").asInt());
   }
 
@@ -227,15 +214,13 @@ class DonacionesApiHttpTest {
     UUID otraDonacionId = crearDonacion(donanteId, "Arroz");
 
     HttpResponse<String> ejecucion =
-        request(
-            "POST", "/api/v1/donaciones/" + donacionId + "/propuesta-asignacion", null);
+        request("POST", "/api/v1/donaciones/" + donacionId + "/propuesta-asignacion", null);
     assertEquals(201, ejecucion.statusCode());
     assertEquals(donacionId.toString(), json(ejecucion).get("donacionId").asText());
     assertFalse(json(ejecucion).get("rankings").isEmpty());
     assertEquals(
         201,
-        request(
-                "POST", "/api/v1/donaciones/" + otraDonacionId + "/propuesta-asignacion", null)
+        request("POST", "/api/v1/donaciones/" + otraDonacionId + "/propuesta-asignacion", null)
             .statusCode());
 
     HttpResponse<String> propuestas = request("GET", "/api/v1/propuestas-asignacion", null);
@@ -262,8 +247,7 @@ class DonacionesApiHttpTest {
     assertEquals(1, json(pendientes).size());
     assertEquals(otraDonacionId.toString(), json(pendientes).get(0).get("donacionId").asText());
     assertEquals(
-        404,
-        request("PUT", "/api/v1/donaciones/" + donacionId + "/asignacion", null).statusCode());
+        404, request("PUT", "/api/v1/donaciones/" + donacionId + "/asignacion", null).statusCode());
     assertEquals(404, request("POST", "/api/v1/propuestas-asignacion", null).statusCode());
     assertEquals(404, request("PUT", "/api/v1/propuestas-asignacion", null).statusCode());
     assertEquals(404, request("DELETE", "/api/v1/propuestas-asignacion", null).statusCode());
@@ -328,7 +312,8 @@ class DonacionesApiHttpTest {
               {"descripcion":"Silla usada","cantidad":3,"unidad":"UNIDADES","estadoDeUso":"USADO","subcategoria":"Sillas","categoria":"MOBILIARIO"},
               {"descripcion":"Mesa nueva","cantidad":1,"unidad":"UNIDADES","estadoDeUso":"NUEVO","subcategoria":"Mesas","categoria":"MOBILIARIO"}
             ]}
-            """.formatted(donanteId));
+            """
+                .formatted(donanteId));
 
     assertEquals(201, response.statusCode(), response.body());
     JsonNode donaciones = json(response);
@@ -341,10 +326,7 @@ class DonacionesApiHttpTest {
 
   private UUID crearDonante() throws Exception {
     HttpResponse<String> response =
-        request(
-            "POST",
-            "/api/v1/donantes",
-            donanteJson("Sofía", "Pérez", "sofia@example.org"));
+        request("POST", "/api/v1/donantes", donanteJson("Sofía", "Pérez", "sofia@example.org"));
     assertEquals(201, response.statusCode(), response.body());
     return UUID.fromString(json(response).get("id").asText());
   }
@@ -438,7 +420,9 @@ class DonacionesApiHttpTest {
   private HttpResponse<String> request(String method, String path, String body)
       throws IOException, InterruptedException {
     HttpRequest.BodyPublisher publisher =
-        body == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(body);
+        body == null
+            ? HttpRequest.BodyPublishers.noBody()
+            : HttpRequest.BodyPublishers.ofString(body);
     HttpRequest request =
         HttpRequest.newBuilder(URI.create(baseUrl + path))
             .header("Content-Type", "application/json")

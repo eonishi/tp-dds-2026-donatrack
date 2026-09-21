@@ -12,5 +12,4 @@ public final class MatchmakingDtos {
 
   public record PropuestaResponse(
       UUID donacionId, boolean pendiente, List<RankingResponse> rankings) {}
-
 }

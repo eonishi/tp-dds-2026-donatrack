@@ -20,16 +20,15 @@ public class GatewayTwilio implements GatewaySms {
   private final String smsRemitente;
 
   public GatewayTwilio(
-      HttpClient client,
-      String accountSid,
-      String authToken,
-      String smsRemitente) {
+      HttpClient client, String accountSid, String authToken, String smsRemitente) {
     this.client = Objects.requireNonNull(client);
     this.accountSid = Objects.requireNonNull(accountSid);
     this.authorization =
         "Basic "
             + Base64.getEncoder()
-                .encodeToString((accountSid + ":" + Objects.requireNonNull(authToken)).getBytes(StandardCharsets.UTF_8));
+                .encodeToString(
+                    (accountSid + ":" + Objects.requireNonNull(authToken))
+                        .getBytes(StandardCharsets.UTF_8));
     this.smsRemitente = Objects.requireNonNull(smsRemitente);
   }
 
@@ -39,13 +38,12 @@ public class GatewayTwilio implements GatewaySms {
   }
 
   private ResultadoEnvio enviarMensaje(String remitente, String destinatario, String mensaje) {
-    String form = "To=%s&From=%s&Body=%s".formatted(valor(destinatario), valor(remitente), valor(mensaje));
+    String form =
+        "To=%s&From=%s&Body=%s".formatted(valor(destinatario), valor(remitente), valor(mensaje));
     HttpRequest request =
         HttpRequest.newBuilder(
                 URI.create(
-                    "https://api.twilio.com/2010-04-01/Accounts/"
-                        + accountSid
-                        + "/Messages.json"))
+                    "https://api.twilio.com/2010-04-01/Accounts/" + accountSid + "/Messages.json"))
             .header("Authorization", authorization)
             .header("Content-Type", "application/x-www-form-urlencoded")
             .timeout(Duration.ofSeconds(10))

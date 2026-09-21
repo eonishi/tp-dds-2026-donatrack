@@ -110,7 +110,8 @@ class EventoNotificableTest {
     donante.setContactoPredeterminado(new Sms("+541112345678"));
     entidad.agregarCorreo(new CorreoElectronico("entidad@test.com"));
 
-    List<Notificacion> notificaciones = new EventoAsignacion(donante, entidad).generarNotificaciones();
+    List<Notificacion> notificaciones =
+        new EventoAsignacion(donante, entidad).generarNotificaciones();
 
     assertEquals(2, notificaciones.size());
     assertInstanceOf(Sms.class, notificaciones.get(0).getDestinatario());

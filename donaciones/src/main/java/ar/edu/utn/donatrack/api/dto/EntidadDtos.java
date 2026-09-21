@@ -1,9 +1,9 @@
 package ar.edu.utn.donatrack.api.dto;
 
-import java.util.List;
-import java.util.UUID;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import java.util.List;
+import java.util.UUID;
 
 public final class EntidadDtos {
   private EntidadDtos() {}

@@ -59,7 +59,8 @@ class PropuestaDeAsignacionTest {
     EntidadBeneficiaria entidadNoRankeada = new EntidadBeneficiaria("Otra Entidad", "Dir", "Tel");
 
     EntidadFueraDeRankingException error =
-        assertThrows(EntidadFueraDeRankingException.class, () -> propuesta.confirmar(entidadNoRankeada));
+        assertThrows(
+            EntidadFueraDeRankingException.class, () -> propuesta.confirmar(entidadNoRankeada));
 
     assertEquals("La entidad no pertenece al ranking vigente.", error.getMessage());
     assertTrue(propuesta.isPendiente());

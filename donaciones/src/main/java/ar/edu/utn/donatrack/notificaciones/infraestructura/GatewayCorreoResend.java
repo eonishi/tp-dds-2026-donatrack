@@ -27,7 +27,8 @@ public class GatewayCorreoResend implements GatewayCorreo {
   public ResultadoEnvio enviar(String destinatario, String asunto, String mensaje) {
     String body =
         "{\"from\":\"%s\",\"to\":[\"%s\"],\"subject\":\"%s\",\"text\":\"%s\"}"
-            .formatted(escapar(remitente), escapar(destinatario), escapar(asunto), escapar(mensaje));
+            .formatted(
+                escapar(remitente), escapar(destinatario), escapar(asunto), escapar(mensaje));
     HttpRequest request =
         HttpRequest.newBuilder(EMAILS_URI)
             .header("Authorization", "Bearer " + apiKey)

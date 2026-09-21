@@ -8,7 +8,6 @@ import ar.edu.utn.donatrack.logistica.monitoreo.Coordenada;
 import ar.edu.utn.donatrack.logistica.monitoreo.LecturaPosicion;
 import ar.edu.utn.donatrack.logistica.monitoreo.MonitorRutas;
 import io.javalin.http.Context;
-
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -19,7 +18,8 @@ public class PosicionController {
   private final CamionRepository camionRepo;
   private final RutaRepository rutaRepo;
 
-  public PosicionController(MonitorRutas monitor, CamionRepository camionRepo, RutaRepository rutaRepo) {
+  public PosicionController(
+      MonitorRutas monitor, CamionRepository camionRepo, RutaRepository rutaRepo) {
     this.monitor = monitor;
     this.camionRepo = camionRepo;
     this.rutaRepo = rutaRepo;
@@ -40,12 +40,8 @@ public class PosicionController {
 
       Coordenada coordenada = new Coordenada(dto.lat, dto.lng);
 
-      LecturaPosicion lectura = new LecturaPosicion(
-          camionOpt.get(),
-          coordenada,
-          dto.velocidad,
-          dto.timestamp
-      );
+      LecturaPosicion lectura =
+          new LecturaPosicion(camionOpt.get(), coordenada, dto.velocidad, dto.timestamp);
 
       // El monitor decide si la procesa o la descarta
       monitor.procesar(lectura);
@@ -81,14 +77,11 @@ public class PosicionController {
     String idRuta = rutaActiva.map(r -> r.getId().toString()).orElse(null);
 
     // Transformamos tu record a un DTO para que Jackson use "lat" y "lng"
-    CoordenadaDTO coordDto = new CoordenadaDTO(lectura.coordenada().latitud(), lectura.coordenada().longitud());
+    CoordenadaDTO coordDto =
+        new CoordenadaDTO(lectura.coordenada().latitud(), lectura.coordenada().longitud());
 
-    PosicionResponseDTO response = new PosicionResponseDTO(
-        patente,
-        idRuta,
-        coordDto,
-        lectura.timestamp()
-    );
+    PosicionResponseDTO response =
+        new PosicionResponseDTO(patente, idRuta, coordDto, lectura.timestamp());
 
     ctx.json(response);
   }
@@ -103,5 +96,7 @@ public class PosicionController {
   }
 
   public record CoordenadaDTO(double lat, double lng) {}
-  public record PosicionResponseDTO(String idCamion, String idRutaActiva, CoordenadaDTO coordenadas, LocalDateTime timestamp) {}
+
+  public record PosicionResponseDTO(
+      String idCamion, String idRutaActiva, CoordenadaDTO coordenadas, LocalDateTime timestamp) {}
 }

@@ -5,9 +5,9 @@ import static io.javalin.apibuilder.ApiBuilder.path;
 import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
-import ar.edu.utn.donatrack.api.mappers.ApiMapper;
 import ar.edu.utn.donatrack.api.dto.DonacionDtos.SeleccionEntidadRequest;
 import ar.edu.utn.donatrack.api.error.ApiException;
+import ar.edu.utn.donatrack.api.mappers.ApiMapper;
 import ar.edu.utn.donatrack.api.validation.DtoValidator;
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
@@ -74,7 +74,9 @@ public final class MatchmakingController {
     SeleccionEntidadRequest request = ctx.bodyAsClass(SeleccionEntidadRequest.class);
     ctx.json(
         ApiMapper.donacion(
-            confirmarSeleccion(HttpSupport.id(ctx, "donacionId"), DtoValidator.validate(request).entidadBeneficiariaId())));
+            confirmarSeleccion(
+                HttpSupport.id(ctx, "donacionId"),
+                DtoValidator.validate(request).entidadBeneficiariaId())));
   }
 
   private Donacion confirmarSeleccion(UUID donacionId, UUID entidadId) {
@@ -94,7 +96,8 @@ public final class MatchmakingController {
     } catch (EntidadFueraDeRankingException error) {
       throw ApiException.conflict(error.getMessage());
     }
-    notificaciones.enviar(new EventoAsignacion(donacion.getDonante(), entidad).generarNotificaciones());
+    notificaciones.enviar(
+        new EventoAsignacion(donacion.getDonante(), entidad).generarNotificaciones());
     return donacion;
   }
 
