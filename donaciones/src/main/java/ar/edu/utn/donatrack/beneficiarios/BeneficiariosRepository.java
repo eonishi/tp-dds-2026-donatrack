@@ -4,10 +4,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 public class BeneficiariosRepository {
-  private final Map<UUID, EntidadBeneficiaria> beneficiarios = new LinkedHashMap<>();
+  private final Map<EntidadBeneficiariaId, EntidadBeneficiaria> beneficiarios =
+      new LinkedHashMap<>();
 
   public synchronized Set<EntidadBeneficiaria> getBeneficiarios() {
     return Set.copyOf(beneficiarios.values());
@@ -22,11 +22,11 @@ public class BeneficiariosRepository {
     return entidad;
   }
 
-  public synchronized Optional<EntidadBeneficiaria> findById(UUID id) {
+  public synchronized Optional<EntidadBeneficiaria> findById(EntidadBeneficiariaId id) {
     return Optional.ofNullable(beneficiarios.get(id));
   }
 
-  public synchronized void deleteById(UUID id) {
+  public synchronized void deleteById(EntidadBeneficiariaId id) {
     beneficiarios.remove(id);
   }
 }

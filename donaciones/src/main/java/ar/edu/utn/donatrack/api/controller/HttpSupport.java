@@ -14,4 +14,12 @@ final class HttpSupport {
       throw ApiException.badRequest(parameter + " debe ser un UUID válido.");
     }
   }
+
+  static long longId(Context ctx, String parameter) {
+    try {
+      return Long.parseLong(ctx.pathParam(parameter));
+    } catch (NumberFormatException exception) {
+      throw ApiException.badRequest(parameter + " debe ser un número entero válido.");
+    }
+  }
 }

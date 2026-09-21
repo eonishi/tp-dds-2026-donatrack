@@ -12,10 +12,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
+import java.util.Optional;
 
 public class Donacion {
-  private final UUID id;
+  private final DonacionId id;
   private EstadoDonacion estado = new EnDeposito();
   private final List<HistorialEstado> historialEstado = new ArrayList<>();
   private final List<Bien> bienes = new ArrayList<>();
@@ -35,13 +35,33 @@ public class Donacion {
    *
    * @return el identificador de la donación
    */
-  public UUID getId() {
+  public DonacionId getId() {
     return id;
   }
 
-  public void cambiarEstado(HistorialEstado nuevoHistorial, EstadoDonacion nuevoEstado) {
-    historialEstado.add(nuevoHistorial);
+  public synchronized void cambiarEstado(
+      HistorialEstado nuevoHistorial, EstadoDonacion nuevoEstado) {
+    Objects.requireNonNull(nuevoHistorial, "historial no puede ser null");
+    Objects.requireNonNull(nuevoEstado, "estado no puede ser null");
+    historialEstado.add(
+        nuevoHistorial.contextualizar(historialEstado.size() + 1L, estado.getNombreEstado()));
     estado = nuevoEstado;
+  }
+
+  /**
+   * Reemplaza los bienes de la donación conservando una copia defensiva de la lista recibida.
+   *
+   * @param nuevosBienes bienes que pasan a componer la donación (no vacíos ni nulos)
+   * @throws IllegalArgumentException si la lista es nula, está vacía o contiene un bien nulo
+   */
+  public void reemplazarBienes(List<Bien> nuevosBienes) {
+    if (nuevosBienes == null
+        || nuevosBienes.isEmpty()
+        || nuevosBienes.stream().anyMatch(Objects::isNull)) {
+      throw new IllegalArgumentException("La donación debe contener al menos un bien válido.");
+    }
+    this.bienes.clear();
+    this.bienes.addAll(nuevosBienes);
   }
 
   public SubCategoria getSubcategoria() {

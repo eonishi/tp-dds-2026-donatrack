@@ -36,7 +36,7 @@ public class CargaDonacion {
         .stream()
         .map(
             bienesDeClave -> {
-              Donacion donacion = new Donacion(donante, bienesDeClave);
+              Donacion donacion = new Donacion(DonacionId.generar(), donante, bienesDeClave);
               donacionesRepository.addDonacion(donacion);
               return donacion;
             })

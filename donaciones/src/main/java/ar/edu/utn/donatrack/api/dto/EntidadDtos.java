@@ -15,7 +15,7 @@ public final class EntidadDtos {
       List<@Email String> correos) {}
 
   public record EntidadResponse(
-      UUID id,
+      long id,
       String razonSocial,
       String direccion,
       String telefono,

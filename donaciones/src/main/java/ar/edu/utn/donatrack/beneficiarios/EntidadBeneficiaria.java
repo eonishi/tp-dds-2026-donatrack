@@ -10,9 +10,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class EntidadBeneficiaria implements Notificable {
-  private final UUID id;
+  private final EntidadBeneficiariaId id;
   private String razonSocial;
   private String direccion;
   private String telefono;
@@ -21,18 +22,38 @@ public class EntidadBeneficiaria implements Notificable {
   private final List<NecesidadRecurrente> necesidadesRecurrentes = new ArrayList<>();
   private final List<CorreoElectronico> correos = new ArrayList<>();
 
+  /**
+   * Crea una entidad beneficiaria con un identificador nuevo.
+   *
+   * <p>El alta sin identificador explícito resuelve la asignación en el borde del servicio, igual
+   * que {@code UUID.randomUUID()} resolvía el alta sin id en el modelo anterior.
+   *
+   * @param razonSocial razón social de la entidad
+   * @param direccion dirección de la entidad
+   * @param telefono teléfono de contacto de la entidad
+   */
   public EntidadBeneficiaria(String razonSocial, String direccion, String telefono) {
-    this(UUID.randomUUID(), razonSocial, direccion, telefono);
+    this(
+        new EntidadBeneficiariaId(ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE)),
+        razonSocial,
+        direccion,
+        telefono);
   }
 
-  public EntidadBeneficiaria(UUID id, String razonSocial, String direccion, String telefono) {
+  public EntidadBeneficiaria(
+      EntidadBeneficiariaId id, String razonSocial, String direccion, String telefono) {
     this.id = Objects.requireNonNull(id, "id no puede ser null");
     this.razonSocial = razonSocial;
     this.direccion = direccion;
     this.telefono = telefono;
   }
 
-  public UUID getId() {
+  /**
+   * Devuelve el identificador de la entidad beneficiaria.
+   *
+   * @return el identificador de la entidad beneficiaria
+   */
+  public EntidadBeneficiariaId getId() {
     return id;
   }
 

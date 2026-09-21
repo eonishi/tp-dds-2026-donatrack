@@ -22,6 +22,7 @@ import ar.edu.utn.donatrack.bienes.EstadoUso;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.donaciones.CargaDonacion;
 import ar.edu.utn.donatrack.donaciones.Donacion;
+import ar.edu.utn.donatrack.donaciones.DonacionId;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donaciones.NombreEstado;
 import ar.edu.utn.donatrack.donaciones.PropuestaRepository;
@@ -131,7 +132,9 @@ public final class DonacionController {
   }
 
   private Donacion buscar(UUID id) {
-    return donaciones.findById(id).orElseThrow(() -> ApiException.notFound("Donación", id));
+    return donaciones
+        .findById(new DonacionId(id))
+        .orElseThrow(() -> ApiException.notFound("Donación", id));
   }
 
   private List<Bien> bienes(List<BienRequest> items) {

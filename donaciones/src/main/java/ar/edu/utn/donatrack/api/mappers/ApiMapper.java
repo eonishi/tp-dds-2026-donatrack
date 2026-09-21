@@ -65,22 +65,22 @@ public final class ApiMapper {
         representantes);
   }
 
-  public static EntidadResponse entidad(EntidadBeneficiaria entidad) {
+  public static EntidadResponse entidad(EntidadBeneficiaria entidad, long recepciones) {
     return new EntidadResponse(
-        entidad.getId(),
+        entidad.getId().value(),
         entidad.getRazonSocial(),
         entidad.getDireccion(),
         entidad.getTelefono(),
         entidad.getCorreos().stream().map(CorreoElectronico::getContacto).toList(),
         entidad.necesidades().stream().map(Necesidad::getId).toList(),
-        entidad.getRecepciones().size());
+        Math.toIntExact(recepciones));
   }
 
   public static NecesidadResponse necesidad(Necesidad necesidad, EntidadBeneficiaria entidad) {
     NecesidadRecurrente recurrente = necesidad instanceof NecesidadRecurrente valor ? valor : null;
     return new NecesidadResponse(
         necesidad.getId(),
-        entidad.getId(),
+        entidad.getId().value(),
         recurrente == null ? "EXTRAORDINARIA" : "RECURRENTE",
         recurrente == null ? null : recurrente.getPeriodo(),
         necesidad.getDescripcion(),
@@ -108,11 +108,11 @@ public final class ApiMapper {
                         bien.getSubcategoria().getCategoria()))
             .toList();
     return new DonacionResponse(
-        donacion.getId(),
+        donacion.getId().value(),
         donacion.getDonante().getId(),
         donacion.getEntidadBeneficiaria() == null
             ? null
-            : donacion.getEntidadBeneficiaria().getId(),
+            : donacion.getEntidadBeneficiaria().getId().value(),
         donacion.getNombreEstado(),
         bienes,
         donacion.getFotos());
@@ -138,12 +138,12 @@ public final class ApiMapper {
                             .map(
                                 candidato ->
                                     new CandidatoResponse(
-                                        candidato.getEntidadBeneficiaria().getId(),
+                                        candidato.getEntidadBeneficiaria().getId().value(),
                                         candidato.getEntidadBeneficiaria().getRazonSocial(),
                                         candidato.getPuntaje()))
                             .toList()))
             .toList();
     return new PropuestaResponse(
-        propuesta.getDonacion().getId(), propuesta.isPendiente(), rankings);
+        propuesta.getDonacion().getId().value(), propuesta.isPendiente(), rankings);
   }
 }

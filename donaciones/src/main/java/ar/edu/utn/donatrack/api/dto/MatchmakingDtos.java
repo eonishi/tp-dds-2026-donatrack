@@ -6,7 +6,7 @@ import java.util.UUID;
 public final class MatchmakingDtos {
   private MatchmakingDtos() {}
 
-  public record CandidatoResponse(UUID entidadBeneficiariaId, String razonSocial, int puntaje) {}
+  public record CandidatoResponse(long entidadBeneficiariaId, String razonSocial, int puntaje) {}
 
   public record RankingResponse(String algoritmo, List<CandidatoResponse> candidatos) {}
 

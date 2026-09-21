@@ -22,7 +22,7 @@ public final class NecesidadDtos {
 
   public record NecesidadResponse(
       UUID id,
-      UUID entidadBeneficiariaId,
+      long entidadBeneficiariaId,
       String tipo,
       TipoPeriodo periodo,
       String descripcion,

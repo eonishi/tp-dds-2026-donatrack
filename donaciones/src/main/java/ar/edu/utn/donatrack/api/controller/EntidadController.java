@@ -8,16 +8,16 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
 import ar.edu.utn.donatrack.api.dto.EntidadDtos.EntidadRequest;
+import ar.edu.utn.donatrack.api.dto.EntidadDtos.EntidadResponse;
 import ar.edu.utn.donatrack.api.error.ApiException;
-import ar.edu.utn.donatrack.api.mappers.ApiMapper;
 import ar.edu.utn.donatrack.api.validation.DtoValidator;
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
+import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiariaId;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import io.javalin.http.Context;
 import java.util.List;
-import java.util.UUID;
 
 public final class EntidadController {
   private final BeneficiariosRepository entidades;
@@ -45,11 +45,11 @@ public final class EntidadController {
   }
 
   private void listar(Context ctx) {
-    ctx.json(entidades.getBeneficiarios().stream().map(ApiMapper::entidad).toList());
+    ctx.json(entidades.getBeneficiarios().stream().map(this::response).toList());
   }
 
   private void obtener(Context ctx) {
-    ctx.json(entidad(buscar(HttpSupport.id(ctx, "id"))));
+    ctx.json(response(buscar(entidadId(ctx, "id"))));
   }
 
   private void crear(Context ctx) {
@@ -59,21 +59,21 @@ public final class EntidadController {
         new EntidadBeneficiaria(request.razonSocial(), request.direccion(), request.telefono());
     nueva.actualizarDatos(
         request.razonSocial(), request.direccion(), request.telefono(), correos(request));
-    ctx.status(201).json(entidad(entidades.save(nueva)));
+    ctx.status(201).json(response(entidades.save(nueva)));
   }
 
   private void actualizar(Context ctx) {
-    UUID id = HttpSupport.id(ctx, "id");
+    EntidadBeneficiariaId id = entidadId(ctx, "id");
     EntidadBeneficiaria entidad = buscar(id);
     EntidadRequest request = DtoValidator.validate(ctx.bodyAsClass(EntidadRequest.class));
     validarRazonSocial(request.razonSocial(), id);
     entidad.actualizarDatos(
         request.razonSocial(), request.direccion(), request.telefono(), correos(request));
-    ctx.json(entidad(entidades.save(entidad)));
+    ctx.json(response(entidades.save(entidad)));
   }
 
   private void eliminar(Context ctx) {
-    UUID id = HttpSupport.id(ctx, "id");
+    EntidadBeneficiariaId id = entidadId(ctx, "id");
     buscar(id);
     if (donaciones.getDonaciones().stream()
         .anyMatch(
@@ -86,13 +86,21 @@ public final class EntidadController {
     ctx.status(204);
   }
 
-  private EntidadBeneficiaria buscar(UUID id) {
-    return entidades
-        .findById(id)
-        .orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", id));
+  private EntidadResponse response(EntidadBeneficiaria entidad) {
+    return entidad(entidad, donaciones.cantidadEntregadas(entidad));
   }
 
-  private void validarRazonSocial(String razonSocial, UUID actual) {
+  private EntidadBeneficiaria buscar(EntidadBeneficiariaId id) {
+    return entidades
+        .findById(id)
+        .orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", id.value()));
+  }
+
+  private EntidadBeneficiariaId entidadId(Context ctx, String parameter) {
+    return new EntidadBeneficiariaId(HttpSupport.longId(ctx, parameter));
+  }
+
+  private void validarRazonSocial(String razonSocial, EntidadBeneficiariaId actual) {
     if (entidades.getBeneficiarios().stream()
         .anyMatch(
             e -> !e.getId().equals(actual) && e.getRazonSocial().equalsIgnoreCase(razonSocial))) {

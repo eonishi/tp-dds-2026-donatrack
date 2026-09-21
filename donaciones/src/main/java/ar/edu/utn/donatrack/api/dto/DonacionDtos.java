@@ -12,6 +12,7 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -46,7 +47,7 @@ public final class DonacionDtos {
   public record DonacionResponse(
       UUID id,
       UUID donanteId,
-      UUID entidadBeneficiariaId,
+      Long entidadBeneficiariaId,
       NombreEstado estado,
       List<BienResponse> bienes,
       List<String> fotos) {}
@@ -59,7 +60,7 @@ public final class DonacionDtos {
   }
 
   public record SeleccionEntidadRequest(
-      @NotNull @JsonAlias({"beneficiarioId", "entidadId"}) UUID entidadBeneficiariaId) {}
+      @NotNull @JsonAlias({"beneficiarioId", "entidadId"}) Long entidadBeneficiariaId) {}
 
   public record FotoRequest(@NotBlank @JsonAlias({"referencia", "foto"}) String url) {}
 
@@ -67,7 +68,7 @@ public final class DonacionDtos {
 
   public record HistorialEstadoResponse(
       long secuencia,
-      LocalDate fecha,
+      LocalDateTime fecha,
       NombreEstado estadoAnterior,
       NombreEstado estadoAlcanzado,
       String justificacion) {}

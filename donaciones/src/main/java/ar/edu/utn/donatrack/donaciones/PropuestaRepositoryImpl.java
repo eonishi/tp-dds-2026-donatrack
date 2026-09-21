@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 
 public class PropuestaRepositoryImpl implements PropuestaRepository {
-  private final Map<java.util.UUID, PropuestaDeAsignacion> propuestas = new HashMap<>();
+  private final Map<DonacionId, PropuestaDeAsignacion> propuestas = new HashMap<>();
 
   @Override
   public Optional<PropuestaDeAsignacion> findPendingByDonacion(Donacion donacion) {

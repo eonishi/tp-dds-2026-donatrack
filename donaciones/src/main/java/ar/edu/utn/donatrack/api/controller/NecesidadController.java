@@ -13,6 +13,7 @@ import ar.edu.utn.donatrack.api.mappers.ApiMapper;
 import ar.edu.utn.donatrack.api.validation.DtoValidator;
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
+import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiariaId;
 import ar.edu.utn.donatrack.beneficiarios.Necesidad;
 import ar.edu.utn.donatrack.beneficiarios.NecesidadRecurrente;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
@@ -44,27 +45,27 @@ public final class NecesidadController {
   }
 
   private void listar(Context ctx) {
-    EntidadBeneficiaria entidad = entidad(HttpSupport.id(ctx, "entidadId"));
+    EntidadBeneficiaria entidad = entidad(ctx);
     ctx.json(
         entidad.necesidades().stream().map(necesidad -> response(necesidad, entidad)).toList());
   }
 
   private void obtener(Context ctx) {
-    EntidadBeneficiaria entidad = entidad(HttpSupport.id(ctx, "entidadId"));
+    EntidadBeneficiaria entidad = entidad(ctx);
     ctx.json(response(necesidad(entidad, HttpSupport.id(ctx, "necesidadId")), entidad));
   }
 
   private void crear(Context ctx) {
     NecesidadRequest request = DtoValidator.validate(ctx.bodyAsClass(NecesidadRequest.class));
     validar(request);
-    EntidadBeneficiaria entidad = entidad(HttpSupport.id(ctx, "entidadId"));
+    EntidadBeneficiaria entidad = entidad(ctx);
     Necesidad necesidad = construirNecesidad(request);
     agregar(entidad, necesidad);
     ctx.status(201).json(ApiMapper.necesidad(necesidad, entidad));
   }
 
   private void actualizar(Context ctx) {
-    EntidadBeneficiaria entidad = entidad(HttpSupport.id(ctx, "entidadId"));
+    EntidadBeneficiaria entidad = entidad(ctx);
     Necesidad actual = necesidad(entidad, HttpSupport.id(ctx, "necesidadId"));
     NecesidadRequest request = DtoValidator.validate(ctx.bodyAsClass(NecesidadRequest.class));
     validar(request);
@@ -84,7 +85,7 @@ public final class NecesidadController {
   }
 
   private void eliminar(Context ctx) {
-    EntidadBeneficiaria entidad = entidad(HttpSupport.id(ctx, "entidadId"));
+    EntidadBeneficiaria entidad = entidad(ctx);
     Necesidad necesidad = necesidad(entidad, HttpSupport.id(ctx, "necesidadId"));
     entidad.eliminarNecesidad(necesidad.getId());
     ctx.status(204);
@@ -100,10 +101,14 @@ public final class NecesidadController {
         .orElseThrow(() -> ApiException.notFound("Necesidad", necesidadId));
   }
 
-  private EntidadBeneficiaria entidad(UUID id) {
+  private EntidadBeneficiaria entidad(Context ctx) {
+    return entidad(new EntidadBeneficiariaId(HttpSupport.longId(ctx, "entidadId")));
+  }
+
+  private EntidadBeneficiaria entidad(EntidadBeneficiariaId id) {
     return entidades
         .findById(id)
-        .orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", id));
+        .orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", id.value()));
   }
 
   private Necesidad construirNecesidad(NecesidadRequest request) {

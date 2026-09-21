@@ -53,7 +53,9 @@ public final class DonacionesApi {
             donaciones,
             entidades,
             propuestas,
-            List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos()));
+            List.of(
+                new AlgoritmoCompatibilidadSemantica(),
+                new AlgoritmoPrioridadSubAtendidos(donaciones)));
     MatchmakingController matchmakingController =
         new MatchmakingController(matchmakingDomain, donaciones, entidades, notificaciones, clock);
 
