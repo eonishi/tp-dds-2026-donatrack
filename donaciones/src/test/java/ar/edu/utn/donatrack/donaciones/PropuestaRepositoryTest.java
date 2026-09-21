@@ -46,7 +46,7 @@ class PropuestaRepositoryTest {
   @Test
   void findPendingByDonacion_PropuestaConfirmada_RetornaEmpty() {
     repository.save(propuesta);
-    propuesta.confirmar(nuevaEntidad("Hogar"));
+    propuesta.confirmar(entidadRankeada(propuesta));
 
     var encontrada = repository.findPendingByDonacion(donacion);
 
@@ -62,7 +62,7 @@ class PropuestaRepositoryTest {
     repository.save(propuestaB);
 
     // Confirmar la primera
-    propuesta.confirmar(nuevaEntidad("Hogar"));
+    propuesta.confirmar(entidadRankeada(propuesta));
 
     List<PropuestaDeAsignacion> pendientes = repository.findAllPending();
 
@@ -131,5 +131,9 @@ class PropuestaRepositoryTest {
     RankingMatchmaking ranking2 =
         new RankingMatchmaking("algoritmo-2", List.of(new MatchCandidato(entidad, 80)));
     return List.of(ranking1, ranking2);
+  }
+
+  private static EntidadBeneficiaria entidadRankeada(PropuestaDeAsignacion propuesta) {
+    return propuesta.getRankings().get(0).getCandidatos().get(0).getEntidadBeneficiaria();
   }
 }

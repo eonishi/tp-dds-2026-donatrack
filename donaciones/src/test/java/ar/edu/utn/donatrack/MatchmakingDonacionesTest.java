@@ -216,6 +216,7 @@ public class MatchmakingDonacionesTest {
     BeneficiariosRepository beneficiariosRepository = new BeneficiariosRepository();
     EntidadBeneficiaria entidad =
         crearEntidadConNecesidad("Hogar", alimentos, 5, fecha.plusMonths(4));
+    beneficiariosRepository.addBeneficiario(entidad);
 
     PropuestaRepository propuestaRepository = new PropuestaRepositoryImpl();
     ServicioMatchmakingDonaciones servicio =
