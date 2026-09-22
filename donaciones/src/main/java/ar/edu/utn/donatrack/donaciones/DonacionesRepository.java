@@ -56,9 +56,10 @@ public class DonacionesRepository implements JpaRepository {
    *
    * <p>La donación cascadea a sus bienes y a su historial, pero no a sus referencias externas: el
    * donante, la subcategoría de cada bien y la entidad beneficiaria deben existir antes de
-   * persistirla. {@link #sincronizarReferencias(Donacion)} almacena el donante y las subcategorías
-   * cuando todavía no tienen fila; la entidad beneficiaria debe llegar administrada por {@code
-   * BeneficiariosRepository}, que ya es el repositorio dueño de ese agregado.
+   * persistirla. El donante debe llegar administrado por {@code DonantesRepository}, que es el
+   * repositorio dueño de ese agregado; la entidad beneficiaria debe llegar administrada por {@code
+   * BeneficiariosRepository}. {@link #sincronizarReferencias(Donacion)} almacena las subcategorías
+   * de los bienes cuando todavía no tienen fila.
    *
    * @param donacion la donación a registrar
    */
@@ -142,15 +143,14 @@ public class DonacionesRepository implements JpaRepository {
   /**
    * Asegura que las referencias externas de la donación tengan fila en la base antes de escribirla.
    *
-   * <p>El donante pertenece a un agregado cuyo repositorio todavía no es JPA y las subcategorías de
-   * los bienes las compone la API por solicitud: la donación solo cascadea a sus bienes y a su
-   * historial, así que la clave foránea no puede escribirse sin esas filas. Este paso las inserta
+   * <p>El donante pertenece al agregado que ya administra {@code DonantesRepository} y debe llegar
+   * administrado por ese repositorio: acá no se escribe. Las subcategorías de los bienes las
+   * compone la API por solicitud y no tienen repositorio propio, así que este paso las inserta
    * cuando faltan y no hace nada cuando ya existen o están administradas. La entidad beneficiaria
-   * no se escribe acá: su fila la garantiza {@code BeneficiariosRepository} y la donación
+   * tampoco se escribe acá: su fila la garantiza {@code BeneficiariosRepository} y la donación
    * referencia la instancia administrada que ese repositorio devuelve.
    */
   private void sincronizarReferencias(Donacion donacion) {
-    asegurarFila(donacion.getDonante());
     donacion.getBienes().forEach(bien -> asegurarFila(bien.getSubcategoria()));
   }
 

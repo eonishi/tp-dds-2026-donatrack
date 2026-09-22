@@ -4,11 +4,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.donantes.*;
 import ar.edu.utn.donatrack.utilidades.ImportadorDonantesCsv;
+import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-public class RepositoriosTest {
+public class RepositoriosTest implements SimplePersistenceTest {
   @Test
   public void agregarDonantesDesdeCsv() throws IOException {
     DonantesRepository repo = new DonantesRepository();

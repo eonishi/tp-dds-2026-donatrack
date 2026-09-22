@@ -27,7 +27,7 @@ public abstract class Donante implements Notificable {
   @JoinColumn(name = "donante_id")
   protected List<MedioDeContacto> mediosDeContacto = new ArrayList<>();
 
-  @ManyToOne
+  @ManyToOne(cascade = CascadeType.PERSIST)
   @JoinColumn(name = "contacto_predeterminado_id")
   protected MedioDeContacto contactoPredeterminado;
 
