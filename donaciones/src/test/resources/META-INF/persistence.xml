@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://xmlns.jcp.org/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence
+                                 http://xmlns.jcp.org/xml/ns/persistence/persistence_2_2.xsd"
+             version="2.2">
+    <persistence-unit name="simple-persistence-unit" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+
+        <!-- La unidad de persistencia de test vive en una raíz de classpath distinta a la de las entidades, así que Hibernate no puede autodetectarlas: se listan explícitamente. -->
+        <class>ar.edu.utn.donatrack.donantes.CorreoElectronico</class>
+        <class>ar.edu.utn.donatrack.donantes.Donante</class>
+        <class>ar.edu.utn.donatrack.donantes.MedioDeContacto</class>
+        <class>ar.edu.utn.donatrack.donantes.PersonaHumana</class>
+        <class>ar.edu.utn.donatrack.donantes.PersonajeJuridica</class>
+        <class>ar.edu.utn.donatrack.donantes.Representante</class>
+        <class>ar.edu.utn.donatrack.donantes.Sms</class>
+        <class>ar.edu.utn.donatrack.donantes.Whatsapp</class>
+
+        <properties>
+            <property name="javax.persistence.jdbc.url" value="jdbc:hsqldb:mem:donatrack-test"/>
+            <property name="javax.persistence.jdbc.user" value="sa"/>
+            <property name="javax.persistence.jdbc.password" value=""/>
+            <property name="javax.persistence.jdbc.driver" value="org.hsqldb.jdbc.JDBCDriver"/>
+
+            <!-- El módulo valida DTOs con Jakarta Bean Validation 3; Hibernate 5.6 inspecciona esa API javax y no puede cargarla, así que se desactiva la validación de callbacks de JPA (las entidades no llevan restricciones). -->
+            <property name="javax.persistence.validation.mode" value="none"/>
+
+            <property name="hibernate.dialect" value="org.hibernate.dialect.HSQLDialect"/>
+            <property name="hibernate.show_sql" value="false"/>
+            <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+        </properties>
+    </persistence-unit>
+</persistence>

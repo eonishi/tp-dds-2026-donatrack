@@ -61,3 +61,4 @@ odd/
 *.iml
 
 secrets.local.sh
+donaciones/src/main/resources/META-INF/persistence.xml

@@ -7,13 +7,31 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 
+@Entity
+@Inheritance(strategy = InheritanceType.JOINED)
 public abstract class Donante implements Notificable {
-  private final UUID id;
+  @Id private UUID id;
   protected String numDocumento;
   protected TipoDocumento documento;
+
+  @OneToMany(cascade = CascadeType.ALL)
+  @JoinColumn(name = "donante_id")
   protected List<MedioDeContacto> mediosDeContacto = new ArrayList<>();
+
+  @ManyToOne
+  @JoinColumn(name = "contacto_predeterminado_id")
   protected MedioDeContacto contactoPredeterminado;
+
+  protected Donante() {}
 
   public Donante(MedioDeContacto medioDeContacto, String numDocumento, TipoDocumento documento) {
     this(UUID.randomUUID(), medioDeContacto, numDocumento, documento);

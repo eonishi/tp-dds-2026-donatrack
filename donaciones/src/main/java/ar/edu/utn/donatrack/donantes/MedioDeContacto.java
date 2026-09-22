@@ -2,9 +2,25 @@ package ar.edu.utn.donatrack.donantes;
 
 import ar.edu.utn.donatrack.notificaciones.Notificador;
 import ar.edu.utn.donatrack.notificaciones.ResultadoEnvio;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
 
+@Entity
+@Inheritance(strategy = InheritanceType.JOINED)
 public abstract class MedioDeContacto {
-  private final String contacto;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  protected MedioDeContacto() {}
+
+  @Column(nullable = false)
+  private String contacto;
 
   public MedioDeContacto(String contacto) {
     this.contacto = contacto;

@@ -4,12 +4,22 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
 
+@Entity
 public class PersonajeJuridica extends Donante {
   private String razonSocial;
   private TipoOrganizacion tipoOrganizacion;
   private String rubro;
-  private final List<Representante> representantes = new ArrayList<>();
+
+  @OneToMany(cascade = CascadeType.ALL)
+  @JoinColumn(name = "donante_id")
+  private List<Representante> representantes = new ArrayList<>();
+
+  protected PersonajeJuridica() {}
 
   public PersonajeJuridica(
       CorreoElectronico email,
