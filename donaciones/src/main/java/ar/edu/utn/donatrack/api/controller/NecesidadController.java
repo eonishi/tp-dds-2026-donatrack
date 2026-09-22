@@ -61,6 +61,7 @@ public final class NecesidadController {
     EntidadBeneficiaria entidad = entidad(ctx);
     Necesidad necesidad = construirNecesidad(request);
     agregar(entidad, necesidad);
+    entidades.save(entidad);
     ctx.status(201).json(ApiMapper.necesidad(necesidad, entidad));
   }
 
@@ -81,6 +82,7 @@ public final class NecesidadController {
     if (esRecurrente) {
       ((NecesidadRecurrente) actual).setPeriodo(request.periodo());
     }
+    entidades.save(entidad);
     ctx.json(ApiMapper.necesidad(actual, entidad));
   }
 

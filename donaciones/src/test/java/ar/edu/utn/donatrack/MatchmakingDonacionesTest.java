@@ -81,9 +81,9 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
     Donacion donacion =
         nuevaDonacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
     // El repositorio persiste la donación que recibe, y una donación solo cascadea a sus bienes:
-    // el donante y la subcategoría del bien ya deben estar almacenados. Los beneficiarios siguen
-    // viviendo en memoria, así que sus entidades se almacenan acá porque la donación entregada
-    // referencia a hogarB.
+    // el donante, la subcategoría del bien y la entidad beneficiaria ya deben estar almacenados.
+    // El repositorio de beneficiarios ya es JPA, pero la donación no persiste su entidad: las
+    // entidades se almacenan acá porque la donación entregada referencia a hogarB.
     persist(alimentos);
     persist(donante);
     DonacionesRepository donacionesRepository = new DonacionesRepository();

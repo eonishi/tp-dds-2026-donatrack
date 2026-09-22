@@ -1,7 +1,6 @@
 package ar.edu.utn.donatrack.donaciones;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiariaId;
 import ar.edu.utn.donatrack.persistencia.JpaRepository;
 import java.time.LocalDate;
 import java.util.List;
@@ -11,8 +10,8 @@ import java.util.Optional;
  * Repositorio de donaciones respaldado por JPA: las lecturas consultan la base y las escrituras
  * persisten en ella.
  *
- * <p>El estado de la donación se guarda en una columna: las consultas filtran por el estado
- * actual sin recorrer el historial.
+ * <p>El estado de la donación se guarda en una columna: las consultas filtran por el estado actual
+ * sin recorrer el historial.
  */
 public class DonacionesRepository implements JpaRepository {
 
@@ -57,8 +56,9 @@ public class DonacionesRepository implements JpaRepository {
    *
    * <p>La donación cascadea a sus bienes y a su historial, pero no a sus referencias externas: el
    * donante, la subcategoría de cada bien y la entidad beneficiaria deben existir antes de
-   * persistirla. {@link #sincronizarReferencias(Donacion)} las almacena cuando todavía no tienen
-   * fila.
+   * persistirla. {@link #sincronizarReferencias(Donacion)} almacena el donante y las subcategorías
+   * cuando todavía no tienen fila; la entidad beneficiaria debe llegar administrada por {@code
+   * BeneficiariosRepository}, que ya es el repositorio dueño de ese agregado.
    *
    * @param donacion la donación a registrar
    */
@@ -142,47 +142,16 @@ public class DonacionesRepository implements JpaRepository {
   /**
    * Asegura que las referencias externas de la donación tengan fila en la base antes de escribirla.
    *
-   * <p>El donante y las subcategorías pertenecen a agregados cuyos repositorios todavía no son JPA
-   * (donantes y beneficiarios) o que la API compone por solicitud (las subcategorías de los
-   * bienes): la donación solo cascadea a sus bienes y a su historial, así que la clave foránea no
-   * puede escribirse sin esas filas. Este paso las inserta cuando faltan y no hace nada cuando ya
-   * existen o están administradas. Es una adaptación de la transición, no una regla de lectura:
-   * las consultas nunca dependen de ella.
+   * <p>El donante pertenece a un agregado cuyo repositorio todavía no es JPA y las subcategorías de
+   * los bienes las compone la API por solicitud: la donación solo cascadea a sus bienes y a su
+   * historial, así que la clave foránea no puede escribirse sin esas filas. Este paso las inserta
+   * cuando faltan y no hace nada cuando ya existen o están administradas. La entidad beneficiaria
+   * no se escribe acá: su fila la garantiza {@code BeneficiariosRepository} y la donación
+   * referencia la instancia administrada que ese repositorio devuelve.
    */
   private void sincronizarReferencias(Donacion donacion) {
     asegurarFila(donacion.getDonante());
     donacion.getBienes().forEach(bien -> asegurarFila(bien.getSubcategoria()));
-    asegurarReferenciaDeEntidad(donacion);
-  }
-
-  /**
-   * Escribe la fila de identidad de la entidad beneficiaria que necesita la clave foránea de la
-   * donación y apunta la asociación a una instancia administrada.
-   *
-   * <p>El agregado de beneficiarios sigue en memoria hasta su propia unidad de trabajo. Persistir su
-   * grafo completo —necesidades y correos— choca con una colisión de mapeo heredada de develop:
-   * {@code necesidadesExtraordinarias} y {@code necesidadesRecurrentes} comparten la columna
-   * {@code entidad_id} y {@code NecesidadRecurrente} hereda de {@code Necesidad} en una sola tabla,
-   * así que la colección recurrente no puede leer una fila {@code Necesidad} sin un filtro de
-   * discriminador. Hasta que esa unidad arregle el mapeo, acá se escribe solo la fila de identidad
-   * que la donación necesita; el resto del agregado queda donde ya vivía: en memoria.
-   */
-  private void asegurarReferenciaDeEntidad(Donacion donacion) {
-    EntidadBeneficiaria entidad = donacion.getEntidadBeneficiaria();
-    if (entidad == null || entityManager().contains(entidad)) {
-      return;
-    }
-    EntidadBeneficiariaId id = entidad.getId();
-    EntidadBeneficiaria referencia = find(EntidadBeneficiaria.class, id.value());
-    if (referencia == null) {
-      referencia =
-          new EntidadBeneficiaria(
-              id, entidad.getRazonSocial(), entidad.getDireccion(), entidad.getTelefono());
-      persist(referencia);
-    }
-    // La asociación debe apuntar a la instancia administrada: al vaciar la transacción, la
-    // referencia original —separada— haría fallar la escritura de la clave foránea.
-    donacion.setEntidadBeneficiaria(referencia);
   }
 
   private void asegurarFila(Object entidad) {
@@ -190,10 +159,7 @@ public class DonacionesRepository implements JpaRepository {
       return;
     }
     Object id =
-        entityManager()
-            .getEntityManagerFactory()
-            .getPersistenceUnitUtil()
-            .getIdentifier(entidad);
+        entityManager().getEntityManagerFactory().getPersistenceUnitUtil().getIdentifier(entidad);
     if (id == null) {
       // Entidad nueva con identidad generada: persist la deja administrada y le asigna el id.
       persist(entidad);

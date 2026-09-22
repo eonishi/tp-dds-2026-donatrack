@@ -25,12 +25,16 @@ public class EntidadBeneficiaria implements Notificable {
   private String direccion;
   private String telefono;
 
+  // Cada colección tiene su propia clave foránea: compartir entidad_id hacía que la colección
+  // recurrente leyera filas Necesidad y Hibernate levantara WrongClassException, porque
+  // NecesidadRecurrente hereda de Necesidad en una sola tabla. Con dos columnas, la pertenencia a
+  // una colección es explícita y el tipo real de cada fila se conserva.
   @OneToMany(cascade = CascadeType.ALL)
   @JoinColumn(name = "entidad_id")
   private List<Necesidad> necesidadesExtraordinarias = new ArrayList<>();
 
   @OneToMany(cascade = CascadeType.ALL)
-  @JoinColumn(name = "entidad_id")
+  @JoinColumn(name = "entidad_recurrente_id")
   private List<NecesidadRecurrente> necesidadesRecurrentes = new ArrayList<>();
 
   @OneToMany(cascade = CascadeType.ALL)

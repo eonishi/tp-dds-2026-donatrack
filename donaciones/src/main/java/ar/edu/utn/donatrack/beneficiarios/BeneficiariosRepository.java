@@ -1,32 +1,99 @@
 package ar.edu.utn.donatrack.beneficiarios;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import ar.edu.utn.donatrack.persistencia.JpaRepository;
 import java.util.Optional;
 import java.util.Set;
 
-public class BeneficiariosRepository {
-  private final Map<EntidadBeneficiariaId, EntidadBeneficiaria> beneficiarios =
-      new LinkedHashMap<>();
+/**
+ * Repositorio de entidades beneficiarias respaldado por JPA: las lecturas consultan la base y las
+ * escrituras persisten en ella, conservando la API que usan los controladores y el matchmaking.
+ */
+public class BeneficiariosRepository implements JpaRepository {
 
-  public synchronized Set<EntidadBeneficiaria> getBeneficiarios() {
-    return Set.copyOf(beneficiarios.values());
+  /**
+   * @return una instantánea inmutable de todas las entidades beneficiarias almacenadas.
+   */
+  public Set<EntidadBeneficiaria> getBeneficiarios() {
+    return Set.copyOf(
+        createQuery("select e from EntidadBeneficiaria e", EntidadBeneficiaria.class)
+            .getResultList());
   }
 
-  public synchronized void addBeneficiario(EntidadBeneficiaria nuevo) {
+  /**
+   * Registra una entidad beneficiaria. Equivale a {@link #save(EntidadBeneficiaria)}: la identidad
+   * de la entidad decide si la fila se inserta o se actualiza.
+   *
+   * @param nuevo la entidad beneficiaria a registrar
+   */
+  public void addBeneficiario(EntidadBeneficiaria nuevo) {
     save(nuevo);
   }
 
-  public synchronized EntidadBeneficiaria save(EntidadBeneficiaria entidad) {
-    beneficiarios.put(entidad.getId(), entidad);
-    return entidad;
+  /**
+   * Inserta o actualiza la entidad beneficiaria junto con sus necesidades y sus correos. Si todavía
+   * no existe, la inserta; si ya está administrada por el contexto de persistencia, la devuelve
+   * para que el vaciado de la transacción guarde sus cambios; si está separada, fusiona su estado
+   * con la fila almacenada.
+   *
+   * <p>Las subcategorías de las necesidades se almacenan antes de escribir la entidad: son la única
+   * referencia del agregado que no cascadea y la API las compone nuevas en cada solicitud.
+   *
+   * @param entidad la entidad beneficiaria a guardar
+   * @return la instancia administrada resultante
+   */
+  public EntidadBeneficiaria save(EntidadBeneficiaria entidad) {
+    return inTransaction(
+        () -> {
+          asegurarSubcategorias(entidad);
+          if (entityManager().contains(entidad)) {
+            return entidad;
+          }
+          return merge(entidad);
+        });
   }
 
-  public synchronized Optional<EntidadBeneficiaria> findById(EntidadBeneficiariaId id) {
-    return Optional.ofNullable(beneficiarios.get(id));
+  /**
+   * Busca una entidad beneficiaria por su identidad.
+   *
+   * @param id identidad de la entidad beneficiaria
+   * @return la entidad almacenada, o {@link Optional#empty()} si no existe
+   */
+  public Optional<EntidadBeneficiaria> findById(EntidadBeneficiariaId id) {
+    return Optional.ofNullable(find(EntidadBeneficiaria.class, id.value()));
   }
 
-  public synchronized void deleteById(EntidadBeneficiariaId id) {
-    beneficiarios.remove(id);
+  /**
+   * Elimina la entidad beneficiaria indicada junto con sus necesidades y sus correos. Si no existe,
+   * no hace nada.
+   *
+   * @param id identidad de la entidad beneficiaria
+   */
+  public void deleteById(EntidadBeneficiariaId id) {
+    inTransaction(
+        () -> {
+          EntidadBeneficiaria entidad = find(EntidadBeneficiaria.class, id.value());
+          if (entidad != null) {
+            remove(entidad);
+          }
+        });
+  }
+
+  private void asegurarSubcategorias(EntidadBeneficiaria entidad) {
+    entidad.necesidades().forEach(necesidad -> asegurarFila(necesidad.getSubcategoria()));
+  }
+
+  private void asegurarFila(Object entidad) {
+    if (entidad == null || entityManager().contains(entidad)) {
+      return;
+    }
+    Object id =
+        entityManager().getEntityManagerFactory().getPersistenceUnitUtil().getIdentifier(entidad);
+    if (id == null) {
+      // Subcategoría nueva con identidad generada: persist la deja administrada y le asigna el id.
+      persist(entidad);
+    } else if (find(entidad.getClass(), id) == null) {
+      // Subcategoría separada con identidad asignada: merge inserta la fila que falta.
+      merge(entidad);
+    }
   }
 }

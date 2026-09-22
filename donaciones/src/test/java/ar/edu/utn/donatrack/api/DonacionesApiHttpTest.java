@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.persistencia.JpaRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -44,13 +45,19 @@ class DonacionesApiHttpTest implements JpaRepository {
   @AfterEach
   void limpiarPersistencia() {
     // Las solicitudes HTTP confirman sus propias transacciones, a diferencia de las pruebas
-    // transaccionales que revierten: se borran las donaciones confirmadas para que no contaminen
-    // los conteos de las demás pruebas.
+    // transaccionales que revierten: se borran las donaciones confirmadas y las entidades
+    // beneficiarias creadas por la API para que no contaminen los conteos ni el chequeo de razones
+    // sociales duplicadas de las demás pruebas. Las donaciones se borran primero porque referencian
+    // a las entidades.
     inTransaction(
-        () ->
-            createQuery("select d from Donacion d", Donacion.class)
-                .getResultList()
-                .forEach(this::remove));
+        () -> {
+          createQuery("select d from Donacion d", Donacion.class)
+              .getResultList()
+              .forEach(this::remove);
+          createQuery("select e from EntidadBeneficiaria e", EntidadBeneficiaria.class)
+              .getResultList()
+              .forEach(this::remove);
+        });
   }
 
   @Test
