@@ -17,7 +17,6 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
-import ar.edu.utn.donatrack.estados.Entregada;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -241,7 +240,8 @@ class AlgoritmoPrioridadSubAtendidosTest {
                     subCategoria)));
     donacion.confirmarEntidadBeneficiaria(entidad);
     donacion.cambiarEstado(
-        new HistorialEstado(fechaEntrega, NombreEstado.ENTREGADA, null), new Entregada());
+        new HistorialEstado(fechaEntrega, EstadoDonacion.ENTREGADA, null),
+        EstadoDonacion.ENTREGADA);
     return donacion;
   }
 }

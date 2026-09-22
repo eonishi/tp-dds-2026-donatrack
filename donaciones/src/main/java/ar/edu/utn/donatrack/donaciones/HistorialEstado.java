@@ -5,19 +5,20 @@ import java.time.LocalDateTime;
 public class HistorialEstado {
   private final long secuencia;
   private final LocalDateTime fecha;
-  private final NombreEstado estadoAnterior;
-  private final NombreEstado estadoAlcanzado;
+  private final EstadoDonacion estadoAnterior;
+  private final EstadoDonacion estadoAlcanzado;
   private final String justificacion;
 
-  public HistorialEstado(LocalDateTime fecha, NombreEstado estadoAlcanzado, String justificacion) {
+  public HistorialEstado(
+      LocalDateTime fecha, EstadoDonacion estadoAlcanzado, String justificacion) {
     this(0, fecha, null, estadoAlcanzado, justificacion);
   }
 
   private HistorialEstado(
       long secuencia,
       LocalDateTime fecha,
-      NombreEstado estadoAnterior,
-      NombreEstado estadoAlcanzado,
+      EstadoDonacion estadoAnterior,
+      EstadoDonacion estadoAlcanzado,
       String justificacion) {
     this.secuencia = secuencia;
     this.fecha = fecha;
@@ -33,7 +34,7 @@ public class HistorialEstado {
    * @param estadoAnterior estado desde el que se produjo la transición
    * @return un nuevo evento con la secuencia y el estado anterior indicados
    */
-  public HistorialEstado contextualizar(long secuencia, NombreEstado estadoAnterior) {
+  public HistorialEstado contextualizar(long secuencia, EstadoDonacion estadoAnterior) {
     return new HistorialEstado(secuencia, fecha, estadoAnterior, estadoAlcanzado, justificacion);
   }
 
@@ -45,11 +46,11 @@ public class HistorialEstado {
     return fecha;
   }
 
-  public NombreEstado getEstadoAlcanzado() {
+  public EstadoDonacion getEstadoAlcanzado() {
     return estadoAlcanzado;
   }
 
-  public NombreEstado getEstadoAnterior() {
+  public EstadoDonacion getEstadoAnterior() {
     return estadoAnterior;
   }
 

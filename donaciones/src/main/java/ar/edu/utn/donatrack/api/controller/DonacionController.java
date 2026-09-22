@@ -24,7 +24,7 @@ import ar.edu.utn.donatrack.donaciones.CargaDonacion;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionId;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
-import ar.edu.utn.donatrack.donaciones.NombreEstado;
+import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
 import ar.edu.utn.donatrack.donaciones.PropuestaRepository;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
@@ -92,7 +92,7 @@ public final class DonacionController {
 
   private void actualizar(Context ctx) {
     Donacion donacion = buscar(HttpSupport.id(ctx, "id"));
-    if (donacion.getNombreEstado() != NombreEstado.EN_DEPOSITO)
+    if (donacion.getEstado() != EstadoDonacion.EN_DEPOSITO)
       throw ApiException.conflict("Sólo se puede modificar una donación en depósito.");
     DonacionUpdateRequest request =
         DtoValidator.validate(ctx.bodyAsClass(DonacionUpdateRequest.class));
@@ -103,7 +103,7 @@ public final class DonacionController {
 
   private void eliminar(Context ctx) {
     Donacion donacion = buscar(HttpSupport.id(ctx, "id"));
-    if (donacion.getNombreEstado() != NombreEstado.EN_DEPOSITO)
+    if (donacion.getEstado() != EstadoDonacion.EN_DEPOSITO)
       throw ApiException.conflict("Sólo se puede eliminar una donación en depósito.");
     propuestas.remove(donacion);
     donaciones.deleteById(donacion.getId());

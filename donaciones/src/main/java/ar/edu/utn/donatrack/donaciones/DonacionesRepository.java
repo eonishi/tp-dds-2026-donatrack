@@ -1,7 +1,6 @@
 package ar.edu.utn.donatrack.donaciones;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-import ar.edu.utn.donatrack.estados.EnDeposito;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,13 +18,13 @@ public class DonacionesRepository {
 
   public List<Donacion> getDonacionesEnDeposito() {
     return donaciones.values().stream()
-        .filter(donacion -> donacion.getEstado() instanceof EnDeposito)
+        .filter(donacion -> donacion.getEstado() == EstadoDonacion.EN_DEPOSITO)
         .toList();
   }
 
   public List<Donacion> getDonacionesEnAsignacionRealizada() {
     return donaciones.values().stream()
-        .filter(donacion -> donacion.getNombreEstado() == NombreEstado.ASIGNACION_REALIZADA)
+        .filter(donacion -> donacion.getEstado() == EstadoDonacion.ASIGNACION_REALIZADA)
         .toList();
   }
 
@@ -51,7 +50,7 @@ public class DonacionesRepository {
    *
    * @param entidad entidad beneficiaria receptora
    * @param fechaDesde fecha mínima de entrega
-   * @return cantidad de donaciones con un evento {@link NombreEstado#ENTREGADA} en el período
+   * @return cantidad de donaciones con un evento {@link EstadoDonacion#ENTREGADA} en el período
    */
   public long cantidadEntregadasDesde(EntidadBeneficiaria entidad, LocalDate fechaDesde) {
     return donaciones.values().stream()
@@ -61,7 +60,7 @@ public class DonacionesRepository {
                 donacion.getHistorialEstado().stream()
                     .anyMatch(
                         historial ->
-                            historial.getEstadoAlcanzado() == NombreEstado.ENTREGADA
+                            historial.getEstadoAlcanzado() == EstadoDonacion.ENTREGADA
                                 && !historial.getFecha().toLocalDate().isBefore(fechaDesde)))
         .count();
   }

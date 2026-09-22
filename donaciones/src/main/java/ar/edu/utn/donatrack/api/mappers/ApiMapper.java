@@ -112,7 +112,7 @@ public final class ApiMapper {
         donacion.getEntidadBeneficiaria() == null
             ? null
             : donacion.getEntidadBeneficiaria().getId().value(),
-        donacion.getNombreEstado(),
+        donacion.getEstado(),
         bienes,
         donacion.getFotos());
   }

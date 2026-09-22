@@ -3,7 +3,7 @@ package ar.edu.utn.donatrack.api.dto;
 import ar.edu.utn.donatrack.bienes.Categoria;
 import ar.edu.utn.donatrack.bienes.EstadoUso;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
-import ar.edu.utn.donatrack.donaciones.NombreEstado;
+import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
@@ -48,14 +48,14 @@ public final class DonacionDtos {
       UUID id,
       UUID donanteId,
       Long entidadBeneficiariaId,
-      NombreEstado estado,
+      EstadoDonacion estado,
       List<BienResponse> bienes,
       List<String> fotos) {}
 
-  public record TransicionEstadoRequest(@NotNull NombreEstado estado, String justificacion) {
+  public record TransicionEstadoRequest(@NotNull EstadoDonacion estado, String justificacion) {
     @AssertTrue(message = "no admite ASIGNACION_REALIZADA")
     public boolean isEstadoPermitido() {
-      return estado != NombreEstado.ASIGNACION_REALIZADA;
+      return estado != EstadoDonacion.ASIGNACION_REALIZADA;
     }
   }
 
@@ -69,7 +69,7 @@ public final class DonacionDtos {
   public record HistorialEstadoResponse(
       long secuencia,
       LocalDateTime fecha,
-      NombreEstado estadoAnterior,
-      NombreEstado estadoAlcanzado,
+      EstadoDonacion estadoAnterior,
+      EstadoDonacion estadoAlcanzado,
       String justificacion) {}
 }

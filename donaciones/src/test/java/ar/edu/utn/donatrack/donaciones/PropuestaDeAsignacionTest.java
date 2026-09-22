@@ -15,7 +15,6 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
-import ar.edu.utn.donatrack.estados.AsignacionRealizada;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -46,8 +45,8 @@ class PropuestaDeAsignacionTest {
         entidad,
         donacion.getEntidadBeneficiaria(),
         "Donacion debe tener la entidad beneficiaria asignada");
-    assertInstanceOf(
-        AsignacionRealizada.class,
+    assertEquals(
+        EstadoDonacion.ASIGNACION_REALIZADA,
         donacion.getEstado(),
         "Donacion debe transicionar a AsignacionRealizada");
   }

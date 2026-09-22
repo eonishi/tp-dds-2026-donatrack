@@ -16,9 +16,6 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
-import ar.edu.utn.donatrack.estados.EnDeposito;
-import ar.edu.utn.donatrack.estados.EntregaFallida;
-import ar.edu.utn.donatrack.estados.Entregada;
 import ar.edu.utn.donatrack.notificaciones.Notificacion;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoEntregaExitosa;
 import ar.edu.utn.donatrack.notificaciones.payloads.ComprobanteEntrega;
@@ -124,7 +121,7 @@ class DonacionTest {
     donacion.confirmarEntrega();
 
     // Assert: estado cambió
-    assertInstanceOf(Entregada.class, donacion.getEstado());
+    assertEquals(EstadoDonacion.ENTREGADA, donacion.getEstado());
 
     // Assert: aplicarDonacionRecibida fue llamado → cantidadRecibida incrementada
     assertTrue(
@@ -216,15 +213,15 @@ class DonacionTest {
     donacion.iniciarTraslado();
     donacion.reportarFalla("Dirección incorrecta");
 
-    assertInstanceOf(
-        EntregaFallida.class,
+    assertEquals(
+        EstadoDonacion.ENTREGA_FALLIDA,
         donacion.getEstado(),
         "Debe estar en estado EntregaFallida antes de retornar");
 
     donacion.retornarAlDeposito();
 
     assertTrue(donacion.getIdCamion().isEmpty(), "retornarAlDeposito() debe limpiar el camión");
-    assertInstanceOf(EnDeposito.class, donacion.getEstado(), "Debe volver a EnDeposito");
+    assertEquals(EstadoDonacion.EN_DEPOSITO, donacion.getEstado(), "Debe volver a EnDeposito");
   }
 
   @Test
@@ -241,7 +238,7 @@ class DonacionTest {
 
     LocalDateTime fechaEntrega =
         donacion.getHistorialEstado().stream()
-            .filter(h -> h.getEstadoAlcanzado() == NombreEstado.ENTREGADA)
+            .filter(h -> h.getEstadoAlcanzado() == EstadoDonacion.ENTREGADA)
             .findFirst()
             .orElseThrow()
             .getFecha();
@@ -284,7 +281,7 @@ class DonacionTest {
     donacion.confirmarEntidadBeneficiaria(entidad);
 
     assertSame(entidad, donacion.getEntidadBeneficiaria());
-    assertInstanceOf(ar.edu.utn.donatrack.estados.AsignacionRealizada.class, donacion.getEstado());
+    assertEquals(EstadoDonacion.ASIGNACION_REALIZADA, donacion.getEstado());
   }
 
   @Test

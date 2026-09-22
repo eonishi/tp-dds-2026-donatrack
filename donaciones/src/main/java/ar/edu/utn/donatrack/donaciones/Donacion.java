@@ -5,8 +5,6 @@ import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
 import ar.edu.utn.donatrack.donantes.Donante;
-import ar.edu.utn.donatrack.estados.EnDeposito;
-import ar.edu.utn.donatrack.estados.EstadoDonacion;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,7 +14,7 @@ import java.util.Optional;
 
 public class Donacion {
   private final DonacionId id;
-  private EstadoDonacion estado = new EnDeposito();
+  private EstadoDonacion estado = EstadoDonacion.EN_DEPOSITO;
   private final List<HistorialEstado> historialEstado = new ArrayList<>();
   private final List<Bien> bienes = new ArrayList<>();
   private final List<String> fotos = new ArrayList<>();
@@ -43,8 +41,7 @@ public class Donacion {
       HistorialEstado nuevoHistorial, EstadoDonacion nuevoEstado) {
     Objects.requireNonNull(nuevoHistorial, "historial no puede ser null");
     Objects.requireNonNull(nuevoEstado, "estado no puede ser null");
-    historialEstado.add(
-        nuevoHistorial.contextualizar(historialEstado.size() + 1L, estado.getNombreEstado()));
+    historialEstado.add(nuevoHistorial.contextualizar(historialEstado.size() + 1L, estado));
     estado = nuevoEstado;
   }
 
@@ -70,10 +67,6 @@ public class Donacion {
 
   public EstadoDonacion getEstado() {
     return estado;
-  }
-
-  public NombreEstado getNombreEstado() {
-    return estado.getNombreEstado();
   }
 
   public List<HistorialEstado> getHistorialEstado() {

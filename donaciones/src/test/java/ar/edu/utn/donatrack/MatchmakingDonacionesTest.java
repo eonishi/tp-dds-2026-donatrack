@@ -18,10 +18,10 @@ import ar.edu.utn.donatrack.donaciones.AlgoritmoPrioridadSubAtendidos;
 import ar.edu.utn.donatrack.donaciones.CargaDonacion;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
+import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
 import ar.edu.utn.donatrack.donaciones.HistorialEstado;
 import ar.edu.utn.donatrack.donaciones.MatchCandidato;
 import ar.edu.utn.donatrack.donaciones.MatchmakingScheduler;
-import ar.edu.utn.donatrack.donaciones.NombreEstado;
 import ar.edu.utn.donatrack.donaciones.PropuestaDeAsignacion;
 import ar.edu.utn.donatrack.donaciones.PropuestaRepository;
 import ar.edu.utn.donatrack.donaciones.PropuestaRepositoryImpl;
@@ -32,8 +32,6 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
-import ar.edu.utn.donatrack.estados.AsignacionRealizada;
-import ar.edu.utn.donatrack.estados.Entregada;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -240,8 +238,8 @@ public class MatchmakingDonacionesTest {
         "Propuesta debe ser removida del repositorio tras confirmar");
     assertEquals(
         entidad, donacion.getEntidadBeneficiaria(), "Donacion debe tener la entidad beneficiaria");
-    assertInstanceOf(
-        AsignacionRealizada.class,
+    assertEquals(
+        EstadoDonacion.ASIGNACION_REALIZADA,
         donacion.getEstado(),
         "Donacion debe estar en AsignacionRealizada");
     assertEquals(
@@ -322,7 +320,8 @@ public class MatchmakingDonacionesTest {
         nuevaDonacion(crearDonanteDummy(), List.of(crearBien("Entregada", 1, subCategoria, null)));
     donacion.confirmarEntidadBeneficiaria(entidad);
     donacion.cambiarEstado(
-        new HistorialEstado(fechaEntrega, NombreEstado.ENTREGADA, null), new Entregada());
+        new HistorialEstado(fechaEntrega, EstadoDonacion.ENTREGADA, null),
+        EstadoDonacion.ENTREGADA);
     return donacion;
   }
 

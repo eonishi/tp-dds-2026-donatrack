@@ -31,7 +31,7 @@ public class ServicioMatchmakingDonaciones {
 
   public PropuestaDeAsignacion ejecutarMatchmakingParaDonacion(
       Donacion donacion, LocalDate fechaReferencia) {
-    if (donacion.getNombreEstado() != NombreEstado.EN_DEPOSITO) {
+    if (donacion.getEstado() != EstadoDonacion.EN_DEPOSITO) {
       throw new IllegalStateException(
           "El matchmaking sólo puede ejecutarse para donaciones en depósito.");
     }
