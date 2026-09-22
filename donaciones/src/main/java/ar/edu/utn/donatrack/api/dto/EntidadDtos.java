@@ -20,6 +20,5 @@ public final class EntidadDtos {
       String direccion,
       String telefono,
       List<String> correos,
-      List<UUID> necesidades,
-      int recepciones) {}
+      List<UUID> necesidades) {}
 }

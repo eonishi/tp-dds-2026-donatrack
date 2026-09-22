@@ -191,17 +191,6 @@ class DonacionesApiHttpTest {
             "{\"estado\":\"ENTREGADA\"}");
     assertEquals(200, recibida.statusCode());
     assertEquals("ENTREGADA", json(recibida).get("estado").asText());
-
-    assertEquals(
-        404,
-        request(
-                "PATCH",
-                "/api/v1/donaciones/" + donacionRecibidaId + "/recepcion",
-                "{\"recibido\":true}")
-            .statusCode());
-
-    HttpResponse<String> entidad = request("GET", "/api/v1/beneficiarias/" + entidadId, null);
-    assertEquals(1, json(entidad).get("recepciones").asInt());
   }
 
   @Test

@@ -65,25 +65,4 @@ public class DonacionesRepository {
                                 && !historial.getFecha().toLocalDate().isBefore(fechaDesde)))
         .count();
   }
-
-  /**
-   * Cuenta todas las donaciones entregadas a la entidad, sin recorte de fecha.
-   *
-   * <p>{@link #cantidadEntregadasDesde(EntidadBeneficiaria, LocalDate)} exige una cota inferior;
-   * usarla con {@link LocalDate#MIN} para expresar un total escondería la intención. Este método
-   * conserva la misma regla de entrega ({@link NombreEstado#ENTREGADA}) para el conteo total.
-   *
-   * @param entidad entidad beneficiaria receptora
-   * @return cantidad de donaciones entregadas a la entidad
-   */
-  public long cantidadEntregadas(EntidadBeneficiaria entidad) {
-    return donaciones.values().stream()
-        .filter(donacion -> entidad.equals(donacion.getEntidadBeneficiaria()))
-        .filter(
-            donacion ->
-                donacion.getHistorialEstado().stream()
-                    .anyMatch(
-                        historial -> historial.getEstadoAlcanzado() == NombreEstado.ENTREGADA))
-        .count();
-  }
 }

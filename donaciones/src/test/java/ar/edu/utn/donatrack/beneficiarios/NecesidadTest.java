@@ -46,7 +46,7 @@ class NecesidadTest {
   }
 
   @Test
-  void necesidad_SinRecepciones_NoEstaSatisfecha() {
+  void necesidad_RecienCreada_NoEstaSatisfecha() {
     SubCategoria fideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     Necesidad necesidad = new Necesidad(fideos, 10.0, UnidadMedida.KILOGRAMOS, "Fideos");
 

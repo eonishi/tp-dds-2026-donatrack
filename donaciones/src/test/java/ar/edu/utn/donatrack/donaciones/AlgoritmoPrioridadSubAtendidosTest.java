@@ -53,7 +53,7 @@ class AlgoritmoPrioridadSubAtendidosTest {
                     EstadoUso.NO_APLICA,
                     fideos)));
 
-    // Create 15 entities with matching subcategoria and no recepciones (all get score 100)
+    // Create 15 entities with matching subcategoria and no entregas (all get score 100)
     var entidades =
         java.util.stream.IntStream.range(0, 15)
             .mapToObj(
@@ -157,8 +157,8 @@ class AlgoritmoPrioridadSubAtendidosTest {
                     EstadoUso.NO_APLICA,
                     fideos)));
 
-    EntidadBeneficiaria sinRecepciones = nuevaEntidad("Sin Recibir");
-    sinRecepciones.agregarNecesidadExtraordinaria(
+    EntidadBeneficiaria sinEntregas = nuevaEntidad("Sin Recibir");
+    sinEntregas.agregarNecesidadExtraordinaria(
         new Necesidad(fideos, 5.0, UnidadMedida.KILOGRAMOS, "Fideos"));
 
     EntidadBeneficiaria conMuchas = nuevaEntidad("Ya Recibio");
@@ -173,7 +173,7 @@ class AlgoritmoPrioridadSubAtendidosTest {
 
     var ranking =
         new AlgoritmoPrioridadSubAtendidos(donacionesRepository)
-            .rankear(donacion, List.of(sinRecepciones, conMuchas), LocalDate.of(2026, 7, 11));
+            .rankear(donacion, List.of(sinEntregas, conMuchas), LocalDate.of(2026, 7, 11));
 
     assertEquals(2, ranking.getCandidatos().size());
     assertTrue(

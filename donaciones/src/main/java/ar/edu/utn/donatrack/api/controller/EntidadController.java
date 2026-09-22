@@ -87,7 +87,7 @@ public final class EntidadController {
   }
 
   private EntidadResponse response(EntidadBeneficiaria entidad) {
-    return entidad(entidad, donaciones.cantidadEntregadas(entidad));
+    return entidad(entidad);
   }
 
   private EntidadBeneficiaria buscar(EntidadBeneficiariaId id) {

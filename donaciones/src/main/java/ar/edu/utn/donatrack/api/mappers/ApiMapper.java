@@ -65,15 +65,14 @@ public final class ApiMapper {
         representantes);
   }
 
-  public static EntidadResponse entidad(EntidadBeneficiaria entidad, long recepciones) {
+  public static EntidadResponse entidad(EntidadBeneficiaria entidad) {
     return new EntidadResponse(
         entidad.getId().value(),
         entidad.getRazonSocial(),
         entidad.getDireccion(),
         entidad.getTelefono(),
         entidad.getCorreos().stream().map(CorreoElectronico::getContacto).toList(),
-        entidad.necesidades().stream().map(Necesidad::getId).toList(),
-        Math.toIntExact(recepciones));
+        entidad.necesidades().stream().map(Necesidad::getId).toList());
   }
 
   public static NecesidadResponse necesidad(Necesidad necesidad, EntidadBeneficiaria entidad) {
