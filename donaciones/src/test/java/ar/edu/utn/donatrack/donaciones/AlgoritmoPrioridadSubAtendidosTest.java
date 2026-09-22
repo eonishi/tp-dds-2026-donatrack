@@ -17,12 +17,13 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
+import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-class AlgoritmoPrioridadSubAtendidosTest {
+class AlgoritmoPrioridadSubAtendidosTest implements SimplePersistenceTest {
 
   private static Donante crearDonanteDummy() {
     return new PersonaHumana(
@@ -63,6 +64,11 @@ class AlgoritmoPrioridadSubAtendidosTest {
                   return e;
                 })
             .toList();
+
+    // El ranking real consulta las entregas por entidad: las subcategorías de las necesidades y
+    // las entidades deben estar almacenadas.
+    persist(fideos);
+    entidades.forEach(this::persist);
 
     var ranking =
         new AlgoritmoPrioridadSubAtendidos(new DonacionesRepository())
@@ -109,6 +115,10 @@ class AlgoritmoPrioridadSubAtendidosTest {
     EntidadBeneficiaria e3 = nuevaEntidad("Comedor C");
     e3.agregarNecesidadExtraordinaria(
         new Necesidad(fideos, 8.0, UnidadMedida.KILOGRAMOS, "Fideos"));
+    persist(fideos);
+    persist(e1);
+    persist(e2);
+    persist(e3);
 
     var ranking =
         new AlgoritmoPrioridadSubAtendidos(new DonacionesRepository())
@@ -164,10 +174,17 @@ class AlgoritmoPrioridadSubAtendidosTest {
     conMuchas.agregarNecesidadExtraordinaria(
         new Necesidad(fideos, 5.0, UnidadMedida.KILOGRAMOS, "Fideos"));
     // Simulate 50 entregas
+    // El ranking real consulta las entregas por entidad: el donante, la subcategoría de la
+    // necesidad y las entidades deben estar almacenados.
+    Donante donante = crearDonanteDummy();
+    persist(fideos);
+    persist(donante);
+    persist(sinEntregas);
+    persist(conMuchas);
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     for (int i = 0; i < 50; i++) {
       donacionesRepository.addDonacion(
-          crearDonacionEntregada(conMuchas, fideos, LocalDateTime.of(2026, 6, 1, 10, 0)));
+          crearDonacionEntregada(donante, conMuchas, fideos, LocalDateTime.of(2026, 6, 1, 10, 0)));
     }
 
     var ranking =
@@ -212,6 +229,9 @@ class AlgoritmoPrioridadSubAtendidosTest {
       entidad.agregarNecesidadExtraordinaria(
           new Necesidad(fideos, 5.0, UnidadMedida.KILOGRAMOS, "Fideos"));
     }
+    persist(fideos);
+    persist(mayor);
+    persist(menor);
 
     var ranking =
         new AlgoritmoPrioridadSubAtendidos(new DonacionesRepository())
@@ -225,10 +245,13 @@ class AlgoritmoPrioridadSubAtendidosTest {
   }
 
   private static Donacion crearDonacionEntregada(
-      EntidadBeneficiaria entidad, SubCategoria subCategoria, LocalDateTime fechaEntrega) {
+      Donante donante,
+      EntidadBeneficiaria entidad,
+      SubCategoria subCategoria,
+      LocalDateTime fechaEntrega) {
     Donacion donacion =
         nuevaDonacion(
-            crearDonanteDummy(),
+            donante,
             List.of(
                 new Bien(
                     "Entregada",

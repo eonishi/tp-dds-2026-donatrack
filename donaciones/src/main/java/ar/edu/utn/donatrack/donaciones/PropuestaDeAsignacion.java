@@ -15,13 +15,27 @@ public class PropuestaDeAsignacion {
   }
 
   public void confirmar(EntidadBeneficiaria elegida) {
+    confirmar(elegida, donacion);
+  }
+
+  /**
+   * Confirma la asignación sobre la donación indicada.
+   *
+   * <p>La propuesta vive en memoria y puede sobrevivir a la solicitud que la creó: la donación que
+   * referencia queda separada del contexto de persistencia. El llamador que tenga la instancia
+   * administrada la pasa acá para que la transición se aplique —y se guarde— sobre ella.
+   *
+   * @param elegida entidad beneficiaria elegida, que debe pertenecer al ranking
+   * @param donacionAConfirmar donación sobre la que se aplica la transición
+   */
+  public void confirmar(EntidadBeneficiaria elegida, Donacion donacionAConfirmar) {
     if (!pendiente) {
       return; // no-op on double-confirm
     }
     if (!incluye(elegida)) {
       throw new EntidadFueraDeRankingException();
     }
-    this.donacion.confirmarEntidadBeneficiaria(elegida);
+    donacionAConfirmar.confirmarEntidadBeneficiaria(elegida);
     this.pendiente = false;
   }
 

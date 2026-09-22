@@ -76,6 +76,7 @@ public final class DonacionesApi {
                           }));
             });
     ApiExceptionHandler.register(app, clock);
+    RequestPersistenceBoundary.register(app);
     return app;
   }
 }

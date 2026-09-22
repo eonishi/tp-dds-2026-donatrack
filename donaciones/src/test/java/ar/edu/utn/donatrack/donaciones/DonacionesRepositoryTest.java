@@ -4,6 +4,7 @@ import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaDonacion;
 import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaEntidad;
 import static org.junit.jupiter.api.Assertions.*;
 
+import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.Categoria;
 import ar.edu.utn.donatrack.bienes.EstadoUso;
@@ -14,10 +15,29 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
+import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class DonacionesRepositoryTest {
+class DonacionesRepositoryTest implements SimplePersistenceTest {
+
+  private Donante donante;
+  private SubCategoria subCategoria;
+  private EntidadBeneficiaria entidadBeneficiaria;
+
+  @BeforeEach
+  void persistPrerequisites() {
+    donante = crearDonanteDummy();
+    subCategoria = new SubCategoria("X", Categoria.ALIMENTO);
+    entidadBeneficiaria = nuevaEntidad("Ent");
+    // Donacion cascadea a su Bien y a su HistorialEstado, pero no al donante, a la subcategoría de
+    // cada bien ni a la entidad beneficiaria: esos ya deben estar almacenados al persistir una
+    // donación.
+    persist(donante);
+    persist(subCategoria);
+    persist(entidadBeneficiaria);
+  }
 
   private static Donante crearDonanteDummy() {
     return new PersonaHumana(
@@ -31,26 +51,20 @@ class DonacionesRepositoryTest {
         "Calle Falsa 123");
   }
 
-  private static Bien crearBienDummy() {
+  private Bien crearBienDummy() {
     return new Bien(
-        "Test",
-        "",
-        1.0,
-        UnidadMedida.UNIDADES,
-        null,
-        EstadoUso.NO_APLICA,
-        new SubCategoria("X", Categoria.ALIMENTO));
+        "Test", "", 1.0, UnidadMedida.UNIDADES, null, EstadoUso.NO_APLICA, subCategoria);
   }
 
   private Donacion crearDonacionConEstado(EstadoDonacion estado) {
-    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    Donacion donacion = nuevaDonacion(donante, List.of(crearBienDummy()));
     // Force the internal estado field via reflection or state machine walk
     // Walk: EnDeposito → asignar → AsignacionRealizada
     if (estado == EstadoDonacion.EN_DEPOSITO) {
       return donacion; // default state
     }
     if (estado == EstadoDonacion.ASIGNACION_REALIZADA) {
-      donacion.confirmarEntidadBeneficiaria(nuevaEntidad("Ent"));
+      donacion.confirmarEntidadBeneficiaria(entidadBeneficiaria);
       return donacion;
     }
     throw new IllegalArgumentException("Estado no soportado en helper: " + estado);

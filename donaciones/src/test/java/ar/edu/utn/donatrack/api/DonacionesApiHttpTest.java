@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ar.edu.utn.donatrack.donaciones.Donacion;
+import ar.edu.utn.donatrack.persistencia.JpaRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -21,7 +23,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class DonacionesApiHttpTest {
+class DonacionesApiHttpTest implements JpaRepository {
   private final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
   private final HttpClient client = HttpClient.newHttpClient();
   private Javalin app;
@@ -37,6 +39,18 @@ class DonacionesApiHttpTest {
   @AfterEach
   void stop() {
     app.stop();
+  }
+
+  @AfterEach
+  void limpiarPersistencia() {
+    // Las solicitudes HTTP confirman sus propias transacciones, a diferencia de las pruebas
+    // transaccionales que revierten: se borran las donaciones confirmadas para que no contaminen
+    // los conteos de las demás pruebas.
+    inTransaction(
+        () ->
+            createQuery("select d from Donacion d", Donacion.class)
+                .getResultList()
+                .forEach(this::remove));
   }
 
   @Test

@@ -12,13 +12,14 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
+import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class DonaTrackTest {
+class DonaTrackTest implements SimplePersistenceTest {
 
   private SubCategoria subcatSillas;
   private SubCategoria subcatFideos;
@@ -40,6 +41,11 @@ class DonaTrackTest {
             TipoDocumento.DNI,
             Genero.MASCULINO,
             "Calle Falsa 123");
+    // CargaDonacion persiste cada donación que segmenta, y una donación solo cascadea a sus
+    // bienes: el donante y las subcategorías de esos bienes ya deben estar almacenados.
+    persist(donanteDummy);
+    persist(subcatSillas);
+    persist(subcatFideos);
   }
 
   // ==========================================

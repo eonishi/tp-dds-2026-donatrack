@@ -32,6 +32,7 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
+import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -40,7 +41,7 @@ import java.time.ZoneId;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-public class MatchmakingDonacionesTest {
+public class MatchmakingDonacionesTest implements SimplePersistenceTest {
 
   private static Donante crearDonanteDummy() {
     return new PersonaHumana(
@@ -59,10 +60,15 @@ public class MatchmakingDonacionesTest {
     SubCategoria subCategoria = new SubCategoria("Sillas", Categoria.MOBILIARIO);
     Bien silla =
         new Bien("Silla", "", 1, UnidadMedida.UNIDADES, null, EstadoUso.USADO, subCategoria);
+    Donante donante = crearDonanteDummy();
+    // CargaDonacion persiste cada donación segmentada, y una donación solo cascadea a sus bienes:
+    // el donante y la subcategoría del bien ya deben estar almacenados.
+    persist(subCategoria);
+    persist(donante);
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     CargaDonacion cargaDonacion = new CargaDonacion(LocalDate.now(), donacionesRepository);
 
-    cargaDonacion.cargarDonacion(crearDonanteDummy(), List.of(silla));
+    cargaDonacion.cargarDonacion(donante, List.of(silla));
 
     assertEquals(1, donacionesRepository.getDonaciones().size());
   }
@@ -74,6 +80,12 @@ public class MatchmakingDonacionesTest {
     Donante donante = crearDonanteDummy();
     Donacion donacion =
         nuevaDonacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+    // El repositorio persiste la donación que recibe, y una donación solo cascadea a sus bienes:
+    // el donante y la subcategoría del bien ya deben estar almacenados. Los beneficiarios siguen
+    // viviendo en memoria, así que sus entidades se almacenan acá porque la donación entregada
+    // referencia a hogarB.
+    persist(alimentos);
+    persist(donante);
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     donacionesRepository.addDonacion(donacion);
 
@@ -81,8 +93,10 @@ public class MatchmakingDonacionesTest {
         crearEntidadConNecesidad("Hogar A", alimentos, 5, fecha.plusMonths(4));
     EntidadBeneficiaria hogarB =
         crearEntidadConNecesidad("Hogar B", alimentos, 5, fecha.plusMonths(4));
+    persist(hogarA);
+    persist(hogarB);
     donacionesRepository.addDonacion(
-        crearDonacionEntregada(hogarB, alimentos, fecha.minusDays(10).atTime(10, 0)));
+        crearDonacionEntregada(donante, hogarB, alimentos, fecha.minusDays(10).atTime(10, 0)));
 
     BeneficiariosRepository beneficiariosRepository = new BeneficiariosRepository();
     beneficiariosRepository.addBeneficiario(hogarA);
@@ -118,6 +132,11 @@ public class MatchmakingDonacionesTest {
     Donante donante = crearDonanteDummy();
     Donacion donacion =
         nuevaDonacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+    // El repositorio persiste la donación que recibe: su donante y las subcategorías de su bien y
+    // de la necesidad ya deben estar almacenados.
+    persist(alimentos);
+    persist(ropa);
+    persist(donante);
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     donacionesRepository.addDonacion(donacion);
 
@@ -172,11 +191,18 @@ public class MatchmakingDonacionesTest {
     Donante donante = crearDonanteDummy();
     Donacion donacion =
         nuevaDonacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+    // El repositorio persiste la donación que recibe: su donante y la subcategoría de su bien ya
+    // deben estar almacenados.
+    persist(alimentos);
+    persist(donante);
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     donacionesRepository.addDonacion(donacion);
     BeneficiariosRepository beneficiariosRepository = new BeneficiariosRepository();
-    beneficiariosRepository.addBeneficiario(
-        crearEntidadConNecesidad("Entidad", alimentos, 5, fecha.plusMonths(4)));
+    EntidadBeneficiaria entidad =
+        crearEntidadConNecesidad("Entidad", alimentos, 5, fecha.plusMonths(4));
+    // El ranking real consulta las entregas por entidad: la entidad debe estar almacenada.
+    persist(entidad);
+    beneficiariosRepository.addBeneficiario(entidad);
 
     PropuestaRepository propuestaRepository = new PropuestaRepositoryImpl();
     ServicioMatchmakingDonaciones servicio =
@@ -209,11 +235,16 @@ public class MatchmakingDonacionesTest {
     Donante donante = crearDonanteDummy();
     Donacion donacion =
         nuevaDonacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+    // El repositorio persiste la donación que recibe: su donante y la subcategoría de su bien ya
+    // deben estar almacenados.
+    persist(alimentos);
+    persist(donante);
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     donacionesRepository.addDonacion(donacion);
     BeneficiariosRepository beneficiariosRepository = new BeneficiariosRepository();
     EntidadBeneficiaria entidad =
         crearEntidadConNecesidad("Hogar", alimentos, 5, fecha.plusMonths(4));
+    persist(entidad);
     beneficiariosRepository.addBeneficiario(entidad);
 
     PropuestaRepository propuestaRepository = new PropuestaRepositoryImpl();
@@ -277,13 +308,22 @@ public class MatchmakingDonacionesTest {
     Donacion donacion =
         nuevaDonacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
     DonacionesRepository donacionesRepository = new DonacionesRepository();
+    // Las donaciones entregadas referencian a la entidad y la consulta de entregas la recibe como
+    // parámetro: ambas entidades deben estar almacenadas.
+    persist(alimentos);
+    persist(donante);
+    persist(entidadMasAtendida);
+    persist(entidadMenosAtendida);
 
     donacionesRepository.addDonacion(
-        crearDonacionEntregada(entidadMasAtendida, alimentos, fecha.minusDays(5).atTime(10, 0)));
+        crearDonacionEntregada(
+            donante, entidadMasAtendida, alimentos, fecha.minusDays(5).atTime(10, 0)));
     donacionesRepository.addDonacion(
-        crearDonacionEntregada(entidadMasAtendida, alimentos, fecha.minusDays(15).atTime(10, 0)));
+        crearDonacionEntregada(
+            donante, entidadMasAtendida, alimentos, fecha.minusDays(15).atTime(10, 0)));
     donacionesRepository.addDonacion(
-        crearDonacionEntregada(entidadMasAtendida, alimentos, fecha.minusMonths(4).atTime(10, 0)));
+        crearDonacionEntregada(
+            donante, entidadMasAtendida, alimentos, fecha.minusMonths(4).atTime(10, 0)));
 
     var ranking =
         new AlgoritmoPrioridadSubAtendidos(donacionesRepository)
@@ -315,9 +355,12 @@ public class MatchmakingDonacionesTest {
   }
 
   private static Donacion crearDonacionEntregada(
-      EntidadBeneficiaria entidad, SubCategoria subCategoria, LocalDateTime fechaEntrega) {
+      Donante donante,
+      EntidadBeneficiaria entidad,
+      SubCategoria subCategoria,
+      LocalDateTime fechaEntrega) {
     Donacion donacion =
-        nuevaDonacion(crearDonanteDummy(), List.of(crearBien("Entregada", 1, subCategoria, null)));
+        nuevaDonacion(donante, List.of(crearBien("Entregada", 1, subCategoria, null)));
     donacion.confirmarEntidadBeneficiaria(entidad);
     donacion.cambiarEstado(
         new HistorialEstado(fechaEntrega, EstadoDonacion.ENTREGADA, null),

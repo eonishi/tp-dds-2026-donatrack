@@ -64,8 +64,11 @@ public class ServicioMatchmakingDonaciones {
             .orElseThrow(
                 () ->
                     new IllegalStateException("No hay una propuesta pendiente para la donación."));
-    propuesta.confirmar(entidadBeneficiaria);
+    propuesta.confirmar(entidadBeneficiaria, donacion);
     propuestaRepository.remove(donacion);
+    // La confirmación cambia el estado y la entidad de la donación: hay que guardarla para que
+    // esos cambios lleguen a la base. Este camino no pasa por DonacionController.
+    donacionesRepository.save(donacion);
   }
 
   private void recalcular(Donacion donacion, LocalDate fechaReferencia) {
