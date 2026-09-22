@@ -11,16 +11,33 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
 
+@Entity
 public class EntidadBeneficiaria implements Notificable {
-  private final EntidadBeneficiariaId id;
+  @Id private Long id;
+
   private String razonSocial;
   private String direccion;
   private String telefono;
 
-  private final List<Necesidad> necesidadesExtraordinarias = new ArrayList<>();
-  private final List<NecesidadRecurrente> necesidadesRecurrentes = new ArrayList<>();
-  private final List<CorreoElectronico> correos = new ArrayList<>();
+  @OneToMany(cascade = CascadeType.ALL)
+  @JoinColumn(name = "entidad_id")
+  private List<Necesidad> necesidadesExtraordinarias = new ArrayList<>();
+
+  @OneToMany(cascade = CascadeType.ALL)
+  @JoinColumn(name = "entidad_id")
+  private List<NecesidadRecurrente> necesidadesRecurrentes = new ArrayList<>();
+
+  @OneToMany(cascade = CascadeType.ALL)
+  @JoinColumn(name = "entidad_id")
+  private List<CorreoElectronico> correos = new ArrayList<>();
+
+  protected EntidadBeneficiaria() {}
 
   /**
    * Crea una entidad beneficiaria con un identificador nuevo.
@@ -42,7 +59,7 @@ public class EntidadBeneficiaria implements Notificable {
 
   public EntidadBeneficiaria(
       EntidadBeneficiariaId id, String razonSocial, String direccion, String telefono) {
-    this.id = Objects.requireNonNull(id, "id no puede ser null");
+    this.id = Objects.requireNonNull(id, "id no puede ser null").value();
     this.razonSocial = razonSocial;
     this.direccion = direccion;
     this.telefono = telefono;
@@ -54,7 +71,7 @@ public class EntidadBeneficiaria implements Notificable {
    * @return el identificador de la entidad beneficiaria
    */
   public EntidadBeneficiariaId getId() {
-    return id;
+    return new EntidadBeneficiariaId(id);
   }
 
   public String getRazonSocial() {

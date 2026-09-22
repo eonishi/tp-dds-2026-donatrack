@@ -4,14 +4,26 @@ import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
 import java.util.Objects;
 import java.util.UUID;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 
+@Entity
 public class Necesidad {
-  private final UUID id;
+  @Id private UUID id;
+
   private String descripcion;
   private double cantidadRecibida = 0.0;
+
+  @ManyToOne
+  @JoinColumn(name = "subcategoria_id")
   private SubCategoria subcategoria;
+
   private double cantidadObjetivo;
   private UnidadMedida unidad;
+
+  protected Necesidad() {}
 
   public Necesidad(
       SubCategoria subcategoria, double cantidadObjetivo, UnidadMedida unidad, String descripcion) {

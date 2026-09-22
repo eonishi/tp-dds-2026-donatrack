@@ -11,19 +11,59 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
+import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
 
+@Entity
 public class Donacion {
-  private final DonacionId id;
+  @Id private UUID id;
+
+  // Obligatorio a propósito: sin estado, sería invisible para los filtros y nula al cargar.
+  @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
   private EstadoDonacion estado = EstadoDonacion.EN_DEPOSITO;
-  private final List<HistorialEstado> historialEstado = new ArrayList<>();
-  private final List<Bien> bienes = new ArrayList<>();
-  private final List<String> fotos = new ArrayList<>();
+
+  // El historial se ordena por la secuencia que ya lleva cada evento; sin esto la recarga no
+  // conserva el orden que el dominio mantiene en memoria.
+  @OneToMany(cascade = CascadeType.ALL)
+  @JoinColumn(name = "donacion_id")
+  @OrderBy("secuencia ASC")
+  private List<HistorialEstado> historialEstado = new ArrayList<>();
+
+  @OneToMany(cascade = CascadeType.ALL)
+  @JoinColumn(name = "donacion_id")
+  private List<Bien> bienes = new ArrayList<>();
+
+  @ElementCollection
+  @CollectionTable(name = "donacion_fotos", joinColumns = @JoinColumn(name = "donacion_id"))
+  @Column(name = "foto")
+  private List<String> fotos = new ArrayList<>();
+
+  @ManyToOne
+  @JoinColumn(name = "entidad_id")
   private EntidadBeneficiaria entidadBeneficiaria;
+
   private String idCamion;
-  private final Donante donante;
+
+  @ManyToOne
+  @JoinColumn(name = "donante_id")
+  private Donante donante;
+
+  protected Donacion() {}
 
   public Donacion(DonacionId id, Donante donante, List<Bien> bienes) {
-    this.id = Objects.requireNonNull(id, "id no puede ser null");
+    this.id = Objects.requireNonNull(id, "id no puede ser null").value();
     this.donante = Objects.requireNonNull(donante, "donante no puede ser null");
     this.bienes.addAll(bienes);
   }
@@ -34,7 +74,7 @@ public class Donacion {
    * @return el identificador de la donación
    */
   public DonacionId getId() {
-    return id;
+    return new DonacionId(id);
   }
 
   public synchronized void cambiarEstado(

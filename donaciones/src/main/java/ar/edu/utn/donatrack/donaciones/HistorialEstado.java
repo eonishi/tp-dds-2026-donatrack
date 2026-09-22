@@ -1,13 +1,34 @@
 package ar.edu.utn.donatrack.donaciones;
 
 import java.time.LocalDateTime;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 
+@Entity
 public class HistorialEstado {
-  private final long secuencia;
-  private final LocalDateTime fecha;
-  private final EstadoDonacion estadoAnterior;
-  private final EstadoDonacion estadoAlcanzado;
-  private final String justificacion;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  private long secuencia;
+  private LocalDateTime fecha;
+
+  @Enumerated(EnumType.STRING)
+  private EstadoDonacion estadoAnterior;
+
+  // Obligatorio a propósito: toda entrada del historial registra la transición que la produjo.
+  @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
+  private EstadoDonacion estadoAlcanzado;
+
+  private String justificacion;
+
+  protected HistorialEstado() {}
 
   public HistorialEstado(
       LocalDateTime fecha, EstadoDonacion estadoAlcanzado, String justificacion) {
