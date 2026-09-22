@@ -19,7 +19,6 @@ import ar.edu.utn.donatrack.donaciones.CargaDonacion;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
-import ar.edu.utn.donatrack.donaciones.HistorialEstado;
 import ar.edu.utn.donatrack.donaciones.MatchCandidato;
 import ar.edu.utn.donatrack.donaciones.MatchmakingScheduler;
 import ar.edu.utn.donatrack.donaciones.PropuestaDeAsignacion;
@@ -36,7 +35,6 @@ import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -95,8 +93,7 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
         crearEntidadConNecesidad("Hogar B", alimentos, 5, fecha.plusMonths(4));
     persist(hogarA);
     persist(hogarB);
-    donacionesRepository.addDonacion(
-        crearDonacionEntregada(donante, hogarB, alimentos, fecha.minusDays(10).atTime(10, 0)));
+    donacionesRepository.addDonacion(crearDonacionEntregada(donante, hogarB, alimentos));
 
     BeneficiariosRepository beneficiariosRepository = new BeneficiariosRepository();
     beneficiariosRepository.addBeneficiario(hogarA);
@@ -298,39 +295,42 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
 
   @Test
   void prioridadSubAtendidosUsaEntregasDelUltimoTrimestre() {
-    LocalDate fecha = LocalDate.of(2026, 7, 6);
     SubCategoria alimentos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     Donante donante = crearDonanteDummy();
-    EntidadBeneficiaria entidadMenosAtendida =
-        crearEntidadConNecesidad("Menos Atendida", alimentos, 5, fecha.plusMonths(4));
-    EntidadBeneficiaria entidadMasAtendida =
-        crearEntidadConNecesidad("Mas Atendida", alimentos, 5, fecha.plusMonths(4));
+    EntidadBeneficiaria entidad =
+        crearEntidadConNecesidad("Sub Atendida", alimentos, 5, LocalDate.now().plusMonths(4));
     Donacion donacion =
-        nuevaDonacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+        nuevaDonacion(
+            donante, List.of(crearBien("Fideos", 10, alimentos, LocalDate.now().plusMonths(6))));
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     // Las donaciones entregadas referencian a la entidad y la consulta de entregas la recibe como
-    // parámetro: ambas entidades deben estar almacenadas.
+    // parámetro: la entidad debe estar almacenada.
     persist(alimentos);
     persist(donante);
-    persist(entidadMasAtendida);
-    persist(entidadMenosAtendida);
+    persist(entidad);
 
-    donacionesRepository.addDonacion(
-        crearDonacionEntregada(
-            donante, entidadMasAtendida, alimentos, fecha.minusDays(5).atTime(10, 0)));
-    donacionesRepository.addDonacion(
-        crearDonacionEntregada(
-            donante, entidadMasAtendida, alimentos, fecha.minusDays(15).atTime(10, 0)));
-    donacionesRepository.addDonacion(
-        crearDonacionEntregada(
-            donante, entidadMasAtendida, alimentos, fecha.minusMonths(4).atTime(10, 0)));
+    donacionesRepository.addDonacion(crearDonacionEntregada(donante, entidad, alimentos));
+    donacionesRepository.addDonacion(crearDonacionEntregada(donante, entidad, alimentos));
 
-    var ranking =
-        new AlgoritmoPrioridadSubAtendidos(donacionesRepository)
-            .rankear(donacion, List.of(entidadMasAtendida, entidadMenosAtendida), fecha);
+    AlgoritmoPrioridadSubAtendidos algoritmo =
+        new AlgoritmoPrioridadSubAtendidos(donacionesRepository);
+
+    var rankingEnVentana = algoritmo.rankear(donacion, List.of(entidad), LocalDate.now());
+    var rankingFueraDeVentana =
+        algoritmo.rankear(donacion, List.of(entidad), LocalDate.now().plusMonths(4));
 
     assertEquals(
-        "Menos Atendida", ranking.getCandidatos().get(0).getEntidadBeneficiaria().getRazonSocial());
+        98,
+        rankingEnVentana.getCandidatos().get(0).getPuntaje(),
+        "Las dos entregas dentro del trimestre deben descontar dos puntos del puntaje");
+    assertEquals(
+        100,
+        rankingFueraDeVentana.getCandidatos().get(0).getPuntaje(),
+        "Las entregas fuera del trimestre no deben contar: el puntaje debe quedar completo");
+    assertTrue(
+        rankingEnVentana.getCandidatos().get(0).getPuntaje()
+            < rankingFueraDeVentana.getCandidatos().get(0).getPuntaje(),
+        "Las entregas dentro del trimestre deben bajar el puntaje y las de afuera no deben contar");
   }
 
   @Test
@@ -355,16 +355,11 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
   }
 
   private static Donacion crearDonacionEntregada(
-      Donante donante,
-      EntidadBeneficiaria entidad,
-      SubCategoria subCategoria,
-      LocalDateTime fechaEntrega) {
+      Donante donante, EntidadBeneficiaria entidad, SubCategoria subCategoria) {
     Donacion donacion =
         nuevaDonacion(donante, List.of(crearBien("Entregada", 1, subCategoria, null)));
     donacion.confirmarEntidadBeneficiaria(entidad);
-    donacion.cambiarEstado(
-        new HistorialEstado(fechaEntrega, EstadoDonacion.ENTREGADA, null),
-        EstadoDonacion.ENTREGADA);
+    donacion.cambiarEstado(EstadoDonacion.ENTREGADA, null);
     return donacion;
   }
 

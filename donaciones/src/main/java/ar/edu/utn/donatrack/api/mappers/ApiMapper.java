@@ -117,13 +117,15 @@ public final class ApiMapper {
         donacion.getFotos());
   }
 
+  /**
+   * Traduce una entrada del historial de una donación al contrato HTTP.
+   *
+   * @param historial entrada del historial que se traduce
+   * @return la entrada con la fecha, el estado alcanzado y la justificación
+   */
   public static HistorialEstadoResponse historial(HistorialEstado historial) {
     return new HistorialEstadoResponse(
-        historial.getSecuencia(),
-        historial.getFecha(),
-        historial.getEstadoAnterior(),
-        historial.getEstadoAlcanzado(),
-        historial.getJustificacion());
+        historial.getFecha(), historial.getEstadoAlcanzado(), historial.getJustificacion());
   }
 
   public static PropuestaResponse propuesta(PropuestaDeAsignacion propuesta) {

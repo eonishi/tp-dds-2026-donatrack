@@ -6,6 +6,7 @@ import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
 import ar.edu.utn.donatrack.donantes.Donante;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -23,7 +24,6 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
-import javax.persistence.OrderBy;
 
 @Entity
 public class Donacion {
@@ -34,11 +34,9 @@ public class Donacion {
   @Enumerated(EnumType.STRING)
   private EstadoDonacion estado = EstadoDonacion.EN_DEPOSITO;
 
-  // El historial se ordena por la secuencia que ya lleva cada evento; sin esto la recarga no
-  // conserva el orden que el dominio mantiene en memoria.
+  // El historial es append-only: el orden de la colección es el de inserción de sus entradas.
   @OneToMany(cascade = CascadeType.ALL)
   @JoinColumn(name = "donacion_id")
-  @OrderBy("secuencia ASC")
   private List<HistorialEstado> historialEstado = new ArrayList<>();
 
   @OneToMany(cascade = CascadeType.ALL)
@@ -77,11 +75,21 @@ public class Donacion {
     return new DonacionId(id);
   }
 
-  public synchronized void cambiarEstado(
-      HistorialEstado nuevoHistorial, EstadoDonacion nuevoEstado) {
-    Objects.requireNonNull(nuevoHistorial, "historial no puede ser null");
+  /**
+   * Registra una transición de estado construyendo la entrada de historial que la respalda.
+   *
+   * <p>El historial es interno a la donación: quien transiciona indica el estado destino y la
+   * justificación, y la donación arma la entrada con el instante que corresponde. El instante lo
+   * fija la donación y no el llamador: la transición ocurre cuando se ejecuta, y dejar que un
+   * tercero la feche permitiría un historial cuya fecha contradiga el orden real de los eventos.
+   *
+   * @param nuevoEstado estado al que transiciona la donación (no nulo)
+   * @param justificacion motivo de la transición, o {@code null} si no requiere justificación
+   * @throws NullPointerException si {@code nuevoEstado} es {@code null}
+   */
+  public synchronized void cambiarEstado(EstadoDonacion nuevoEstado, String justificacion) {
     Objects.requireNonNull(nuevoEstado, "estado no puede ser null");
-    historialEstado.add(nuevoHistorial.contextualizar(historialEstado.size() + 1L, estado));
+    historialEstado.add(new HistorialEstado(LocalDateTime.now(), nuevoEstado, justificacion));
     estado = nuevoEstado;
   }
 

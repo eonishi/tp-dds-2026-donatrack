@@ -67,9 +67,5 @@ public final class DonacionDtos {
   public record FotoResponse(UUID donacionId, String url) {}
 
   public record HistorialEstadoResponse(
-      long secuencia,
-      LocalDateTime fecha,
-      EstadoDonacion estadoAnterior,
-      EstadoDonacion estadoAlcanzado,
-      String justificacion) {}
+      LocalDateTime fecha, EstadoDonacion estadoAlcanzado, String justificacion) {}
 }

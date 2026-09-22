@@ -195,8 +195,7 @@ class DonacionesApiHttpTest implements JpaRepository {
     assertEquals(200, historial.statusCode());
     JsonNode eventos = json(historial);
     assertEquals(4, eventos.size());
-    assertEquals(1, eventos.get(0).get("secuencia").asInt());
-    assertEquals(4, eventos.get(3).get("secuencia").asInt());
+    assertEquals("ENTREGA_FALLIDA", eventos.get(3).get("estadoAlcanzado").asText());
     assertEquals("No había responsables", eventos.get(3).get("justificacion").asText());
 
     HttpResponse<String> foto =

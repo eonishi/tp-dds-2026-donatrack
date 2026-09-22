@@ -19,7 +19,6 @@ import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -183,13 +182,12 @@ class AlgoritmoPrioridadSubAtendidosTest implements SimplePersistenceTest {
     persist(conMuchas);
     DonacionesRepository donacionesRepository = new DonacionesRepository();
     for (int i = 0; i < 50; i++) {
-      donacionesRepository.addDonacion(
-          crearDonacionEntregada(donante, conMuchas, fideos, LocalDateTime.of(2026, 6, 1, 10, 0)));
+      donacionesRepository.addDonacion(crearDonacionEntregada(donante, conMuchas, fideos));
     }
 
     var ranking =
         new AlgoritmoPrioridadSubAtendidos(donacionesRepository)
-            .rankear(donacion, List.of(sinEntregas, conMuchas), LocalDate.of(2026, 7, 11));
+            .rankear(donacion, List.of(sinEntregas, conMuchas), LocalDate.now());
 
     assertEquals(2, ranking.getCandidatos().size());
     assertTrue(
@@ -245,10 +243,7 @@ class AlgoritmoPrioridadSubAtendidosTest implements SimplePersistenceTest {
   }
 
   private static Donacion crearDonacionEntregada(
-      Donante donante,
-      EntidadBeneficiaria entidad,
-      SubCategoria subCategoria,
-      LocalDateTime fechaEntrega) {
+      Donante donante, EntidadBeneficiaria entidad, SubCategoria subCategoria) {
     Donacion donacion =
         nuevaDonacion(
             donante,
@@ -262,9 +257,7 @@ class AlgoritmoPrioridadSubAtendidosTest implements SimplePersistenceTest {
                     EstadoUso.NO_APLICA,
                     subCategoria)));
     donacion.confirmarEntidadBeneficiaria(entidad);
-    donacion.cambiarEstado(
-        new HistorialEstado(fechaEntrega, EstadoDonacion.ENTREGADA, null),
-        EstadoDonacion.ENTREGADA);
+    donacion.cambiarEstado(EstadoDonacion.ENTREGADA, null);
     return donacion;
   }
 }

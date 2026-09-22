@@ -1,7 +1,5 @@
 package ar.edu.utn.donatrack.donaciones;
 
-import java.time.LocalDateTime;
-
 /**
  * Estados de una donación y las transiciones válidas desde cada uno.
  *
@@ -315,9 +313,17 @@ public enum EstadoDonacion {
 
   public abstract void retornarAlDeposito(Donacion donacion);
 
+  /**
+   * Registra la transición en el historial de la donación.
+   *
+   * <p>La donación arma la entrada: acá solo se declara el estado destino y la justificación.
+   *
+   * @param donacion donación que transiciona
+   * @param destino estado al que transiciona
+   * @param justificacion motivo de la transición, o {@code null} si no requiere justificación
+   */
   private static void transicionar(
       Donacion donacion, EstadoDonacion destino, String justificacion) {
-    donacion.cambiarEstado(
-        new HistorialEstado(LocalDateTime.now(), destino, justificacion), destino);
+    donacion.cambiarEstado(destino, justificacion);
   }
 }
