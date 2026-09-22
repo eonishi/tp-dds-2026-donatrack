@@ -36,7 +36,7 @@ public class PosicionController {
     }
 
     try {
-      IngestaDTO dto = ctx.bodyAsClass(IngestaDTO.class);
+      IngestaDto dto = ctx.bodyAsClass(IngestaDto.class);
 
       Coordenada coordenada = new Coordenada(dto.lat, dto.lng);
 
@@ -77,26 +77,26 @@ public class PosicionController {
     String idRuta = rutaActiva.map(r -> r.getId().toString()).orElse(null);
 
     // Transformamos tu record a un DTO para que Jackson use "lat" y "lng"
-    CoordenadaDTO coordDto =
-        new CoordenadaDTO(lectura.coordenada().latitud(), lectura.coordenada().longitud());
+    CoordenadaDto coordDto =
+        new CoordenadaDto(lectura.coordenada().latitud(), lectura.coordenada().longitud());
 
-    PosicionResponseDTO response =
-        new PosicionResponseDTO(patente, idRuta, coordDto, lectura.timestamp());
+    PosicionResponseDto response =
+        new PosicionResponseDto(patente, idRuta, coordDto, lectura.timestamp());
 
     ctx.json(response);
   }
 
   // --- DTOs Internos ---
 
-  public static class IngestaDTO {
+  public static class IngestaDto {
     public double lat;
     public double lng;
     public double velocidad;
     public LocalDateTime timestamp;
   }
 
-  public record CoordenadaDTO(double lat, double lng) {}
+  public record CoordenadaDto(double lat, double lng) {}
 
-  public record PosicionResponseDTO(
-      String idCamion, String idRutaActiva, CoordenadaDTO coordenadas, LocalDateTime timestamp) {}
+  public record PosicionResponseDto(
+      String idCamion, String idRutaActiva, CoordenadaDto coordenadas, LocalDateTime timestamp) {}
 }

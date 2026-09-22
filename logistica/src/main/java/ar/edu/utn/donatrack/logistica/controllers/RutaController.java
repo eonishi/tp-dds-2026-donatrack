@@ -39,7 +39,7 @@ public class RutaController {
 
   // POST /logistica/rutas
   public void crear(Context ctx) {
-    RutaDTO dto = ctx.bodyAsClass(RutaDTO.class);
+    RutaDto dto = ctx.bodyAsClass(RutaDto.class);
 
     // 1. Buscamos el camión referenciado en el JSON
     Optional<Camion> camionOpt = camionRepo.buscarPorPatente(dto.patenteCamion);
@@ -125,7 +125,7 @@ public class RutaController {
           .ifPresentOrElse(
               ruta -> {
                 // Leemos la actualización desde el body
-                RutaUpdateDTO dto = ctx.bodyAsClass(RutaUpdateDTO.class);
+                RutaUpdateDto dto = ctx.bodyAsClass(RutaUpdateDto.class);
 
                 if (dto.estado != null) {
                   try {
@@ -154,12 +154,12 @@ public class RutaController {
   }
 
   // --- DTOs Internos ---
-  public static class RutaDTO {
+  public static class RutaDto {
     public String patenteCamion;
     public List<Destino> destinos;
   }
 
-  public static class RutaUpdateDTO {
+  public static class RutaUpdateDto {
     public String estado;
   }
 }

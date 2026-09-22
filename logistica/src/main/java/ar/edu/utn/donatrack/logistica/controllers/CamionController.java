@@ -31,7 +31,7 @@ public class CamionController {
   public void crear(Context ctx) {
     try {
       // 1. Mapeamos el JSON entrante a un DTO simple
-      CamionDTO dto = ctx.bodyAsClass(CamionDTO.class);
+      CamionDto dto = ctx.bodyAsClass(CamionDto.class);
 
       // 2. Usamos tu constructor que ya tiene las validaciones
       Camion nuevoCamion =
@@ -57,7 +57,7 @@ public class CamionController {
     }
 
     try {
-      CamionDTO dto = ctx.bodyAsClass(CamionDTO.class);
+      CamionDto dto = ctx.bodyAsClass(CamionDto.class);
 
       // Nos aseguramos de que la patente del body coincida con la de la URL
       if (!patente.equals(dto.patente)) {
@@ -93,7 +93,7 @@ public class CamionController {
   }
 
   // --- DTO Interno para recibir el JSON ---
-  public static class CamionDTO {
+  public static class CamionDto {
     public String patente;
     public double volumenM3;
     public double alturaM;
