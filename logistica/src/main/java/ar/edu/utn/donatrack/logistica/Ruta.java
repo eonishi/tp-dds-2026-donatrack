@@ -6,6 +6,15 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.OrderColumn;
+import javax.persistence.Table;
+
 /**
  * Agregado raíz que representa una ruta de entrega.
  *
@@ -15,12 +24,25 @@ import java.util.UUID;
  * <p>La lista de destinos no admite entidades beneficiarias repetidas: la validación se apoya en la
  * identidad declarada por {@link Destino#entidadId()}.
  */
+@Entity
+@Table(schema = "logistica", name = "rutas")
 public class Ruta {
 
-  private final UUID id;
-  private final Camion camion;
-  private final List<Destino> destinos;
+  @Id
+  private UUID id;
+
+  @ManyToOne
+  @JoinColumn(name = "camion_id")
+  private Camion camion;
+
+  @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+  @JoinColumn(name = "ruta_id")
+  @OrderColumn(name = "orden")
+  private List<Destino> destinos;
+
   private boolean enCurso;
+
+  protected Ruta() {}
 
   /**
    * Crea una nueva ruta con el camión y los destinos especificados.

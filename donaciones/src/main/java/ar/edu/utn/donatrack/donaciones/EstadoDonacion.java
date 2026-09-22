@@ -18,6 +18,11 @@ public enum EstadoDonacion {
     @Override
     public void asignar(Donacion donacion) {
       transicionar(donacion, ASIGNACION_REALIZADA, null);
+      if (donacion.getDonante() != null && donacion.getEntidadBeneficiaria() != null) {
+          new ar.edu.utn.donatrack.notificaciones.eventos.EventoAsignacion(donacion.getDonante(), donacion.getEntidadBeneficiaria())
+              .generarNotificaciones()
+              .forEach(n -> System.out.println("Enviar notificacion: " + n.getMensaje()));     
+      }
     }
 
     @Override
@@ -56,11 +61,26 @@ public enum EstadoDonacion {
       }
       transicionar(donacion, ENTREGADA, null);
       donacion.getEntidadBeneficiaria().aplicarDonacionRecibida(donacion);
+      if (donacion.getDonante() != null && donacion.getEntidadBeneficiaria() != null && donacion.getIdCamion().isPresent()) {
+          new ar.edu.utn.donatrack.notificaciones.eventos.EventoEntregaExitosa(
+            donacion.getDonante(),
+            donacion.getEntidadBeneficiaria(),
+            java.time.LocalDateTime.now(),
+            donacion.getIdCamion().get()
+          ).generarNotificaciones().forEach(n -> System.out.println("Enviar notificacion: " + n.getMensaje()));
+      }
     }
 
     @Override
     public void reportarFalla(Donacion donacion, String justificacion) {
       transicionar(donacion, ENTREGA_FALLIDA, justificacion);
+      if (donacion.getDonante() != null && donacion.getEntidadBeneficiaria() != null) {
+          new ar.edu.utn.donatrack.notificaciones.eventos.EventoEntregaNoSatisfactoria(
+            donacion.getDonante(), 
+            donacion.getEntidadBeneficiaria(),
+            justificacion
+          ).generarNotificaciones().forEach(n -> System.out.println("Enviar notificacion: " + n.getMensaje()));
+      }
     }
 
     @Override

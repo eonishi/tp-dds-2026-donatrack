@@ -96,12 +96,14 @@ class ServicioPlanificacionRutasTest {
   @Test
   void planificar_Con250Donaciones_ParticionaEn3Lotes() {
     Camion camion = crearCamionDummy("ABC123");
+    Camion camion2 = crearCamionDummy("DEF456");
+    Camion camion3 = crearCamionDummy("GHI789");
     List<DonacionPlanificable> donaciones = new ArrayList<>();
     for (int i = 0; i < 250; i++) {
       donaciones.add(crearPlanificable(1L, nuevoDonacionId()));
     }
     when(donacionesRemotas.listarEnAsignacionRealizada()).thenReturn(donaciones);
-    when(camionRepository.listarTodos()).thenReturn(List.of(camion));
+    when(camionRepository.listarTodos()).thenReturn(List.of(camion, camion2, camion3));
     when(planificadorRutas.enviarLote(any())).thenAnswer(invocacion -> LoteId.generar());
 
     List<LoteId> resultado = servicio.planificar();
@@ -136,12 +138,14 @@ class ServicioPlanificacionRutasTest {
   @Test
   void planificar_Con250Donaciones_LosLotesNoExceden100Donaciones() {
     Camion camion = crearCamionDummy("ABC123");
+    Camion camion2 = crearCamionDummy("DEF456");
+    Camion camion3 = crearCamionDummy("GHI789");
     List<DonacionPlanificable> donaciones = new ArrayList<>();
     for (int i = 0; i < 250; i++) {
       donaciones.add(crearPlanificable(1L, nuevoDonacionId()));
     }
     when(donacionesRemotas.listarEnAsignacionRealizada()).thenReturn(donaciones);
-    when(camionRepository.listarTodos()).thenReturn(List.of(camion));
+    when(camionRepository.listarTodos()).thenReturn(List.of(camion, camion2, camion3));
     when(planificadorRutas.enviarLote(any())).thenAnswer(invocacion -> LoteId.generar());
 
     servicio.planificar();
@@ -193,7 +197,8 @@ class ServicioPlanificacionRutasTest {
                 List.of(
                     new Destino(entB, "Dir 2", List.of(dB1, dB2)),
                     new Destino(entA, "Dir 1", List.of(dA1, dA2)),
-                    new Destino(entC, "Dir 3", List.of(dC1, dC2)))));
+                    new Destino(entC, "Dir 3", List.of(dC1, dC2)))),
+            java.util.Collections.emptyList());
 
     servicio.procesarResultado(resultado);
 
@@ -238,7 +243,8 @@ class ServicioPlanificacionRutasTest {
             loteId,
             Map.of(
                 camion1, List.of(new Destino(entA, "Dir 1", List.of(d1))),
-                camion2, List.of(new Destino(entB, "Dir 2", List.of(d2)))));
+                camion2, List.of(new Destino(entB, "Dir 2", List.of(d2)))),
+            java.util.Collections.emptyList());
 
     servicio.procesarResultado(resultado);
 
@@ -265,7 +271,8 @@ class ServicioPlanificacionRutasTest {
     // El resultado solo incluye la donación de la entidad A
     ResultadoPlanificacion resultado =
         new ResultadoPlanificacion(
-            loteId, Map.of(camion, List.of(new Destino(entA, "Dir 1", List.of(planificada)))));
+            loteId, Map.of(camion, List.of(new Destino(entA, "Dir 1", List.of(planificada)))),
+            java.util.Collections.emptyList());
 
     servicio.procesarResultado(resultado);
 
@@ -286,7 +293,7 @@ class ServicioPlanificacionRutasTest {
 
     servicio.planificar();
 
-    servicio.procesarResultado(new ResultadoPlanificacion(loteId, Map.of()));
+    servicio.procesarResultado(new ResultadoPlanificacion(loteId, Map.of(), java.util.Collections.emptyList()));
 
     verify(rutaRepository, never()).agregar(any());
     verify(donacionesRemotas, never()).notificarListaParaEntregar(any());
@@ -294,7 +301,7 @@ class ServicioPlanificacionRutasTest {
 
   @Test
   void procesarResultado_LoteIdDesconocido_DebeLanzarIllegalStateException() {
-    ResultadoPlanificacion resultado = new ResultadoPlanificacion(LoteId.generar(), Map.of());
+    ResultadoPlanificacion resultado = new ResultadoPlanificacion(LoteId.generar(), Map.of(), java.util.Collections.emptyList());
 
     assertThrows(IllegalStateException.class, () -> servicio.procesarResultado(resultado));
   }
@@ -316,7 +323,8 @@ class ServicioPlanificacionRutasTest {
     ResultadoPlanificacion resultado =
         new ResultadoPlanificacion(
             loteId,
-            Map.of(camion, List.of(new Destino(entidadDelDestino, "Dir 2", List.of(donacionId)))));
+            Map.of(camion, List.of(new Destino(entidadDelDestino, "Dir 2", List.of(donacionId)))),
+            java.util.Collections.emptyList());
 
     assertThrows(IllegalArgumentException.class, () -> servicio.procesarResultado(resultado));
     verify(rutaRepository, never()).agregar(any());
@@ -339,7 +347,8 @@ class ServicioPlanificacionRutasTest {
 
     ResultadoPlanificacion resultado =
         new ResultadoPlanificacion(
-            loteId, Map.of(camion, List.of(new Destino(entidad, "Dir 1", List.of(ajena)))));
+            loteId, Map.of(camion, List.of(new Destino(entidad, "Dir 1", List.of(ajena)))),
+            java.util.Collections.emptyList());
 
     assertThrows(IllegalArgumentException.class, () -> servicio.procesarResultado(resultado));
     verify(rutaRepository, never()).agregar(any());
@@ -370,7 +379,7 @@ class ServicioPlanificacionRutasTest {
 
     assertThrows(
         IllegalArgumentException.class,
-        () -> servicio.procesarResultado(new ResultadoPlanificacion(loteId, rutas)));
+        () -> servicio.procesarResultado(new ResultadoPlanificacion(loteId, rutas, java.util.Collections.emptyList())));
 
     verify(rutaRepository, never()).agregar(any());
     verify(donacionesRemotas, never()).notificarListaParaEntregar(any());
@@ -399,7 +408,7 @@ class ServicioPlanificacionRutasTest {
 
     assertThrows(
         IllegalArgumentException.class,
-        () -> servicio.procesarResultado(new ResultadoPlanificacion(loteId, invalido)));
+        () -> servicio.procesarResultado(new ResultadoPlanificacion(loteId, invalido, java.util.Collections.emptyList())));
 
     // El lote no se consumió: el mismo LoteId se puede reprocesar con un resultado válido.
     ResultadoPlanificacion valido =
@@ -407,7 +416,8 @@ class ServicioPlanificacionRutasTest {
             loteId,
             Map.of(
                 camionValido, List.of(new Destino(entA, "Dir 1", List.of(deA))),
-                camionConError, List.of(new Destino(entB, "Dir 2", List.of(deB)))));
+                camionConError, List.of(new Destino(entB, "Dir 2", List.of(deB)))),
+            java.util.Collections.emptyList());
 
     servicio.procesarResultado(valido);
 

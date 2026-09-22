@@ -1,4 +1,5 @@
 package ar.edu.utn.donatrack.logistica;
+import javax.persistence.Embeddable;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -12,6 +13,7 @@ import java.util.UUID;
  *
  * @param value valor del identificador (no nulo)
  */
+@Embeddable
 public record DonacionId(UUID value) {
   public DonacionId {
     Objects.requireNonNull(value, "value no debe ser null");

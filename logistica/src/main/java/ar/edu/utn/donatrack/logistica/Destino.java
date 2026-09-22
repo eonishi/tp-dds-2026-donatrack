@@ -1,32 +1,90 @@
 package ar.edu.utn.donatrack.logistica;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Embedded;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.CollectionTable;
+import javax.persistence.Table;
+
 /**
- * Parada de una {@link Ruta}: agrupa las donaciones que se entregan en una misma entidad
- * beneficiaria.
- *
- * <p>Value object inmutable. {@code entidadId} identifica a la parada dentro de la ruta — una ruta
- * no puede repetir entidad beneficiaria (ver {@link Ruta}); {@code direccion} es una foto de la
- * dirección tomada al planificar y {@code donaciones} son las donaciones a entregar en ese orden.
- *
- * <p>Como value object, dos destinos son iguales cuando coinciden todos sus componentes: la
- * dirección y las donaciones son parte del valor, no de la identidad.
- *
- * <p>La entidad y la dirección viven en el microservicio de donaciones: acá llegan como valores del
- * contrato de integración, no se revalidan.
- *
- * @param entidadId entidad beneficiaria que recibe la entrega (no nula)
- * @param direccion dirección de la entrega (no nula)
- * @param donaciones donaciones a entregar en esta parada (no nula)
+ * Parada de una {@link Ruta}: agrupa las donaciones que se entregan en una misma entidad beneficiaria.
  */
-public record Destino(
-    EntidadBeneficiariaId entidadId, String direccion, List<DonacionId> donaciones) {
-  public Destino {
-    Objects.requireNonNull(entidadId, "entidadId no debe ser null");
-    Objects.requireNonNull(direccion, "direccion no debe ser null");
+@Entity
+@Table(schema = "logistica", name = "destinos")
+public class Destino {
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  @Embedded
+  @AttributeOverrides({
+      @AttributeOverride(name = "value", column = @Column(name = "entidad_id", nullable = false))
+  })
+  private EntidadBeneficiariaId entidadId;
+
+  @Column(nullable = false)
+  private String direccion;
+
+  @ElementCollection
+  @CollectionTable(schema = "logistica", name = "destino_donaciones", joinColumns = @JoinColumn(name = "destino_id"))
+  @AttributeOverrides({
+      @AttributeOverride(name = "value", column = @Column(name = "donacion_id", nullable = false))
+  })
+  private List<DonacionId> donaciones = new ArrayList<>();
+
+  protected Destino() {}
+
+  public Destino(EntidadBeneficiariaId entidadId, String direccion, List<DonacionId> donaciones) {
+    this.entidadId = Objects.requireNonNull(entidadId, "entidadId no debe ser null");
+    this.direccion = Objects.requireNonNull(direccion, "direccion no debe ser null");
     Objects.requireNonNull(donaciones, "donaciones no debe ser null");
-    donaciones = List.copyOf(donaciones);
+    for (DonacionId d : donaciones) {
+        Objects.requireNonNull(d, "donacion no debe ser null");
+    }
+    this.donaciones = new ArrayList<>(donaciones);
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public EntidadBeneficiariaId entidadId() {
+    return entidadId;
+  }
+
+  public String direccion() {
+    return direccion;
+  }
+
+  public List<DonacionId> donaciones() {
+    return Collections.unmodifiableList(donaciones);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof Destino)) return false;
+    Destino destino = (Destino) o;
+    return Objects.equals(entidadId, destino.entidadId) &&
+           Objects.equals(direccion, destino.direccion) &&
+           Objects.equals(donaciones, destino.donaciones);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(entidadId, direccion, donaciones);
   }
 }

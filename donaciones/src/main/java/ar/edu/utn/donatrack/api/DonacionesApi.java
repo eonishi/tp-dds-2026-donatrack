@@ -75,6 +75,13 @@ public final class DonacionesApi {
                             matchmakingController.routes();
                           }));
             });
+            
+    java.util.concurrent.ScheduledExecutorService scheduler = java.util.concurrent.Executors.newSingleThreadScheduledExecutor();
+    scheduler.scheduleAtFixedRate(new ar.edu.utn.donatrack.notificaciones.TareaAusenciaDonantes(donantes, NotificadorDesdeEntorno.crear()), 0, 1, java.util.concurrent.TimeUnit.DAYS);
+    app.events(event -> {
+      event.serverStopping(() -> scheduler.shutdown());
+    });
+    
     ApiExceptionHandler.register(app, clock);
     RequestPersistenceBoundary.register(app);
     return app;

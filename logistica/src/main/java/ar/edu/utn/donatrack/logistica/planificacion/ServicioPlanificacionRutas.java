@@ -69,14 +69,36 @@ public class ServicioPlanificacionRutas {
     }
 
     List<LoteId> loteIds = new ArrayList<>();
-    for (List<DonacionPlanificable> batch :
-        partirEnLotes(disponibles, LoteDonaciones.MAXIMO_DONACIONES)) {
-      LoteDonaciones lote = new LoteDonaciones(batch, camiones);
+    List<List<DonacionPlanificable>> batches = partirEnLotes(disponibles, LoteDonaciones.MAXIMO_DONACIONES);
+    List<List<Camion>> camionesPorLote = partirCamionesEnLotes(camiones, batches.size());
+
+    for (int i = 0; i < batches.size(); i++) {
+      List<DonacionPlanificable> batch = batches.get(i);
+      List<Camion> camionesAsignados = camionesPorLote.get(i);
+
+      if (camionesAsignados.isEmpty()) {
+        continue;
+      }
+
+      LoteDonaciones lote = new LoteDonaciones(batch, camionesAsignados);
       LoteId loteId = planificadorRutas.enviarLote(lote);
       lotesPendientes.put(loteId, List.copyOf(batch));
       loteIds.add(loteId);
     }
     return loteIds;
+  }
+
+  private List<List<Camion>> partirCamionesEnLotes(List<Camion> camiones, int cantidadLotes) {
+    List<List<Camion>> lotes = new ArrayList<>();
+    for (int i = 0; i < cantidadLotes; i++) {
+      lotes.add(new ArrayList<>());
+    }
+    if (cantidadLotes == 0) return lotes;
+
+    for (int i = 0; i < camiones.size(); i++) {
+      lotes.get(i % cantidadLotes).add(camiones.get(i));
+    }
+    return lotes;
   }
 
   /**
