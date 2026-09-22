@@ -2,12 +2,13 @@ package ar.edu.utn.donatrack.logistica;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
-class CamionTest {
+class CamionTest implements SimplePersistenceTest {
 
   // ── Entity Creation Tests ──────────────────────────────────────────
 

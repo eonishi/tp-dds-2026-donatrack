@@ -1,19 +1,25 @@
 package ar.edu.utn.donatrack.logistica;
 
 import java.util.Objects;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 
 /**
  * Representa un camión en el sistema de gestión de flota.
  *
- * <p>Entidad inmutable identificada por su patente. Cada camión tiene dimensiones físicas (volumen,
- * altura) y capacidad de carga necesarias para planificar rutas y asignar donaciones.
+ * <p>Entidad identificada por su patente. Cada camión tiene dimensiones físicas (volumen, altura) y
+ * capacidad de carga necesarias para planificar rutas y asignar donaciones. Sus atributos los
+ * hidrata JPA al recargar la instancia, por lo que no se declaran finales.
  */
+@Entity
 public class Camion {
 
-  private final String patente;
-  private final double volumenM3;
-  private final double alturaM;
-  private final double capacidadCargaKg;
+  @Id private String patente;
+  private double volumenM3;
+  private double alturaM;
+  private double capacidadCargaKg;
+
+  protected Camion() {}
 
   /**
    * Crea un nuevo camión con los atributos especificados.

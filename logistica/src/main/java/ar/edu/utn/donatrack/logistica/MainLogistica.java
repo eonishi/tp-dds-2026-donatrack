@@ -10,6 +10,7 @@ import java.time.Clock;
 public class MainLogistica {
   public static void main(String[] args) {
     var app = Javalin.create().start(9001);
+    RequestPersistenceBoundary.register(app);
 
     // 1. Instanciamos dependencias
     CamionRepository camionRepo = new CamionRepository();

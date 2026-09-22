@@ -6,17 +6,33 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ar.edu.utn.donatrack.logistica.Camion;
 import ar.edu.utn.donatrack.logistica.CamionRepository;
 import ar.edu.utn.donatrack.logistica.RutaRepository;
+import ar.edu.utn.donatrack.persistencia.JpaRepository;
 import io.javalin.Javalin;
 import io.javalin.testtools.JavalinTest;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class RutaControllerTest {
+public class RutaControllerTest implements JpaRepository {
 
   private RutaRepository rutaRepo;
   private CamionRepository camionRepo;
   private RutaController controlador;
   private Javalin app;
+
+  @AfterEach
+  void limpiarPersistencia() {
+    // Las solicitudes HTTP confirman sus propias transacciones, a diferencia de las pruebas
+    // transaccionales que revierten: se borran los camiones confirmados en el setUp para que no
+    // contaminen los conteos de las demás pruebas. Después se limpia el contexto para que el
+    // próximo test no reutilice una instancia administrada con la misma patente.
+    inTransaction(
+        () ->
+            createQuery("select c from Camion c", Camion.class)
+                .getResultList()
+                .forEach(this::remove));
+    entityManager().clear();
+  }
 
   @BeforeEach
   public void setUp() {
