@@ -72,6 +72,14 @@ public final class MatchmakingController {
     ctx.json(ApiMapper.propuesta(ranking(HttpSupport.id(ctx, "donacionId"))));
   }
 
+  private PropuestaDeAsignacion ranking(UUID donacionId) {
+    try {
+      return matchmaking.obtenerRankingVigente(donacion(donacionId));
+    } catch (IllegalStateException error) {
+      throw ApiException.notFound("Ranking de la donación", donacionId);
+    }
+  }
+
   private void seleccionar(Context ctx) {
     SeleccionEntidadRequest request = ctx.bodyAsClass(SeleccionEntidadRequest.class);
     Long entidadBeneficiariaId = DtoValidator.validate(request).entidadBeneficiariaId();
@@ -102,14 +110,6 @@ public final class MatchmakingController {
     notificaciones.enviar(
         new EventoAsignacion(donacion.getDonante(), entidad).generarNotificaciones());
     return donacion;
-  }
-
-  private PropuestaDeAsignacion ranking(UUID donacionId) {
-    try {
-      return matchmaking.obtenerRankingVigente(donacion(donacionId));
-    } catch (IllegalStateException error) {
-      throw ApiException.notFound("Ranking de la donación", donacionId);
-    }
   }
 
   private Donacion donacion(UUID id) {

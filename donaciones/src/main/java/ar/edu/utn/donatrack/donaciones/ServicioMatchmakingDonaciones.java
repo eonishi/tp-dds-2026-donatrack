@@ -36,7 +36,7 @@ public class ServicioMatchmakingDonaciones {
           "El matchmaking sólo puede ejecutarse para donaciones en depósito.");
     }
     propuestaRepository.remove(donacion);
-    return calcularYGuardar(donacion, fechaReferencia);
+    return generarPropuesta(donacion, fechaReferencia);
   }
 
   public List<PropuestaDeAsignacion> ejecutarMatchmakingTotal(LocalDate fechaReferencia) {
@@ -76,10 +76,11 @@ public class ServicioMatchmakingDonaciones {
       return; // skip Donaciones with existing pending Propuesta
     }
 
-    calcularYGuardar(donacion, fechaReferencia);
+    generarPropuesta(donacion, fechaReferencia);
   }
 
-  private PropuestaDeAsignacion calcularYGuardar(Donacion donacion, LocalDate fechaReferencia) {
+  // Calcula el ranking de la donación, persiste la propuesta y la devuelve.
+  private PropuestaDeAsignacion generarPropuesta(Donacion donacion, LocalDate fechaReferencia) {
     List<RankingMatchmaking> rankings =
         algoritmos.stream()
             .map(

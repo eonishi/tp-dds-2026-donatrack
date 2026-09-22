@@ -26,16 +26,16 @@ public class PropuestaDeAsignacion {
    * administrada la pasa acá para que la transición se aplique —y se guarde— sobre ella.
    *
    * @param elegida entidad beneficiaria elegida, que debe pertenecer al ranking
-   * @param donacionAConfirmar donación sobre la que se aplica la transición
+   * @param donacionParaConfirmar donación sobre la que se aplica la transición
    */
-  public void confirmar(EntidadBeneficiaria elegida, Donacion donacionAConfirmar) {
+  public void confirmar(EntidadBeneficiaria elegida, Donacion donacionParaConfirmar) {
     if (!pendiente) {
       return; // no-op on double-confirm
     }
     if (!incluye(elegida)) {
       throw new EntidadFueraDeRankingException();
     }
-    donacionAConfirmar.confirmarEntidadBeneficiaria(elegida);
+    donacionParaConfirmar.confirmarEntidadBeneficiaria(elegida);
     this.pendiente = false;
   }
 

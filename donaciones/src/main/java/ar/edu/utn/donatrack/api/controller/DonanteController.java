@@ -8,6 +8,7 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
 import ar.edu.utn.donatrack.api.dto.DonanteDtos.DonanteRequest;
+import ar.edu.utn.donatrack.api.dto.DonanteDtos.MedioContactoRequest;
 import ar.edu.utn.donatrack.api.error.ApiException;
 import ar.edu.utn.donatrack.api.mappers.ApiMapper;
 import ar.edu.utn.donatrack.api.validation.DtoValidator;
@@ -198,18 +199,17 @@ public final class DonanteController {
   }
 
   private List<MedioDeContacto> medios(DonanteRequest request) {
-    return request.mediosDeContacto().stream()
-        .map(
-            contacto ->
-                switch (contacto.tipo().toUpperCase(Locale.ROOT)) {
-                  case "EMAIL" -> new CorreoElectronico(contacto.contacto());
-                  case "WHATSAPP" -> new Whatsapp(contacto.contacto());
-                  case "SMS" -> new Sms(contacto.contacto());
-                  default ->
-                      throw new IllegalArgumentException(
-                          "tipo de contacto inválido: " + contacto.tipo());
-                })
-        .toList();
+    return request.mediosDeContacto().stream().map(this::medio).toList();
+  }
+
+  private MedioDeContacto medio(MedioContactoRequest contacto) {
+    return switch (contacto.tipo().toUpperCase(Locale.ROOT)) {
+      case "EMAIL" -> new CorreoElectronico(contacto.contacto());
+      case "WHATSAPP" -> new Whatsapp(contacto.contacto());
+      case "SMS" -> new Sms(contacto.contacto());
+      default ->
+          throw new IllegalArgumentException("tipo de contacto inválido: " + contacto.tipo());
+    };
   }
 
   private List<Representante> representantes(DonanteRequest request) {

@@ -92,8 +92,9 @@ public final class DonacionController {
 
   private void actualizar(Context ctx) {
     Donacion donacion = buscar(HttpSupport.id(ctx, "id"));
-    if (donacion.getEstado() != EstadoDonacion.EN_DEPOSITO)
+    if (donacion.getEstado() != EstadoDonacion.EN_DEPOSITO) {
       throw ApiException.conflict("Sólo se puede modificar una donación en depósito.");
+    }
     DonacionUpdateRequest request =
         DtoValidator.validate(ctx.bodyAsClass(DonacionUpdateRequest.class));
     donacion.reemplazarBienes(bienes(request.bienes()));
@@ -103,8 +104,9 @@ public final class DonacionController {
 
   private void eliminar(Context ctx) {
     Donacion donacion = buscar(HttpSupport.id(ctx, "id"));
-    if (donacion.getEstado() != EstadoDonacion.EN_DEPOSITO)
+    if (donacion.getEstado() != EstadoDonacion.EN_DEPOSITO) {
       throw ApiException.conflict("Sólo se puede eliminar una donación en depósito.");
+    }
     propuestas.remove(donacion);
     donaciones.deleteById(donacion.getId());
     ctx.status(204);

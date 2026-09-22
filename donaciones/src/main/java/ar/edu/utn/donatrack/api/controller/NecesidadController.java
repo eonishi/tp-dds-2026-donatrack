@@ -127,9 +127,11 @@ public final class NecesidadController {
   }
 
   private void agregar(EntidadBeneficiaria entidad, Necesidad necesidad) {
-    if (necesidad instanceof NecesidadRecurrente recurrente)
+    if (necesidad instanceof NecesidadRecurrente recurrente) {
       entidad.agregarNecesidadRecurrente(recurrente);
-    else entidad.agregarNecesidadExtraordinaria(necesidad);
+    } else {
+      entidad.agregarNecesidadExtraordinaria(necesidad);
+    }
   }
 
   private void validar(NecesidadRequest request) {
