@@ -1,10 +1,26 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>ar.edu.utn.donatrack</groupId>
     <artifactId>tp-dds-2026-donatrack</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <!--
+      Proyecto dividido en dos microservicios (ver docs/enunciado/enunciado-2.md):
+        * donaciones : gestión de donaciones, donantes, entidades beneficiarias,
+                       matchmaking y notificaciones.
+        * logistica  : gestión de flota de camiones, rutas, monitoreo y planificación.
+      Cada módulo es un microservicio independiente; la integración REST entre ambos
+      queda pendiente (la lógica cruzada está comentada dentro de cada módulo).
+    -->
+    <modules>
+        <module>donaciones</module>
+        <module>logistica</module>
+    </modules>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -34,9 +50,9 @@
         <dependency>
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
-            <version>5.9</version> 
+            <version>5.9</version> <!-- Usá la última versión disponible -->
         </dependency>
-    <dependency><groupId>io.github.flbulgarelli</groupId><artifactId>jpa-extras</artifactId><version>1.0.0-rc1</version></dependency><dependency><groupId>org.hsqldb</groupId><artifactId>hsqldb</artifactId><version>2.7.2</version></dependency><dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><version>42.7.2</version></dependency></dependencies>
+    </dependencies>
 
     <build>
         <plugins>
@@ -49,7 +65,7 @@
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
-                <version>3.6.0</version> 
+                <version>3.6.0</version> <!-- Usa la versión estable más reciente -->
                 <configuration>
                     <java>
                         <googleJavaFormat>
@@ -106,13 +122,14 @@
                 </configuration>
             </plugin>
             <plugin>
-                
+                <!-- Build an executable JAR -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>3.5.0</version>
                 <configuration>
                     <archive>
                         <manifest>
+                            <!-- TODO: definir el Main de cada microservicio (hoy solo hay tests) -->
                             <mainClass>Main</mainClass>
                         </manifest>
                     </archive>

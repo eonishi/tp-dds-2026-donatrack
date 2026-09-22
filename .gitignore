@@ -59,4 +59,5 @@ odd/
 
 # checkstyle
 *.iml
-src/main/resources/META-INF/persistence.xml
+
+secrets.local.sh
