@@ -1,6 +1,6 @@
 package ar.edu.utn.donatrack.logistica;
 
-import ar.edu.utn.donatrack.persistencia.JpaRepository;
+import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -11,7 +11,7 @@ import java.util.Optional;
  * <p>La deduplicación se apoya en la patente, que es la identidad de {@link Camion#equals}: un
  * camión cuya patente ya está registrada no reemplaza al almacenado, sino que se descarta.
  */
-public class CamionRepository implements JpaRepository {
+public class CamionRepository implements WithSimplePersistenceUnit {
 
   /**
    * Registra un camión.
@@ -20,15 +20,15 @@ public class CamionRepository implements JpaRepository {
    * conserva el camión almacenado y se ignora la instancia nueva —la semántica de {@link
    * HashSet#add}.
    *
+   * <p>Requiere una transacción activa del llamador (el caso de uso); nunca abre ni confirma una
+   * transacción por su cuenta.
+   *
    * @param camion el camión a registrar (no nulo)
    */
   public void agregar(Camion camion) {
-    inTransaction(
-        () -> {
-          if (buscarPorPatente(camion.getPatente()).isEmpty()) {
-            persist(camion);
-          }
-        });
+    if (buscarPorPatente(camion.getPatente()).isEmpty()) {
+      persist(camion);
+    }
   }
 
   /**
@@ -55,9 +55,12 @@ public class CamionRepository implements JpaRepository {
   /**
    * Elimina un camión por su patente. Si no existe, no hace nada.
    *
+   * <p>Requiere una transacción activa del llamador (el caso de uso); nunca abre ni confirma una
+   * transacción por su cuenta.
+   *
    * @param patente la patente del camión a eliminar
    */
   public void eliminar(String patente) {
-    inTransaction(() -> buscarPorPatente(patente).ifPresent(this::remove));
+    buscarPorPatente(patente).ifPresent(this::remove);
   }
 }

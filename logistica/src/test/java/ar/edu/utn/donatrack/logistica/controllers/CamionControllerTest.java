@@ -5,14 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ar.edu.utn.donatrack.logistica.Camion;
 import ar.edu.utn.donatrack.logistica.CamionRepository;
-import ar.edu.utn.donatrack.persistencia.JpaRepository;
+import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.Javalin;
 import io.javalin.testtools.JavalinTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class CamionControllerTest implements JpaRepository {
+public class CamionControllerTest implements WithSimplePersistenceUnit {
 
   private CamionRepository repositorio;
   private CamionController controlador;
@@ -24,7 +24,7 @@ public class CamionControllerTest implements JpaRepository {
     // transaccionales que revierten: se borran los camiones confirmados para que no contaminen
     // los conteos de las demás pruebas. Después se limpia el contexto para que el próximo test no
     // reutilice una instancia administrada con la misma patente.
-    inTransaction(
+    withTransaction(
         () ->
             createQuery("select c from Camion c", Camion.class)
                 .getResultList()
@@ -43,6 +43,9 @@ public class CamionControllerTest implements JpaRepository {
         Javalin.create()
             .get("/logistica/camiones", controlador::listar)
             .post("/logistica/camiones", controlador::crear);
+    // El contexto de persistencia es por hilo y la biblioteca no lo limpia: sin este reseteo, un
+    // hilo reutilizado por Javalin serviría entidades cacheadas de una solicitud anterior.
+    app.before(ctx -> entityManager().clear());
   }
 
   @Test

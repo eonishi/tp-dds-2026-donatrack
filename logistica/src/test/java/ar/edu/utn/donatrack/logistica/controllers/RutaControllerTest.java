@@ -6,14 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ar.edu.utn.donatrack.logistica.Camion;
 import ar.edu.utn.donatrack.logistica.CamionRepository;
 import ar.edu.utn.donatrack.logistica.RutaRepository;
-import ar.edu.utn.donatrack.persistencia.JpaRepository;
+import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.Javalin;
 import io.javalin.testtools.JavalinTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class RutaControllerTest implements JpaRepository {
+public class RutaControllerTest implements WithSimplePersistenceUnit {
 
   private RutaRepository rutaRepo;
   private CamionRepository camionRepo;
@@ -26,7 +26,7 @@ public class RutaControllerTest implements JpaRepository {
     // transaccionales que revierten: se borran los camiones confirmados en el setUp para que no
     // contaminen los conteos de las demás pruebas. Después se limpia el contexto para que el
     // próximo test no reutilice una instancia administrada con la misma patente.
-    inTransaction(
+    withTransaction(
         () ->
             createQuery("select c from Camion c", Camion.class)
                 .getResultList()
@@ -45,9 +45,11 @@ public class RutaControllerTest implements JpaRepository {
             org.mockito.Mockito.mock(
                 ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas.class));
 
-    // Pre-cargamos un camión válido porque la ruta necesita uno para crearse
+    // Pre-cargamos un camión válido porque la ruta necesita uno para crearse. El repositorio ya
+    // no abre ninguna transacción por su cuenta y acá no hay una previa, así que el test es el
+    // dueño legítimo de esta unidad de trabajo.
     Camion camionPrueba = new Camion("AB123CD", 20.0, 2.5, 10000.0);
-    camionRepo.agregar(camionPrueba);
+    withTransaction(() -> camionRepo.agregar(camionPrueba));
 
     app =
         Javalin.create()

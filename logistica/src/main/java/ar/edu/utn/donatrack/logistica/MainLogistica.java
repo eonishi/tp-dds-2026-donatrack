@@ -5,7 +5,12 @@ import ar.edu.utn.donatrack.logistica.controllers.PlanificacionController;
 import ar.edu.utn.donatrack.logistica.controllers.PosicionController;
 import ar.edu.utn.donatrack.logistica.controllers.RutaController;
 import ar.edu.utn.donatrack.logistica.monitoreo.MonitorRutas;
-import ar.edu.utn.donatrack.logistica.planificacion.*;
+import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
+import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotasImpl;
+import ar.edu.utn.donatrack.logistica.planificacion.LoteId;
+import ar.edu.utn.donatrack.logistica.planificacion.PlanificadorRutas;
+import ar.edu.utn.donatrack.logistica.planificacion.ServicioPlanificacionRutas;
+import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.Javalin;
 
 import java.net.http.HttpClient;
@@ -13,10 +18,18 @@ import java.time.Clock;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class MainLogistica {
+public class MainLogistica implements WithSimplePersistenceUnit {
   public static void main(String[] args) {
+    new MainLogistica().iniciar();
+  }
+
+  private void iniciar() {
     var app = Javalin.create().start(9001);
-    RequestPersistenceBoundary.register(app);
+
+    // El contexto de persistencia es por hilo y la biblioteca no lo limpia: sin este reseteo, un
+    // hilo reutilizado serviría entidades cacheadas de una solicitud anterior. El reseteo es del
+    // contexto, no de la transacción: cada caso de uso sigue siendo el único dueño de la suya.
+    app.before(ctx -> entityManager().clear());
 
     // 1. Instanciamos dependencias
     CamionRepository camionRepo = new CamionRepository();

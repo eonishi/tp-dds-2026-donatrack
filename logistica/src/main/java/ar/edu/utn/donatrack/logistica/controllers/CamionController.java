@@ -2,9 +2,10 @@ package ar.edu.utn.donatrack.logistica.controllers;
 
 import ar.edu.utn.donatrack.logistica.Camion;
 import ar.edu.utn.donatrack.logistica.CamionRepository;
+import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
 
-public class CamionController {
+public class CamionController implements WithSimplePersistenceUnit {
 
   private final CamionRepository repositorio;
 
@@ -33,12 +34,18 @@ public class CamionController {
       // 1. Mapeamos el JSON entrante a un DTO simple
       CamionDto dto = ctx.bodyAsClass(CamionDto.class);
 
-      // 2. Usamos tu constructor que ya tiene las validaciones
+      // 2. Usamos tu constructor que ya tiene las validaciones y guardamos dentro de la
+      // transacción que abre este controlador como dueño de la unidad de trabajo
       Camion nuevoCamion =
-          new Camion(dto.patente, dto.volumenM3, dto.alturaM, dto.capacidadCargaKg);
+          withTransaction(
+              () -> {
+                Camion camion =
+                    new Camion(dto.patente, dto.volumenM3, dto.alturaM, dto.capacidadCargaKg);
+                repositorio.agregar(camion);
+                return camion;
+              });
 
-      // 3. Guardamos y respondemos 201 Created
-      repositorio.agregar(nuevoCamion);
+      // 3. Respondemos 201 Created
       ctx.status(201).json(nuevoCamion);
 
     } catch (IllegalArgumentException e) {
@@ -65,12 +72,16 @@ public class CamionController {
         return;
       }
 
-      Camion camionActualizado =
-          new Camion(dto.patente, dto.volumenM3, dto.alturaM, dto.capacidadCargaKg);
-
       // Tu método agregar funciona como "upsert", así que pisa el anterior gracias al
-      // equals/hashCode
-      repositorio.agregar(camionActualizado);
+      // equals/hashCode; la escritura va dentro de la transacción de este controlador
+      Camion camionActualizado =
+          withTransaction(
+              () -> {
+                Camion camion =
+                    new Camion(dto.patente, dto.volumenM3, dto.alturaM, dto.capacidadCargaKg);
+                repositorio.agregar(camion);
+                return camion;
+              });
       ctx.status(200).json(camionActualizado);
 
     } catch (IllegalArgumentException e) {
@@ -86,7 +97,7 @@ public class CamionController {
         .buscarPorPatente(patente)
         .ifPresentOrElse(
             camion -> {
-              repositorio.eliminar(patente);
+              withTransaction(() -> repositorio.eliminar(patente));
               ctx.status(204); // 204 No Content
             },
             () -> ctx.status(404).result("Camión no encontrado"));
