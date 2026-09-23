@@ -26,4 +26,6 @@ public interface DonacionesRemotas {
    * @param donaciones identificadores de las donaciones planificadas (no nulo)
    */
   void notificarListaParaEntregar(List<DonacionId> donaciones);
+
+  void notificarInicioTraslado(List<DonacionId> donaciones, String urlMapa);
 }

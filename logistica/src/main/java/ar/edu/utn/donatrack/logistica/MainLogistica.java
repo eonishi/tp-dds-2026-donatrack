@@ -4,6 +4,7 @@ import ar.edu.utn.donatrack.logistica.controllers.CamionController;
 import ar.edu.utn.donatrack.logistica.controllers.PosicionController;
 import ar.edu.utn.donatrack.logistica.controllers.RutaController;
 import ar.edu.utn.donatrack.logistica.monitoreo.MonitorRutas;
+import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
 import io.javalin.Javalin;
 import java.time.Clock;
 
@@ -19,7 +20,9 @@ public class MainLogistica {
 
     // 2. Instanciamos Controladores
     CamionController camionController = new CamionController(camionRepo);
-    RutaController rutaController = new RutaController(rutaRepo, camionRepo);
+    
+    ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas donacionesRemotas = new ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas() { public java.util.List<ar.edu.utn.donatrack.logistica.planificacion.DonacionPlanificable> listarEnAsignacionRealizada() { return java.util.List.of(); } public void notificarListaParaEntregar(java.util.List<ar.edu.utn.donatrack.logistica.DonacionId> donaciones) {} public void notificarInicioTraslado(java.util.List<ar.edu.utn.donatrack.logistica.DonacionId> donaciones, String urlMapa) {} };
+    RutaController rutaController = new RutaController(rutaRepo, camionRepo, donacionesRemotas);
     PosicionController posicionController =
         new PosicionController(monitorRutas, camionRepo, rutaRepo);
 

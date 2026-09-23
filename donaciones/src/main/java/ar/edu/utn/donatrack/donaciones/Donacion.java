@@ -209,8 +209,8 @@ public class Donacion {
     this.estado.planificarRuta(this);
   }
 
-  public void iniciarTraslado() {
-    this.estado.iniciarTraslado(this);
+  public void iniciarTraslado(String urlMapa) {
+    this.estado.iniciarTraslado(this, urlMapa);
   }
 
   public void confirmarEntrega() {

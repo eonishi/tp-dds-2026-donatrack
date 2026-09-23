@@ -1,5 +1,8 @@
 package ar.edu.utn.donatrack.donaciones;
 
+import java.util.List;
+import ar.edu.utn.donatrack.notificaciones.eventos.EventoEntregaExitosa;
+import ar.edu.utn.donatrack.notificaciones.eventos.EventoInicioRuta;
 /**
  * Estados de una donación y las transiciones válidas desde cada uno.
  *
@@ -43,8 +46,12 @@ public enum EstadoDonacion {
   },
   LISTA_PARA_ENTREGAR {
     @Override
-    public void iniciarTraslado(Donacion donacion) {
+    public void iniciarTraslado(Donacion donacion, String urlMapa) {
       transicionar(donacion, EN_TRASLADO, null);
+      if (donacion.getDonante() != null && donacion.getEntidadBeneficiaria() != null && urlMapa != null) {
+        new EventoInicioRuta(List.of(donacion.getDonante(),donacion.getEntidadBeneficiaria()), urlMapa)
+        .generarNotificaciones().forEach(n -> System.out.println("Enviar notificacion: " + n.getMensaje()));
+      }
     }
 
     @Override
@@ -62,7 +69,7 @@ public enum EstadoDonacion {
       transicionar(donacion, ENTREGADA, null);
       donacion.getEntidadBeneficiaria().aplicarDonacionRecibida(donacion);
       if (donacion.getDonante() != null && donacion.getEntidadBeneficiaria() != null && donacion.getIdCamion().isPresent()) {
-          new ar.edu.utn.donatrack.notificaciones.eventos.EventoEntregaExitosa(
+          new EventoEntregaExitosa(
             donacion.getDonante(),
             donacion.getEntidadBeneficiaria(),
             java.time.LocalDateTime.now(),
@@ -112,7 +119,7 @@ public enum EstadoDonacion {
     noPermitido("planificar la ruta");
   }
 
-  public void iniciarTraslado(Donacion donacion) {
+  public void iniciarTraslado(Donacion donacion, String urlMapa) {
     noPermitido("iniciar el traslado");
   }
 

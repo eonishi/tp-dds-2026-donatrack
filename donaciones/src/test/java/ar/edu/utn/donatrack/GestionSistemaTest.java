@@ -144,7 +144,7 @@ class DonaTrackTest implements SimplePersistenceTest {
     assertEquals(EstadoDonacion.LISTA_PARA_ENTREGAR, donacion.getEstado());
 
     // Transición: Lista para entregar -> En traslado
-    donacion.iniciarTraslado();
+    donacion.iniciarTraslado("http://test.mapa");
     assertEquals(EstadoDonacion.EN_TRASLADO, donacion.getEstado());
 
     // Transición: En traslado -> Entrega fallida (Único estado que requiere justificación según
@@ -174,7 +174,7 @@ class DonaTrackTest implements SimplePersistenceTest {
 
     // Act & Assert
     // Intentar iniciar un traslado desde el depósito sin asignar ni planificar
-    assertThrows(IllegalStateException.class, donacion::iniciarTraslado);
+    assertThrows(IllegalStateException.class, () -> donacion.iniciarTraslado("http://test.mapa"));
   }
 
   @Test
@@ -217,7 +217,7 @@ class DonaTrackTest implements SimplePersistenceTest {
     Donacion traslado = nuevaDonacion(donanteDummy, List.of(fideos));
     traslado.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"));
     traslado.planificarRuta();
-    traslado.iniciarTraslado();
+    traslado.iniciarTraslado("http://test.mapa");
     assertThrows(
         IllegalStateException.class,
         traslado::retornarAlDeposito,
@@ -227,7 +227,7 @@ class DonaTrackTest implements SimplePersistenceTest {
     Donacion entregada = nuevaDonacion(donanteDummy, List.of(fideos));
     entregada.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"));
     entregada.planificarRuta();
-    entregada.iniciarTraslado();
+    entregada.iniciarTraslado("http://test.mapa");
     entregada.confirmarEntrega();
     assertThrows(
         IllegalStateException.class,
@@ -265,7 +265,7 @@ class DonaTrackTest implements SimplePersistenceTest {
     assertEquals(entidad, donacion.getEntidadBeneficiaria());
 
     donacion.planificarRuta(); // → ListaParaEntregar
-    donacion.iniciarTraslado(); // → EnTraslado
+    donacion.iniciarTraslado("http://test.mapa"); // → EnTraslado
     donacion.reportarFalla("Dirección incorrecta"); // → EntregaFallida
     assertEquals(EstadoDonacion.ENTREGA_FALLIDA, donacion.getEstado());
 
@@ -304,7 +304,7 @@ class DonaTrackTest implements SimplePersistenceTest {
     // Llevar la donacion hasta EntregaFallida
     donacion.confirmarEntidadBeneficiaria(entidad);
     donacion.planificarRuta();
-    donacion.iniciarTraslado();
+    donacion.iniciarTraslado("http://test.mapa");
     donacion.reportarFalla("No respondieron");
     assertEquals(EstadoDonacion.ENTREGA_FALLIDA, donacion.getEstado());
 

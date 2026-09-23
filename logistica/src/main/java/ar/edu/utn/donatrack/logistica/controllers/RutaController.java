@@ -3,8 +3,10 @@ package ar.edu.utn.donatrack.logistica.controllers;
 import ar.edu.utn.donatrack.logistica.Camion;
 import ar.edu.utn.donatrack.logistica.CamionRepository;
 import ar.edu.utn.donatrack.logistica.Destino;
+import ar.edu.utn.donatrack.logistica.DonacionId;
 import ar.edu.utn.donatrack.logistica.Ruta;
 import ar.edu.utn.donatrack.logistica.RutaRepository;
+import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
 import io.javalin.http.Context;
 import java.util.List;
 import java.util.Optional;
@@ -14,10 +16,12 @@ public class RutaController {
 
   private final RutaRepository rutaRepo;
   private final CamionRepository camionRepo;
+  private final DonacionesRemotas donacionesRemotas;
 
-  public RutaController(RutaRepository rutaRepo, CamionRepository camionRepo) {
+  public RutaController(RutaRepository rutaRepo, CamionRepository camionRepo, DonacionesRemotas donacionesRemotas) {
     this.rutaRepo = rutaRepo;
     this.camionRepo = camionRepo;
+    this.donacionesRemotas = donacionesRemotas;
   }
 
   // GET /logistica/rutas
@@ -131,7 +135,11 @@ public class RutaController {
                   try {
                     if ("EN_CURSO".equalsIgnoreCase(dto.estado)) {
                       ruta.iniciar();
-                      // TODO: (Integración S2S - Issue #9) Avisar a Donaciones
+                      List<DonacionId> donaciones = ruta.getDestinos().stream()
+                        .flatMap(d -> d.donaciones().stream())
+                        .toList();
+                      String urlMapa = "https://mapa.donatrack.org/tracking/" + ruta.getCamion().getPatente();
+                      donacionesRemotas.notificarInicioTraslado(donaciones, urlMapa);
                     } else if ("FINALIZADA".equalsIgnoreCase(dto.estado)) {
                       ruta.finalizar();
                     } else {

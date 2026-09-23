@@ -79,7 +79,7 @@ class DonacionTest {
 
     donacion.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"));
     donacion.planificarRuta();
-    donacion.iniciarTraslado();
+    donacion.iniciarTraslado("http://test.mapa");
     donacion.reportarFalla("Dirección incorrecta");
     donacion.retornarAlDeposito();
 
@@ -111,7 +111,7 @@ class DonacionTest {
     // Walk through state machine: EnDeposito → Asignada → ListaParaEntregar → EnTraslado
     donacion.confirmarEntidadBeneficiaria(entidad);
     donacion.planificarRuta();
-    donacion.iniciarTraslado();
+    donacion.iniciarTraslado("http://test.mapa");
 
     // Pre-condition: necesidad starts at 0, not satisfied
     assertFalse(necesidad.estaSatisfecha(), "Necesidad aún no debería estar satisfecha");
@@ -149,7 +149,7 @@ class DonacionTest {
 
     donacion.confirmarEntidadBeneficiaria(entidad);
     donacion.planificarRuta();
-    donacion.iniciarTraslado();
+    donacion.iniciarTraslado("http://test.mapa");
 
     // Pre-condition
     assertEquals(0.0, necesidad.getCantidadRecibida(), 0.001);
@@ -210,7 +210,7 @@ class DonacionTest {
     donacion.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"));
     donacion.planificarRuta();
     donacion.registrarCamion("XYZ789");
-    donacion.iniciarTraslado();
+    donacion.iniciarTraslado("http://test.mapa");
     donacion.reportarFalla("Dirección incorrecta");
 
     assertEquals(
@@ -233,7 +233,7 @@ class DonacionTest {
     donacion.confirmarEntidadBeneficiaria(entidad);
     donacion.planificarRuta();
     donacion.registrarCamion("AF123ZZ");
-    donacion.iniciarTraslado();
+    donacion.iniciarTraslado("http://test.mapa");
     donacion.confirmarEntrega();
 
     LocalDateTime fechaEntrega =

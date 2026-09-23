@@ -161,7 +161,7 @@ public final class DonacionController {
         yield donacion;
       }
       case EN_TRASLADO -> {
-        donacion.iniciarTraslado();
+        donacion.iniciarTraslado(request.urlMapa());
         yield donacion;
       }
       case ENTREGADA -> {
