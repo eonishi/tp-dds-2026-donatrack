@@ -16,10 +16,11 @@ import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiariaId;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
+import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
 import java.util.List;
 
-public final class EntidadController {
+public final class EntidadController implements WithSimplePersistenceUnit {
   private final BeneficiariosRepository entidades;
   private final DonacionesRepository donaciones;
 
@@ -59,7 +60,8 @@ public final class EntidadController {
         new EntidadBeneficiaria(request.razonSocial(), request.direccion(), request.telefono());
     nueva.actualizarDatos(
         request.razonSocial(), request.direccion(), request.telefono(), correos(request));
-    ctx.status(201).json(response(entidades.save(nueva)));
+    EntidadResponse creada = withTransaction(() -> response(entidades.save(nueva)));
+    ctx.status(201).json(creada);
   }
 
   private void actualizar(Context ctx) {
@@ -69,7 +71,8 @@ public final class EntidadController {
     validarRazonSocial(request.razonSocial(), id);
     entidad.actualizarDatos(
         request.razonSocial(), request.direccion(), request.telefono(), correos(request));
-    ctx.json(response(entidades.save(entidad)));
+    EntidadResponse actualizada = withTransaction(() -> response(entidades.save(entidad)));
+    ctx.json(actualizada);
   }
 
   private void eliminar(Context ctx) {
@@ -82,7 +85,7 @@ public final class EntidadController {
                     && d.getEntidadBeneficiaria().getId().equals(id))) {
       throw ApiException.conflict("No se puede eliminar una entidad con donaciones asignadas.");
     }
-    entidades.deleteById(id);
+    withTransaction(() -> entidades.deleteById(id));
     ctx.status(204);
   }
 

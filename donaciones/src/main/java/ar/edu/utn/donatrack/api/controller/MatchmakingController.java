@@ -5,6 +5,7 @@ import static io.javalin.apibuilder.ApiBuilder.path;
 import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
+import ar.edu.utn.donatrack.api.dto.DonacionDtos.DonacionResponse;
 import ar.edu.utn.donatrack.api.dto.DonacionDtos.SeleccionEntidadRequest;
 import ar.edu.utn.donatrack.api.error.ApiException;
 import ar.edu.utn.donatrack.api.mappers.ApiMapper;
@@ -20,12 +21,13 @@ import ar.edu.utn.donatrack.donaciones.PropuestaDeAsignacion;
 import ar.edu.utn.donatrack.donaciones.ServicioMatchmakingDonaciones;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoAsignacion;
+import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.UUID;
 
-public final class MatchmakingController {
+public final class MatchmakingController implements WithSimplePersistenceUnit {
   private final ServicioMatchmakingDonaciones matchmaking;
   private final DonacionesRepository donaciones;
   private final BeneficiariosRepository entidades;
@@ -83,11 +85,14 @@ public final class MatchmakingController {
   private void seleccionar(Context ctx) {
     SeleccionEntidadRequest request = ctx.bodyAsClass(SeleccionEntidadRequest.class);
     Long entidadBeneficiariaId = DtoValidator.validate(request).entidadBeneficiariaId();
-    ctx.json(
-        ApiMapper.donacion(
-            confirmarSeleccion(
-                HttpSupport.id(ctx, "donacionId"),
-                new EntidadBeneficiariaId(entidadBeneficiariaId))));
+    DonacionResponse seleccionada =
+        withTransaction(
+            () ->
+                ApiMapper.donacion(
+                    confirmarSeleccion(
+                        HttpSupport.id(ctx, "donacionId"),
+                        new EntidadBeneficiariaId(entidadBeneficiariaId))));
+    ctx.json(seleccionada);
   }
 
   private Donacion confirmarSeleccion(UUID donacionId, EntidadBeneficiariaId entidadId) {

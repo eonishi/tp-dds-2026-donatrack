@@ -1,6 +1,6 @@
 package ar.edu.utn.donatrack.donantes;
 
-import ar.edu.utn.donatrack.persistencia.JpaRepository;
+import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -13,7 +13,7 @@ import java.util.UUID;
  * completo —las personas humanas con sus medios de contacto y las jurídicas además con sus
  * representantes— y las donaciones que lo referencian reciben la instancia administrada.
  */
-public class DonantesRepository implements JpaRepository {
+public class DonantesRepository implements WithSimplePersistenceUnit {
 
   /**
    * @return una instantánea inmutable de todos los donantes almacenados.
@@ -23,17 +23,23 @@ public class DonantesRepository implements JpaRepository {
   }
 
   /**
-   * Persiste todos los donantes del lote dentro de una única transacción.
+   * Persiste todos los donantes del lote.
+   *
+   * <p>Requiere una transacción activa del llamador (el caso de uso); nunca abre ni confirma una
+   * transacción por su cuenta, así que el lote completo se une a la transacción del llamador.
    *
    * @param nuevos los donantes a registrar
    */
   public void addMany(List<Donante> nuevos) {
-    inTransaction(() -> nuevos.forEach(this::persist));
+    nuevos.forEach(this::persist);
   }
 
   /**
    * Inserta los donantes entrantes que todavía no están almacenados y fusiona los datos de dominio
    * de los que ya existen, emparejando por correo electrónico.
+   *
+   * <p>Requiere una transacción activa del llamador (el caso de uso); nunca abre ni confirma una
+   * transacción por su cuenta.
    *
    * @param entrantes los donantes a insertar o actualizar
    */
@@ -41,20 +47,16 @@ public class DonantesRepository implements JpaRepository {
     if (entrantes == null || entrantes.isEmpty()) {
       return;
     }
-    inTransaction(
-        () -> {
-          // La tabla completa de donantes se carga a propósito: la implementación en memoria
-          // anterior emparejaba cada donante entrante contra todos los donantes almacenados por
-          // correo electrónico, y reproducir exactamente esa semántica de emparejamiento requiere
-          // la misma pasada en memoria. El costo por llamada es aceptable para este flujo de
-          // importación, que corre según la agenda del operador.
-          List<Donante> existentes =
-              new ArrayList<>(
-                  createQuery("select d from Donante d", Donante.class).getResultList());
-          for (Donante entrante : entrantes) {
-            upsertOne(entrante, existentes);
-          }
-        });
+    // La tabla completa de donantes se carga a propósito: la implementación en memoria
+    // anterior emparejaba cada donante entrante contra todos los donantes almacenados por
+    // correo electrónico, y reproducir exactamente esa semántica de emparejamiento requiere
+    // la misma pasada en memoria. El costo por llamada es aceptable para este flujo de
+    // importación, que corre según la agenda del operador.
+    List<Donante> existentes =
+        new ArrayList<>(createQuery("select d from Donante d", Donante.class).getResultList());
+    for (Donante entrante : entrantes) {
+      upsertOne(entrante, existentes);
+    }
   }
 
   private void upsertOne(Donante entrante, List<Donante> existentes) {
@@ -95,17 +97,17 @@ public class DonantesRepository implements JpaRepository {
    * devuelve para que el vaciado de la transacción guarde sus cambios; si está separado, fusiona su
    * estado con la fila almacenada.
    *
+   * <p>Requiere una transacción activa del llamador (el caso de uso); nunca abre ni confirma una
+   * transacción por su cuenta.
+   *
    * @param donante el donante a guardar
    * @return la instancia administrada resultante
    */
   public Donante save(Donante donante) {
-    return inTransaction(
-        () -> {
-          if (entityManager().contains(donante)) {
-            return donante;
-          }
-          return merge(donante);
-        });
+    if (entityManager().contains(donante)) {
+      return donante;
+    }
+    return merge(donante);
   }
 
   /**
@@ -122,16 +124,16 @@ public class DonantesRepository implements JpaRepository {
    * Elimina el donante indicado junto con sus medios de contacto y sus representantes. Si no
    * existe, no hace nada.
    *
+   * <p>Requiere una transacción activa del llamador (el caso de uso); nunca abre ni confirma una
+   * transacción por su cuenta.
+   *
    * @param id identidad del donante
    */
   public void deleteById(UUID id) {
-    inTransaction(
-        () -> {
-          Donante donante = find(Donante.class, id);
-          if (donante != null) {
-            remove(donante);
-          }
-        });
+    Donante donante = find(Donante.class, id);
+    if (donante != null) {
+      remove(donante);
+    }
   }
 
   public List<Donante> getDonantesInactivos(java.time.LocalDate limite) {

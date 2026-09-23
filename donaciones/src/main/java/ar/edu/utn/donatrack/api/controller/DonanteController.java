@@ -8,6 +8,7 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
 import ar.edu.utn.donatrack.api.dto.DonanteDtos.DonanteRequest;
+import ar.edu.utn.donatrack.api.dto.DonanteDtos.DonanteResponse;
 import ar.edu.utn.donatrack.api.dto.DonanteDtos.MedioContactoRequest;
 import ar.edu.utn.donatrack.api.error.ApiException;
 import ar.edu.utn.donatrack.api.mappers.ApiMapper;
@@ -23,12 +24,13 @@ import ar.edu.utn.donatrack.donantes.Representante;
 import ar.edu.utn.donatrack.donantes.Sms;
 import ar.edu.utn.donatrack.donantes.Whatsapp;
 import ar.edu.utn.donatrack.utilidades.TipoPersona;
+import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
-public final class DonanteController {
+public final class DonanteController implements WithSimplePersistenceUnit {
   private final DonantesRepository donantes;
   private final DonacionesRepository donaciones;
 
@@ -64,7 +66,9 @@ public final class DonanteController {
   private void crear(Context ctx) {
     DonanteRequest request = DtoValidator.validate(ctx.bodyAsClass(DonanteRequest.class));
     validar(request, null);
-    ctx.status(201).json(donante(donantes.save(construirDonante(request))));
+    DonanteResponse creado =
+        withTransaction(() -> donante(donantes.save(construirDonante(request))));
+    ctx.status(201).json(creado);
   }
 
   private void actualizar(Context ctx) {
@@ -76,7 +80,8 @@ public final class DonanteController {
       throw ApiException.conflict("No se puede cambiar el tipo de persona del donante.");
     }
     aplicarCambios(actual, request);
-    ctx.json(donante(donantes.save(actual)));
+    DonanteResponse actualizado = withTransaction(() -> donante(donantes.save(actual)));
+    ctx.json(actualizado);
   }
 
   private void eliminar(Context ctx) {
@@ -86,7 +91,7 @@ public final class DonanteController {
         .anyMatch(donacion -> donacion.getDonante().getId().equals(id))) {
       throw ApiException.conflict("No se puede eliminar un donante con donaciones asociadas.");
     }
-    donantes.deleteById(id);
+    withTransaction(() -> donantes.deleteById(id));
     ctx.status(204);
   }
 

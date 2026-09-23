@@ -18,11 +18,12 @@ import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import ar.edu.utn.donatrack.notificaciones.NotificacionesRepository;
 import ar.edu.utn.donatrack.notificaciones.NotificadorDesdeEntorno;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
+import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.Javalin;
 import java.time.Clock;
 import java.util.List;
 
-public final class DonacionesApi {
+public final class DonacionesApi implements WithSimplePersistenceUnit {
   private DonacionesApi() {}
 
   public static Javalin create() {
@@ -30,6 +31,10 @@ public final class DonacionesApi {
   }
 
   public static Javalin create(Clock clock) {
+    return new DonacionesApi().build(clock);
+  }
+
+  private Javalin build(Clock clock) {
     DonacionesRepository donaciones = new DonacionesRepository();
     DonantesRepository donantes = new DonantesRepository();
     BeneficiariosRepository entidades = new BeneficiariosRepository();
@@ -91,7 +96,11 @@ public final class DonacionesApi {
         });
 
     ApiExceptionHandler.register(app, clock);
-    RequestPersistenceBoundary.register(app);
+    // El contexto de persistencia es por hilo y la biblioteca no lo limpia: sin este reseteo, un
+    // hilo reutilizado por Javalin serviría entidades cacheadas de una solicitud anterior y
+    // devolvería lecturas obsoletas o rechazaría transiciones válidas. El reseteo es del contexto,
+    // no de la transacción: cada caso de uso sigue siendo el único dueño de la suya.
+    app.before(ctx -> entityManager().clear());
     return app;
   }
 }

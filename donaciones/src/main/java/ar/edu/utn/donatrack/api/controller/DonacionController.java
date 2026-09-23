@@ -8,8 +8,10 @@ import static io.javalin.apibuilder.ApiBuilder.path;
 import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
+import ar.edu.utn.donatrack.api.controller.DonacionController.TransicionMasivaRequest;
 import ar.edu.utn.donatrack.api.dto.DonacionDtos.BienRequest;
 import ar.edu.utn.donatrack.api.dto.DonacionDtos.CargaDonacionRequest;
+import ar.edu.utn.donatrack.api.dto.DonacionDtos.DonacionResponse;
 import ar.edu.utn.donatrack.api.dto.DonacionDtos.DonacionUpdateRequest;
 import ar.edu.utn.donatrack.api.dto.DonacionDtos.FotoRequest;
 import ar.edu.utn.donatrack.api.dto.DonacionDtos.FotoResponse;
@@ -28,12 +30,16 @@ import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
 import ar.edu.utn.donatrack.donaciones.PropuestaRepository;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
+import ar.edu.utn.donatrack.notificaciones.Notificacion;
+import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
 import jakarta.validation.constraints.NotNull;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public final class DonacionController {
+public final class DonacionController implements WithSimplePersistenceUnit {
   private final DonacionesRepository donaciones;
   private final DonantesRepository donantes;
   private final PropuestaRepository propuestas;
@@ -88,11 +94,13 @@ public final class DonacionController {
         donantes
             .findById(request.donanteId())
             .orElseThrow(() -> ApiException.notFound("Donante", request.donanteId()));
-    ctx.status(201)
-        .json(
-            cargaDonacion.cargarDonacion(donante, bienes(request.bienes())).stream()
-                .map(ApiMapper::donacion)
-                .toList());
+    List<DonacionResponse> creadas =
+        withTransaction(
+            () ->
+                cargaDonacion.cargarDonacion(donante, bienes(request.bienes())).stream()
+                    .map(ApiMapper::donacion)
+                    .toList());
+    ctx.status(201).json(creadas);
   }
 
   private void actualizar(Context ctx) {
@@ -104,7 +112,8 @@ public final class DonacionController {
         DtoValidator.validate(ctx.bodyAsClass(DonacionUpdateRequest.class));
     donacion.reemplazarBienes(bienes(request.bienes()));
     propuestas.remove(donacion);
-    ctx.json(donacion(donaciones.save(donacion)));
+    DonacionResponse actualizada = withTransaction(() -> donacion(donaciones.save(donacion)));
+    ctx.json(actualizada);
   }
 
   private void eliminar(Context ctx) {
@@ -113,7 +122,7 @@ public final class DonacionController {
       throw ApiException.conflict("Sólo se puede eliminar una donación en depósito.");
     }
     propuestas.remove(donacion);
-    donaciones.deleteById(donacion.getId());
+    withTransaction(() -> donaciones.deleteById(donacion.getId()));
     ctx.status(204);
   }
 
@@ -121,11 +130,13 @@ public final class DonacionController {
     TransicionEstadoRequest request =
         DtoValidator.validate(ctx.bodyAsClass(TransicionEstadoRequest.class));
     Donacion donacion = buscar(HttpSupport.id(ctx, "id"));
-    java.util.List<ar.edu.utn.donatrack.notificaciones.Notificacion> generadas = new java.util.ArrayList<>();
-    donaciones.inTransaction(() -> {
+    List<Notificacion> generadas = new ArrayList<>();
+
+    withTransaction(() -> {
       generadas.addAll(cambiarEstado(donacion, request));
       donaciones.save(donacion);
     });
+
     notificaciones.enviar(generadas);
     ctx.json(donacion(donacion));
   }
@@ -141,10 +152,12 @@ public final class DonacionController {
     FotoRequest request = DtoValidator.validate(ctx.bodyAsClass(FotoRequest.class));
     var id = HttpSupport.id(ctx, "id");
     Donacion donacion = buscar(id);
-    donaciones.inTransaction(() -> {
+
+    withTransaction(() -> {
       donacion.agregarFoto(request.url());
       donaciones.save(donacion);
     });
+
     ctx.status(201).json(new FotoResponse(id, request.url()));
   }
 
@@ -169,7 +182,7 @@ public final class DonacionController {
         .toList();
   }
 
-  private List<ar.edu.utn.donatrack.notificaciones.Notificacion> cambiarEstado(Donacion donacion, TransicionEstadoRequest request) {
+  private List<Notificacion> cambiarEstado(Donacion donacion, TransicionEstadoRequest request) {
     return switch (request.estado()) {
       case LISTA_PARA_ENTREGAR -> donacion.planificarRuta();
       case EN_TRASLADO -> donacion.iniciarTraslado(request.urlMapa());
@@ -200,8 +213,8 @@ public final class DonacionController {
       buscar(req.idDonacion());
     }
 
-    java.util.List<ar.edu.utn.donatrack.notificaciones.Notificacion> generadas = new java.util.ArrayList<>();
-    donaciones.inTransaction(() -> {
+    List<Notificacion> generadas = new ArrayList<>();
+    withTransaction(() -> {
       for (TransicionMasivaRequest req : requests) {
         Donacion donacion = buscar(req.idDonacion());
         String urlGenerada = req.idCamion() != null ? "https://mapa.donatrack.org/tracking/" + req.idCamion() : null;

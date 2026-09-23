@@ -1,7 +1,7 @@
 package ar.edu.utn.donatrack.donaciones;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-import ar.edu.utn.donatrack.persistencia.JpaRepository;
+import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -13,7 +13,7 @@ import java.util.Optional;
  * <p>El estado de la donación se guarda en una columna: las consultas filtran por el estado actual
  * sin recorrer el historial.
  */
-public class DonacionesRepository implements JpaRepository {
+public class DonacionesRepository implements WithSimplePersistenceUnit {
 
   /**
    * @return una instantánea inmutable de todas las donaciones almacenadas.
@@ -54,6 +54,9 @@ public class DonacionesRepository implements JpaRepository {
   /**
    * Registra una donación persistiéndola en la base.
    *
+   * <p>Requiere una transacción activa del llamador (el caso de uso); nunca abre ni confirma una
+   * transacción por su cuenta.
+   *
    * <p>La donación cascadea a sus bienes y a su historial, pero no a sus referencias externas: el
    * donante, la subcategoría de cada bien y la entidad beneficiaria deben existir antes de
    * persistirla. El donante debe llegar administrado por {@code DonantesRepository}, que es el
@@ -64,11 +67,8 @@ public class DonacionesRepository implements JpaRepository {
    * @param donacion la donación a registrar
    */
   public void addDonacion(Donacion donacion) {
-    inTransaction(
-        () -> {
-          sincronizarReferencias(donacion);
-          persist(donacion);
-        });
+    sincronizarReferencias(donacion);
+    persist(donacion);
   }
 
   /**
@@ -76,18 +76,18 @@ public class DonacionesRepository implements JpaRepository {
    * el contexto de persistencia, la devuelve para que el vaciado de la transacción guarde sus
    * cambios; si está separada, fusiona su estado con la fila almacenada.
    *
+   * <p>Requiere una transacción activa del llamador (el caso de uso); nunca abre ni confirma una
+   * transacción por su cuenta.
+   *
    * @param donacion la donación a guardar
    * @return la instancia administrada resultante
    */
   public Donacion save(Donacion donacion) {
-    return inTransaction(
-        () -> {
-          sincronizarReferencias(donacion);
-          if (entityManager().contains(donacion)) {
-            return donacion;
-          }
-          return merge(donacion);
-        });
+    sincronizarReferencias(donacion);
+    if (entityManager().contains(donacion)) {
+      return donacion;
+    }
+    return merge(donacion);
   }
 
   /**
@@ -104,16 +104,16 @@ public class DonacionesRepository implements JpaRepository {
    * Elimina la donación indicada junto con su historial, sus bienes y sus fotos. Si no existe, no
    * hace nada.
    *
+   * <p>Requiere una transacción activa del llamador (el caso de uso); nunca abre ni confirma una
+   * transacción por su cuenta.
+   *
    * @param id identidad de la donación
    */
   public void deleteById(DonacionId id) {
-    inTransaction(
-        () -> {
-          Donacion donacion = find(Donacion.class, id.value());
-          if (donacion != null) {
-            remove(donacion);
-          }
-        });
+    Donacion donacion = find(Donacion.class, id.value());
+    if (donacion != null) {
+      remove(donacion);
+    }
   }
 
   /**

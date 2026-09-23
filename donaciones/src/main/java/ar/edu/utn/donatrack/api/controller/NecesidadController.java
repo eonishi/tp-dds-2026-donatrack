@@ -17,11 +17,12 @@ import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiariaId;
 import ar.edu.utn.donatrack.beneficiarios.Necesidad;
 import ar.edu.utn.donatrack.beneficiarios.NecesidadRecurrente;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
+import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
 import java.util.Locale;
 import java.util.UUID;
 
-public final class NecesidadController {
+public final class NecesidadController implements WithSimplePersistenceUnit {
   private final BeneficiariosRepository entidades;
 
   public NecesidadController(BeneficiariosRepository entidades) {
@@ -61,8 +62,13 @@ public final class NecesidadController {
     EntidadBeneficiaria entidad = entidad(ctx);
     Necesidad necesidad = construirNecesidad(request);
     agregar(entidad, necesidad);
-    entidades.save(entidad);
-    ctx.status(201).json(ApiMapper.necesidad(necesidad, entidad));
+    NecesidadResponse creada =
+        withTransaction(
+            () -> {
+              entidades.save(entidad);
+              return ApiMapper.necesidad(necesidad, entidad);
+            });
+    ctx.status(201).json(creada);
   }
 
   private void actualizar(Context ctx) {
@@ -82,14 +88,19 @@ public final class NecesidadController {
     if (esRecurrente) {
       ((NecesidadRecurrente) actual).setPeriodo(request.periodo());
     }
-    entidades.save(entidad);
-    ctx.json(ApiMapper.necesidad(actual, entidad));
+    NecesidadResponse actualizada =
+        withTransaction(
+            () -> {
+              entidades.save(entidad);
+              return ApiMapper.necesidad(actual, entidad);
+            });
+    ctx.json(actualizada);
   }
 
   private void eliminar(Context ctx) {
     EntidadBeneficiaria entidad = entidad(ctx);
     Necesidad necesidad = necesidad(entidad, HttpSupport.id(ctx, "necesidadId"));
-    entidad.eliminarNecesidad(necesidad.getId());
+    withTransaction(() -> entidad.eliminarNecesidad(necesidad.getId()));
     ctx.status(204);
   }
 

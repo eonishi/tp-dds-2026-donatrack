@@ -1,6 +1,6 @@
 package ar.edu.utn.donatrack.beneficiarios;
 
-import ar.edu.utn.donatrack.persistencia.JpaRepository;
+import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import java.util.Optional;
 import java.util.Set;
 
@@ -8,7 +8,7 @@ import java.util.Set;
  * Repositorio de entidades beneficiarias respaldado por JPA: las lecturas consultan la base y las
  * escrituras persisten en ella, conservando la API que usan los controladores y el matchmaking.
  */
-public class BeneficiariosRepository implements JpaRepository {
+public class BeneficiariosRepository implements WithSimplePersistenceUnit {
 
   /**
    * @return una instantánea inmutable de todas las entidades beneficiarias almacenadas.
@@ -35,6 +35,9 @@ public class BeneficiariosRepository implements JpaRepository {
    * para que el vaciado de la transacción guarde sus cambios; si está separada, fusiona su estado
    * con la fila almacenada.
    *
+   * <p>Requiere una transacción activa del llamador (el caso de uso); nunca abre ni confirma una
+   * transacción por su cuenta.
+   *
    * <p>Las subcategorías de las necesidades se almacenan antes de escribir la entidad: son la única
    * referencia del agregado que no cascadea y la API las compone nuevas en cada solicitud.
    *
@@ -42,14 +45,11 @@ public class BeneficiariosRepository implements JpaRepository {
    * @return la instancia administrada resultante
    */
   public EntidadBeneficiaria save(EntidadBeneficiaria entidad) {
-    return inTransaction(
-        () -> {
-          asegurarSubcategorias(entidad);
-          if (entityManager().contains(entidad)) {
-            return entidad;
-          }
-          return merge(entidad);
-        });
+    asegurarSubcategorias(entidad);
+    if (entityManager().contains(entidad)) {
+      return entidad;
+    }
+    return merge(entidad);
   }
 
   /**
@@ -66,16 +66,16 @@ public class BeneficiariosRepository implements JpaRepository {
    * Elimina la entidad beneficiaria indicada junto con sus necesidades y sus correos. Si no existe,
    * no hace nada.
    *
+   * <p>Requiere una transacción activa del llamador (el caso de uso); nunca abre ni confirma una
+   * transacción por su cuenta.
+   *
    * @param id identidad de la entidad beneficiaria
    */
   public void deleteById(EntidadBeneficiariaId id) {
-    inTransaction(
-        () -> {
-          EntidadBeneficiaria entidad = find(EntidadBeneficiaria.class, id.value());
-          if (entidad != null) {
-            remove(entidad);
-          }
-        });
+    EntidadBeneficiaria entidad = find(EntidadBeneficiaria.class, id.value());
+    if (entidad != null) {
+      remove(entidad);
+    }
   }
 
   private void asegurarSubcategorias(EntidadBeneficiaria entidad) {

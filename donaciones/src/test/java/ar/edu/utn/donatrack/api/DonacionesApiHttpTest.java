@@ -7,10 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donantes.Donante;
-import ar.edu.utn.donatrack.persistencia.JpaRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.Javalin;
 import java.io.IOException;
 import java.net.URI;
@@ -25,7 +25,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class DonacionesApiHttpTest implements JpaRepository {
+class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
   private final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
   private final HttpClient client = HttpClient.newHttpClient();
   private Javalin app;
@@ -45,12 +45,13 @@ class DonacionesApiHttpTest implements JpaRepository {
 
   @AfterEach
   void limpiarPersistencia() {
-    // Las solicitudes HTTP confirman sus propias transacciones, a diferencia de las pruebas
-    // transaccionales que revierten: se borran las donaciones confirmadas, los donantes y las
-    // entidades beneficiarias creadas por la API para que no contaminen los conteos ni el chequeo
-    // de documentos o razones sociales duplicadas de las demás pruebas. Las donaciones se borran
-    // primero porque referencian a las entidades y a los donantes.
-    inTransaction(
+    // Cada escritura HTTP confirma su propia transacción en el controlador, a diferencia de las
+    // pruebas transaccionales que revierten: se borran las donaciones confirmadas, los donantes y
+    // las entidades beneficiarias creadas por la API para que no contaminen los conteos ni el
+    // chequeo de documentos o razones sociales duplicadas de las demás pruebas. Las donaciones se
+    // borran primero porque referencian a las entidades y a los donantes. Acá no hay transacción
+    // previa, así que este método es el dueño legítimo de la transacción de limpieza.
+    withTransaction(
         () -> {
           createQuery("select d from Donacion d", Donacion.class)
               .getResultList()
