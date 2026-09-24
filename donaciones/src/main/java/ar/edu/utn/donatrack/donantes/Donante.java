@@ -9,6 +9,8 @@ import java.util.Optional;
 import java.util.UUID;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
@@ -21,6 +23,8 @@ import javax.persistence.OneToMany;
 public abstract class Donante implements Notificable {
   @Id private UUID id;
   protected String numDocumento;
+
+  @Enumerated(EnumType.STRING)
   protected TipoDocumento documento;
 
   @OneToMany(cascade = CascadeType.ALL)

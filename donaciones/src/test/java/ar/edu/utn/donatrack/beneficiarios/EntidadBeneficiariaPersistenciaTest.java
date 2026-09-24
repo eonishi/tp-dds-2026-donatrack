@@ -105,4 +105,64 @@ class EntidadBeneficiariaPersistenciaTest implements SimplePersistenceTest {
         recargada.getNecesidadesRecurrentes().isEmpty(),
         "La colección recurrente no debe absorber una necesidad que pertenece a la extraordinaria");
   }
+
+  @Test
+  void lasColumnasDeUnidadYPeriodoDeLasNecesidadesGuardanElNombreDeLaConstanteYNoElIndice() {
+    SubCategoria alimentos = new SubCategoria("Alimentos no perecederos", Categoria.ALIMENTO);
+    EntidadBeneficiaria entidad =
+        new EntidadBeneficiaria("Hogar Test", "Av. Siempreviva 742", "1145557777");
+    entidad.agregarNecesidadExtraordinaria(
+        new Necesidad(alimentos, 10.0, UnidadMedida.UNIDADES, "Fideos extraordinarios"));
+    NecesidadRecurrente recurrente =
+        new NecesidadRecurrente(alimentos, 20.0, UnidadMedida.LITROS, "Fideos recurrentes");
+    recurrente.setPeriodo(TipoPeriodo.MENSUAL);
+    entidad.agregarNecesidadRecurrente(recurrente);
+
+    persist(alimentos);
+    persist(entidad);
+    entityManager().flush();
+    entityManager().clear();
+
+    EntidadBeneficiaria recargada = find(EntidadBeneficiaria.class, entidad.getId().value());
+
+    assertNotNull(recargada, "La entidad beneficiaria debe poder recargarse por su identidad");
+    assertEquals(
+        UnidadMedida.UNIDADES,
+        recargada.getNecesidadesExtraordinarias().get(0).getUnidad(),
+        "La unidad de la necesidad extraordinaria debe sobrevivir al viaje");
+    NecesidadRecurrente recurrenteRecargada = recargada.getNecesidadesRecurrentes().get(0);
+    assertEquals(
+        UnidadMedida.LITROS,
+        recurrenteRecargada.getUnidad(),
+        "La unidad de la necesidad recurrente debe sobrevivir al viaje");
+    assertEquals(
+        TipoPeriodo.MENSUAL,
+        recurrenteRecargada.getPeriodo(),
+        "El período de la necesidad recurrente debe sobrevivir al viaje");
+
+    // Consultas nativas: esquivan el mapeo de Hibernate y leen el valor crudo de cada columna.
+    Object unidadExtraordinaria =
+        entityManager()
+            .createNativeQuery(
+                "SELECT unidad FROM Necesidad WHERE descripcion = 'Fideos extraordinarios'")
+            .getSingleResult();
+    Object unidadRecurrente =
+        entityManager()
+            .createNativeQuery(
+                "SELECT unidad FROM Necesidad WHERE descripcion = 'Fideos recurrentes'")
+            .getSingleResult();
+    Object periodo =
+        entityManager()
+            .createNativeQuery(
+                "SELECT periodo FROM Necesidad WHERE descripcion = 'Fideos recurrentes'")
+            .getSingleResult();
+
+    assertEquals(
+        "UNIDADES",
+        unidadExtraordinaria,
+        "La columna debe guardar el nombre del enum, no su índice");
+    assertEquals(
+        "LITROS", unidadRecurrente, "La columna debe guardar el nombre del enum, no su índice");
+    assertEquals("MENSUAL", periodo, "La columna debe guardar el nombre del enum, no su índice");
+  }
 }

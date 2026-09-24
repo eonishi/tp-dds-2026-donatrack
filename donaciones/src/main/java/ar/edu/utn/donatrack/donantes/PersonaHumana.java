@@ -2,13 +2,18 @@ package ar.edu.utn.donatrack.donantes;
 
 import java.util.UUID;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 
 @Entity
 public class PersonaHumana extends Donante {
   private String nombre;
   private String apellido;
   private Integer edad;
+
+  @Enumerated(EnumType.STRING)
   private Genero genero;
+
   private String direccion;
 
   protected PersonaHumana() {}

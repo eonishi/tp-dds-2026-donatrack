@@ -5,6 +5,8 @@ import ar.edu.utn.donatrack.bienes.UnidadMedida;
 import java.util.Objects;
 import java.util.UUID;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -17,10 +19,12 @@ public class Necesidad {
   private double cantidadRecibida = 0.0;
 
   @ManyToOne
-  @JoinColumn(name = "subcategoria_id")
+  @JoinColumn(name = "subcategoria_id", nullable = false)
   private SubCategoria subcategoria;
 
   private double cantidadObjetivo;
+
+  @Enumerated(EnumType.STRING)
   private UnidadMedida unidad;
 
   protected Necesidad() {}

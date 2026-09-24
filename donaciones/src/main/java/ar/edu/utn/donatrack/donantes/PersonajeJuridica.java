@@ -6,13 +6,18 @@ import java.util.List;
 import java.util.UUID;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 
 @Entity
 public class PersonajeJuridica extends Donante {
   private String razonSocial;
+
+  @Enumerated(EnumType.STRING)
   private TipoOrganizacion tipoOrganizacion;
+
   private String rubro;
 
   @OneToMany(cascade = CascadeType.ALL)

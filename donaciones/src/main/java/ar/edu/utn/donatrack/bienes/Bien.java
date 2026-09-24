@@ -1,7 +1,10 @@
 package ar.edu.utn.donatrack.bienes;
 
 import java.time.LocalDate;
+import java.util.Objects;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -17,12 +20,17 @@ public class Bien {
   private String descripcion;
   private String foto;
   private double cantidad;
+
+  @Enumerated(EnumType.STRING)
   private UnidadMedida unidad;
+
   private LocalDate fechaVencimiento;
+
+  @Enumerated(EnumType.STRING)
   private EstadoUso estadoDeUso;
 
   @ManyToOne
-  @JoinColumn(name = "subcategoria_id")
+  @JoinColumn(name = "subcategoria_id", nullable = false)
   private SubCategoria subcategoria;
 
   protected Bien() {}
@@ -41,7 +49,7 @@ public class Bien {
     this.unidad = unidad;
     this.fechaVencimiento = fechaVencimiento;
     this.estadoDeUso = estadoDeUso;
-    this.subcategoria = subcategoria;
+    this.subcategoria = Objects.requireNonNull(subcategoria, "subcategoria no puede ser null");
   }
 
   public SubCategoria getSubcategoria() {

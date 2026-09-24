@@ -116,6 +116,56 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
         "Las columnas del historial deben guardar el nombre del enum, no su índice");
   }
 
+  @Test
+  void lasColumnasDeUnidadYEstadoDeUsoDeLosBienesGuardanElNombreDeLaConstanteYNoElIndice() {
+    SubCategoria mobiliario = new SubCategoria("Sillas", Categoria.MOBILIARIO);
+    Donante donante = crearDonante();
+    Donacion donacion =
+        new Donacion(
+            DonacionId.generar(),
+            donante,
+            List.of(
+                new Bien(
+                    "Sillas usadas",
+                    "",
+                    3.0,
+                    UnidadMedida.UNIDADES,
+                    null,
+                    EstadoUso.USADO,
+                    mobiliario)));
+
+    persist(mobiliario);
+    persist(donante);
+    persist(donacion);
+    entityManager().flush();
+    entityManager().clear();
+
+    Donacion recargada = find(Donacion.class, donacion.getId().value());
+
+    assertNotNull(recargada, "La donación debe poder recargarse por su identidad");
+    assertEquals(
+        UnidadMedida.UNIDADES,
+        recargada.getBienes().get(0).getUnidad(),
+        "La unidad del bien debe sobrevivir al viaje");
+    assertEquals(
+        EstadoUso.USADO,
+        recargada.getBienes().get(0).getEstadoDeUso(),
+        "El estado de uso del bien debe sobrevivir al viaje");
+
+    // Consultas nativas: esquivan el mapeo de Hibernate y leen el valor crudo de cada columna.
+    Object unidad =
+        entityManager()
+            .createNativeQuery("SELECT unidad FROM Bien WHERE descripcion = 'Sillas usadas'")
+            .getSingleResult();
+    Object estadoDeUso =
+        entityManager()
+            .createNativeQuery("SELECT estadoDeUso FROM Bien WHERE descripcion = 'Sillas usadas'")
+            .getSingleResult();
+
+    assertEquals("UNIDADES", unidad, "La columna debe guardar el nombre del enum, no su índice");
+    assertEquals("USADO", estadoDeUso, "La columna debe guardar el nombre del enum, no su índice");
+  }
+
   private static Donante crearDonante() {
     return new PersonaHumana(
         new CorreoElectronico("ana@test.com"),

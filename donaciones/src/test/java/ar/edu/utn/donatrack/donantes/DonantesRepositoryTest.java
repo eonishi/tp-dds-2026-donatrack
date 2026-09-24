@@ -159,4 +159,76 @@ class DonantesRepositoryTest implements SimplePersistenceTest {
         vacio.getDonantes().stream().noneMatch(d -> d.getId().equals(id)),
         "La organización eliminada no debe aparecer en el listado");
   }
+
+  @Test
+  void lasColumnasDeDocumentoGeneroYTipoDeOrganizacionGuardanElNombreDeLaConstanteYNoElIndice() {
+    PersonaHumana persona =
+        new PersonaHumana(
+            new CorreoElectronico("ana@test.com"),
+            "Ana",
+            "Gomez",
+            34,
+            "30111222",
+            TipoDocumento.DNI,
+            Genero.FEMENINO,
+            "Av. Siempreviva 742");
+    PersonajeJuridica organizacion =
+        new PersonajeJuridica(
+            new CorreoElectronico("ong@test.com"),
+            "30111222333",
+            TipoDocumento.CUIT,
+            "Fundación Test",
+            TipoOrganizacion.ONG,
+            "Alimentos");
+    UUID idPersona = persona.getId();
+    UUID idOrganizacion = organizacion.getId();
+
+    DonantesRepository repositorio = new DonantesRepository();
+    repositorio.save(persona);
+    repositorio.save(organizacion);
+    entityManager().flush();
+    entityManager().clear();
+
+    // Recarga con un repositorio nuevo: la lectura sale de la base, no del contexto de
+    // persistencia.
+    DonantesRepository recarga = new DonantesRepository();
+    PersonaHumana personaRecargada =
+        assertInstanceOf(PersonaHumana.class, recarga.findById(idPersona).orElseThrow());
+    assertEquals(Genero.FEMENINO, personaRecargada.getGenero());
+    assertEquals(TipoDocumento.DNI, personaRecargada.getDocumento());
+    PersonajeJuridica organizacionRecargada =
+        assertInstanceOf(PersonajeJuridica.class, recarga.findById(idOrganizacion).orElseThrow());
+    assertEquals(TipoOrganizacion.ONG, organizacionRecargada.getTipoOrganizacion());
+    assertEquals(TipoDocumento.CUIT, organizacionRecargada.getDocumento());
+
+    // Consultas nativas: esquivan el mapeo de Hibernate y leen el valor crudo de cada columna.
+    Object documentoHumano =
+        entityManager()
+            .createNativeQuery("SELECT documento FROM Donante WHERE numDocumento = '30111222'")
+            .getSingleResult();
+    Object documentoJuridico =
+        entityManager()
+            .createNativeQuery("SELECT documento FROM Donante WHERE numDocumento = '30111222333'")
+            .getSingleResult();
+    Object genero =
+        entityManager()
+            .createNativeQuery(
+                "SELECT p.genero FROM PersonaHumana p JOIN Donante d ON p.id = d.id "
+                    + "WHERE d.numDocumento = '30111222'")
+            .getSingleResult();
+    Object tipoOrganizacion =
+        entityManager()
+            .createNativeQuery(
+                "SELECT p.tipoOrganizacion FROM PersonajeJuridica p JOIN Donante d ON p.id = d.id "
+                    + "WHERE d.numDocumento = '30111222333'")
+            .getSingleResult();
+
+    assertEquals(
+        "DNI", documentoHumano, "La columna debe guardar el nombre del enum, no su índice");
+    assertEquals(
+        "CUIT", documentoJuridico, "La columna debe guardar el nombre del enum, no su índice");
+    assertEquals("FEMENINO", genero, "La columna debe guardar el nombre del enum, no su índice");
+    assertEquals(
+        "ONG", tipoOrganizacion, "La columna debe guardar el nombre del enum, no su índice");
+  }
 }
