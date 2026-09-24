@@ -30,7 +30,7 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
 
   @Test
   void unaDonacionConHistorialYBienesSobreviveAlViajeDeIdaYVuelta() {
-    SubCategoria alimentos = new SubCategoria("Alimentos no perecederos", Categoria.ALIMENTO);
+    SubCategoria alimentos = new SubCategoria(nombreUnicoAlimentos(), Categoria.ALIMENTO);
     Donante donante = crearDonante();
     Bien bien = crearBien(alimentos, "Fideos secos", 5.0);
     Donacion donacion = new Donacion(DonacionId.generar(), donante, List.of(bien));
@@ -80,13 +80,13 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
     assertEquals(5.0, bienes.get(0).getCantidad(), 0.001);
     assertEquals(UnidadMedida.KILOGRAMOS, bienes.get(0).getUnidad());
     assertEquals(EstadoUso.NO_APLICA, bienes.get(0).getEstadoDeUso());
-    assertEquals("Alimentos no perecederos", bienes.get(0).getSubcategoria().getNombre());
+    assertEquals(alimentos.getNombre(), bienes.get(0).getSubcategoria().getNombre());
     assertEquals(Categoria.ALIMENTO, bienes.get(0).getSubcategoria().getCategoria());
   }
 
   @Test
   void lasColumnasDeEstadoGuardanElNombreDeLaConstanteYNoElIndice() {
-    SubCategoria alimentos = new SubCategoria("Alimentos no perecederos", Categoria.ALIMENTO);
+    SubCategoria alimentos = new SubCategoria(nombreUnicoAlimentos(), Categoria.ALIMENTO);
     Donante donante = crearDonante();
     Donacion donacion =
         new Donacion(DonacionId.generar(), donante, List.of(crearBien(alimentos, "Arroz", 2.0)));
@@ -98,12 +98,19 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
     persist(donacion);
     entityManager().flush();
 
-    // Consultas nativas: esquivan el mapeo de Hibernate y leen el valor crudo de cada columna.
+    // Consultas nativas: esquivan el mapeo de Hibernate y leen el valor crudo de cada columna. Se
+    // restringen por la donación sembrada para no depender de las filas que la base compartida ya
+    // tenga de otras clases.
     Object estadoDonacion =
-        entityManager().createNativeQuery("SELECT estado FROM Donacion").getSingleResult();
+        entityManager()
+            .createNativeQuery("SELECT estado FROM Donacion WHERE id = :id")
+            .setParameter("id", donacion.getId().value())
+            .getSingleResult();
     List<?> estadosAlcanzados =
         entityManager()
-            .createNativeQuery("SELECT estadoAlcanzado FROM HistorialEstado ORDER BY fecha")
+            .createNativeQuery(
+                "SELECT estadoAlcanzado FROM HistorialEstado WHERE donacion_id = :id ORDER BY fecha")
+            .setParameter("id", donacion.getId().value())
             .getResultList();
 
     assertEquals(
@@ -118,7 +125,7 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
 
   @Test
   void lasColumnasDeUnidadYEstadoDeUsoDeLosBienesGuardanElNombreDeLaConstanteYNoElIndice() {
-    SubCategoria mobiliario = new SubCategoria("Sillas", Categoria.MOBILIARIO);
+    SubCategoria mobiliario = new SubCategoria(nombreUnicoMobiliario(), Categoria.MOBILIARIO);
     Donante donante = crearDonante();
     Donacion donacion =
         new Donacion(
@@ -152,18 +159,30 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
         recargada.getBienes().get(0).getEstadoDeUso(),
         "El estado de uso del bien debe sobrevivir al viaje");
 
-    // Consultas nativas: esquivan el mapeo de Hibernate y leen el valor crudo de cada columna.
+    // Consultas nativas: esquivan el mapeo de Hibernate y leen el valor crudo de cada columna. Se
+    // restringen por la donación sembrada para no depender de las filas que la base compartida ya
+    // tenga de otras clases.
     Object unidad =
         entityManager()
-            .createNativeQuery("SELECT unidad FROM Bien WHERE descripcion = 'Sillas usadas'")
+            .createNativeQuery("SELECT unidad FROM Bien WHERE donacion_id = :id")
+            .setParameter("id", donacion.getId().value())
             .getSingleResult();
     Object estadoDeUso =
         entityManager()
-            .createNativeQuery("SELECT estadoDeUso FROM Bien WHERE descripcion = 'Sillas usadas'")
+            .createNativeQuery("SELECT estadoDeUso FROM Bien WHERE donacion_id = :id")
+            .setParameter("id", donacion.getId().value())
             .getSingleResult();
 
     assertEquals("UNIDADES", unidad, "La columna debe guardar el nombre del enum, no su índice");
     assertEquals("USADO", estadoDeUso, "La columna debe guardar el nombre del enum, no su índice");
+  }
+
+  private static String nombreUnicoAlimentos() {
+    return "Alimentos no perecederos " + UUID.randomUUID();
+  }
+
+  private static String nombreUnicoMobiliario() {
+    return "Sillas " + UUID.randomUUID();
   }
 
   private static Donante crearDonante() {

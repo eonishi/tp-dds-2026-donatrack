@@ -201,26 +201,30 @@ class DonantesRepositoryTest implements SimplePersistenceTest {
     assertEquals(TipoOrganizacion.ONG, organizacionRecargada.getTipoOrganizacion());
     assertEquals(TipoDocumento.CUIT, organizacionRecargada.getDocumento());
 
-    // Consultas nativas: esquivan el mapeo de Hibernate y leen el valor crudo de cada columna.
+    // Consultas nativas: esquivan el mapeo de Hibernate y leen el valor crudo de cada columna. Se
+    // restringen por la identidad del donante o de la organización sembrada y no por su documento:
+    // la base en memoria es compartida y un número de documento puede repetirse en filas de otras
+    // pruebas, mientras que el id señala exactamente la fila que este test persistió.
     Object documentoHumano =
         entityManager()
-            .createNativeQuery("SELECT documento FROM Donante WHERE numDocumento = '30111222'")
+            .createNativeQuery("SELECT documento FROM Donante WHERE id = :id")
+            .setParameter("id", idPersona)
             .getSingleResult();
     Object documentoJuridico =
         entityManager()
-            .createNativeQuery("SELECT documento FROM Donante WHERE numDocumento = '30111222333'")
+            .createNativeQuery("SELECT documento FROM Donante WHERE id = :id")
+            .setParameter("id", idOrganizacion)
             .getSingleResult();
     Object genero =
         entityManager()
-            .createNativeQuery(
-                "SELECT p.genero FROM PersonaHumana p JOIN Donante d ON p.id = d.id "
-                    + "WHERE d.numDocumento = '30111222'")
+            .createNativeQuery("SELECT p.genero FROM PersonaHumana p WHERE p.id = :id")
+            .setParameter("id", idPersona)
             .getSingleResult();
     Object tipoOrganizacion =
         entityManager()
             .createNativeQuery(
-                "SELECT p.tipoOrganizacion FROM PersonajeJuridica p JOIN Donante d ON p.id = d.id "
-                    + "WHERE d.numDocumento = '30111222333'")
+                "SELECT p.tipoOrganizacion FROM PersonajeJuridica p WHERE p.id = :id")
+            .setParameter("id", idOrganizacion)
             .getSingleResult();
 
     assertEquals(

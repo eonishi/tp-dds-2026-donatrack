@@ -2,12 +2,15 @@ package ar.edu.utn.donatrack.bienes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import javax.persistence.PersistenceException;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -15,9 +18,9 @@ import org.junit.jupiter.api.Test;
  * búsqueda por la clave natural y la resolución con caché de la solicitud.
  *
  * <p>La base en memoria es única por JVM y otras clases confirman filas de catálogo, así que cada
- * prueba usa un nombre único derivado de un UUID y no depende del contenido total del catálogo. Las
- * pruebas que necesitan dos filas con el mismo nombre las insertan dentro de la transacción de la
- * prueba: la restricción {@code unique} sobre el nombre todavía no existe.
+ * prueba usa un nombre único derivado de un UUID y no depende del contenido total del catálogo. La
+ * tabla declara el nombre único: insertar una segunda fila con un nombre ya almacenado falla en la
+ * base, y esa garantía es la que fija la prueba del duplicado.
  */
 class SubcategoriasRepositoryTest implements SimplePersistenceTest {
 
@@ -38,16 +41,25 @@ class SubcategoriasRepositoryTest implements SimplePersistenceTest {
   }
 
   @Test
-  void buscarPorNombreToleraFilasDuplicadasDelMismoNombre() {
+  void unaSegundaSubcategoriaConElMismoNombreSeRechazaEnLaBase() {
     String nombre = nombreUnico();
     persist(new SubCategoria(nombre, Categoria.ALIMENTO));
-    persist(new SubCategoria(nombre, Categoria.MOBILIARIO));
     entityManager().flush();
 
-    SubCategoria encontrada = new SubcategoriasRepository().buscarPorNombre(nombre).orElseThrow();
+    PersistenceException error =
+        assertThrows(
+            PersistenceException.class,
+            () -> {
+              persist(new SubCategoria(nombre, Categoria.MOBILIARIO));
+              entityManager().flush();
+            },
+            "La restricción única sobre el nombre debe rechazar la fila duplicada");
 
+    ConstraintViolationException violacion = violacionDeRestriccion(error);
     assertEquals(
-        nombre, encontrada.getNombre(), "La búsqueda debe devolver una de las filas duplicadas");
+        "23505",
+        violacion.getSQLState(),
+        "HSQLDB reporta el duplicado como violación de restricción única");
   }
 
   @Test
@@ -95,5 +107,15 @@ class SubcategoriasRepositoryTest implements SimplePersistenceTest {
 
   private static String nombreUnico() {
     return "Catalogo-" + UUID.randomUUID();
+  }
+
+  private static ConstraintViolationException violacionDeRestriccion(Throwable error) {
+    for (Throwable causa = error; causa != null; causa = causa.getCause()) {
+      if (causa instanceof ConstraintViolationException) {
+        return (ConstraintViolationException) causa;
+      }
+    }
+    throw new AssertionError(
+        "La excepción no expone la violación de restricción de Hibernate", error);
   }
 }

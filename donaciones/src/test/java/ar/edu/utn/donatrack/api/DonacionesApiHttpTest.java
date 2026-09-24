@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
+import ar.edu.utn.donatrack.beneficiarios.Necesidad;
+import ar.edu.utn.donatrack.bienes.Bien;
+import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donantes.Donante;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -46,20 +49,32 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
   @AfterEach
   void limpiarPersistencia() {
     // Cada escritura HTTP confirma su propia transacción en el controlador, a diferencia de las
-    // pruebas transaccionales que revierten: se borran las donaciones confirmadas, los donantes y
-    // las entidades beneficiarias creadas por la API para que no contaminen los conteos ni el
-    // chequeo de documentos o razones sociales duplicadas de las demás pruebas. Las donaciones se
-    // borran primero porque referencian a las entidades y a los donantes. Acá no hay transacción
+    // pruebas transaccionales que revierten: se borran las donaciones confirmadas, los bienes, las
+    // necesidades, los donantes, las entidades beneficiarias y las subcategorías del catálogo
+    // creadas por la API para que no contaminen los conteos, el chequeo de documentos o razones
+    // sociales duplicadas ni la restricción única del catálogo de las demás pruebas. El orden
+    // explícito va siempre del hijo al padre y no depende del orden en que Hibernate encola los
+    // borrados en cascada: bienes y necesidades primero porque referencian a las donaciones, a las
+    // entidades y a las subcategorías; donaciones, entidades y donantes después; y las
+    // subcategorías al final porque los bienes y las necesidades las referencian. Los bienes
+    // incluyen los que quedaron sueltos al reemplazar los de una donación. Acá no hay transacción
     // previa, así que este método es el dueño legítimo de la transacción de limpieza.
     withTransaction(
         () -> {
+          createQuery("select b from Bien b", Bien.class).getResultList().forEach(this::remove);
+          createQuery("select n from Necesidad n", Necesidad.class)
+              .getResultList()
+              .forEach(this::remove);
           createQuery("select d from Donacion d", Donacion.class)
+              .getResultList()
+              .forEach(this::remove);
+          createQuery("select e from EntidadBeneficiaria e", EntidadBeneficiaria.class)
               .getResultList()
               .forEach(this::remove);
           createQuery("select d from Donante d", Donante.class)
               .getResultList()
               .forEach(this::remove);
-          createQuery("select e from EntidadBeneficiaria e", EntidadBeneficiaria.class)
+          createQuery("select s from SubCategoria s", SubCategoria.class)
               .getResultList()
               .forEach(this::remove);
         });

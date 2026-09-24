@@ -12,10 +12,10 @@ import java.util.Optional;
  *
  * <p>La clave natural es {@code nombre}: {@link SubCategoria#equals(Object)} y {@link
  * SubCategoria#hashCode()} sólo miran el nombre, así que el nombre identifica una entrada del
- * catálogo. Mientras la restricción {@code unique} sobre la columna todavía no exista, la base
- * puede contener más de una fila con el mismo nombre; por eso {@link #buscarPorNombre(String)}
- * devuelve la primera de la lista y nunca usa {@code getSingleResult()}, que lanzaría {@code
- * NonUniqueResultException} contra filas duplicadas.
+ * catálogo. La base garantiza esa unicidad con la restricción {@code uk_subcategoria_nombre}; aun
+ * así {@link #buscarPorNombre(String)} recorre la lista con {@code findFirst()} y nunca usa {@code
+ * getSingleResult()}, que lanzaría {@code NonUniqueResultException} si una base preexistente
+ * todavía tuviera filas duplicadas.
  *
  * <p>Toda escritura requiere una transacción activa del llamador (el caso de uso); el repositorio
  * nunca abre ni confirma una transacción por su cuenta.
@@ -33,9 +33,10 @@ public class SubcategoriasRepository implements WithSimplePersistenceUnit {
   /**
    * Busca una subcategoría por su clave natural, el nombre.
    *
-   * <p>Tolera filas duplicadas: mientras la restricción {@code unique} sobre el nombre no exista,
-   * la base puede contener más de una fila con ese nombre, y una lista recorrida con {@code
-   * findFirst()} no lanza la excepción de resultado no único.
+   * <p>Tolera filas duplicadas como defensa: la restricción {@code uk_subcategoria_nombre} impide
+   * insertar dos filas con el mismo nombre, pero la consulta reduce la lista con {@code
+   * findFirst()} en lugar de {@code getSingleResult()} para no fallar contra una base preexistente
+   * que todavía tenga duplicados.
    *
    * @param nombre nombre de la subcategoría buscada
    * @return la primera subcategoría almacenada con ese nombre, o {@link Optional#empty()} si no
@@ -57,7 +58,8 @@ public class SubcategoriasRepository implements WithSimplePersistenceUnit {
    * tiene la entrada, la categoría recibida se ignora y se devuelve la almacenada; si la entrada se
    * crea en esta llamada, queda con la categoría recibida y las llamadas posteriores de la misma
    * solicitud reciben la instancia cacheada aunque nombren otra categoría. Sin esta resolución, dos
-   * instancias con el mismo nombre llegarían a la base como dos filas.
+   * instancias con el mismo nombre llegarían a la base y la segunda violaría la restricción única
+   * del catálogo.
    *
    * <p>Requiere una transacción activa del llamador (el caso de uso): una entrada nueva se escribe
    * con {@code persist} y la fila debe unirse a esa transacción.

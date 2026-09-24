@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -18,14 +19,15 @@ import org.junit.jupiter.api.Test;
  * hash calculado con él mutaría en el momento en que la fila se persiste.
  *
  * <p>Las recargas y las consultas nativas se restringen por id y no por nombre: la base en memoria
- * es única por JVM y las pruebas que confirman su transacción dejan filas de otras clases con
- * nombres repetidos, así que "Sillas" no identifica una fila por sí solo.
+ * es única por JVM y otra clase puede confirmar filas de catálogo, así que un nombre no
+ * necesariamente identifica una fila por sí solo. Por la misma razón, cada prueba que persiste una
+ * subcategoría usa un nombre único derivado de un UUID.
  */
 class SubCategoriaPersistenciaTest implements SimplePersistenceTest {
 
   @Test
   void laCategoriaDeUnaSubcategoriaSeGuardaComoNombreYNoComoIndice() {
-    SubCategoria sillas = new SubCategoria("Sillas", Categoria.MOBILIARIO);
+    SubCategoria sillas = new SubCategoria(nombreUnico(), Categoria.MOBILIARIO);
     Long id = persistirYDesligar(sillas);
 
     SubCategoria recargada = find(SubCategoria.class, id);
@@ -42,8 +44,9 @@ class SubCategoriaPersistenciaTest implements SimplePersistenceTest {
 
   @Test
   void dosSubcategoriasConElMismoNombreSonIgualesYCompartenHashCodeAunqueCambieSuId() {
-    SubCategoria separada = new SubCategoria("Sillas", Categoria.MOBILIARIO);
-    Long id = persistirYDesligar(new SubCategoria("Sillas", Categoria.MOBILIARIO));
+    String nombre = nombreUnico();
+    SubCategoria separada = new SubCategoria(nombre, Categoria.MOBILIARIO);
+    Long id = persistirYDesligar(new SubCategoria(nombre, Categoria.MOBILIARIO));
 
     SubCategoria recargada = find(SubCategoria.class, id);
 
@@ -63,7 +66,7 @@ class SubCategoriaPersistenciaTest implements SimplePersistenceTest {
 
   @Test
   void elHashCodeDeUnaSubcategoriaNoCambiaAlPersistirseYRecargarse() {
-    SubCategoria sillas = new SubCategoria("Sillas", Categoria.MOBILIARIO);
+    SubCategoria sillas = new SubCategoria(nombreUnico(), Categoria.MOBILIARIO);
     int hashSeparado = sillas.hashCode();
 
     persist(sillas);
@@ -94,6 +97,10 @@ class SubCategoriaPersistenciaTest implements SimplePersistenceTest {
     Long id = identificador(subcategoria);
     entityManager().clear();
     return id;
+  }
+
+  private static String nombreUnico() {
+    return "Sillas " + UUID.randomUUID();
   }
 
   private Long identificador(SubCategoria subcategoria) {
