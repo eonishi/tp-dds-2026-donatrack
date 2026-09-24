@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.beneficiarios.Necesidad;
 import ar.edu.utn.donatrack.bienes.Bien;
+import ar.edu.utn.donatrack.bienes.Categoria;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donantes.Donante;
@@ -23,6 +24,7 @@ import java.net.http.HttpResponse;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -385,6 +387,71 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     assertEquals(1, coincidencias, "La entrada creada debe aparecer una sola vez en el listado");
   }
 
+  @Test
+  void unaNecesidadNuevaResuelveSuSubcategoriaEnElCatalogoYLaReutilizaSinDuplicar()
+      throws Exception {
+    long entidadId = crearEntidad("Comedor Catálogo");
+    String nombre = "Necesidad-" + UUID.randomUUID();
+
+    HttpResponse<String> primera =
+        request(
+            "POST", "/api/v1/entidades/" + entidadId + "/necesidades", necesidadJson(nombre, 10));
+    assertEquals(201, primera.statusCode(), primera.body());
+    assertEquals(
+        1,
+        subcategoriasConNombre(nombre).size(),
+        "La necesidad con un nombre nuevo debe insertar una sola fila de catálogo");
+
+    HttpResponse<String> segunda =
+        request(
+            "POST", "/api/v1/entidades/" + entidadId + "/necesidades", necesidadJson(nombre, 20));
+    assertEquals(201, segunda.statusCode(), segunda.body());
+    assertEquals(
+        1,
+        subcategoriasConNombre(nombre).size(),
+        "La segunda necesidad debe reutilizar la fila del catálogo en lugar de insertar otra");
+  }
+
+  @Test
+  void elAltaDeSubcategoriasRechazaUnNombreEnBlanco() throws Exception {
+    HttpResponse<String> respuesta =
+        request("POST", "/api/v1/subcategorias", "{\"nombre\":\"   \",\"categoria\":\"ALIMENTO\"}");
+
+    assertEquals(400, respuesta.statusCode(), respuesta.body());
+    assertEquals("VALIDATION_ERROR", json(respuesta).get("code").asText());
+    assertFalse(json(respuesta).get("details").isEmpty());
+  }
+
+  @Test
+  void elAltaDuplicadaDelCatalogoRespondeConflictoYSinModificarLaEntradaExistente()
+      throws Exception {
+    String nombre = "Catalogo-" + UUID.randomUUID();
+    HttpResponse<String> creada =
+        request(
+            "POST",
+            "/api/v1/subcategorias",
+            "{\"nombre\":\"" + nombre + "\",\"categoria\":\"ALIMENTO\"}");
+    assertEquals(201, creada.statusCode(), creada.body());
+
+    HttpResponse<String> duplicada =
+        request(
+            "POST",
+            "/api/v1/subcategorias",
+            "{\"nombre\":\"" + nombre + "\",\"categoria\":\"MOBILIARIO\"}");
+
+    assertEquals(409, duplicada.statusCode(), duplicada.body());
+    assertEquals("CONFLICT", json(duplicada).get("code").asText());
+    assertEquals(
+        "Ya existe una subcategoría con ese nombre.", json(duplicada).get("message").asText());
+    assertTrue(json(duplicada).get("details").isEmpty());
+    List<SubCategoria> entradas = subcategoriasConNombre(nombre);
+    assertEquals(1, entradas.size(), "El rechazo no debe insertar una segunda fila");
+    assertEquals(
+        Categoria.ALIMENTO,
+        entradas.get(0).getCategoria(),
+        "El rechazo no debe modificar la categoría de la entrada existente");
+  }
+
   private UUID crearDonante() throws Exception {
     HttpResponse<String> response =
         request("POST", "/api/v1/donantes", donanteJson("Sofía", "Pérez", "sofia@example.org"));
@@ -426,6 +493,12 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
                 + "\",\"categoria\":\"ALIMENTO\"}]}");
     assertEquals(201, response.statusCode(), response.body());
     return UUID.fromString(json(response).get(0).get("id").asText());
+  }
+
+  private List<SubCategoria> subcategoriasConNombre(String nombre) {
+    return createQuery("select s from SubCategoria s where s.nombre = :nombre", SubCategoria.class)
+        .setParameter("nombre", nombre)
+        .getResultList();
   }
 
   private void llevarATraslado(UUID donacionId, long entidadId) throws Exception {

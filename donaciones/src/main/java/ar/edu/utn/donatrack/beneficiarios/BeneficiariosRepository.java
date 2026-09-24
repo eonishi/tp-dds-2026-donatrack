@@ -38,14 +38,14 @@ public class BeneficiariosRepository implements WithSimplePersistenceUnit {
    * <p>Requiere una transacción activa del llamador (el caso de uso); nunca abre ni confirma una
    * transacción por su cuenta.
    *
-   * <p>Las subcategorías de las necesidades se almacenan antes de escribir la entidad: son la única
-   * referencia del agregado que no cascadea y la API las compone nuevas en cada solicitud.
+   * <p>La subcategoría de cada necesidad debe existir y llegar administrada por {@code
+   * SubcategoriasRepository}, el único repositorio que escribe el catálogo: este repositorio nunca
+   * crea entradas del catálogo como efecto lateral de guardar la entidad.
    *
    * @param entidad la entidad beneficiaria a guardar
    * @return la instancia administrada resultante
    */
   public EntidadBeneficiaria save(EntidadBeneficiaria entidad) {
-    asegurarSubcategorias(entidad);
     if (entityManager().contains(entidad)) {
       return entidad;
     }
@@ -75,25 +75,6 @@ public class BeneficiariosRepository implements WithSimplePersistenceUnit {
     EntidadBeneficiaria entidad = find(EntidadBeneficiaria.class, id.value());
     if (entidad != null) {
       remove(entidad);
-    }
-  }
-
-  private void asegurarSubcategorias(EntidadBeneficiaria entidad) {
-    entidad.necesidades().forEach(necesidad -> asegurarFila(necesidad.getSubcategoria()));
-  }
-
-  private void asegurarFila(Object entidad) {
-    if (entidad == null || entityManager().contains(entidad)) {
-      return;
-    }
-    Object id =
-        entityManager().getEntityManagerFactory().getPersistenceUnitUtil().getIdentifier(entidad);
-    if (id == null) {
-      // Subcategoría nueva con identidad generada: persist la deja administrada y le asigna el id.
-      persist(entidad);
-    } else if (find(entidad.getClass(), id) == null) {
-      // Subcategoría separada con identidad asignada: merge inserta la fila que falta.
-      merge(entidad);
     }
   }
 }

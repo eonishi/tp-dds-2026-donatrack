@@ -143,21 +143,25 @@ class EntidadBeneficiariaPersistenciaTest implements SimplePersistenceTest {
         recurrenteRecargada.getPeriodo(),
         "El período de la necesidad recurrente debe sobrevivir al viaje");
 
-    // Consultas nativas: esquivan el mapeo de Hibernate y leen el valor crudo de cada columna.
+    // Consultas nativas: esquivan el mapeo de Hibernate, leen el valor crudo de cada columna y se
+    // restringen por la identidad de cada necesidad de este test para no depender de filas
+    // homónimas que otras clases escriban en la base compartida.
+    UUID idExtraordinaria = recargada.getNecesidadesExtraordinarias().get(0).getId();
+    UUID idRecurrente = recargada.getNecesidadesRecurrentes().get(0).getId();
     Object unidadExtraordinaria =
         entityManager()
-            .createNativeQuery(
-                "SELECT unidad FROM Necesidad WHERE descripcion = 'Fideos extraordinarios'")
+            .createNativeQuery("SELECT unidad FROM Necesidad WHERE id = :id")
+            .setParameter("id", idExtraordinaria)
             .getSingleResult();
     Object unidadRecurrente =
         entityManager()
-            .createNativeQuery(
-                "SELECT unidad FROM Necesidad WHERE descripcion = 'Fideos recurrentes'")
+            .createNativeQuery("SELECT unidad FROM Necesidad WHERE id = :id")
+            .setParameter("id", idRecurrente)
             .getSingleResult();
     Object periodo =
         entityManager()
-            .createNativeQuery(
-                "SELECT periodo FROM Necesidad WHERE descripcion = 'Fideos recurrentes'")
+            .createNativeQuery("SELECT periodo FROM Necesidad WHERE id = :id")
+            .setParameter("id", idRecurrente)
             .getSingleResult();
 
     assertEquals(

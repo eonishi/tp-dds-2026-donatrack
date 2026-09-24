@@ -59,15 +59,15 @@ public class DonacionesRepository implements WithSimplePersistenceUnit {
    *
    * <p>La donación cascadea a sus bienes y a su historial, pero no a sus referencias externas: el
    * donante, la subcategoría de cada bien y la entidad beneficiaria deben existir antes de
-   * persistirla. El donante debe llegar administrado por {@code DonantesRepository}, que es el
-   * repositorio dueño de ese agregado; la entidad beneficiaria debe llegar administrada por {@code
-   * BeneficiariosRepository}. {@link #sincronizarReferencias(Donacion)} almacena las subcategorías
-   * de los bienes cuando todavía no tienen fila.
+   * persistirla y llegar administrados por su repositorio dueño. Al donante lo administra {@code
+   * DonantesRepository}, a la entidad beneficiaria {@code BeneficiariosRepository} y a la
+   * subcategoría de cada bien {@code SubcategoriasRepository}, el único repositorio que escribe el
+   * catálogo: este repositorio nunca crea entradas del catálogo como efecto lateral de escribir la
+   * donación.
    *
    * @param donacion la donación a registrar
    */
   public void addDonacion(Donacion donacion) {
-    sincronizarReferencias(donacion);
     persist(donacion);
   }
 
@@ -79,11 +79,13 @@ public class DonacionesRepository implements WithSimplePersistenceUnit {
    * <p>Requiere una transacción activa del llamador (el caso de uso); nunca abre ni confirma una
    * transacción por su cuenta.
    *
+   * <p>La subcategoría de cada bien debe existir y llegar administrada por {@code
+   * SubcategoriasRepository}; este repositorio no escribe el catálogo.
+   *
    * @param donacion la donación a guardar
    * @return la instancia administrada resultante
    */
   public Donacion save(Donacion donacion) {
-    sincronizarReferencias(donacion);
     if (entityManager().contains(donacion)) {
       return donacion;
     }
@@ -138,34 +140,5 @@ public class DonacionesRepository implements WithSimplePersistenceUnit {
         .setParameter("estado", EstadoDonacion.ENTREGADA)
         .setParameter("fechaDesde", fechaDesde.atStartOfDay())
         .getSingleResult();
-  }
-
-  /**
-   * Asegura que las referencias externas de la donación tengan fila en la base antes de escribirla.
-   *
-   * <p>El donante pertenece al agregado que ya administra {@code DonantesRepository} y debe llegar
-   * administrado por ese repositorio: acá no se escribe. Las subcategorías de los bienes las
-   * compone la API por solicitud y no tienen repositorio propio, así que este paso las inserta
-   * cuando faltan y no hace nada cuando ya existen o están administradas. La entidad beneficiaria
-   * tampoco se escribe acá: su fila la garantiza {@code BeneficiariosRepository} y la donación
-   * referencia la instancia administrada que ese repositorio devuelve.
-   */
-  private void sincronizarReferencias(Donacion donacion) {
-    donacion.getBienes().forEach(bien -> asegurarFila(bien.getSubcategoria()));
-  }
-
-  private void asegurarFila(Object entidad) {
-    if (entidad == null || entityManager().contains(entidad)) {
-      return;
-    }
-    Object id =
-        entityManager().getEntityManagerFactory().getPersistenceUnitUtil().getIdentifier(entidad);
-    if (id == null) {
-      // Entidad nueva con identidad generada: persist la deja administrada y le asigna el id.
-      persist(entidad);
-    } else if (find(entidad.getClass(), id) == null) {
-      // Entidad separada con identidad asignada: merge inserta la fila que falta.
-      merge(entidad);
-    }
   }
 }

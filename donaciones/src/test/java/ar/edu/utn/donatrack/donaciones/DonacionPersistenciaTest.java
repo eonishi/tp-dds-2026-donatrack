@@ -161,17 +161,24 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
 
     // Consultas nativas: esquivan el mapeo de Hibernate y leen el valor crudo de cada columna. Se
     // restringen por la donación sembrada para no depender de las filas que la base compartida ya
-    // tenga de otras clases.
+    // tenga de otras clases, y reducen la lista con findFirst() porque una donación puede contener
+    // varios bienes: getSingleResult() sólo sería único por el tamaño de esta fixture.
     Object unidad =
         entityManager()
-            .createNativeQuery("SELECT unidad FROM Bien WHERE donacion_id = :id")
+            .createNativeQuery("SELECT unidad FROM Bien WHERE donacion_id = :id ORDER BY id")
             .setParameter("id", donacion.getId().value())
-            .getSingleResult();
+            .getResultList()
+            .stream()
+            .findFirst()
+            .orElseThrow();
     Object estadoDeUso =
         entityManager()
-            .createNativeQuery("SELECT estadoDeUso FROM Bien WHERE donacion_id = :id")
+            .createNativeQuery("SELECT estadoDeUso FROM Bien WHERE donacion_id = :id ORDER BY id")
             .setParameter("id", donacion.getId().value())
-            .getSingleResult();
+            .getResultList()
+            .stream()
+            .findFirst()
+            .orElseThrow();
 
     assertEquals("UNIDADES", unidad, "La columna debe guardar el nombre del enum, no su índice");
     assertEquals("USADO", estadoDeUso, "La columna debe guardar el nombre del enum, no su índice");

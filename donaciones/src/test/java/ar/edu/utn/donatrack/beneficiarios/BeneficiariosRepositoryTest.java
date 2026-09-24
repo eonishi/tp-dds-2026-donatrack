@@ -32,8 +32,10 @@ class BeneficiariosRepositoryTest implements SimplePersistenceTest {
     entidad.agregarCorreo(new CorreoElectronico("contacto@hogar.org"));
 
     BeneficiariosRepository repositorio = new BeneficiariosRepository();
-    // La subcategoría no se persiste antes: la API la compone nueva en cada solicitud y el
-    // repositorio debe escribirla para que la clave foránea de la necesidad exista.
+    // La resolución del catálogo pertenece al caso de uso: acá la subcategoría se siembra antes
+    // porque el repositorio de beneficiarios ya no escribe el catálogo y la clave foránea de la
+    // necesidad debe existir al persistir la entidad.
+    persist(alimentos);
     repositorio.save(entidad);
     entityManager().flush();
     entityManager().clear();
@@ -81,13 +83,12 @@ class BeneficiariosRepositoryTest implements SimplePersistenceTest {
 
   @Test
   void deleteByIdEliminaLaEntidadConSuAgregado() {
+    SubCategoria alimentos = new SubCategoria("Alimentos no perecederos", Categoria.ALIMENTO);
     EntidadBeneficiaria entidad = crearEntidad("Hogar Test");
     entidad.agregarNecesidadExtraordinaria(
-        new Necesidad(
-            new SubCategoria("Alimentos no perecederos", Categoria.ALIMENTO),
-            10.0,
-            UnidadMedida.KILOGRAMOS,
-            "Fideos extraordinarios"));
+        new Necesidad(alimentos, 10.0, UnidadMedida.KILOGRAMOS, "Fideos extraordinarios"));
+    // La subcategoría se siembra antes porque el repositorio ya no escribe el catálogo.
+    persist(alimentos);
     BeneficiariosRepository repositorio = new BeneficiariosRepository();
     repositorio.save(entidad);
     entityManager().flush();
