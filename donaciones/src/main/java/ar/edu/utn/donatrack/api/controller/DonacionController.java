@@ -8,7 +8,6 @@ import static io.javalin.apibuilder.ApiBuilder.path;
 import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
-import ar.edu.utn.donatrack.api.controller.DonacionController.TransicionMasivaRequest;
 import ar.edu.utn.donatrack.api.dto.DonacionDtos.BienRequest;
 import ar.edu.utn.donatrack.api.dto.DonacionDtos.CargaDonacionRequest;
 import ar.edu.utn.donatrack.api.dto.DonacionDtos.DonacionResponse;
@@ -22,6 +21,7 @@ import ar.edu.utn.donatrack.api.validation.DtoValidator;
 import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.EstadoUso;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
+import ar.edu.utn.donatrack.bienes.SubcategoriasRepository;
 import ar.edu.utn.donatrack.donaciones.CargaDonacion;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionId;
@@ -31,12 +31,15 @@ import ar.edu.utn.donatrack.donaciones.PropuestaRepository;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import ar.edu.utn.donatrack.notificaciones.Notificacion;
+import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public final class DonacionController implements WithSimplePersistenceUnit {
@@ -44,19 +47,22 @@ public final class DonacionController implements WithSimplePersistenceUnit {
   private final DonantesRepository donantes;
   private final PropuestaRepository propuestas;
   private final CargaDonacion cargaDonacion;
-  private final ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones notificaciones;
+  private final ServicioNotificaciones notificaciones;
+  private final SubcategoriasRepository subcategorias;
 
   public DonacionController(
       DonacionesRepository donaciones,
       DonantesRepository donantes,
       PropuestaRepository propuestas,
       CargaDonacion cargaDonacion,
-      ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones notificaciones) {
+      ServicioNotificaciones notificaciones,
+      SubcategoriasRepository subcategorias) {
     this.donaciones = donaciones;
     this.donantes = donantes;
     this.propuestas = propuestas;
     this.cargaDonacion = cargaDonacion;
     this.notificaciones = notificaciones;
+    this.subcategorias = subcategorias;
   }
 
   public void routes() {
@@ -96,10 +102,12 @@ public final class DonacionController implements WithSimplePersistenceUnit {
             .orElseThrow(() -> ApiException.notFound("Donante", request.donanteId()));
     List<DonacionResponse> creadas =
         withTransaction(
-            () ->
-                cargaDonacion.cargarDonacion(donante, bienes(request.bienes())).stream()
-                    .map(ApiMapper::donacion)
-                    .toList());
+            () -> {
+              Map<String, SubCategoria> cache = new HashMap<>();
+              return cargaDonacion.cargarDonacion(donante, bienes(request.bienes(), cache)).stream()
+                  .map(ApiMapper::donacion)
+                  .toList();
+            });
     ctx.status(201).json(creadas);
   }
 
@@ -110,9 +118,13 @@ public final class DonacionController implements WithSimplePersistenceUnit {
     }
     DonacionUpdateRequest request =
         DtoValidator.validate(ctx.bodyAsClass(DonacionUpdateRequest.class));
-    donacion.reemplazarBienes(bienes(request.bienes()));
     propuestas.remove(donacion);
-    DonacionResponse actualizada = withTransaction(() -> donacion(donaciones.save(donacion)));
+    DonacionResponse actualizada =
+        withTransaction(
+            () -> {
+              donacion.reemplazarBienes(bienes(request.bienes(), new HashMap<>()));
+              return donacion(donaciones.save(donacion));
+            });
     ctx.json(actualizada);
   }
 
@@ -167,7 +179,7 @@ public final class DonacionController implements WithSimplePersistenceUnit {
         .orElseThrow(() -> ApiException.notFound("Donación", id));
   }
 
-  private List<Bien> bienes(List<BienRequest> items) {
+  private List<Bien> bienes(List<BienRequest> items, Map<String, SubCategoria> cache) {
     return items.stream()
         .map(
             b ->
@@ -178,7 +190,7 @@ public final class DonacionController implements WithSimplePersistenceUnit {
                     b.unidad(),
                     b.fechaVencimiento(),
                     b.estadoDeUso() == null ? EstadoUso.NO_APLICA : b.estadoDeUso(),
-                    new SubCategoria(b.subcategoria(), b.categoria())))
+                    subcategorias.obtenerOCrear(b.subcategoria(), b.categoria(), cache)))
         .toList();
   }
 

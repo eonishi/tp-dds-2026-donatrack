@@ -5,8 +5,10 @@ import ar.edu.utn.donatrack.api.controller.DonanteController;
 import ar.edu.utn.donatrack.api.controller.EntidadController;
 import ar.edu.utn.donatrack.api.controller.MatchmakingController;
 import ar.edu.utn.donatrack.api.controller.NecesidadController;
+import ar.edu.utn.donatrack.api.controller.SubcategoriasController;
 import ar.edu.utn.donatrack.api.error.ApiExceptionHandler;
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
+import ar.edu.utn.donatrack.bienes.SubcategoriasRepository;
 import ar.edu.utn.donatrack.donaciones.AlgoritmoCompatibilidadSemantica;
 import ar.edu.utn.donatrack.donaciones.AlgoritmoPrioridadSubAtendidos;
 import ar.edu.utn.donatrack.donaciones.CargaDonacion;
@@ -38,6 +40,7 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
     DonacionesRepository donaciones = new DonacionesRepository();
     DonantesRepository donantes = new DonantesRepository();
     BeneficiariosRepository entidades = new BeneficiariosRepository();
+    SubcategoriasRepository subcategorias = new SubcategoriasRepository();
     PropuestaRepository propuestas = new PropuestaRepositoryImpl();
     ServicioNotificaciones notificaciones =
         new ServicioNotificaciones(
@@ -45,14 +48,16 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
 
     DonanteController donanteController = new DonanteController(donantes, donaciones);
     EntidadController entidadController = new EntidadController(entidades, donaciones);
-    NecesidadController necesidadController = new NecesidadController(entidades);
+    NecesidadController necesidadController = new NecesidadController(entidades, subcategorias);
     DonacionController donacionController =
         new DonacionController(
             donaciones,
             donantes,
             propuestas,
             new CargaDonacion(java.time.LocalDate.now(clock), donaciones),
-            notificaciones);
+            notificaciones,
+            subcategorias);
+    SubcategoriasController subcategoriasController = new SubcategoriasController(subcategorias);
 
     ServicioMatchmakingDonaciones matchmakingDomain =
         new ServicioMatchmakingDonaciones(
@@ -78,6 +83,7 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
                             entidadController.routes();
                             necesidadController.routes();
                             donacionController.routes();
+                            subcategoriasController.routes();
                             matchmakingController.routes();
                           }));
             });

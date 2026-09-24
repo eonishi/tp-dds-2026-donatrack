@@ -17,16 +17,22 @@ import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiariaId;
 import ar.edu.utn.donatrack.beneficiarios.Necesidad;
 import ar.edu.utn.donatrack.beneficiarios.NecesidadRecurrente;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
+import ar.edu.utn.donatrack.bienes.SubcategoriasRepository;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 public final class NecesidadController implements WithSimplePersistenceUnit {
   private final BeneficiariosRepository entidades;
+  private final SubcategoriasRepository subcategorias;
 
-  public NecesidadController(BeneficiariosRepository entidades) {
+  public NecesidadController(
+      BeneficiariosRepository entidades, SubcategoriasRepository subcategorias) {
     this.entidades = entidades;
+    this.subcategorias = subcategorias;
   }
 
   public void routes() {
@@ -60,11 +66,11 @@ public final class NecesidadController implements WithSimplePersistenceUnit {
     NecesidadRequest request = DtoValidator.validate(ctx.bodyAsClass(NecesidadRequest.class));
     validar(request);
     EntidadBeneficiaria entidad = entidad(ctx);
-    Necesidad necesidad = construirNecesidad(request);
-    agregar(entidad, necesidad);
     NecesidadResponse creada =
         withTransaction(
             () -> {
+              Necesidad necesidad = construirNecesidad(request, new HashMap<>());
+              agregar(entidad, necesidad);
               entidades.save(entidad);
               return ApiMapper.necesidad(necesidad, entidad);
             });
@@ -80,17 +86,18 @@ public final class NecesidadController implements WithSimplePersistenceUnit {
     if (esRecurrente != recurrente(request)) {
       throw ApiException.conflict("No se puede cambiar el tipo de una necesidad.");
     }
-    actual.actualizar(
-        new SubCategoria(request.subcategoria(), request.categoria()),
-        request.cantidadObjetivo(),
-        request.unidad(),
-        request.descripcion());
-    if (esRecurrente) {
-      ((NecesidadRecurrente) actual).setPeriodo(request.periodo());
-    }
     NecesidadResponse actualizada =
         withTransaction(
             () -> {
+              actual.actualizar(
+                  subcategorias.obtenerOCrear(
+                      request.subcategoria(), request.categoria(), new HashMap<>()),
+                  request.cantidadObjetivo(),
+                  request.unidad(),
+                  request.descripcion());
+              if (esRecurrente) {
+                ((NecesidadRecurrente) actual).setPeriodo(request.periodo());
+              }
               entidades.save(entidad);
               return ApiMapper.necesidad(actual, entidad);
             });
@@ -124,8 +131,9 @@ public final class NecesidadController implements WithSimplePersistenceUnit {
         .orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", id.value()));
   }
 
-  private Necesidad construirNecesidad(NecesidadRequest request) {
-    SubCategoria subcategoria = new SubCategoria(request.subcategoria(), request.categoria());
+  private Necesidad construirNecesidad(NecesidadRequest request, Map<String, SubCategoria> cache) {
+    SubCategoria subcategoria =
+        subcategorias.obtenerOCrear(request.subcategoria(), request.categoria(), cache);
     if (!recurrente(request)) {
       return new Necesidad(
           subcategoria, request.cantidadObjetivo(), request.unidad(), request.descripcion());

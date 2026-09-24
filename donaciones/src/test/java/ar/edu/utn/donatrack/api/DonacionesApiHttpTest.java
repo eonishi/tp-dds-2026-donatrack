@@ -337,6 +337,39 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     }
   }
 
+  @Test
+  void elCatalogoDeSubcategoriasSeListaYDaDeAltaUnaEntrada() throws Exception {
+    String nombre = "Catalogo-" + UUID.randomUUID();
+
+    HttpResponse<String> creada =
+        request(
+            "POST",
+            "/api/v1/subcategorias",
+            "{\"nombre\":\"" + nombre + "\",\"categoria\":\"ALIMENTO\"}");
+    assertEquals(201, creada.statusCode(), creada.body());
+    assertEquals(nombre, json(creada).get("nombre").asText());
+    assertEquals("ALIMENTO", json(creada).get("categoria").asText());
+
+    HttpResponse<String> duplicada =
+        request(
+            "POST",
+            "/api/v1/subcategorias",
+            "{\"nombre\":\"" + nombre + "\",\"categoria\":\"MOBILIARIO\"}");
+    assertEquals(409, duplicada.statusCode(), duplicada.body());
+    assertEquals("CONFLICT", json(duplicada).get("code").asText());
+
+    HttpResponse<String> listado = request("GET", "/api/v1/subcategorias", null);
+    assertEquals(200, listado.statusCode());
+    long coincidencias = 0;
+    for (JsonNode entrada : json(listado)) {
+      if (nombre.equals(entrada.get("nombre").asText())) {
+        coincidencias++;
+        assertEquals("ALIMENTO", entrada.get("categoria").asText());
+      }
+    }
+    assertEquals(1, coincidencias, "La entrada creada debe aparecer una sola vez en el listado");
+  }
+
   private UUID crearDonante() throws Exception {
     HttpResponse<String> response =
         request("POST", "/api/v1/donantes", donanteJson("Sofía", "Pérez", "sofia@example.org"));

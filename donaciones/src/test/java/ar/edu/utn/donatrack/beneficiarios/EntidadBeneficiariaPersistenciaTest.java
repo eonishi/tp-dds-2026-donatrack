@@ -3,6 +3,7 @@ package ar.edu.utn.donatrack.beneficiarios;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ar.edu.utn.donatrack.bienes.Categoria;
@@ -11,6 +12,8 @@ import ar.edu.utn.donatrack.bienes.UnidadMedida;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.util.List;
+import java.util.UUID;
+import javax.persistence.PersistenceException;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -164,5 +167,48 @@ class EntidadBeneficiariaPersistenciaTest implements SimplePersistenceTest {
     assertEquals(
         "LITROS", unidadRecurrente, "La columna debe guardar el nombre del enum, no su índice");
     assertEquals("MENSUAL", periodo, "La columna debe guardar el nombre del enum, no su índice");
+  }
+
+  @Test
+  void laBaseRechazaInsertarUnaNecesidadConSubcategoriaNula() {
+    SubCategoria alimentos =
+        new SubCategoria("Necesidad nula " + UUID.randomUUID(), Categoria.ALIMENTO);
+    persist(alimentos);
+    entityManager().flush();
+    Long subcategoriaId =
+        (Long)
+            entityManager()
+                .getEntityManagerFactory()
+                .getPersistenceUnitUtil()
+                .getIdentifier(alimentos);
+
+    // Inserción nativa de control: la misma sentencia con la FK presente entra, así que el rechazo
+    // de la variante nula no puede venir de una columna o un tipo mal escritos. El DDL es el que
+    // prueba la restricción, no el chequeo del constructor de Necesidad.
+    assertEquals(
+        1,
+        insertarNecesidadNativa("Control con subcategoría", subcategoriaId),
+        "La inserción de control con la FK presente debe entrar");
+    assertThrows(
+        PersistenceException.class,
+        () -> insertarNecesidadNativa("Necesidad sin subcategoría", null),
+        "La columna subcategoria_id NOT NULL debe rechazar un insert nativo con null");
+  }
+
+  private int insertarNecesidadNativa(String descripcion, Long subcategoriaId) {
+    String valorFk = subcategoriaId == null ? "NULL" : ":subcategoriaId";
+    var query =
+        entityManager()
+            .createNativeQuery(
+                "INSERT INTO Necesidad (id, DTYPE, descripcion, cantidadRecibida, cantidadObjetivo, unidad, subcategoria_id) "
+                    + "VALUES (:id, 'Necesidad', :descripcion, 0, 1, 'UNIDADES', "
+                    + valorFk
+                    + ")")
+            .setParameter("id", UUID.randomUUID())
+            .setParameter("descripcion", descripcion);
+    if (subcategoriaId != null) {
+      query.setParameter("subcategoriaId", subcategoriaId);
+    }
+    return query.executeUpdate();
   }
 }
