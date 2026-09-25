@@ -14,7 +14,6 @@ import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
-import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +57,7 @@ class ResolucionSubcategoriasTest implements SimplePersistenceTest {
             bien("Silla usada", EstadoUso.USADO, sillaUsada));
 
     List<Donacion> donaciones =
-        new CargaDonacion(LocalDate.now(), new DonacionesRepository())
+        new CargaDonacion(new DonacionesRepository())
             .cargarDonacion(donante, bienes);
     entityManager().flush();
 

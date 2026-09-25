@@ -54,7 +54,7 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
             donaciones,
             donantes,
             propuestas,
-            new CargaDonacion(java.time.LocalDate.now(clock), donaciones),
+            new CargaDonacion(donaciones),
             notificaciones,
             subcategorias);
     SubcategoriasController subcategoriasController = new SubcategoriasController(subcategorias);

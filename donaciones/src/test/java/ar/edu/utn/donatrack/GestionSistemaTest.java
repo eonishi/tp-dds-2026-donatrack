@@ -90,7 +90,7 @@ class DonaTrackTest implements SimplePersistenceTest {
     List<Bien> bienesDonados =
         Arrays.asList(sillaNueva, sillaUsada, fideos2026, fideos2027, masFideos2026);
     DonacionesRepository repo = new DonacionesRepository();
-    CargaDonacion carga = new CargaDonacion(hoy, repo);
+    CargaDonacion carga = new CargaDonacion(repo);
 
     // Act
     carga.cargarDonacion(donanteDummy, bienesDonados);

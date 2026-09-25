@@ -64,7 +64,7 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
     persist(subCategoria);
     persist(donante);
     DonacionesRepository donacionesRepository = new DonacionesRepository();
-    CargaDonacion cargaDonacion = new CargaDonacion(LocalDate.now(), donacionesRepository);
+    CargaDonacion cargaDonacion = new CargaDonacion(donacionesRepository);
 
     cargaDonacion.cargarDonacion(donante, List.of(silla));
 

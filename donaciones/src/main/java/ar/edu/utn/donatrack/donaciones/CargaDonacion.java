@@ -3,18 +3,15 @@ package ar.edu.utn.donatrack.donaciones;
 import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.EstadoUso;
 import ar.edu.utn.donatrack.donantes.Donante;
-import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class CargaDonacion {
-  private final LocalDate fechaRegistro;
   private final DonacionesRepository donacionesRepository;
 
-  public CargaDonacion(LocalDate fechaRegistro, DonacionesRepository donacionesRepository) {
-    this.fechaRegistro = fechaRegistro;
+  public CargaDonacion(DonacionesRepository donacionesRepository) {
     this.donacionesRepository =
         Objects.requireNonNull(donacionesRepository, "donacionesRepository no puede ser null");
   }

@@ -15,7 +15,6 @@ import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
@@ -41,7 +40,7 @@ class CargaDonacionAtomicidadTest implements WithSimplePersistenceUnit {
   void unaFallaEnLaTerceraSegmentacionRevierteTodasLasDonaciones() {
     sembrarDatosBase();
 
-    CargaDonacion carga = new CargaDonacion(LocalDate.now(), new RepositorioEspia());
+    CargaDonacion carga = new CargaDonacion(new RepositorioEspia());
     List<Bien> bienes =
         List.of(
             bien("Bien A", subcategorias.get(0)),
