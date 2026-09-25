@@ -139,6 +139,9 @@ public class ServicioPlanificacionRutas {
 
     for (int i = 0; i < rutas.size(); i++) {
       rutaRepository.agregar(rutas.get(i));
+    }
+    
+    for (int i = 0; i < rutas.size(); i++) {
       donacionesRemotas.notificarListaParaEntregar(donacionesPorRuta.get(i));
     }
   }

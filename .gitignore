@@ -63,3 +63,6 @@ odd/
 secrets.local.sh
 donaciones/src/main/resources/META-INF/persistence.xml
 logistica/src/main/resources/META-INF/persistence.xml
+
+#persistencia
+persistence.xmlsrc/main/resources/META-INF/persistence.xml

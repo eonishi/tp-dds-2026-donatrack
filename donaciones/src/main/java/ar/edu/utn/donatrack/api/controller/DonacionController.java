@@ -29,6 +29,7 @@ import ar.edu.utn.donatrack.donaciones.PropuestaRepository;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import io.javalin.http.Context;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.UUID;
 
@@ -55,6 +56,7 @@ public final class DonacionController {
         () -> {
           get(this::listar);
           post(this::crear);
+          patch("/estado", this::transicionarMasivo);
           path(
               "/{id}",
               () -> {
@@ -64,7 +66,7 @@ public final class DonacionController {
                 patch("/estado", this::transicionar);
                 get("/historial-estados", this::historial);
                 post("/fotos", this::agregarFoto);
-              });
+              });          
         });
   }
 
@@ -116,7 +118,11 @@ public final class DonacionController {
     TransicionEstadoRequest request =
         DtoValidator.validate(ctx.bodyAsClass(TransicionEstadoRequest.class));
     Donacion donacion = buscar(HttpSupport.id(ctx, "id"));
-    ctx.json(donacion(cambiarEstado(donacion, request)));
+    donaciones.inTransaction(() -> {
+      cambiarEstado(donacion, request);
+      donaciones.save(donacion);
+    });
+    ctx.json(donacion(donacion));
   }
 
   private void historial(Context ctx) {
@@ -129,7 +135,11 @@ public final class DonacionController {
   private void agregarFoto(Context ctx) {
     FotoRequest request = DtoValidator.validate(ctx.bodyAsClass(FotoRequest.class));
     var id = HttpSupport.id(ctx, "id");
-    buscar(id).agregarFoto(request.url());
+    Donacion donacion = buscar(id);
+    donaciones.inTransaction(() -> {
+      donacion.agregarFoto(request.url());
+      donaciones.save(donacion);
+    });
     ctx.status(201).json(new FotoResponse(id, request.url()));
   }
 
@@ -181,7 +191,34 @@ public final class DonacionController {
         donacion.retornarAlDeposito();
         yield donacion;
       }
-      case ASIGNACION_REALIZADA -> throw new IllegalArgumentException("Estado no permitido.");
+      case ASIGNACION_REALIZADA -> throw ApiException.badRequest("Estado no permitido.");
     };
+  }
+
+  public record TransicionMasivaRequest(
+    @NotNull UUID idDonacion,
+    @NotNull EstadoDonacion nuevoEstado,
+    String justificacion,
+    String idCamion
+  ) {}
+
+  private void transicionarMasivo(Context ctx) {
+    TransicionMasivaRequest[] requests = ctx.bodyAsClass(TransicionMasivaRequest[].class);
+
+    for (TransicionMasivaRequest req : requests) {
+      DtoValidator.validate(req);
+      buscar(req.idDonacion());
+    }
+
+    donaciones.inTransaction(() -> {
+      for (TransicionMasivaRequest req : requests) {
+        Donacion donacion = buscar(req.idDonacion());
+        String urlGenerada = req.idCamion() != null ? "https://mapa.donatrack.org/tracking/" + req.idCamion() : null;
+        cambiarEstado(donacion, new TransicionEstadoRequest(req.nuevoEstado(), req.justificacion(), urlGenerada));
+        donaciones.save(donacion);
+      }
+    });
+
+    ctx.status(200);
   }
 }

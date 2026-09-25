@@ -24,18 +24,9 @@ final class RequestPersistenceBoundary implements JpaRepository {
 
   static void register(Javalin app) {
     RequestPersistenceBoundary boundary = new RequestPersistenceBoundary();
-    app.before(ctx -> boundary.beginTransaction());
     app.after(
         ctx -> {
-          try {
-            if (ctx.statusCode() >= 400) {
-              boundary.rollbackTransaction();
-            } else {
-              boundary.commitTransaction();
-            }
-          } finally {
-            boundary.entityManager().clear();
-          }
+          boundary.entityManager().clear();
         });
   }
 }

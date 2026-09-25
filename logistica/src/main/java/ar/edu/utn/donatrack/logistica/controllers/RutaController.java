@@ -109,15 +109,19 @@ public class RutaController {
 
   // DELETE /logistica/rutas/{id}
   public void eliminar(Context ctx) {
-    UUID id = UUID.fromString(ctx.pathParam("id"));
-    rutaRepo
-        .buscarPorId(id)
-        .ifPresentOrElse(
-            ruta -> {
-              rutaRepo.eliminar(id);
-              ctx.status(204);
-            },
-            () -> ctx.status(404).result("Ruta no encontrada"));
+    try {
+      UUID id = UUID.fromString(ctx.pathParam("id"));
+      rutaRepo
+          .buscarPorId(id)
+          .ifPresentOrElse(
+              ruta -> {
+                rutaRepo.eliminar(id);
+                ctx.status(204);
+              },
+              () -> ctx.status(404).result("Ruta no encontrada"));
+    } catch (IllegalArgumentException e) {
+      ctx.status(400).result("Formato de UUID inválido");
+    }
   }
 
   // PATCH /logistica/rutas/{id}
@@ -136,13 +140,15 @@ public class RutaController {
                   try {
                     if ("EN_CURSO".equalsIgnoreCase(dto.estado)) {
                       ruta.iniciar();
-                      List<DonacionId> donaciones =
-                          ruta.getDestinos().stream()
-                              .flatMap(d -> d.donaciones().stream())
-                              .toList();
-                      String urlMapa =
-                          "https://mapa.donatrack.org/tracking/" + ruta.getCamion().getPatente();
-                      donacionesRemotas.notificarInicioTraslado(donaciones, urlMapa);
+                      List<DonacionId> donaciones = ruta.getDestinos().stream()
+                        .flatMap(d -> d.donaciones().stream())
+                        .toList();
+                      try {
+                        donacionesRemotas.notificarInicioTraslado(donaciones, ruta.getCamion().getPatente());
+                      } catch (RuntimeException e) {
+                        ctx.status(502).result("Error notificando inicio a donaciones: " + e.getMessage());
+                        return;
+                      }
                     } else if ("FINALIZADA".equalsIgnoreCase(dto.estado)) {
                       ruta.finalizar();
                     } else {
