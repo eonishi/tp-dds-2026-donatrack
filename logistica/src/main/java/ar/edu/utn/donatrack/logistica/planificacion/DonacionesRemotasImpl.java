@@ -70,7 +70,9 @@ public class DonacionesRemotasImpl implements DonacionesRemotas {
                       dto.pesoKg() != null ? dto.pesoKg() : 0.0))
           .toList();
     } catch (IOException | InterruptedException e) {
-      if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+      if (e instanceof InterruptedException) {
+        Thread.currentThread().interrupt();
+      }
       throw new RuntimeException("Error en la comunicación con servicio donaciones");
     }
   }
@@ -86,7 +88,9 @@ public class DonacionesRemotasImpl implements DonacionesRemotas {
   }
 
   private void actualizarMasivo(List<DonacionId> donaciones, String nuevoEstado, String idCamion) {
-    if (donaciones.isEmpty()) return;
+    if (donaciones.isEmpty()) {
+      return;
+    }
 
     List<Map<String, Object>> payload =
         donaciones.stream()
@@ -124,7 +128,9 @@ public class DonacionesRemotasImpl implements DonacionesRemotas {
           httpClient.send(request, HttpResponse.BodyHandlers.ofString());
       validarRespuesta(response);
     } catch (IOException | InterruptedException e) {
-      if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+      if (e instanceof InterruptedException) {
+        Thread.currentThread().interrupt();
+      }
       throw new RuntimeException("Error al comunicarse con el servicio de donaciones", e);
     }
   }
