@@ -35,7 +35,6 @@ import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
 import jakarta.validation.constraints.NotNull;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -81,7 +80,7 @@ public final class DonacionController implements WithSimplePersistenceUnit {
                 patch("/estado", this::transicionar);
                 get("/historial-estados", this::historial);
                 post("/fotos", this::agregarFoto);
-              });          
+              });
         });
   }
 
@@ -144,10 +143,11 @@ public final class DonacionController implements WithSimplePersistenceUnit {
     Donacion donacion = buscar(HttpSupport.id(ctx, "id"));
     List<Notificacion> generadas = new ArrayList<>();
 
-    withTransaction(() -> {
-      generadas.addAll(cambiarEstado(donacion, request));
-      donaciones.save(donacion);
-    });
+    withTransaction(
+        () -> {
+          generadas.addAll(cambiarEstado(donacion, request));
+          donaciones.save(donacion);
+        });
 
     notificaciones.enviar(generadas);
     ctx.json(donacion(donacion));
@@ -165,10 +165,11 @@ public final class DonacionController implements WithSimplePersistenceUnit {
     var id = HttpSupport.id(ctx, "id");
     Donacion donacion = buscar(id);
 
-    withTransaction(() -> {
-      donacion.agregarFoto(request.url());
-      donaciones.save(donacion);
-    });
+    withTransaction(
+        () -> {
+          donacion.agregarFoto(request.url());
+          donaciones.save(donacion);
+        });
 
     ctx.status(201).json(new FotoResponse(id, request.url()));
   }
@@ -211,11 +212,10 @@ public final class DonacionController implements WithSimplePersistenceUnit {
   }
 
   public record TransicionMasivaRequest(
-    @NotNull UUID idDonacion,
-    @NotNull EstadoDonacion nuevoEstado,
-    String justificacion,
-    String idCamion
-  ) {}
+      @NotNull UUID idDonacion,
+      @NotNull EstadoDonacion nuevoEstado,
+      String justificacion,
+      String idCamion) {}
 
   private void transicionarMasivo(Context ctx) {
     TransicionMasivaRequest[] requests = ctx.bodyAsClass(TransicionMasivaRequest[].class);
@@ -226,14 +226,22 @@ public final class DonacionController implements WithSimplePersistenceUnit {
     }
 
     List<Notificacion> generadas = new ArrayList<>();
-    withTransaction(() -> {
-      for (TransicionMasivaRequest req : requests) {
-        Donacion donacion = buscar(req.idDonacion());
-        String urlGenerada = req.idCamion() != null ? "https://mapa.donatrack.org/tracking/" + req.idCamion() : null;
-        generadas.addAll(cambiarEstado(donacion, new TransicionEstadoRequest(req.nuevoEstado(), req.justificacion(), urlGenerada)));
-        donaciones.save(donacion);
-      }
-    });
+    withTransaction(
+        () -> {
+          for (TransicionMasivaRequest req : requests) {
+            Donacion donacion = buscar(req.idDonacion());
+            String urlGenerada =
+                req.idCamion() != null
+                    ? "https://mapa.donatrack.org/tracking/" + req.idCamion()
+                    : null;
+            generadas.addAll(
+                cambiarEstado(
+                    donacion,
+                    new TransicionEstadoRequest(
+                        req.nuevoEstado(), req.justificacion(), urlGenerada)));
+            donaciones.save(donacion);
+          }
+        });
 
     notificaciones.enviar(generadas);
     ctx.status(200);

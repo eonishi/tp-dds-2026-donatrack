@@ -1,21 +1,17 @@
 package ar.edu.utn.donatrack.logistica.planificacion;
 
+import ar.edu.utn.donatrack.logistica.Camion;
+import ar.edu.utn.donatrack.logistica.Destino;
+import ar.edu.utn.donatrack.logistica.DonacionId;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import ar.edu.utn.donatrack.logistica.Camion;
-import ar.edu.utn.donatrack.logistica.Destino;
-import ar.edu.utn.donatrack.logistica.DonacionId;
-
 /**
- * Resultado que devuelve el planificador externo para un lote: por camión, los
- * destinos a visitar.
+ * Resultado que devuelve el planificador externo para un lote: por camión, los destinos a visitar.
  *
- * <p>
- * El orden de la lista de destinos de cada camión es parte del contrato: el
- * planificador decide la secuencia de visitas y logística la respeta al
- * materializar la {@link Ruta}.
+ * <p>El orden de la lista de destinos de cada camión es parte del contrato: el planificador decide
+ * la secuencia de visitas y logística la respeta al materializar la {@link Ruta}.
  *
  * @param loteId lote al que corresponde el resultado (no nulo)
  * @param rutas destinos por camión (no nulo; puede estar vacío)

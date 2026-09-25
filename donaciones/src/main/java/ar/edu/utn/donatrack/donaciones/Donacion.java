@@ -217,7 +217,8 @@ public class Donacion {
     return this.estado.confirmarEntrega(this);
   }
 
-  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> reportarFalla(String justificacion) {
+  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> reportarFalla(
+      String justificacion) {
     if (justificacion == null || justificacion.isBlank()) {
       throw new IllegalArgumentException("La justificación es obligatoria.");
     }

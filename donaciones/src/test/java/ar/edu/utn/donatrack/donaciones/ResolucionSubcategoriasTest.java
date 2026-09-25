@@ -57,8 +57,7 @@ class ResolucionSubcategoriasTest implements SimplePersistenceTest {
             bien("Silla usada", EstadoUso.USADO, sillaUsada));
 
     List<Donacion> donaciones =
-        new CargaDonacion(new DonacionesRepository())
-            .cargarDonacion(donante, bienes);
+        new CargaDonacion(new DonacionesRepository()).cargarDonacion(donante, bienes);
     entityManager().flush();
 
     assertEquals(2, donaciones.size(), "Cada estado de uso debe segmentar su propia donación");

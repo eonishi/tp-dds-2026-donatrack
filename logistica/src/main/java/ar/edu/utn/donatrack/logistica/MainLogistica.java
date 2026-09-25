@@ -10,13 +10,11 @@ import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotasImpl;
 import ar.edu.utn.donatrack.logistica.planificacion.LoteId;
 import ar.edu.utn.donatrack.logistica.planificacion.PlanificadorRutas;
 import ar.edu.utn.donatrack.logistica.planificacion.ServicioPlanificacionRutas;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.Javalin;
-
 import java.net.http.HttpClient;
 import java.time.Clock;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class MainLogistica implements WithSimplePersistenceUnit {
   public static void main(String[] args) {
@@ -43,8 +41,9 @@ public class MainLogistica implements WithSimplePersistenceUnit {
     HttpClient httpClient = HttpClient.newHttpClient();
     String apiUrl = System.getenv().getOrDefault("DONACIONES_API_URL", "http://localhost:7070");
     String apiKey = System.getenv().getOrDefault("DONACIONES_API_KEY", "S2S_SECRET_KEY");
-    DonacionesRemotas donacionesRemotas = new DonacionesRemotasImpl(apiUrl, apiKey, httpClient, objectMapper);
-    
+    DonacionesRemotas donacionesRemotas =
+        new DonacionesRemotasImpl(apiUrl, apiKey, httpClient, objectMapper);
+
     RutaController rutaController = new RutaController(rutaRepo, camionRepo, donacionesRemotas);
     PosicionController posicionController =
         new PosicionController(monitorRutas, camionRepo, rutaRepo);
