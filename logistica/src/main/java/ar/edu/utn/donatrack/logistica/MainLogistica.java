@@ -1,11 +1,11 @@
 package ar.edu.utn.donatrack.logistica;
 
 import ar.edu.utn.donatrack.logistica.controllers.CamionController;
+import ar.edu.utn.donatrack.logistica.controllers.PlanificacionController;
 import ar.edu.utn.donatrack.logistica.controllers.PosicionController;
 import ar.edu.utn.donatrack.logistica.controllers.RutaController;
 import ar.edu.utn.donatrack.logistica.monitoreo.MonitorRutas;
-import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
-import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotasImpl;
+import ar.edu.utn.donatrack.logistica.planificacion.*;
 import io.javalin.Javalin;
 
 import java.net.http.HttpClient;
@@ -25,14 +25,30 @@ public class MainLogistica {
 
     // 2. Instanciamos Controladores
     CamionController camionController = new CamionController(camionRepo);
-    ObjectMapper objectMapper = new ObjectMapper();
-    HttpClient httpClient = HttpClient.newHttpClient();
-    String apiUrl = System.getenv().getOrDefault("DONACIONES_API_URL", "http://localhost:9000");
-    String apiKey = System.getenv().getOrDefault("DONACIONES_API_KEY", "S2S_SECRET_KEY");
-    DonacionesRemotas donacionesRemotas = new DonacionesRemotasImpl(apiUrl, apiKey, httpClient, objectMapper);
+
+    ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas donacionesRemotas =
+        new ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas() {
+          public java.util.List<ar.edu.utn.donatrack.logistica.planificacion.DonacionPlanificable>
+              listarEnAsignacionRealizada() {
+            return java.util.List.of();
+          }
+
+          public void notificarListaParaEntregar(
+              java.util.List<ar.edu.utn.donatrack.logistica.DonacionId> donaciones) {}
+
+          public void notificarInicioTraslado(
+              java.util.List<ar.edu.utn.donatrack.logistica.DonacionId> donaciones,
+              String urlMapa) {}
+        };
     RutaController rutaController = new RutaController(rutaRepo, camionRepo, donacionesRemotas);
     PosicionController posicionController =
         new PosicionController(monitorRutas, camionRepo, rutaRepo);
+
+    PlanificadorRutas planificadorRutas = lote -> LoteId.generar();
+    ServicioPlanificacionRutas servicioPlanificacion =
+        new ServicioPlanificacionRutas(donacionesRemotas, camionRepo, planificadorRutas, rutaRepo);
+    PlanificacionController planificacionController =
+        new PlanificacionController(servicioPlanificacion, camionRepo);
 
     // 3. Registramos los Endpoints
 
@@ -53,6 +69,9 @@ public class MainLogistica {
     // --- Endpoints de Posición (GPS) ---
     app.post("/logistica/camiones/{patente}/posicion", posicionController::ingestar);
     app.get("/logistica/camiones/{patente}/posicion", posicionController::leerPosicion);
+
+    // --- Endpoints de Planificación ---
+    app.post("/logistica/planificacion/callback", planificacionController::procesarResultado);
 
     System.out.println("Microservicio de Logística corriendo en http://localhost:9001");
   }

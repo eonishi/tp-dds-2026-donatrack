@@ -1,5 +1,9 @@
 package ar.edu.utn.donatrack.logistica.controllers;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import ar.edu.utn.donatrack.logistica.Camion;
 import ar.edu.utn.donatrack.logistica.CamionRepository;
 import ar.edu.utn.donatrack.logistica.Destino;
@@ -8,9 +12,6 @@ import ar.edu.utn.donatrack.logistica.Ruta;
 import ar.edu.utn.donatrack.logistica.RutaRepository;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
 import io.javalin.http.Context;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 public class RutaController {
 
@@ -140,15 +141,13 @@ public class RutaController {
                   try {
                     if ("EN_CURSO".equalsIgnoreCase(dto.estado)) {
                       ruta.iniciar();
-                      List<DonacionId> donaciones = ruta.getDestinos().stream()
-                        .flatMap(d -> d.donaciones().stream())
-                        .toList();
-                      try {
-                        donacionesRemotas.notificarInicioTraslado(donaciones, ruta.getCamion().getPatente());
-                      } catch (RuntimeException e) {
-                        ctx.status(502).result("Error notificando inicio a donaciones: " + e.getMessage());
-                        return;
-                      }
+                      List<DonacionId> donaciones =
+                          ruta.getDestinos().stream()
+                              .flatMap(d -> d.donaciones().stream())
+                              .toList();
+                      String urlMapa =
+                          "https://mapa.donatrack.org/tracking/" + ruta.getCamion().getPatente();
+                      donacionesRemotas.notificarInicioTraslado(donaciones, urlMapa);
                     } else if ("FINALIZADA".equalsIgnoreCase(dto.estado)) {
                       ruta.finalizar();
                     } else {
