@@ -24,7 +24,7 @@ classDiagram
     }
     class Destino {
         -entidadBeneficiaria: EntidadBeneficiaria
-        -donaciones: List~Donacion~
+        -donaciones: List~DonacionPlanificable~
     }
     class Donacion {
         -estado: EstadoDonacion
@@ -50,10 +50,10 @@ classDiagram
 
     Ruta *-- Camion : camion
     Ruta *-- "*" Destino : destinos
-    Destino o-- "*" Donacion : donaciones
+    Destino ..> Donacion : donacionId (API)
     Ruta ..> Donacion : al iniciar, pasa a En traslado
     Donacion *-- EstadoDonacion : estado actual
-    Donacion --> "0..1" Camion : camión responsable
+    Donacion ..> Camion : idCamion (API)
     EstadoDonacion <|-- ListaParaEntregar
     EstadoDonacion <|-- EnTraslado
     Donacion ..> NombreEstado : getNombreEstado()

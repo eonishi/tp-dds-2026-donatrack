@@ -240,7 +240,7 @@ classDiagram
         }
         class Destino {
             -entidadBeneficiaria: EntidadBeneficiaria
-            -donaciones: List~Donacion~
+            -donaciones: List~DonacionPlanificable~
             +agregarDonacion(donacion: Donacion)
         }
         class Camion {
@@ -259,7 +259,7 @@ classDiagram
         }
         class LoteDonaciones {
             <<record>>
-            -donaciones: List~Donacion~
+            -donaciones: List~DonacionPlanificable~
             -camiones: List~Camion~
         }
         class LoteId {
@@ -374,7 +374,7 @@ classDiagram
     Donacion *-- EstadoDonacion : estado actual
     Donacion --> Donante : donante
     Donacion --> "0..1" EntidadBeneficiaria : asignada a
-    Donacion --> "0..1" Camion : asignado a
+    Donacion ..> Camion : idCamion (API)
     HistorialEstado --> NombreEstado : estadoAlcanzado
     PropuestaDeAsignacion *-- Donacion : donacion
     PropuestaDeAsignacion *-- "*" RankingMatchmaking : rankings
@@ -397,17 +397,17 @@ classDiagram
     %% logística
     Ruta *-- Camion : camion
     Ruta *-- "*" Destino : destinos
-    Destino *-- EntidadBeneficiaria : entidad
-    Destino o-- "*" Donacion : donaciones
+    Destino ..> EntidadBeneficiaria : entidadId (API)
+    Destino ..> Donacion : donacionId (API)
 
     %% planificación
     PlanificadorRutas ..> LoteDonaciones : recibe
     PlanificadorRutas ..> LoteId : devuelve
-    LoteDonaciones o-- "*" Donacion : donaciones
+    LoteDonaciones ..> Donacion : donaciones (API)
     LoteDonaciones o-- "*" Camion : camiones
     ResultadoPlanificacion --> LoteId : loteId
     ResultadoPlanificacion o-- "*" Camion : rutas
-    ResultadoPlanificacion o-- "*" EntidadBeneficiaria : rutas
+    ResultadoPlanificacion ..> EntidadBeneficiaria : entidades (API)
 
     %% monitoreo
     LecturaPosicion o-- Camion : camion

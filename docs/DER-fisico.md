@@ -1,9 +1,13 @@
 # Diagrama Entidad-Relación Físico (DER)
 
-Este diagrama representa el modelo relacional físico en la base de datos, reflejando la decisión arquitectónica de aislar las tablas en esquemas separados (`donantes`, `beneficiarios`, `donaciones`, `logistica`).
+Este diagrama representa el modelo relacional. Como que el sistema fue separado en dos microservicios (`Donaciones` y `Logística`), los esquemas pertenecen a bases de datos independientes. Las referencias entre ambos servicios se realizan mediante IDs lógicos a través de la API.
 
 ```mermaid
 erDiagram
+    %% ==========================================
+    %% MICROSERVICIO: DONACIONES
+    %% ==========================================
+    
     %% ESQUEMA DONANTES
     donantes_donantes {
         bigserial id PK
@@ -38,22 +42,39 @@ erDiagram
 
     %% ESQUEMA DONACIONES
     donaciones_donaciones {
-        bigserial id PK
+        uuid id PK
         bigint donante_id FK
         bigint entidad_id FK
         varchar estado
     }
     donaciones_historial_estado {
         bigserial id PK
-        bigint donacion_id FK
+        uuid donacion_id FK
         varchar estado_alcanzado
     }
     donaciones_bien {
         bigserial id PK
-        bigint donacion_id FK
+        uuid donacion_id FK
         bigint subcategoria_id FK
     }
 
+    %% Relaciones (Microservicio Donaciones)
+    donantes_donantes ||--o| donantes_personas_humanas : "es"
+    donantes_donantes ||--o| donantes_personaje_juridica : "es"
+    donantes_donantes ||--o{ donantes_medio_de_contacto : "tiene"
+    
+    donantes_donantes ||--o{ donaciones_donaciones : "realiza"
+    beneficiarios_entidades_beneficiarias ||--o{ donaciones_donaciones : "recibe"
+    beneficiarios_entidades_beneficiarias ||--o{ beneficiarios_necesidad : "declara"
+    
+    donaciones_donaciones ||--o{ donaciones_bien : "contiene"
+    donaciones_donaciones ||--o{ donaciones_historial_estado : "registra"
+
+
+    %% ==========================================
+    %% MICROSERVICIO: LOGÍSTICA
+    %% ==========================================
+    
     %% ESQUEMA LOGISTICA
     logistica_camiones {
         bigserial id PK
@@ -66,24 +87,25 @@ erDiagram
     }
     logistica_destinos {
         bigserial id PK
-        bigint ruta_id FK
-        bigint entidad_beneficiaria_id FK
+        uuid ruta_id FK
+        bigint entidad_id "Referencia Lógica"
+        varchar direccion
+    }
+    logistica_destino_donaciones {
+        bigint destino_id FK
+        uuid donacion_id "Referencia Lógica"
     }
 
-    %% RELACIONES
-    donantes_donantes ||--o| donantes_personas_humanas : "es"
-    donantes_donantes ||--o| donantes_personaje_juridica : "es"
-    donantes_donantes ||--o{ donantes_medio_de_contacto : "tiene"
-    
-    donantes_donantes ||--o{ donaciones_donaciones : "realiza"
-    beneficiarios_entidades_beneficiarias ||--o{ donaciones_donaciones : "recibe"
-    beneficiarios_entidades_beneficiarias ||--o{ beneficiarios_necesidad : "declara"
-    
-    donaciones_donaciones ||--o{ donaciones_bien : "contiene"
-    donaciones_donaciones ||--o{ donaciones_historial_estado : "registra"
-    
+    %% Relaciones (Microservicio Logística)
     logistica_camiones ||--o{ logistica_rutas : "asigna"
     logistica_rutas ||--o{ logistica_destinos : "compone"
-    beneficiarios_entidades_beneficiarias ||--o{ logistica_destinos : "visita"
-    logistica_destinos ||--o{ donaciones_donaciones : "entrega"
+    logistica_destinos ||--o{ logistica_destino_donaciones : "agrupa"
+
+    %% ==========================================
+    %% RELACIONES ENTRE MICROSERVICIOS (APIs)
+    %% ==========================================
+    %% Nota: No se dibujan conectores relacionales cruzados para reflejar la 
+    %% ausencia de restricciones FK reales. La integración se realiza mediante APIs:
+    %% - logistica_destinos usa "entidad_id" referenciando a beneficiarios_entidades_beneficiarias
+    %% - logistica_destino_donaciones usa "donacion_id" referenciando a donaciones_donaciones
 ```

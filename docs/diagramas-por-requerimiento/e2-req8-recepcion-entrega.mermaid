@@ -58,7 +58,7 @@ classDiagram
     EntidadBeneficiaria *-- "*" RecepcionDonacion : recepciones
     RecepcionDonacion --> Donacion : registra
     Donacion *-- EstadoDonacion : estado actual
-    Donacion --> "0..1" Camion : camión responsable
+    Donacion ..> Camion : idCamion (API)
     Donacion *-- "*" HistorialEstado : historial
     EstadoDonacion <|-- Entregada
     EstadoDonacion <|-- EntregaFallida
