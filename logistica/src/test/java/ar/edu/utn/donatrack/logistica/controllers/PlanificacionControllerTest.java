@@ -17,7 +17,7 @@ import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
 import ar.edu.utn.donatrack.logistica.planificacion.LoteId;
 import ar.edu.utn.donatrack.logistica.planificacion.PlanificadorRutas;
 import ar.edu.utn.donatrack.logistica.planificacion.ServicioPlanificacionRutas;
-import ar.edu.utn.donatrack.persistencia.JpaRepository;
+import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.Javalin;
 import io.javalin.testtools.JavalinTest;
 import java.util.List;
@@ -27,7 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class PlanificacionControllerTest implements JpaRepository {
+public class PlanificacionControllerTest implements WithSimplePersistenceUnit {
 
   private static final String PATENTE = "AB123CD";
   private static final long ENTIDAD_ID = 45L;
@@ -55,7 +55,11 @@ public class PlanificacionControllerTest implements JpaRepository {
         new ServicioPlanificacionRutas(donacionesRemotas, camionRepo, planificadorRutas, rutaRepo);
     controlador = new PlanificacionController(servicio, camionRepo);
 
-    camionRepo.agregar(new Camion(PATENTE, 20.0, 2.5, 10000.0));
+    // El repositorio ya no abre ninguna transacción por su cuenta y acá no hay una previa, así
+    // que el test es el dueño legítimo de esta unidad de trabajo. La confirmación además hace
+    // visible el camión para el hilo que atiende el callback.
+    Camion camionPrueba = new Camion(PATENTE, 20.0, 2.5, 10000.0);
+    withTransaction(() -> camionRepo.agregar(camionPrueba));
 
     when(donacionesRemotas.listarEnAsignacionRealizada()).thenReturn(List.of(crearPlanificable()));
     servicio.planificar();
@@ -66,7 +70,7 @@ public class PlanificacionControllerTest implements JpaRepository {
 
   @AfterEach
   void limpiarPersistencia() {
-    inTransaction(
+    withTransaction(
         () ->
             createQuery("select c from Camion c", Camion.class)
                 .getResultList()
