@@ -46,7 +46,8 @@ public class GatewayCorreoResend implements GatewayCorreo {
       if (response.statusCode() >= 200 && response.statusCode() < 300) {
         return ResultadoEnvio.aceptado();
       }
-      return ResultadoEnvio.fallido("Resend respondió HTTP " + response.statusCode() + ".");
+      return ResultadoEnvio.fallido(
+          RespuestaProveedor.error("Resend", response.statusCode(), response.body(), apiKey));
     } catch (IOException error) {
       return ResultadoEnvio.fallido("No se pudo conectar con Resend: " + error.getMessage());
     } catch (InterruptedException error) {

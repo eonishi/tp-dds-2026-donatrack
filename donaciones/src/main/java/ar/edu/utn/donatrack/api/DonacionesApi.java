@@ -33,20 +33,25 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
   }
 
   public static Javalin create(Clock clock) {
-    return new DonacionesApi().build(clock);
+    ServicioNotificaciones notificaciones =
+        new ServicioNotificaciones(
+            NotificadorDesdeEntorno.crear(), new NotificacionesRepository(), 1);
+    return create(clock, notificaciones);
   }
 
-  private Javalin build(Clock clock) {
+  public static Javalin create(Clock clock, ServicioNotificaciones notificaciones) {
+    return new DonacionesApi().build(clock, notificaciones);
+  }
+
+  private Javalin build(Clock clock, ServicioNotificaciones notificaciones) {
     DonacionesRepository donaciones = new DonacionesRepository();
     DonantesRepository donantes = new DonantesRepository();
     BeneficiariosRepository entidades = new BeneficiariosRepository();
     SubcategoriasRepository subcategorias = new SubcategoriasRepository();
     PropuestaRepository propuestas = new PropuestaRepositoryImpl();
-    ServicioNotificaciones notificaciones =
-        new ServicioNotificaciones(
-            NotificadorDesdeEntorno.crear(), new NotificacionesRepository(), 3);
 
-    DonanteController donanteController = new DonanteController(donantes, donaciones);
+    DonanteController donanteController =
+        new DonanteController(donantes, donaciones, notificaciones);
     EntidadController entidadController = new EntidadController(entidades, donaciones);
     NecesidadController necesidadController = new NecesidadController(entidades, subcategorias);
     DonacionController donacionController =
@@ -92,7 +97,7 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
         java.util.concurrent.Executors.newSingleThreadScheduledExecutor();
     scheduler.scheduleAtFixedRate(
         new ar.edu.utn.donatrack.notificaciones.TareaAusenciaDonantes(
-            donantes, NotificadorDesdeEntorno.crear()),
+            donantes, notificaciones),
         0,
         1,
         java.util.concurrent.TimeUnit.DAYS);

@@ -27,5 +27,5 @@ public interface DonacionesRemotas {
    */
   void notificarListaParaEntregar(List<UUID> donaciones);
 
-  void notificarInicioTraslado(List<UUID> donaciones, String urlMapa);
+  void notificarInicioTraslado(List<UUID> donaciones, String idCamion);
 }

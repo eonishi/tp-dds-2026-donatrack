@@ -17,17 +17,19 @@ public class GatewayWhatsappTwilio implements GatewayWhatsapp {
   private final HttpClient client;
   private final String accountSid;
   private final String authorization;
+  private final String authToken;
   private final String remitente;
 
   public GatewayWhatsappTwilio(
       HttpClient client, String accountSid, String authToken, String remitente) {
     this.client = Objects.requireNonNull(client);
     this.accountSid = Objects.requireNonNull(accountSid);
+    this.authToken = Objects.requireNonNull(authToken);
     this.authorization =
         "Basic "
             + Base64.getEncoder()
                 .encodeToString(
-                    (accountSid + ":" + Objects.requireNonNull(authToken))
+                    (accountSid + ":" + authToken)
                         .getBytes(StandardCharsets.UTF_8));
     this.remitente = Objects.requireNonNull(remitente);
   }
@@ -51,7 +53,9 @@ public class GatewayWhatsappTwilio implements GatewayWhatsapp {
       if (response.statusCode() >= 200 && response.statusCode() < 300) {
         return ResultadoEnvio.aceptado();
       }
-      return ResultadoEnvio.fallido("Twilio respondió HTTP " + response.statusCode() + ".");
+      return ResultadoEnvio.fallido(
+          RespuestaProveedor.error(
+              "Twilio", response.statusCode(), response.body(), accountSid, authToken));
     } catch (IOException error) {
       return ResultadoEnvio.fallido("No se pudo conectar con Twilio: " + error.getMessage());
     } catch (InterruptedException error) {

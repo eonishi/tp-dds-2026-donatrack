@@ -4,9 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import ar.edu.utn.donatrack.logistica.Camion;
 import ar.edu.utn.donatrack.logistica.CamionRepository;
+import ar.edu.utn.donatrack.logistica.Destino;
 import ar.edu.utn.donatrack.logistica.Ruta;
 import ar.edu.utn.donatrack.logistica.RutaRepository;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
@@ -14,6 +16,7 @@ import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import io.javalin.Javalin;
 import io.javalin.testtools.JavalinTest;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,6 +27,7 @@ public class RutaControllerTest implements SimplePersistenceTest {
   private CamionRepository camionRepo;
   private RutaController controlador;
   private Javalin app;
+  private DonacionesRemotas donacionesRemotas;
 
   @AfterEach
   void limpiarPersistencia() {
@@ -45,7 +49,8 @@ public class RutaControllerTest implements SimplePersistenceTest {
   public void setUp() {
     rutaRepo = new RutaRepository();
     camionRepo = new CamionRepository();
-    controlador = new RutaController(rutaRepo, camionRepo, mock(DonacionesRemotas.class));
+    donacionesRemotas = mock(DonacionesRemotas.class);
+    controlador = new RutaController(rutaRepo, camionRepo, donacionesRemotas);
 
     // Pre-cargamos un camión válido porque la ruta necesita uno para crearse. El repositorio ya
     // no abre ninguna transacción por su cuenta y acá no hay una previa, así que el test es el
@@ -171,6 +176,34 @@ public class RutaControllerTest implements SimplePersistenceTest {
           assertEquals(400, response.code());
           assertEquals(
               0, rutaRepo.listarTodas().size(), "No se debería haber guardado ninguna ruta");
+        });
+  }
+
+  @Test
+  void iniciarRutaNotificaLaPatenteRealUnaSolaVez() {
+    UUID donacionId = UUID.randomUUID();
+    Ruta ruta = guardarRutaConDestino(donacionId);
+
+    JavalinTest.test(
+        app,
+        (server, client) -> {
+          var response =
+              client.patch("/logistica/rutas/" + ruta.getId(), "{\"estado\":\"EN_CURSO\"}");
+
+          assertEquals(200, response.code());
+          verify(donacionesRemotas).notificarInicioTraslado(List.of(donacionId), "AB123CD");
+        });
+  }
+
+  /** Persiste una ruta con un único destino que agrupa la donación indicada. */
+  private Ruta guardarRutaConDestino(UUID donacionId) {
+    Camion camion = camionRepo.buscarPorPatente("AB123CD").orElseThrow();
+    return withTransaction(
+        () -> {
+          Ruta ruta =
+              new Ruta(camion, List.of(new Destino(1L, "Calle 123", List.of(donacionId))));
+          rutaRepo.agregar(ruta);
+          return ruta;
         });
   }
 }
