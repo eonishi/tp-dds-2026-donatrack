@@ -154,7 +154,6 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <!-- TODO: definir el Main de cada microservicio (hoy solo hay tests) -->
                             <mainClass>Main</mainClass>
                         </manifest>
                     </archive>

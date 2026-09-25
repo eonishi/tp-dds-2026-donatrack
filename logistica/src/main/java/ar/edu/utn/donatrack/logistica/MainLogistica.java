@@ -26,20 +26,12 @@ public class MainLogistica {
     // 2. Instanciamos Controladores
     CamionController camionController = new CamionController(camionRepo);
 
-    ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas donacionesRemotas =
-        new ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas() {
-          public java.util.List<ar.edu.utn.donatrack.logistica.planificacion.DonacionPlanificable>
-              listarEnAsignacionRealizada() {
-            return java.util.List.of();
-          }
-
-          public void notificarListaParaEntregar(
-              java.util.List<ar.edu.utn.donatrack.logistica.DonacionId> donaciones) {}
-
-          public void notificarInicioTraslado(
-              java.util.List<ar.edu.utn.donatrack.logistica.DonacionId> donaciones,
-              String urlMapa) {}
-        };
+    ObjectMapper objectMapper = new ObjectMapper();
+    HttpClient httpClient = HttpClient.newHttpClient();
+    String apiUrl = System.getenv().getOrDefault("DONACIONES_API_URL", "http://localhost:7070");
+    String apiKey = System.getenv().getOrDefault("DONACIONES_API_KEY", "S2S_SECRET_KEY");
+    DonacionesRemotas donacionesRemotas = new DonacionesRemotasImpl(apiUrl, apiKey, httpClient, objectMapper);
+    
     RutaController rutaController = new RutaController(rutaRepo, camionRepo, donacionesRemotas);
     PosicionController posicionController =
         new PosicionController(monitorRutas, camionRepo, rutaRepo);

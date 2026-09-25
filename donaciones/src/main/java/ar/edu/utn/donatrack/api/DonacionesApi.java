@@ -46,7 +46,8 @@ public final class DonacionesApi {
             donaciones,
             donantes,
             propuestas,
-            new CargaDonacion(java.time.LocalDate.now(clock), donaciones));
+            new CargaDonacion(java.time.LocalDate.now(clock), donaciones),
+            notificaciones);
 
     ServicioMatchmakingDonaciones matchmakingDomain =
         new ServicioMatchmakingDonaciones(

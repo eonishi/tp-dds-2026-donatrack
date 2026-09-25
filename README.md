@@ -23,14 +23,9 @@ El sistema se divide en dos microservicios (ver [enunciado 2](./docs/enunciado/e
 
 Cada módulo es un proyecto Maven independiente; el `pom.xml` raíz solo los agrega (`mvn verify` en la raíz compila y testea ambos).
 
-### Lógica cruzada no migrada (comentada)
+### Integración entre servicios
 
-La integración REST entre servicios está pendiente; la lógica que requiere el otro microservicio quedó **comentada** dentro de cada módulo con el marcador `LÓGICA FALTANTE`:
-
-- **En `donaciones`** (depende de logística): asignación de camión a la donación (`Donacion`), limpieza de camión al retornar al depósito (`EntregaFallida`) y datos del camión en notificaciones de entrega (`EventoEntregaExitosa`, `ComprobanteEntrega`) y sus tests.
-- **En `logistica`** (depende de donaciones): el destino con su entidad beneficiaria y donaciones (`Destino`), la validación de destinos duplicados (`Ruta`), las donaciones del lote (`LoteDonaciones`), el resultado de planificación (`ResultadoPlanificacion`), el servicio de planificación completo (`ServicioPlanificacionRutas`) y sus tests.
-
-Para completar la separación falta lo que el enunciado pide como siguiente paso: exponer los endpoints REST de cada servicio y que se integren por HTTP.
+La integración REST entre los dos microservicios ya está implementada y funcional. Cuando `donaciones` necesita iniciar un traslado, se comunica con `logistica`, y viceversa, permitiendo una planificación distribuida.
 
 ## Notificaciones reales para la demo
 

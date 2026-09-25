@@ -201,34 +201,34 @@ public class Donacion {
     this.setEntidadBeneficiaria(entidadBeneficiaria);
   }
 
-  public void asignar() {
-    this.estado.asignar(this);
+  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> asignar() {
+    return this.estado.asignar(this);
   }
 
-  public void planificarRuta() {
-    this.estado.planificarRuta(this);
+  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> planificarRuta() {
+    return this.estado.planificarRuta(this);
   }
 
-  public void iniciarTraslado(String urlMapa) {
-    this.estado.iniciarTraslado(this, urlMapa);
+  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> iniciarTraslado(String urlMapa) {
+    return this.estado.iniciarTraslado(this, urlMapa);
   }
 
-  public void confirmarEntrega() {
-    this.estado.confirmarEntrega(this);
+  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> confirmarEntrega() {
+    return this.estado.confirmarEntrega(this);
   }
 
-  public void reportarFalla(String justificacion) {
+  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> reportarFalla(String justificacion) {
     if (justificacion == null || justificacion.isBlank()) {
       throw new IllegalArgumentException("La justificación es obligatoria.");
     }
-    this.estado.reportarFalla(this, justificacion);
+    return this.estado.reportarFalla(this, justificacion);
   }
 
-  public void marcarVencida() {
-    this.estado.marcarVencida(this);
+  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> marcarVencida() {
+    return this.estado.marcarVencida(this);
   }
 
-  public void retornarAlDeposito() {
-    this.estado.retornarAlDeposito(this);
+  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> retornarAlDeposito() {
+    return this.estado.retornarAlDeposito(this);
   }
 }

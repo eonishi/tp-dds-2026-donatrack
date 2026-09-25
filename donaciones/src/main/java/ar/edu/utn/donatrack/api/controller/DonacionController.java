@@ -38,16 +38,19 @@ public final class DonacionController {
   private final DonantesRepository donantes;
   private final PropuestaRepository propuestas;
   private final CargaDonacion cargaDonacion;
+  private final ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones notificaciones;
 
   public DonacionController(
       DonacionesRepository donaciones,
       DonantesRepository donantes,
       PropuestaRepository propuestas,
-      CargaDonacion cargaDonacion) {
+      CargaDonacion cargaDonacion,
+      ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones notificaciones) {
     this.donaciones = donaciones;
     this.donantes = donantes;
     this.propuestas = propuestas;
     this.cargaDonacion = cargaDonacion;
+    this.notificaciones = notificaciones;
   }
 
   public void routes() {
@@ -118,10 +121,12 @@ public final class DonacionController {
     TransicionEstadoRequest request =
         DtoValidator.validate(ctx.bodyAsClass(TransicionEstadoRequest.class));
     Donacion donacion = buscar(HttpSupport.id(ctx, "id"));
+    java.util.List<ar.edu.utn.donatrack.notificaciones.Notificacion> generadas = new java.util.ArrayList<>();
     donaciones.inTransaction(() -> {
-      cambiarEstado(donacion, request);
+      generadas.addAll(cambiarEstado(donacion, request));
       donaciones.save(donacion);
     });
+    notificaciones.enviar(generadas);
     ctx.json(donacion(donacion));
   }
 
@@ -164,33 +169,18 @@ public final class DonacionController {
         .toList();
   }
 
-  private Donacion cambiarEstado(Donacion donacion, TransicionEstadoRequest request) {
+  private List<ar.edu.utn.donatrack.notificaciones.Notificacion> cambiarEstado(Donacion donacion, TransicionEstadoRequest request) {
     return switch (request.estado()) {
-      case LISTA_PARA_ENTREGAR -> {
-        donacion.planificarRuta();
-        yield donacion;
-      }
-      case EN_TRASLADO -> {
-        donacion.iniciarTraslado(request.urlMapa());
-        yield donacion;
-      }
-      case ENTREGADA -> {
-        donacion.confirmarEntrega();
-        yield donacion;
-      }
-      case ENTREGA_FALLIDA -> {
-        donacion.reportarFalla(request.justificacion());
-        yield donacion;
-      }
+      case LISTA_PARA_ENTREGAR -> donacion.planificarRuta();
+      case EN_TRASLADO -> donacion.iniciarTraslado(request.urlMapa());
+      case ENTREGADA -> donacion.confirmarEntrega();
+      case ENTREGA_FALLIDA -> donacion.reportarFalla(request.justificacion());
       case VENCIDA -> {
-        donacion.marcarVencida();
+        var notifs = donacion.marcarVencida();
         propuestas.remove(donacion);
-        yield donacion;
+        yield notifs;
       }
-      case EN_DEPOSITO -> {
-        donacion.retornarAlDeposito();
-        yield donacion;
-      }
+      case EN_DEPOSITO -> donacion.retornarAlDeposito();
       case ASIGNACION_REALIZADA -> throw ApiException.badRequest("Estado no permitido.");
     };
   }
@@ -210,15 +200,17 @@ public final class DonacionController {
       buscar(req.idDonacion());
     }
 
+    java.util.List<ar.edu.utn.donatrack.notificaciones.Notificacion> generadas = new java.util.ArrayList<>();
     donaciones.inTransaction(() -> {
       for (TransicionMasivaRequest req : requests) {
         Donacion donacion = buscar(req.idDonacion());
         String urlGenerada = req.idCamion() != null ? "https://mapa.donatrack.org/tracking/" + req.idCamion() : null;
-        cambiarEstado(donacion, new TransicionEstadoRequest(req.nuevoEstado(), req.justificacion(), urlGenerada));
+        generadas.addAll(cambiarEstado(donacion, new TransicionEstadoRequest(req.nuevoEstado(), req.justificacion(), urlGenerada)));
         donaciones.save(donacion);
       }
     });
 
+    notificaciones.enviar(generadas);
     ctx.status(200);
   }
 }
