@@ -169,10 +169,11 @@ public final class DonacionController {
         .toList();
   }
 
-  private List<ar.edu.utn.donatrack.notificaciones.Notificacion> cambiarEstado(Donacion donacion, TransicionEstadoRequest request) {
+  private List<ar.edu.utn.donatrack.notificaciones.Notificacion> cambiarEstado(
+      Donacion donacion, TransicionEstadoRequest request) {
     return switch (request.estado()) {
       case LISTA_PARA_ENTREGAR -> donacion.planificarRuta();
-      case EN_TRASLADO -> donacion.iniciarTraslado(request.urlMapa());
+      case EN_TRASLADO -> iniciarTraslado(donacion, request.idCamion());
       case ENTREGADA -> donacion.confirmarEntrega();
       case ENTREGA_FALLIDA -> donacion.reportarFalla(request.justificacion());
       case VENCIDA -> {
@@ -186,11 +187,10 @@ public final class DonacionController {
   }
 
   public record TransicionMasivaRequest(
-    @NotNull UUID idDonacion,
-    @NotNull EstadoDonacion nuevoEstado,
-    String justificacion,
-    String idCamion
-  ) {}
+      @NotNull UUID idDonacion,
+      @NotNull EstadoDonacion nuevoEstado,
+      String justificacion,
+      String idCamion) {}
 
   private void transicionarMasivo(Context ctx) {
     TransicionMasivaRequest[] requests = ctx.bodyAsClass(TransicionMasivaRequest[].class);
@@ -198,19 +198,41 @@ public final class DonacionController {
     for (TransicionMasivaRequest req : requests) {
       DtoValidator.validate(req);
       buscar(req.idDonacion());
+      if (req.nuevoEstado() == EstadoDonacion.EN_TRASLADO) {
+        validarIdCamion(req.idCamion());
+      }
     }
 
-    java.util.List<ar.edu.utn.donatrack.notificaciones.Notificacion> generadas = new java.util.ArrayList<>();
-    donaciones.inTransaction(() -> {
-      for (TransicionMasivaRequest req : requests) {
-        Donacion donacion = buscar(req.idDonacion());
-        String urlGenerada = req.idCamion() != null ? "https://mapa.donatrack.org/tracking/" + req.idCamion() : null;
-        generadas.addAll(cambiarEstado(donacion, new TransicionEstadoRequest(req.nuevoEstado(), req.justificacion(), urlGenerada)));
-        donaciones.save(donacion);
-      }
-    });
+    java.util.List<ar.edu.utn.donatrack.notificaciones.Notificacion> generadas =
+        new java.util.ArrayList<>();
+    donaciones.inTransaction(
+        () -> {
+          for (TransicionMasivaRequest req : requests) {
+            Donacion donacion = buscar(req.idDonacion());
+            generadas.addAll(
+                cambiarEstado(
+                    donacion,
+                    new TransicionEstadoRequest(
+                        req.nuevoEstado(), req.justificacion(), req.idCamion())));
+            donaciones.save(donacion);
+          }
+        });
 
     notificaciones.enviar(generadas);
     ctx.status(200);
+  }
+
+  private List<ar.edu.utn.donatrack.notificaciones.Notificacion> iniciarTraslado(
+      Donacion donacion, String idCamion) {
+    validarIdCamion(idCamion);
+    donacion.registrarCamion(idCamion);
+    String urlMapa = "https://mapa.donatrack.org/tracking/" + idCamion;
+    return donacion.iniciarTraslado(urlMapa);
+  }
+
+  private void validarIdCamion(String idCamion) {
+    if (idCamion == null || idCamion.isBlank()) {
+      throw new IllegalArgumentException("idCamion es obligatorio para iniciar el traslado.");
+    }
   }
 }

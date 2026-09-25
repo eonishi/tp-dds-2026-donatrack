@@ -53,7 +53,9 @@ public final class DonacionDtos {
       List<String> fotos) {}
 
   public record TransicionEstadoRequest(
-      @NotNull EstadoDonacion estado, String justificacion, String urlMapa) {
+      @NotNull EstadoDonacion estado,
+      String justificacion,
+      @JsonAlias("patente") String idCamion) {
     @AssertTrue(message = "no admite ASIGNACION_REALIZADA")
     public boolean isEstadoPermitido() {
       return estado != EstadoDonacion.ASIGNACION_REALIZADA;

@@ -2,6 +2,7 @@ package ar.edu.utn.donatrack.donaciones;
 
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
+import ar.edu.utn.donatrack.notificaciones.Notificacion;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +57,7 @@ public class ServicioMatchmakingDonaciones {
     return propuestaRepository.findAllPending();
   }
 
-  public void confirmarAsignacionAdministrativa(
+  public List<Notificacion> confirmarAsignacionAdministrativa(
       Donacion donacion, EntidadBeneficiaria entidadBeneficiaria, LocalDate fechaConfirmacion) {
     PropuestaDeAsignacion propuesta =
         propuestaRepository
@@ -64,11 +65,12 @@ public class ServicioMatchmakingDonaciones {
             .orElseThrow(
                 () ->
                     new IllegalStateException("No hay una propuesta pendiente para la donación."));
-    propuesta.confirmar(entidadBeneficiaria, donacion);
+    List<Notificacion> notificaciones = propuesta.confirmar(entidadBeneficiaria, donacion);
     propuestaRepository.remove(donacion);
     // La confirmación cambia el estado y la entidad de la donación: hay que guardarla para que
     // esos cambios lleguen a la base. Este camino no pasa por DonacionController.
     donacionesRepository.save(donacion);
+    return notificaciones;
   }
 
   private void recalcular(Donacion donacion, LocalDate fechaReferencia) {

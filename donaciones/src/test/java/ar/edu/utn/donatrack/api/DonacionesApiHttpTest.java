@@ -7,6 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donantes.Donante;
+import ar.edu.utn.donatrack.notificaciones.Notificacion;
+import ar.edu.utn.donatrack.notificaciones.NotificacionesRepository;
+import ar.edu.utn.donatrack.notificaciones.Notificador;
+import ar.edu.utn.donatrack.notificaciones.NotificadorSimulado;
+import ar.edu.utn.donatrack.notificaciones.ResultadoEnvio;
+import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.persistencia.JpaRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,12 +36,55 @@ class DonacionesApiHttpTest implements JpaRepository {
   private final HttpClient client = HttpClient.newHttpClient();
   private Javalin app;
   private String baseUrl;
+  private NotificacionesRepository notificacionesRepository;
 
   @BeforeEach
   void start() {
     Clock clock = Clock.fixed(Instant.parse("2026-09-11T12:00:00Z"), ZoneOffset.UTC);
-    app = DonacionesApi.create(clock).start(0);
+    notificacionesRepository = new NotificacionesRepository();
+    ServicioNotificaciones notificaciones =
+        new ServicioNotificaciones(new NotificadorSimulado(), notificacionesRepository, 1);
+    app = DonacionesApi.create(clock, notificaciones).start(0);
     baseUrl = "http://localhost:" + app.port();
+  }
+
+  @Test
+  void altaDeDonanteEnviaUnaBienvenidaUnaSolaVez() throws Exception {
+    UUID donanteId = crearDonante();
+
+    long bienvenidas =
+        notificacionesRepository.getNotificaciones().stream()
+            .filter(n -> n.getMensaje().contains("DonaTrack"))
+            .count();
+
+    assertEquals(1, bienvenidas);
+    assertEquals(200, request("GET", "/api/v1/donantes/" + donanteId, null).statusCode());
+    assertEquals(1, notificacionesRepository.getNotificaciones().size());
+  }
+
+  @Test
+  void falloDeBienvenidaNoRevierteElAlta() throws Exception {
+    app.stop();
+    notificacionesRepository = new NotificacionesRepository();
+    Notificador notificador = org.mockito.Mockito.mock(Notificador.class);
+    org.mockito.Mockito.when(
+            notificador.enviarNotificacion(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+        .thenReturn(ResultadoEnvio.fallido("proveedor caído"));
+    ServicioNotificaciones notificaciones =
+        new ServicioNotificaciones(
+            notificador, notificacionesRepository, 1);
+    Clock clock = Clock.fixed(Instant.parse("2026-09-11T12:00:00Z"), ZoneOffset.UTC);
+    app = DonacionesApi.create(clock, notificaciones).start(0);
+    baseUrl = "http://localhost:" + app.port();
+
+    HttpResponse<String> response =
+        request("POST", "/api/v1/donantes", donanteJson("Sofía", "Pérez", "sofia@example.org"));
+
+    assertEquals(201, response.statusCode(), response.body());
+    assertEquals(1, notificacionesRepository.getNotificaciones().size());
+    assertEquals(
+        "FALLIDA", notificacionesRepository.getNotificaciones().get(0).getEstado().name());
   }
 
   @AfterEach
@@ -179,7 +228,7 @@ class DonacionesApiHttpTest implements JpaRepository {
         request(
                 "PATCH",
                 "/api/v1/donaciones/" + donacionId + "/estado",
-                "{\"estado\":\"EN_TRASLADO\"}")
+                "{\"estado\":\"EN_TRASLADO\",\"idCamion\":\"AA123BB\"}")
             .statusCode());
 
     HttpResponse<String> noRecibida =
@@ -254,6 +303,22 @@ class DonacionesApiHttpTest implements JpaRepository {
     assertEquals(200, seleccion.statusCode());
     assertEquals("ASIGNACION_REALIZADA", json(seleccion).get("estado").asText());
     assertEquals(entidadId, json(seleccion).get("entidadBeneficiariaId").asLong());
+    long asignacionesAntesDeRepetir =
+        notificacionesRepository.getNotificaciones().stream()
+            .filter(n -> n.getMensaje().contains("asignad"))
+            .count();
+    assertEquals(
+        200,
+        request(
+                "PUT",
+                "/api/v1/donaciones/" + donacionId + "/propuesta-asignacion",
+                "{\"entidadBeneficiariaId\":" + entidadId + "}")
+            .statusCode());
+    assertEquals(
+        asignacionesAntesDeRepetir,
+        notificacionesRepository.getNotificaciones().stream()
+            .filter(n -> n.getMensaje().contains("asignad"))
+            .count());
     HttpResponse<String> pendientes = request("GET", "/api/v1/propuestas-asignacion", null);
     assertEquals(200, pendientes.statusCode());
     assertEquals(1, json(pendientes).size());
@@ -393,8 +458,95 @@ class DonacionesApiHttpTest implements JpaRepository {
         request(
                 "PATCH",
                 "/api/v1/donaciones/" + donacionId + "/estado",
-                "{\"estado\":\"EN_TRASLADO\"}")
+                "{\"estado\":\"EN_TRASLADO\",\"idCamion\":\"AA123BB\"}")
             .statusCode());
+  }
+
+  @Test
+  void transicionMasivaIniciaTrasladoConCamionYUrlUnaVez() throws Exception {
+    UUID donanteId = crearDonante();
+    long entidadId = crearEntidad("Hogar Ruta");
+    crearNecesidad(entidadId, "Arroz");
+    UUID donacionId = crearDonacion(donanteId, "Arroz");
+    asignarDesdePropuesta(donacionId, entidadId);
+    assertEquals(
+        200,
+        request(
+                "PATCH",
+                "/api/v1/donaciones/" + donacionId + "/estado",
+                "{\"estado\":\"LISTA_PARA_ENTREGAR\"}")
+            .statusCode());
+
+    int antes = notificacionesRepository.getNotificaciones().size();
+    HttpResponse<String> response =
+        request(
+            "PATCH",
+            "/api/v1/donaciones/estado",
+            "[{\"idDonacion\":\""
+                + donacionId
+                + "\",\"nuevoEstado\":\"EN_TRASLADO\",\"idCamion\":\"AB123CD\"}]");
+
+    assertEquals(200, response.statusCode(), response.body());
+    Donacion donacion =
+        createQuery("select d from Donacion d where d.id = :id", Donacion.class)
+            .setParameter("id", donacionId)
+            .getSingleResult();
+    assertEquals("AB123CD", donacion.getIdCamion().orElseThrow());
+    var nuevas = notificacionesRepository.getNotificaciones().subList(antes, antes + 2);
+    assertEquals(2, nuevas.size());
+    for (Notificacion notificacion : nuevas) {
+      assertEquals(
+          1,
+          apariciones(
+              notificacion.getMensaje(),
+              "https://mapa.donatrack.org/tracking/AB123CD"));
+    }
+  }
+
+  @Test
+  void transicionIndividualExigeCamionYRegistraPatenteConUrlUnaVez() throws Exception {
+    UUID donanteId = crearDonante();
+    long entidadId = crearEntidad("Hogar Ruta Individual");
+    crearNecesidad(entidadId, "Aceite");
+    UUID donacionId = crearDonacion(donanteId, "Aceite");
+    asignarDesdePropuesta(donacionId, entidadId);
+    assertEquals(
+        200,
+        request(
+                "PATCH",
+                "/api/v1/donaciones/" + donacionId + "/estado",
+                "{\"estado\":\"LISTA_PARA_ENTREGAR\"}")
+            .statusCode());
+
+    HttpResponse<String> sinCamion =
+        request(
+            "PATCH",
+            "/api/v1/donaciones/" + donacionId + "/estado",
+            "{\"estado\":\"EN_TRASLADO\"}");
+    assertEquals(400, sinCamion.statusCode(), sinCamion.body());
+
+    int antes = notificacionesRepository.getNotificaciones().size();
+    HttpResponse<String> response =
+        request(
+            "PATCH",
+            "/api/v1/donaciones/" + donacionId + "/estado",
+            "{\"estado\":\"EN_TRASLADO\",\"idCamion\":\"AC456DE\"}");
+
+    assertEquals(200, response.statusCode(), response.body());
+    Donacion donacion =
+        createQuery("select d from Donacion d where d.id = :id", Donacion.class)
+            .setParameter("id", donacionId)
+            .getSingleResult();
+    assertEquals("AC456DE", donacion.getIdCamion().orElseThrow());
+    var nuevas = notificacionesRepository.getNotificaciones().subList(antes, antes + 2);
+    assertEquals(2, nuevas.size());
+    for (Notificacion notificacion : nuevas) {
+      assertEquals(
+          1,
+          apariciones(
+              notificacion.getMensaje(),
+              "https://mapa.donatrack.org/tracking/AC456DE"));
+    }
   }
 
   private void asignarDesdePropuesta(UUID donacionId, long entidadId) throws Exception {
@@ -445,5 +597,9 @@ class DonacionesApiHttpTest implements JpaRepository {
 
   private JsonNode json(HttpResponse<String> response) throws IOException {
     return mapper.readTree(response.body());
+  }
+
+  private int apariciones(String texto, String buscado) {
+    return (texto.length() - texto.replace(buscado, "").length()) / buscado.length();
   }
 }

@@ -195,10 +195,11 @@ public class Donacion {
     this.entidadBeneficiaria = entidadBeneficiaria;
   }
 
-  public void confirmarEntidadBeneficiaria(EntidadBeneficiaria entidadBeneficiaria) {
+  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> confirmarEntidadBeneficiaria(
+      EntidadBeneficiaria entidadBeneficiaria) {
     Objects.requireNonNull(entidadBeneficiaria, "entidadBeneficiaria no puede ser null");
-    this.asignar();
     this.setEntidadBeneficiaria(entidadBeneficiaria);
+    return this.asignar();
   }
 
   public List<ar.edu.utn.donatrack.notificaciones.Notificacion> asignar() {

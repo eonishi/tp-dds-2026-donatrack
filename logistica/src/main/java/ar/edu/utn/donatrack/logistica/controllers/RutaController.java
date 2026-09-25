@@ -145,9 +145,8 @@ public class RutaController {
                           ruta.getDestinos().stream()
                               .flatMap(d -> d.donaciones().stream())
                               .toList();
-                      String urlMapa =
-                          "https://mapa.donatrack.org/tracking/" + ruta.getCamion().getPatente();
-                      donacionesRemotas.notificarInicioTraslado(donaciones, urlMapa);
+                      donacionesRemotas.notificarInicioTraslado(
+                          donaciones, ruta.getCamion().getPatente());
                     } else if ("FINALIZADA".equalsIgnoreCase(dto.estado)) {
                       ruta.finalizar();
                     } else {

@@ -19,7 +19,6 @@ import ar.edu.utn.donatrack.donaciones.EntidadFueraDeRankingException;
 import ar.edu.utn.donatrack.donaciones.PropuestaDeAsignacion;
 import ar.edu.utn.donatrack.donaciones.ServicioMatchmakingDonaciones;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
-import ar.edu.utn.donatrack.notificaciones.eventos.EventoAsignacion;
 import io.javalin.http.Context;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -103,12 +102,12 @@ public final class MatchmakingController {
       throw ApiException.conflict("La donación ya tiene una entidad beneficiaria asignada.");
     }
     try {
-      matchmaking.confirmarAsignacionAdministrativa(donacion, entidad, LocalDate.now(clock));
+      notificaciones.enviar(
+          matchmaking.confirmarAsignacionAdministrativa(
+              donacion, entidad, LocalDate.now(clock)));
     } catch (EntidadFueraDeRankingException error) {
       throw ApiException.conflict(error.getMessage());
     }
-    notificaciones.enviar(
-        new EventoAsignacion(donacion.getDonante(), entidad).generarNotificaciones());
     return donacion;
   }
 

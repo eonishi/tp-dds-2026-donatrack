@@ -43,7 +43,7 @@ public class DonacionesRemotasImpl implements DonacionesRemotas{
     @Override 
     public List<DonacionPlanificable> listarEnAsignacionRealizada() {
         HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(apiUrl + "/api/donaciones?estado=ASIGNACION_REALIZADA"))
+            .uri(URI.create(apiUrl + "/api/v1/donaciones?estado=ASIGNACION_REALIZADA"))
             .header("Authorization", apiKey)
             .header("Accept", "application/json")
             .GET()
@@ -94,7 +94,7 @@ public class DonacionesRemotasImpl implements DonacionesRemotas{
 
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(apiUrl + "/api/donaciones/estado"))
+                .uri(URI.create(apiUrl + "/api/v1/donaciones/estado"))
                 .header("Authorization", apiKey)
                 .header("Content-Type", "application/json")
                 .method("PATCH", HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))

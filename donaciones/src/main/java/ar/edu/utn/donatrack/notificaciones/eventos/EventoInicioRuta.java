@@ -27,7 +27,7 @@ public class EventoInicioRuta extends EventoNotificable {
         notificaciones.add(
             new Notificacion(
                 medio,
-                "La ruta de entrega ha comenzado. Seguí el recorrido en el mapa.",
+                "La ruta de entrega ha comenzado. Seguí el recorrido en el mapa: " + urlMapa,
                 payload,
                 EstadoNotificacion.PENDIENTE));
       }

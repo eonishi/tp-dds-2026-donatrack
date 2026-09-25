@@ -1,6 +1,7 @@
 package ar.edu.utn.donatrack.donaciones;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
+import ar.edu.utn.donatrack.notificaciones.Notificacion;
 import java.util.List;
 import java.util.Objects;
 
@@ -14,8 +15,8 @@ public class PropuestaDeAsignacion {
     this.rankings = List.copyOf(rankings);
   }
 
-  public void confirmar(EntidadBeneficiaria elegida) {
-    confirmar(elegida, donacion);
+  public List<Notificacion> confirmar(EntidadBeneficiaria elegida) {
+    return confirmar(elegida, donacion);
   }
 
   /**
@@ -28,15 +29,18 @@ public class PropuestaDeAsignacion {
    * @param elegida entidad beneficiaria elegida, que debe pertenecer al ranking
    * @param donacionParaConfirmar donación sobre la que se aplica la transición
    */
-  public void confirmar(EntidadBeneficiaria elegida, Donacion donacionParaConfirmar) {
+  public List<Notificacion> confirmar(
+      EntidadBeneficiaria elegida, Donacion donacionParaConfirmar) {
     if (!pendiente) {
-      return; // no-op on double-confirm
+      return List.of(); // no-op on double-confirm
     }
     if (!incluye(elegida)) {
       throw new EntidadFueraDeRankingException();
     }
-    donacionParaConfirmar.confirmarEntidadBeneficiaria(elegida);
+    List<Notificacion> notificaciones =
+        donacionParaConfirmar.confirmarEntidadBeneficiaria(elegida);
     this.pendiente = false;
+    return notificaciones;
   }
 
   private boolean incluye(EntidadBeneficiaria entidad) {

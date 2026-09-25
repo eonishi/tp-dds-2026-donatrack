@@ -15,6 +15,7 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
+import ar.edu.utn.donatrack.notificaciones.Notificacion;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +39,7 @@ class PropuestaDeAsignacionTest {
     PropuestaDeAsignacion propuesta = new PropuestaDeAsignacion(donacion, crearRankingsDummy());
     EntidadBeneficiaria entidad = entidadRankeada(propuesta);
 
-    propuesta.confirmar(entidad);
+    List<Notificacion> generadas = propuesta.confirmar(entidad);
 
     assertFalse(propuesta.isPendiente(), "confirmar() debe setear pendiente=false");
     assertSame(
@@ -49,6 +50,8 @@ class PropuestaDeAsignacionTest {
         EstadoDonacion.ASIGNACION_REALIZADA,
         donacion.getEstado(),
         "Donacion debe transicionar a AsignacionRealizada");
+    assertEquals(1, generadas.size());
+    assertTrue(generadas.get(0).getMensaje().contains("Entidad"));
   }
 
   @Test
@@ -74,17 +77,19 @@ class PropuestaDeAsignacionTest {
     EntidadBeneficiaria otraEntidad = new EntidadBeneficiaria("Otro Hogar", "Dir2", "Tel2");
 
     // First confirm
-    propuesta.confirmar(entidad);
+    List<Notificacion> primeraConfirmacion = propuesta.confirmar(entidad);
     assertFalse(propuesta.isPendiente());
     assertSame(entidad, donacion.getEntidadBeneficiaria());
 
     // Second confirm — silent no-op, donacion already in AsignacionRealizada
-    assertDoesNotThrow(() -> propuesta.confirmar(otraEntidad));
+    List<Notificacion> segundaConfirmacion = propuesta.confirmar(otraEntidad);
     assertFalse(propuesta.isPendiente(), "Debe seguir siendo false");
     assertSame(
         entidad,
         donacion.getEntidadBeneficiaria(),
         "La entidad no debe cambiar en doble confirmación");
+    assertEquals(1, primeraConfirmacion.size());
+    assertTrue(segundaConfirmacion.isEmpty());
   }
 
   // ── Helpers ────────────────────────────────────────────────────────
