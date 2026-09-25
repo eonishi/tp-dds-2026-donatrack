@@ -1,8 +1,8 @@
 package ar.edu.utn.donatrack.logistica;
-import javax.persistence.Embeddable;
 
 import java.util.Objects;
 import java.util.UUID;
+import javax.persistence.Embeddable;
 
 /**
  * Identifica una donación, tal como la nombra el contrato de integración ({@code idDonacion}, un

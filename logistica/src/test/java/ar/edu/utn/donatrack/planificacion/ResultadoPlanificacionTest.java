@@ -23,7 +23,8 @@ class ResultadoPlanificacionTest {
     Camion camion = new Camion("ABC123", 45.0, 2.5, 5000.0);
     Map<Camion, List<Destino>> rutas = Map.of(camion, List.of(crearDestino()));
 
-    ResultadoPlanificacion resultado = new ResultadoPlanificacion(loteId, rutas, java.util.Collections.emptyList());
+    ResultadoPlanificacion resultado =
+        new ResultadoPlanificacion(loteId, rutas, java.util.Collections.emptyList());
 
     assertSame(loteId, resultado.loteId());
     assertSame(rutas, resultado.rutas());
@@ -34,14 +35,18 @@ class ResultadoPlanificacionTest {
     Camion camion = new Camion("ABC123", 45.0, 2.5, 5000.0);
     Map<Camion, List<Destino>> rutas = Map.of(camion, List.of(crearDestino()));
 
-    assertThrows(NullPointerException.class, () -> new ResultadoPlanificacion(null, rutas, java.util.Collections.emptyList()));
+    assertThrows(
+        NullPointerException.class,
+        () -> new ResultadoPlanificacion(null, rutas, java.util.Collections.emptyList()));
   }
 
   @Test
   void crearResultado_ConRutasNull_DebeLanzarNullPointerException() {
     LoteId loteId = LoteId.generar();
 
-    assertThrows(NullPointerException.class, () -> new ResultadoPlanificacion(loteId, null, java.util.Collections.emptyList()));
+    assertThrows(
+        NullPointerException.class,
+        () -> new ResultadoPlanificacion(loteId, null, java.util.Collections.emptyList()));
   }
 
   @Test
@@ -49,7 +54,8 @@ class ResultadoPlanificacionTest {
     LoteId loteId = LoteId.generar();
     Map<Camion, List<Destino>> rutas = Map.of();
 
-    ResultadoPlanificacion resultado = new ResultadoPlanificacion(loteId, rutas, java.util.Collections.emptyList());
+    ResultadoPlanificacion resultado =
+        new ResultadoPlanificacion(loteId, rutas, java.util.Collections.emptyList());
 
     assertTrue(resultado.rutas().isEmpty());
   }

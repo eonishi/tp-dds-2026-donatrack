@@ -40,16 +40,21 @@ public class EventoEntregaNoSatisfactoria extends EventoNotificable {
               medio, mensajeEntidad, SinPayload.INSTANCE, EstadoNotificacion.PENDIENTE));
     }
 
-    String adminConfig = System.getProperty("donatrack.admin.emails", System.getenv("DONATRACK_ADMIN_EMAILS"));
+    String adminConfig =
+        System.getProperty("donatrack.admin.emails", System.getenv("DONATRACK_ADMIN_EMAILS"));
     if (adminConfig != null && !adminConfig.isBlank()) {
-    String mensajeAdmin = "Alerta: La entrega a " + entidad.getRazonSocial() + " no pudo completarse. Motivo: " + motivo;
-    for (String email : adminConfig.split(",")) {
-      MedioDeContacto medioAdmin = new CorreoElectronico(email.trim());
-      notificaciones.add(new Notificacion(medioAdmin, mensajeAdmin, SinPayload.INSTANCE, EstadoNotificacion.PENDIENTE));
+      String mensajeAdmin =
+          "Alerta: La entrega a "
+              + entidad.getRazonSocial()
+              + " no pudo completarse. Motivo: "
+              + motivo;
+      for (String email : adminConfig.split(",")) {
+        MedioDeContacto medioAdmin = new CorreoElectronico(email.trim());
+        notificaciones.add(
+            new Notificacion(
+                medioAdmin, mensajeAdmin, SinPayload.INSTANCE, EstadoNotificacion.PENDIENTE));
+      }
     }
-  }
     return notificaciones;
   }
-
-  
 }

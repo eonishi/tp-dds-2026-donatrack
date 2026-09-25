@@ -38,7 +38,12 @@ public class RutaControllerTest implements JpaRepository {
   public void setUp() {
     rutaRepo = new RutaRepository();
     camionRepo = new CamionRepository();
-    controlador = new RutaController(rutaRepo, camionRepo, org.mockito.Mockito.mock(ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas.class));
+    controlador =
+        new RutaController(
+            rutaRepo,
+            camionRepo,
+            org.mockito.Mockito.mock(
+                ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas.class));
 
     // Pre-cargamos un camión válido porque la ruta necesita uno para crearse
     Camion camionPrueba = new Camion("AB123CD", 20.0, 2.5, 10000.0);

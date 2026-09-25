@@ -15,15 +15,16 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 
 public class PlanificacionSchedulerTest {
-    @Test 
-    void iniciar_ConfiguracionSchedulerCorrectamente() {
-        ServicioPlanificacionRutas servicio = mock(ServicioPlanificacionRutas.class);
-        ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
-        Clock clock = Clock.fixed(Instant.parse("2026-09-23T12:00:00Z"), ZoneId.of("UTC"));
+  @Test
+  void iniciar_ConfiguracionSchedulerCorrectamente() {
+    ServicioPlanificacionRutas servicio = mock(ServicioPlanificacionRutas.class);
+    ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
+    Clock clock = Clock.fixed(Instant.parse("2026-09-23T12:00:00Z"), ZoneId.of("UTC"));
 
-        PlanificacionScheduler scheduler = new PlanificacionScheduler(servicio, clock, executor);
-        scheduler.iniciar();
+    PlanificacionScheduler scheduler = new PlanificacionScheduler(servicio, clock, executor);
+    scheduler.iniciar();
 
-        verify(executor).scheduleAtFixedRate(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
-    }
+    verify(executor)
+        .scheduleAtFixedRate(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
+  }
 }

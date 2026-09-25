@@ -18,7 +18,8 @@ public class RutaController {
   private final CamionRepository camionRepo;
   private final DonacionesRemotas donacionesRemotas;
 
-  public RutaController(RutaRepository rutaRepo, CamionRepository camionRepo, DonacionesRemotas donacionesRemotas) {
+  public RutaController(
+      RutaRepository rutaRepo, CamionRepository camionRepo, DonacionesRemotas donacionesRemotas) {
     this.rutaRepo = rutaRepo;
     this.camionRepo = camionRepo;
     this.donacionesRemotas = donacionesRemotas;
@@ -135,10 +136,12 @@ public class RutaController {
                   try {
                     if ("EN_CURSO".equalsIgnoreCase(dto.estado)) {
                       ruta.iniciar();
-                      List<DonacionId> donaciones = ruta.getDestinos().stream()
-                        .flatMap(d -> d.donaciones().stream())
-                        .toList();
-                      String urlMapa = "https://mapa.donatrack.org/tracking/" + ruta.getCamion().getPatente();
+                      List<DonacionId> donaciones =
+                          ruta.getDestinos().stream()
+                              .flatMap(d -> d.donaciones().stream())
+                              .toList();
+                      String urlMapa =
+                          "https://mapa.donatrack.org/tracking/" + ruta.getCamion().getPatente();
                       donacionesRemotas.notificarInicioTraslado(donaciones, urlMapa);
                     } else if ("FINALIZADA".equalsIgnoreCase(dto.estado)) {
                       ruta.finalizar();

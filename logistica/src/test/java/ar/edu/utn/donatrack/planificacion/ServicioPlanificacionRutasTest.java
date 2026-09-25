@@ -271,7 +271,8 @@ class ServicioPlanificacionRutasTest {
     // El resultado solo incluye la donación de la entidad A
     ResultadoPlanificacion resultado =
         new ResultadoPlanificacion(
-            loteId, Map.of(camion, List.of(new Destino(entA, "Dir 1", List.of(planificada)))),
+            loteId,
+            Map.of(camion, List.of(new Destino(entA, "Dir 1", List.of(planificada)))),
             java.util.Collections.emptyList());
 
     servicio.procesarResultado(resultado);
@@ -293,7 +294,8 @@ class ServicioPlanificacionRutasTest {
 
     servicio.planificar();
 
-    servicio.procesarResultado(new ResultadoPlanificacion(loteId, Map.of(), java.util.Collections.emptyList()));
+    servicio.procesarResultado(
+        new ResultadoPlanificacion(loteId, Map.of(), java.util.Collections.emptyList()));
 
     verify(rutaRepository, never()).agregar(any());
     verify(donacionesRemotas, never()).notificarListaParaEntregar(any());
@@ -301,7 +303,8 @@ class ServicioPlanificacionRutasTest {
 
   @Test
   void procesarResultado_LoteIdDesconocido_DebeLanzarIllegalStateException() {
-    ResultadoPlanificacion resultado = new ResultadoPlanificacion(LoteId.generar(), Map.of(), java.util.Collections.emptyList());
+    ResultadoPlanificacion resultado =
+        new ResultadoPlanificacion(LoteId.generar(), Map.of(), java.util.Collections.emptyList());
 
     assertThrows(IllegalStateException.class, () -> servicio.procesarResultado(resultado));
   }
@@ -347,7 +350,8 @@ class ServicioPlanificacionRutasTest {
 
     ResultadoPlanificacion resultado =
         new ResultadoPlanificacion(
-            loteId, Map.of(camion, List.of(new Destino(entidad, "Dir 1", List.of(ajena)))),
+            loteId,
+            Map.of(camion, List.of(new Destino(entidad, "Dir 1", List.of(ajena)))),
             java.util.Collections.emptyList());
 
     assertThrows(IllegalArgumentException.class, () -> servicio.procesarResultado(resultado));
@@ -379,7 +383,9 @@ class ServicioPlanificacionRutasTest {
 
     assertThrows(
         IllegalArgumentException.class,
-        () -> servicio.procesarResultado(new ResultadoPlanificacion(loteId, rutas, java.util.Collections.emptyList())));
+        () ->
+            servicio.procesarResultado(
+                new ResultadoPlanificacion(loteId, rutas, java.util.Collections.emptyList())));
 
     verify(rutaRepository, never()).agregar(any());
     verify(donacionesRemotas, never()).notificarListaParaEntregar(any());
@@ -408,7 +414,9 @@ class ServicioPlanificacionRutasTest {
 
     assertThrows(
         IllegalArgumentException.class,
-        () -> servicio.procesarResultado(new ResultadoPlanificacion(loteId, invalido, java.util.Collections.emptyList())));
+        () ->
+            servicio.procesarResultado(
+                new ResultadoPlanificacion(loteId, invalido, java.util.Collections.emptyList())));
 
     // El lote no se consumió: el mismo LoteId se puede reprocesar con un resultado válido.
     ResultadoPlanificacion valido =

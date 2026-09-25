@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -28,8 +27,7 @@ import javax.persistence.Table;
 @Table(schema = "logistica", name = "rutas")
 public class Ruta {
 
-  @Id
-  private UUID id;
+  @Id private UUID id;
 
   @ManyToOne
   @JoinColumn(name = "camion_id")

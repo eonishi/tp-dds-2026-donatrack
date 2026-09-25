@@ -136,11 +136,11 @@ public class DonantesRepository implements JpaRepository {
 
   public List<Donante> getDonantesInactivos(java.time.LocalDate limite) {
     return createQuery(
-      "select d from Donante d where not exists " +
-      "(select don from Donacion don where don.donante = d and " +
-      "exists (select h from don.historialEstado h where h.fecha >= :limite))",
-      Donante.class)
-      .setParameter("limite", limite)
-      .getResultList();
+            "select d from Donante d where not exists "
+                + "(select don from Donacion don where don.donante = d and "
+                + "exists (select h from don.historialEstado h where h.fecha >= :limite))",
+            Donante.class)
+        .setParameter("limite", limite)
+        .getResultList();
   }
 }

@@ -1,7 +1,7 @@
 package ar.edu.utn.donatrack.logistica;
-import javax.persistence.Embeddable;
 
 import java.util.Objects;
+import javax.persistence.Embeddable;
 
 /**
  * Identifica una entidad beneficiaria, tal como la nombra el contrato de integración ({@code

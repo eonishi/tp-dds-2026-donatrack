@@ -52,7 +52,8 @@ public final class DonacionDtos {
       List<BienResponse> bienes,
       List<String> fotos) {}
 
-  public record TransicionEstadoRequest(@NotNull EstadoDonacion estado, String justificacion, String urlMapa) {
+  public record TransicionEstadoRequest(
+      @NotNull EstadoDonacion estado, String justificacion, String urlMapa) {
     @AssertTrue(message = "no admite ASIGNACION_REALIZADA")
     public boolean isEstadoPermitido() {
       return estado != EstadoDonacion.ASIGNACION_REALIZADA;
@@ -68,6 +69,4 @@ public final class DonacionDtos {
 
   public record HistorialEstadoResponse(
       LocalDateTime fecha, EstadoDonacion estadoAlcanzado, String justificacion) {}
-
-
 }
