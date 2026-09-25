@@ -190,7 +190,7 @@ public final class DonacionController implements WithSimplePersistenceUnit {
                     b.unidad(),
                     b.fechaVencimiento(),
                     b.estadoDeUso() == null ? EstadoUso.NO_APLICA : b.estadoDeUso(),
-                    subcategorias.obtenerOCrear(b.subcategoria(), b.categoria(), cache)))
+                    subcategorias.obtenerOrCrear(b.subcategoria(), b.categoria(), cache)))
         .toList();
   }
 

@@ -70,7 +70,7 @@ public class SubcategoriasRepository implements WithSimplePersistenceUnit {
    *     solicitudes
    * @return la instancia administrada de la entrada del catálogo
    */
-  public SubCategoria obtenerOCrear(
+  public SubCategoria obtenerOrCrear(
       String nombre, Categoria categoria, Map<String, SubCategoria> cache) {
     return cache.computeIfAbsent(
         nombre,

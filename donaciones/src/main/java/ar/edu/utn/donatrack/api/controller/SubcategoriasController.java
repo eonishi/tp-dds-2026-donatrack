@@ -58,7 +58,7 @@ public final class SubcategoriasController implements WithSimplePersistenceUnit 
                 throw ApiException.conflict("Ya existe una subcategoría con ese nombre.");
               }
               return response(
-                  subcategorias.obtenerOCrear(
+                  subcategorias.obtenerOrCrear(
                       request.nombre(), request.categoria(), new HashMap<>()));
             });
     ctx.status(201).json(creada);

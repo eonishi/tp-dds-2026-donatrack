@@ -50,8 +50,8 @@ class ResolucionSubcategoriasTest implements SimplePersistenceTest {
 
     SubcategoriasRepository repositorio = new SubcategoriasRepository();
     Map<String, SubCategoria> cache = new HashMap<>();
-    SubCategoria sillaNueva = repositorio.obtenerOCrear(nombre, Categoria.MOBILIARIO, cache);
-    SubCategoria sillaUsada = repositorio.obtenerOCrear(nombre, Categoria.MOBILIARIO, cache);
+    SubCategoria sillaNueva = repositorio.obtenerOrCrear(nombre, Categoria.MOBILIARIO, cache);
+    SubCategoria sillaUsada = repositorio.obtenerOrCrear(nombre, Categoria.MOBILIARIO, cache);
     List<Bien> bienes =
         List.of(
             bien("Silla nueva", EstadoUso.NUEVO, sillaNueva),
@@ -66,7 +66,7 @@ class ResolucionSubcategoriasTest implements SimplePersistenceTest {
     assertEquals(1, filasConNombre(nombre), "La carga debe insertar una sola fila de catálogo");
 
     SubCategoria deUnaSegundaSolicitud =
-        new SubcategoriasRepository().obtenerOCrear(nombre, Categoria.VESTIMENTA, new HashMap<>());
+        new SubcategoriasRepository().obtenerOrCrear(nombre, Categoria.VESTIMENTA, new HashMap<>());
     entityManager().flush();
 
     assertEquals(

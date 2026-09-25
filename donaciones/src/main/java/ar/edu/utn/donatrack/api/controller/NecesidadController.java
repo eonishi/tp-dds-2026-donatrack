@@ -90,7 +90,7 @@ public final class NecesidadController implements WithSimplePersistenceUnit {
         withTransaction(
             () -> {
               actual.actualizar(
-                  subcategorias.obtenerOCrear(
+                  subcategorias.obtenerOrCrear(
                       request.subcategoria(), request.categoria(), new HashMap<>()),
                   request.cantidadObjetivo(),
                   request.unidad(),
@@ -133,7 +133,7 @@ public final class NecesidadController implements WithSimplePersistenceUnit {
 
   private Necesidad construirNecesidad(NecesidadRequest request, Map<String, SubCategoria> cache) {
     SubCategoria subcategoria =
-        subcategorias.obtenerOCrear(request.subcategoria(), request.categoria(), cache);
+        subcategorias.obtenerOrCrear(request.subcategoria(), request.categoria(), cache);
     if (!recurrente(request)) {
       return new Necesidad(
           subcategoria, request.cantidadObjetivo(), request.unidad(), request.descripcion());

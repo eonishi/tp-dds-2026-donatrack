@@ -25,10 +25,10 @@ import org.junit.jupiter.api.Test;
 class SubcategoriasRepositoryTest implements SimplePersistenceTest {
 
   @Test
-  void obtenerOCrearPersisteUnaEntradaNuevaDisponibleEnElListadoYPorNombre() {
+  void obtenerOrCrearPersisteUnaEntradaNuevaDisponibleEnElListadoYPorNombre() {
     String nombre = nombreUnico();
 
-    new SubcategoriasRepository().obtenerOCrear(nombre, Categoria.ALIMENTO, new HashMap<>());
+    new SubcategoriasRepository().obtenerOrCrear(nombre, Categoria.ALIMENTO, new HashMap<>());
     entityManager().flush();
     entityManager().clear();
 
@@ -63,13 +63,13 @@ class SubcategoriasRepositoryTest implements SimplePersistenceTest {
   }
 
   @Test
-  void obtenerOCrearConLaMismaCacheDevuelveLaMismaInstanciaEInsertaUnaSolaFila() {
+  void obtenerOrCrearConLaMismaCacheDevuelveLaMismaInstanciaEInsertaUnaSolaFila() {
     String nombre = nombreUnico();
     SubcategoriasRepository repositorio = new SubcategoriasRepository();
     Map<String, SubCategoria> cache = new HashMap<>();
 
-    SubCategoria primera = repositorio.obtenerOCrear(nombre, Categoria.ALIMENTO, cache);
-    SubCategoria segunda = repositorio.obtenerOCrear(nombre, Categoria.MOBILIARIO, cache);
+    SubCategoria primera = repositorio.obtenerOrCrear(nombre, Categoria.ALIMENTO, cache);
+    SubCategoria segunda = repositorio.obtenerOrCrear(nombre, Categoria.MOBILIARIO, cache);
     entityManager().flush();
 
     assertSame(
@@ -84,12 +84,12 @@ class SubcategoriasRepositoryTest implements SimplePersistenceTest {
   @Test
   void laPrimeraCategoriaConLaQueSeCreaUnNombreEsLaQuePersiste() {
     String nombre = nombreUnico();
-    new SubcategoriasRepository().obtenerOCrear(nombre, Categoria.ALIMENTO, new HashMap<>());
+    new SubcategoriasRepository().obtenerOrCrear(nombre, Categoria.ALIMENTO, new HashMap<>());
     entityManager().flush();
     entityManager().clear();
 
     SubCategoria posterior =
-        new SubcategoriasRepository().obtenerOCrear(nombre, Categoria.MOBILIARIO, new HashMap<>());
+        new SubcategoriasRepository().obtenerOrCrear(nombre, Categoria.MOBILIARIO, new HashMap<>());
 
     assertEquals(
         Categoria.ALIMENTO,
