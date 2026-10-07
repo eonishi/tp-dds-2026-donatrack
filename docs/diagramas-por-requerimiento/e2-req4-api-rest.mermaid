@@ -39,7 +39,7 @@ classDiagram
     Necesidad <|-- NecesidadRecurrente
     Ruta *-- Camion : camion
     Ruta *-- "*" Destino : destinos
-    Destino o-- "*" Donacion : donaciones
+    Destino ..> Donacion : donacionId (API)
     PropuestaDeAsignacion *-- Donacion : donacion
     PropuestaDeAsignacion *-- "*" RankingMatchmaking : rankings
 

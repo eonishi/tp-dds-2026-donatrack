@@ -47,4 +47,4 @@ classDiagram
     ServicioPlanificacionRutas ..> Donacion : replanifica en la siguiente jornada
     Ruta *-- Camion : camion
     Ruta *-- "*" Destino : destinos
-    Destino o-- "*" Donacion : asignadas
+    Destino ..> Donacion : donacionId (API)

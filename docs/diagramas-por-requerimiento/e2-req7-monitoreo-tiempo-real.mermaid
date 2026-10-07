@@ -40,7 +40,7 @@ classDiagram
     }
     class Destino {
         -entidadBeneficiaria: EntidadBeneficiaria
-        -donaciones: List~Donacion~
+        -donaciones: List~DonacionPlanificable~
     }
     class Donacion
     class Donante
@@ -58,7 +58,7 @@ classDiagram
     MonitorRutas ..> RutaRepository : correlaciona ruta activa
     Ruta *-- Camion : camion
     Ruta *-- "*" Destino : destinos
-    Destino o-- "*" Donacion : donaciones
+    Destino ..> Donacion : donacionId (API)
     Donacion --> Donante : donante
     Donacion --> EntidadBeneficiaria : entidad
     EventoInicioRuta ..> InfoMapa : enlace al mapa (seguimiento en vivo)

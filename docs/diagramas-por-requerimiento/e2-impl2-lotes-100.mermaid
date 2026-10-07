@@ -15,7 +15,7 @@ classDiagram
     }
     class LoteDonaciones {
         <<record>>
-        -donaciones: List~Donacion~
+        -donaciones: List~DonacionPlanificable~
         -camiones: List~Camion~
         +valida: máx 100 donaciones por lote
     }
@@ -31,7 +31,7 @@ classDiagram
     }
 
     ServicioPlanificacionRutas ..> LoteDonaciones : arma lotes (<= 100)
-    LoteDonaciones o-- "*" Donacion : donaciones
+    LoteDonaciones ..> Donacion : donaciones (API)
     LoteDonaciones o-- "*" Camion : camiones
     PlanificadorRutas ..> LoteDonaciones : recibe por ejecución
     PlanificadorRutas ..> LoteId : devuelve
