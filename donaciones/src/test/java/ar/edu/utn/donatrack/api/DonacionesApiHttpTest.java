@@ -241,7 +241,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     long entidadId = crearEntidad("Comedor Match");
     crearNecesidad(entidadId, "Arroz");
     UUID donacionId = crearDonacion(donanteId, "Arroz");
-    UUID otraDonacionId = crearDonacion(donanteId, "Arroz");
+    UUID idOtraDonacion = crearDonacion(donanteId, "Arroz");
 
     HttpResponse<String> ejecucion =
         request("POST", "/api/v1/donaciones/" + donacionId + "/propuesta-asignacion", null);
@@ -250,14 +250,14 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     assertFalse(json(ejecucion).get("rankings").isEmpty());
     assertEquals(
         201,
-        request("POST", "/api/v1/donaciones/" + otraDonacionId + "/propuesta-asignacion", null)
+        request("POST", "/api/v1/donaciones/" + idOtraDonacion + "/propuesta-asignacion", null)
             .statusCode());
 
     HttpResponse<String> propuestas = request("GET", "/api/v1/propuestas-asignacion", null);
     assertEquals(200, propuestas.statusCode());
     assertEquals(2, json(propuestas).size());
     assertTrue(propuestas.body().contains(donacionId.toString()));
-    assertTrue(propuestas.body().contains(otraDonacionId.toString()));
+    assertTrue(propuestas.body().contains(idOtraDonacion.toString()));
 
     HttpResponse<String> ranking =
         request("GET", "/api/v1/donaciones/" + donacionId + "/propuesta-asignacion", null);
@@ -275,7 +275,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     HttpResponse<String> pendientes = request("GET", "/api/v1/propuestas-asignacion", null);
     assertEquals(200, pendientes.statusCode());
     assertEquals(1, json(pendientes).size());
-    assertEquals(otraDonacionId.toString(), json(pendientes).get(0).get("donacionId").asText());
+    assertEquals(idOtraDonacion.toString(), json(pendientes).get(0).get("donacionId").asText());
     assertEquals(
         404, request("PUT", "/api/v1/donaciones/" + donacionId + "/asignacion", null).statusCode());
     assertEquals(404, request("POST", "/api/v1/propuestas-asignacion", null).statusCode());

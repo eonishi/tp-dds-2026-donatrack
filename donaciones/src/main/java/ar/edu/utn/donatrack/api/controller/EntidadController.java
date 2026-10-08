@@ -13,7 +13,6 @@ import ar.edu.utn.donatrack.api.error.ApiException;
 import ar.edu.utn.donatrack.api.validation.DtoValidator;
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiariaId;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
@@ -65,7 +64,7 @@ public final class EntidadController implements WithSimplePersistenceUnit {
   }
 
   private void actualizar(Context ctx) {
-    EntidadBeneficiariaId id = entidadId(ctx, "id");
+    Long id = entidadId(ctx, "id");
     EntidadBeneficiaria entidad = buscar(id);
     EntidadRequest request = DtoValidator.validate(ctx.bodyAsClass(EntidadRequest.class));
     validarRazonSocial(request.razonSocial(), id);
@@ -76,7 +75,7 @@ public final class EntidadController implements WithSimplePersistenceUnit {
   }
 
   private void eliminar(Context ctx) {
-    EntidadBeneficiariaId id = entidadId(ctx, "id");
+    Long id = entidadId(ctx, "id");
     buscar(id);
     if (donaciones.getDonaciones().stream()
         .anyMatch(
@@ -93,17 +92,17 @@ public final class EntidadController implements WithSimplePersistenceUnit {
     return entidad(entidad);
   }
 
-  private EntidadBeneficiaria buscar(EntidadBeneficiariaId id) {
+  private EntidadBeneficiaria buscar(Long id) {
     return entidades
         .findById(id)
-        .orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", id.value()));
+        .orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", id));
   }
 
-  private EntidadBeneficiariaId entidadId(Context ctx, String parameter) {
-    return new EntidadBeneficiariaId(HttpSupport.longId(ctx, parameter));
+  private Long entidadId(Context ctx, String parameter) {
+    return HttpSupport.longId(ctx, parameter);
   }
 
-  private void validarRazonSocial(String razonSocial, EntidadBeneficiariaId actual) {
+  private void validarRazonSocial(String razonSocial, Long actual) {
     if (entidades.getBeneficiarios().stream()
         .anyMatch(
             e -> !e.getId().equals(actual) && e.getRazonSocial().equalsIgnoreCase(razonSocial))) {

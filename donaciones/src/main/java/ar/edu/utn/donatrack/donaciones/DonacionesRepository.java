@@ -5,6 +5,7 @@ import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Repositorio de donaciones respaldado por JPA: las lecturas consultan la base y las escrituras
@@ -98,8 +99,8 @@ public class DonacionesRepository implements WithSimplePersistenceUnit {
    * @param id identidad de la donación
    * @return la donación almacenada, o {@link Optional#empty()} si no existe
    */
-  public Optional<Donacion> findById(DonacionId id) {
-    return Optional.ofNullable(find(Donacion.class, id.value()));
+  public Optional<Donacion> findById(UUID id) {
+    return Optional.ofNullable(find(Donacion.class, id));
   }
 
   /**
@@ -111,8 +112,8 @@ public class DonacionesRepository implements WithSimplePersistenceUnit {
    *
    * @param id identidad de la donación
    */
-  public void deleteById(DonacionId id) {
-    Donacion donacion = find(Donacion.class, id.value());
+  public void deleteById(UUID id) {
+    Donacion donacion = find(Donacion.class, id);
     if (donacion != null) {
       remove(donacion);
     }

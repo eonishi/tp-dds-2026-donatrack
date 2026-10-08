@@ -67,7 +67,7 @@ public final class ApiMapper {
 
   public static EntidadResponse entidad(EntidadBeneficiaria entidad) {
     return new EntidadResponse(
-        entidad.getId().value(),
+        entidad.getId(),
         entidad.getRazonSocial(),
         entidad.getDireccion(),
         entidad.getTelefono(),
@@ -79,7 +79,7 @@ public final class ApiMapper {
     NecesidadRecurrente recurrente = necesidad instanceof NecesidadRecurrente valor ? valor : null;
     return new NecesidadResponse(
         necesidad.getId(),
-        entidad.getId().value(),
+        entidad.getId(),
         recurrente == null ? "EXTRAORDINARIA" : "RECURRENTE",
         recurrente == null ? null : recurrente.getPeriodo(),
         necesidad.getDescripcion(),
@@ -107,11 +107,11 @@ public final class ApiMapper {
                         bien.getSubcategoria().getCategoria()))
             .toList();
     return new DonacionResponse(
-        donacion.getId().value(),
+        donacion.getId(),
         donacion.getDonante().getId(),
         donacion.getEntidadBeneficiaria() == null
             ? null
-            : donacion.getEntidadBeneficiaria().getId().value(),
+            : donacion.getEntidadBeneficiaria().getId(),
         donacion.getEstado(),
         bienes,
         donacion.getFotos());
@@ -139,12 +139,12 @@ public final class ApiMapper {
                             .map(
                                 candidato ->
                                     new CandidatoResponse(
-                                        candidato.getEntidadBeneficiaria().getId().value(),
+                                        candidato.getEntidadBeneficiaria().getId(),
                                         candidato.getEntidadBeneficiaria().getRazonSocial(),
                                         candidato.getPuntaje()))
                             .toList()))
             .toList();
     return new PropuestaResponse(
-        propuesta.getDonacion().getId().value(), propuesta.isPendiente(), rankings);
+        propuesta.getDonacion().getId(), propuesta.isPendiente(), rankings);
   }
 }

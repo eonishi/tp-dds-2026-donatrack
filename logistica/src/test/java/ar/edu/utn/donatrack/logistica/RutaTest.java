@@ -16,10 +16,7 @@ class RutaTest {
   }
 
   private static Destino crearDestino(long entidadId) {
-    return new Destino(
-        new EntidadBeneficiariaId(entidadId),
-        "Calle " + entidadId,
-        List.of(new DonacionId(UUID.randomUUID())));
+    return new Destino(entidadId, "Calle " + entidadId, List.of(UUID.randomUUID()));
   }
 
   // ── TDD Cycle 1: Creation + Validation ──────────────────────────
@@ -59,9 +56,8 @@ class RutaTest {
   @Test
   void crearRuta_ConDestinosDuplicados_DebeLanzarIllegalArgumentException() {
     Camion camion = crearCamionDummy();
-    Destino repetido = new Destino(new EntidadBeneficiariaId(1L), "Calle A", List.of());
-    Destino mismoEntidadOtraDireccion =
-        new Destino(new EntidadBeneficiariaId(1L), "Calle B", List.of());
+    Destino repetido = new Destino(1L, "Calle A", List.of());
+    Destino mismoEntidadOtraDireccion = new Destino(1L, "Calle B", List.of());
     List<Destino> destinos = List.of(repetido, mismoEntidadOtraDireccion);
 
     assertThrows(IllegalArgumentException.class, () -> new Ruta(camion, destinos));

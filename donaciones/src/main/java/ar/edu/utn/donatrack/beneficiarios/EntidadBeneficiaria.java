@@ -54,16 +54,11 @@ public class EntidadBeneficiaria implements Notificable {
    * @param telefono teléfono de contacto de la entidad
    */
   public EntidadBeneficiaria(String razonSocial, String direccion, String telefono) {
-    this(
-        new EntidadBeneficiariaId(ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE)),
-        razonSocial,
-        direccion,
-        telefono);
+    this(ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE), razonSocial, direccion, telefono);
   }
 
-  public EntidadBeneficiaria(
-      EntidadBeneficiariaId id, String razonSocial, String direccion, String telefono) {
-    this.id = Objects.requireNonNull(id, "id no puede ser null").value();
+  public EntidadBeneficiaria(Long id, String razonSocial, String direccion, String telefono) {
+    this.id = Objects.requireNonNull(id, "id no puede ser null");
     this.razonSocial = razonSocial;
     this.direccion = direccion;
     this.telefono = telefono;
@@ -74,8 +69,8 @@ public class EntidadBeneficiaria implements Notificable {
    *
    * @return el identificador de la entidad beneficiaria
    */
-  public EntidadBeneficiariaId getId() {
-    return new EntidadBeneficiariaId(id);
+  public Long getId() {
+    return id;
   }
 
   public String getRazonSocial() {

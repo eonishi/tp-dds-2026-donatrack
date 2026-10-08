@@ -47,7 +47,7 @@ class EntidadBeneficiariaPersistenciaTest implements SimplePersistenceTest {
     entityManager().flush();
     entityManager().clear();
 
-    EntidadBeneficiaria recargada = find(EntidadBeneficiaria.class, entidad.getId().value());
+    EntidadBeneficiaria recargada = find(EntidadBeneficiaria.class, entidad.getId());
 
     assertNotNull(recargada, "La entidad beneficiaria debe poder recargarse por su identidad");
 
@@ -94,7 +94,7 @@ class EntidadBeneficiariaPersistenciaTest implements SimplePersistenceTest {
     entityManager().flush();
     entityManager().clear();
 
-    EntidadBeneficiaria recargada = find(EntidadBeneficiaria.class, entidad.getId().value());
+    EntidadBeneficiaria recargada = find(EntidadBeneficiaria.class, entidad.getId());
 
     assertNotNull(recargada);
     List<Necesidad> extraordinarias = recargada.getNecesidadesExtraordinarias();
@@ -126,7 +126,7 @@ class EntidadBeneficiariaPersistenciaTest implements SimplePersistenceTest {
     entityManager().flush();
     entityManager().clear();
 
-    EntidadBeneficiaria recargada = find(EntidadBeneficiaria.class, entidad.getId().value());
+    EntidadBeneficiaria recargada = find(EntidadBeneficiaria.class, entidad.getId());
 
     assertNotNull(recargada, "La entidad beneficiaria debe poder recargarse por su identidad");
     assertEquals(

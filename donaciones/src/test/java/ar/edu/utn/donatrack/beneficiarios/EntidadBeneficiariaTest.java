@@ -13,7 +13,7 @@ class EntidadBeneficiariaTest {
 
   @Test
   void mismoId_SeDeduplicaEnHashSet() {
-    EntidadBeneficiariaId id = new EntidadBeneficiariaId(1L);
+    Long id = 1L;
     EntidadBeneficiaria a =
         new EntidadBeneficiaria(id, "Comedor Los Pibes", "Av. Siempre Viva 123", "011-4567-8901");
     EntidadBeneficiaria b =
@@ -29,14 +29,9 @@ class EntidadBeneficiariaTest {
   @Test
   void distintoId_NoSeDeduplicaEnHashSet() {
     EntidadBeneficiaria a =
-        new EntidadBeneficiaria(
-            new EntidadBeneficiariaId(1L),
-            "Comedor Los Pibes",
-            "Av. Siempre Viva 123",
-            "011-4567-8901");
+        new EntidadBeneficiaria(1L, "Comedor Los Pibes", "Av. Siempre Viva 123", "011-4567-8901");
     EntidadBeneficiaria b =
-        new EntidadBeneficiaria(
-            new EntidadBeneficiariaId(2L), "Comedor Los Pibes", "Calle Falsa 456", "011-1111-2222");
+        new EntidadBeneficiaria(2L, "Comedor Los Pibes", "Calle Falsa 456", "011-1111-2222");
 
     Set<EntidadBeneficiaria> set = new HashSet<>();
     set.add(a);
@@ -47,7 +42,7 @@ class EntidadBeneficiariaTest {
 
   @Test
   void getId_DevuelveElIdAsignado() {
-    EntidadBeneficiariaId id = new EntidadBeneficiariaId(42L);
+    Long id = 42L;
     EntidadBeneficiaria entidad = new EntidadBeneficiaria(id, "Test", "Dir", "Tel");
 
     assertEquals(id, entidad.getId());

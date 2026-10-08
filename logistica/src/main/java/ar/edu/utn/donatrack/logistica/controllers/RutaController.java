@@ -3,7 +3,6 @@ package ar.edu.utn.donatrack.logistica.controllers;
 import ar.edu.utn.donatrack.logistica.Camion;
 import ar.edu.utn.donatrack.logistica.CamionRepository;
 import ar.edu.utn.donatrack.logistica.Destino;
-import ar.edu.utn.donatrack.logistica.DonacionId;
 import ar.edu.utn.donatrack.logistica.Ruta;
 import ar.edu.utn.donatrack.logistica.RutaRepository;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
@@ -140,7 +139,7 @@ public class RutaController {
                   try {
                     if ("EN_CURSO".equalsIgnoreCase(dto.estado)) {
                       ruta.iniciar();
-                      List<DonacionId> donaciones =
+                      List<UUID> donaciones =
                           ruta.getDestinos().stream()
                               .flatMap(d -> d.donaciones().stream())
                               .toList();

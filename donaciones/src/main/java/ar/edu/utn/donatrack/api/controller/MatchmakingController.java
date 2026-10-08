@@ -12,9 +12,7 @@ import ar.edu.utn.donatrack.api.mappers.ApiMapper;
 import ar.edu.utn.donatrack.api.validation.DtoValidator;
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiariaId;
 import ar.edu.utn.donatrack.donaciones.Donacion;
-import ar.edu.utn.donatrack.donaciones.DonacionId;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donaciones.EntidadFueraDeRankingException;
 import ar.edu.utn.donatrack.donaciones.PropuestaDeAsignacion;
@@ -89,18 +87,16 @@ public final class MatchmakingController implements WithSimplePersistenceUnit {
         withTransaction(
             () ->
                 ApiMapper.donacion(
-                    confirmarSeleccion(
-                        HttpSupport.id(ctx, "donacionId"),
-                        new EntidadBeneficiariaId(entidadBeneficiariaId))));
+                    confirmarSeleccion(HttpSupport.id(ctx, "donacionId"), entidadBeneficiariaId)));
     ctx.json(seleccionada);
   }
 
-  private Donacion confirmarSeleccion(UUID donacionId, EntidadBeneficiariaId entidadId) {
+  private Donacion confirmarSeleccion(UUID donacionId, Long entidadId) {
     Donacion donacion = donacion(donacionId);
     EntidadBeneficiaria entidad =
         entidades
             .findById(entidadId)
-            .orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", entidadId.value()));
+            .orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", entidadId));
     if (donacion.getEntidadBeneficiaria() != null) {
       if (donacion.getEntidadBeneficiaria().getId().equals(entidadId)) {
         return donacion;
@@ -118,8 +114,6 @@ public final class MatchmakingController implements WithSimplePersistenceUnit {
   }
 
   private Donacion donacion(UUID id) {
-    return donaciones
-        .findById(new DonacionId(id))
-        .orElseThrow(() -> ApiException.notFound("Donación", id));
+    return donaciones.findById(id).orElseThrow(() -> ApiException.notFound("Donación", id));
   }
 }

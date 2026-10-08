@@ -7,7 +7,6 @@ import ar.edu.utn.donatrack.logistica.controllers.RutaController;
 import ar.edu.utn.donatrack.logistica.monitoreo.MonitorRutas;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotasImpl;
-import ar.edu.utn.donatrack.logistica.planificacion.LoteId;
 import ar.edu.utn.donatrack.logistica.planificacion.PlanificadorRutas;
 import ar.edu.utn.donatrack.logistica.planificacion.ServicioPlanificacionRutas;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,6 +14,7 @@ import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.Javalin;
 import java.net.http.HttpClient;
 import java.time.Clock;
+import java.util.UUID;
 
 public class MainLogistica implements WithSimplePersistenceUnit {
   public static void main(String[] args) {
@@ -48,7 +48,7 @@ public class MainLogistica implements WithSimplePersistenceUnit {
     PosicionController posicionController =
         new PosicionController(monitorRutas, camionRepo, rutaRepo);
 
-    PlanificadorRutas planificadorRutas = lote -> LoteId.generar();
+    PlanificadorRutas planificadorRutas = lote -> UUID.randomUUID();
     ServicioPlanificacionRutas servicioPlanificacion =
         new ServicioPlanificacionRutas(donacionesRemotas, camionRepo, planificadorRutas, rutaRepo);
     PlanificacionController planificacionController =

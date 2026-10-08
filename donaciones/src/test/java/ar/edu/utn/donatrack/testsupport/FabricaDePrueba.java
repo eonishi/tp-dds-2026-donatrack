@@ -1,12 +1,11 @@
 package ar.edu.utn.donatrack.testsupport;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiariaId;
 import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.donaciones.Donacion;
-import ar.edu.utn.donatrack.donaciones.DonacionId;
 import ar.edu.utn.donatrack.donantes.Donante;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -51,10 +50,10 @@ public final class FabricaDePrueba {
    * @return la donación creada
    */
   public static Donacion nuevaDonacion(Donante donante, List<Bien> bienes) {
-    return new Donacion(DonacionId.generar(), donante, bienes);
+    return new Donacion(UUID.randomUUID(), donante, bienes);
   }
 
-  private static EntidadBeneficiariaId idDeEntidadNuevo() {
-    return new EntidadBeneficiariaId(ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE));
+  private static Long idDeEntidadNuevo() {
+    return ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE);
   }
 }

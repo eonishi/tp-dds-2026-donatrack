@@ -44,7 +44,7 @@ public class AlgoritmoPrioridadSubAtendidos implements AlgoritmoMatchmaking {
         Comparator.comparingInt(MatchCandidato::getPuntaje)
             .reversed()
             .thenComparing(candidato -> candidato.getEntidadBeneficiaria().getRazonSocial())
-            .thenComparing(candidato -> candidato.getEntidadBeneficiaria().getId().value()));
+            .thenComparing(candidato -> candidato.getEntidadBeneficiaria().getId()));
     return new RankingMatchmaking(getNombre(), candidatos.stream().limit(10).toList());
   }
 

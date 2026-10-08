@@ -60,8 +60,8 @@ public class Donacion {
 
   protected Donacion() {}
 
-  public Donacion(DonacionId id, Donante donante, List<Bien> bienes) {
-    this.id = Objects.requireNonNull(id, "id no puede ser null").value();
+  public Donacion(UUID id, Donante donante, List<Bien> bienes) {
+    this.id = Objects.requireNonNull(id, "id no puede ser null");
     this.donante = Objects.requireNonNull(donante, "donante no puede ser null");
     this.bienes.addAll(bienes);
   }
@@ -71,8 +71,8 @@ public class Donacion {
    *
    * @return el identificador de la donación
    */
-  public DonacionId getId() {
-    return new DonacionId(id);
+  public UUID getId() {
+    return id;
   }
 
   /**

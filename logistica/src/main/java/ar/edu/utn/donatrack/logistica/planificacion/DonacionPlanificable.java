@@ -1,9 +1,8 @@
 package ar.edu.utn.donatrack.logistica.planificacion;
 
-import ar.edu.utn.donatrack.logistica.DonacionId;
-import ar.edu.utn.donatrack.logistica.EntidadBeneficiariaId;
 import ar.edu.utn.donatrack.logistica.monitoreo.Coordenada;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Donación con los datos que necesita el planificador externo.
@@ -21,8 +20,8 @@ import java.util.Objects;
  * @param pesoKg peso de la donación en kilogramos (no negativo, no NaN)
  */
 public record DonacionPlanificable(
-    DonacionId idDonacion,
-    EntidadBeneficiariaId idEntidadBeneficiaria,
+    UUID idDonacion,
+    Long idEntidadBeneficiaria,
     String direccionDestino,
     Coordenada coordenadas,
     double volumenM3,

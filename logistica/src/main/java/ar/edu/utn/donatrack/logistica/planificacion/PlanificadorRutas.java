@@ -1,5 +1,7 @@
 package ar.edu.utn.donatrack.logistica.planificacion;
 
+import java.util.UUID;
+
 public interface PlanificadorRutas {
-  LoteId enviarLote(LoteDonaciones lote);
+  UUID enviarLote(LoteDonaciones lote);
 }

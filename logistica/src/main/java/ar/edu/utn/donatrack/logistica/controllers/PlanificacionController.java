@@ -3,9 +3,6 @@ package ar.edu.utn.donatrack.logistica.controllers;
 import ar.edu.utn.donatrack.logistica.Camion;
 import ar.edu.utn.donatrack.logistica.CamionRepository;
 import ar.edu.utn.donatrack.logistica.Destino;
-import ar.edu.utn.donatrack.logistica.DonacionId;
-import ar.edu.utn.donatrack.logistica.EntidadBeneficiariaId;
-import ar.edu.utn.donatrack.logistica.planificacion.LoteId;
 import ar.edu.utn.donatrack.logistica.planificacion.ResultadoPlanificacion;
 import ar.edu.utn.donatrack.logistica.planificacion.ServicioPlanificacionRutas;
 import io.javalin.http.Context;
@@ -45,7 +42,7 @@ public class PlanificacionController {
       servicio.procesarResultado(resultado);
       ctx.status(200);
     } catch (IllegalStateException e) {
-      ctx.status(404).result(mensajeDe(e, "LoteId no encontrado"));
+      ctx.status(404).result(mensajeDe(e, "Lote no encontrado"));
     } catch (IllegalArgumentException e) {
       ctx.status(400).result(mensajeDe(e, "Resultado inválido"));
     }
@@ -68,9 +65,7 @@ public class PlanificacionController {
     }
 
     return new ResultadoPlanificacion(
-        new LoteId(UUID.fromString(dto.loteId)),
-        rutas,
-        mapearDonaciones(dto.donacionesNoAsignadas));
+        UUID.fromString(dto.loteId), rutas, mapearDonaciones(dto.donacionesNoAsignadas));
   }
 
   private Destino mapearDestino(DestinoDto dto) {
@@ -78,17 +73,14 @@ public class PlanificacionController {
       throw new IllegalArgumentException(
           "Cada destino debe incluir entidadBeneficiariaId y direccion");
     }
-    return new Destino(
-        new EntidadBeneficiariaId(dto.entidadBeneficiariaId),
-        dto.direccion,
-        mapearDonaciones(dto.donaciones));
+    return new Destino(dto.entidadBeneficiariaId, dto.direccion, mapearDonaciones(dto.donaciones));
   }
 
-  private List<DonacionId> mapearDonaciones(List<String> valores) {
+  private List<UUID> mapearDonaciones(List<String> valores) {
     if (valores == null) {
       return List.of();
     }
-    return valores.stream().map(UUID::fromString).map(DonacionId::new).toList();
+    return valores.stream().map(UUID::fromString).toList();
   }
 
   private String mensajeDe(Exception e, String porDefecto) {

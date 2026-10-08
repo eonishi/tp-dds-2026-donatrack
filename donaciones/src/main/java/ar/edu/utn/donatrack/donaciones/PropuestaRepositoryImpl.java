@@ -4,9 +4,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 public class PropuestaRepositoryImpl implements PropuestaRepository {
-  private final Map<DonacionId, PropuestaDeAsignacion> propuestas = new HashMap<>();
+  private final Map<UUID, PropuestaDeAsignacion> propuestas = new HashMap<>();
 
   @Override
   public Optional<PropuestaDeAsignacion> findPendingByDonacion(Donacion donacion) {

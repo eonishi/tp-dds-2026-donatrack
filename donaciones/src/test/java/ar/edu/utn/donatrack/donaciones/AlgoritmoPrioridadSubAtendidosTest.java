@@ -5,7 +5,6 @@ import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaEntidad;
 import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiariaId;
 import ar.edu.utn.donatrack.beneficiarios.Necesidad;
 import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.Categoria;
@@ -219,10 +218,8 @@ class AlgoritmoPrioridadSubAtendidosTest implements SimplePersistenceTest {
                     EstadoUso.NO_APLICA,
                     fideos)));
 
-    EntidadBeneficiaria mayor =
-        new EntidadBeneficiaria(new EntidadBeneficiariaId(2L), "Comedor Los Pibes", "Dir", "Tel");
-    EntidadBeneficiaria menor =
-        new EntidadBeneficiaria(new EntidadBeneficiariaId(1L), "Comedor Los Pibes", "Dir", "Tel");
+    EntidadBeneficiaria mayor = new EntidadBeneficiaria(2L, "Comedor Los Pibes", "Dir", "Tel");
+    EntidadBeneficiaria menor = new EntidadBeneficiaria(1L, "Comedor Los Pibes", "Dir", "Tel");
     for (EntidadBeneficiaria entidad : List.of(mayor, menor)) {
       entidad.agregarNecesidadExtraordinaria(
           new Necesidad(fideos, 5.0, UnidadMedida.KILOGRAMOS, "Fideos"));

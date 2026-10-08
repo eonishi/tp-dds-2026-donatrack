@@ -13,7 +13,6 @@ import ar.edu.utn.donatrack.api.mappers.ApiMapper;
 import ar.edu.utn.donatrack.api.validation.DtoValidator;
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiariaId;
 import ar.edu.utn.donatrack.beneficiarios.Necesidad;
 import ar.edu.utn.donatrack.beneficiarios.NecesidadRecurrente;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
@@ -122,13 +121,13 @@ public final class NecesidadController implements WithSimplePersistenceUnit {
   }
 
   private EntidadBeneficiaria entidad(Context ctx) {
-    return entidad(new EntidadBeneficiariaId(HttpSupport.longId(ctx, "entidadId")));
+    return entidad(HttpSupport.longId(ctx, "entidadId"));
   }
 
-  private EntidadBeneficiaria entidad(EntidadBeneficiariaId id) {
+  private EntidadBeneficiaria entidad(Long id) {
     return entidades
         .findById(id)
-        .orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", id.value()));
+        .orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", id));
   }
 
   private Necesidad construirNecesidad(NecesidadRequest request, Map<String, SubCategoria> cache) {
