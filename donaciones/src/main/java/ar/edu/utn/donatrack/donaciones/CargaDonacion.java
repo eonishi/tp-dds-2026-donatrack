@@ -6,7 +6,6 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class CargaDonacion {
@@ -34,7 +33,7 @@ public class CargaDonacion {
         .stream()
         .map(
             bienesDeClave -> {
-              Donacion donacion = new Donacion(UUID.randomUUID(), donante, bienesDeClave);
+              Donacion donacion = new Donacion(donante, bienesDeClave);
               donacionesRepository.addDonacion(donacion);
               return donacion;
             })

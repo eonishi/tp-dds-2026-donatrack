@@ -218,15 +218,20 @@ class AlgoritmoPrioridadSubAtendidosTest implements SimplePersistenceTest {
                     EstadoUso.NO_APLICA,
                     fideos)));
 
-    EntidadBeneficiaria mayor = new EntidadBeneficiaria(2L, "Comedor Los Pibes", "Dir", "Tel");
-    EntidadBeneficiaria menor = new EntidadBeneficiaria(1L, "Comedor Los Pibes", "Dir", "Tel");
-    for (EntidadBeneficiaria entidad : List.of(mayor, menor)) {
+    EntidadBeneficiaria primera = new EntidadBeneficiaria("Comedor Los Pibes", "Dir", "Tel");
+    EntidadBeneficiaria segunda = new EntidadBeneficiaria("Comedor Los Pibes", "Dir", "Tel");
+    for (EntidadBeneficiaria entidad : List.of(primera, segunda)) {
       entidad.agregarNecesidadExtraordinaria(
           new Necesidad(fideos, 5.0, UnidadMedida.KILOGRAMOS, "Fideos"));
     }
     persist(fideos);
-    persist(mayor);
-    persist(menor);
+    persist(primera);
+    persist(segunda);
+
+    // El proveedor asigna los ids al persistir: el desempate por id se verifica comparando el
+    // ranking contra la entidad que quedó con el id menor, sin fijar los ids de antemano.
+    EntidadBeneficiaria menor = primera.getId() < segunda.getId() ? primera : segunda;
+    EntidadBeneficiaria mayor = menor == primera ? segunda : primera;
 
     var ranking =
         new AlgoritmoPrioridadSubAtendidos(new DonacionesRepository())

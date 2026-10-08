@@ -5,22 +5,20 @@ import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donantes.Donante;
 import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Fábricas de objetos de dominio para tests.
  *
- * <p>La asignación real de identificadores ocurre en el borde del servicio (persistencia o alta);
- * en tests se resuelve acá: un id nuevo por instancia, sin repetir literales en cada caso. Los
- * tests que necesitan una identidad concreta la construyen explícitamente.
+ * <p>Las instancias se construyen igual que en producción: sin id, porque lo asigna el proveedor de
+ * persistencia al guardarlas. Los tests que necesitan una identidad concreta antes de persistir
+ * usan los constructores con id de cada entidad.
  */
 public final class FabricaDePrueba {
 
   private FabricaDePrueba() {}
 
   /**
-   * Crea una entidad beneficiaria con un id nuevo y datos de contacto genéricos.
+   * Crea una entidad beneficiaria sin id y datos de contacto genéricos.
    *
    * @param razonSocial razón social de la entidad
    * @return la entidad creada
@@ -30,7 +28,7 @@ public final class FabricaDePrueba {
   }
 
   /**
-   * Crea una entidad beneficiaria con un id nuevo.
+   * Crea una entidad beneficiaria sin id.
    *
    * @param razonSocial razón social de la entidad
    * @param direccion dirección de la entidad
@@ -39,21 +37,17 @@ public final class FabricaDePrueba {
    */
   public static EntidadBeneficiaria nuevaEntidad(
       String razonSocial, String direccion, String telefono) {
-    return new EntidadBeneficiaria(idDeEntidadNuevo(), razonSocial, direccion, telefono);
+    return new EntidadBeneficiaria(razonSocial, direccion, telefono);
   }
 
   /**
-   * Crea una donación con un id nuevo.
+   * Crea una donación sin id.
    *
    * @param donante donante de la donación
    * @param bienes bienes donados
    * @return la donación creada
    */
   public static Donacion nuevaDonacion(Donante donante, List<Bien> bienes) {
-    return new Donacion(UUID.randomUUID(), donante, bienes);
-  }
-
-  private static Long idDeEntidadNuevo() {
-    return ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE);
+    return new Donacion(donante, bienes);
   }
 }

@@ -2,6 +2,7 @@ package ar.edu.utn.donatrack.donaciones;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.Categoria;
@@ -33,7 +34,10 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
     SubCategoria alimentos = new SubCategoria(nombreUnicoAlimentos(), Categoria.ALIMENTO);
     Donante donante = crearDonante();
     Bien bien = crearBien(alimentos, "Fideos secos", 5.0);
-    Donacion donacion = new Donacion(UUID.randomUUID(), donante, List.of(bien));
+    Donacion donacion = new Donacion(donante, List.of(bien));
+    assertNull(
+        donacion.getId(),
+        "Una donación recién construida no tiene id: lo asigna el proveedor al persistirla");
     donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, null);
     donacion.cambiarEstado(EstadoDonacion.ENTREGADA, "Entrega confirmada");
     // Las fechas que la donación fijó en memoria son el valor de referencia: la recarga debe
@@ -41,11 +45,12 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
     // flush, el recálculo al leer y el colapso de ambas filas a un mismo instante.
     LocalDateTime fechaPrimera = donacion.getHistorialEstado().get(0).getFecha();
     LocalDateTime fechaSegunda = donacion.getHistorialEstado().get(1).getFecha();
-    UUID id = donacion.getId();
 
     persist(alimentos);
     persist(donante);
     persist(donacion);
+    UUID id = donacion.getId();
+    assertNotNull(id, "El proveedor debe asignar el UUID de la donación al persistirla");
     entityManager().flush();
     entityManager().clear();
 
@@ -88,8 +93,7 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
   void lasColumnasDeEstadoGuardanElNombreDeLaConstanteYNoElIndice() {
     SubCategoria alimentos = new SubCategoria(nombreUnicoAlimentos(), Categoria.ALIMENTO);
     Donante donante = crearDonante();
-    Donacion donacion =
-        new Donacion(UUID.randomUUID(), donante, List.of(crearBien(alimentos, "Arroz", 2.0)));
+    Donacion donacion = new Donacion(donante, List.of(crearBien(alimentos, "Arroz", 2.0)));
     donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, null);
     donacion.cambiarEstado(EstadoDonacion.ENTREGADA, null);
 
@@ -129,7 +133,6 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
     Donante donante = crearDonante();
     Donacion donacion =
         new Donacion(
-            UUID.randomUUID(),
             donante,
             List.of(
                 new Bien(

@@ -20,6 +20,8 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -27,7 +29,9 @@ import javax.persistence.OneToMany;
 
 @Entity
 public class Donacion {
-  @Id private UUID id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.AUTO)
+  private UUID id;
 
   // Obligatorio a propósito: sin estado, sería invisible para los filtros y nula al cargar.
   @Column(nullable = false)
@@ -59,6 +63,20 @@ public class Donacion {
   private Donante donante;
 
   protected Donacion() {}
+
+  /**
+   * Crea una donación sin identificador.
+   *
+   * <p>El identificador lo asigna el proveedor de persistencia al guardar la donación; una donación
+   * recién construida todavía no lo tiene.
+   *
+   * @param donante donante de la donación (no nulo)
+   * @param bienes bienes donados
+   */
+  public Donacion(Donante donante, List<Bien> bienes) {
+    this.donante = Objects.requireNonNull(donante, "donante no puede ser null");
+    this.bienes.addAll(bienes);
+  }
 
   public Donacion(UUID id, Donante donante, List<Bien> bienes) {
     this.id = Objects.requireNonNull(id, "id no puede ser null");

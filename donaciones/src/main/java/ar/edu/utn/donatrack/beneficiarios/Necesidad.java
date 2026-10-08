@@ -7,13 +7,17 @@ import java.util.UUID;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
 @Entity
 public class Necesidad {
-  @Id private UUID id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.AUTO)
+  private UUID id;
 
   private String descripcion;
   private double cantidadRecibida = 0.0;
@@ -31,7 +35,13 @@ public class Necesidad {
 
   public Necesidad(
       SubCategoria subcategoria, double cantidadObjetivo, UnidadMedida unidad, String descripcion) {
-    this(UUID.randomUUID(), subcategoria, cantidadObjetivo, unidad, descripcion);
+    this.subcategoria = Objects.requireNonNull(subcategoria, "subcategoria no puede ser null");
+    if (!Double.isFinite(cantidadObjetivo) || cantidadObjetivo <= 0) {
+      throw new IllegalArgumentException("cantidadObjetivo debe ser mayor a cero");
+    }
+    this.cantidadObjetivo = cantidadObjetivo;
+    this.unidad = Objects.requireNonNull(unidad, "unidad no puede ser null");
+    this.descripcion = descripcion;
   }
 
   public Necesidad(
@@ -40,14 +50,8 @@ public class Necesidad {
       double cantidadObjetivo,
       UnidadMedida unidad,
       String descripcion) {
+    this(subcategoria, cantidadObjetivo, unidad, descripcion);
     this.id = Objects.requireNonNull(id, "id no puede ser null");
-    this.subcategoria = Objects.requireNonNull(subcategoria, "subcategoria no puede ser null");
-    if (!Double.isFinite(cantidadObjetivo) || cantidadObjetivo <= 0) {
-      throw new IllegalArgumentException("cantidadObjetivo debe ser mayor a cero");
-    }
-    this.cantidadObjetivo = cantidadObjetivo;
-    this.unidad = Objects.requireNonNull(unidad, "unidad no puede ser null");
-    this.descripcion = descripcion;
   }
 
   public UUID getId() {

@@ -1,7 +1,6 @@
 package ar.edu.utn.donatrack.donaciones;
 
 import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaDonacion;
-import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaEntidad;
 import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
@@ -115,7 +114,9 @@ class PropuestaDeAsignacionTest {
   }
 
   private static List<RankingMatchmaking> crearRankingsDummy() {
-    EntidadBeneficiaria entidad = nuevaEntidad("Entidad");
+    // La entidad lleva un id explícito: confirmar() compara la elegida contra el ranking por
+    // identidad, y este test no persiste la entidad para que el proveedor se la asigne.
+    EntidadBeneficiaria entidad = new EntidadBeneficiaria(1L, "Entidad", "Dir", "Tel");
     RankingMatchmaking ranking1 =
         new RankingMatchmaking("algoritmo-1", List.of(new MatchCandidato(entidad, 50)));
     RankingMatchmaking ranking2 =

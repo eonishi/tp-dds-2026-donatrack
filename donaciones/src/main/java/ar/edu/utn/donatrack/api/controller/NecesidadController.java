@@ -71,6 +71,10 @@ public final class NecesidadController implements WithSimplePersistenceUnit {
               Necesidad necesidad = construirNecesidad(request, new HashMap<>());
               agregar(entidad, necesidad);
               entidades.save(entidad);
+              // La necesidad se cuelga de una entidad ya administrada, así que su id lo asigna el
+              // proveedor recién al vaciar la colección: el flush lo fuerza antes de armar la
+              // respuesta, que necesita el id generado.
+              entityManager().flush();
               return ApiMapper.necesidad(necesidad, entidad);
             });
     ctx.status(201).json(creada);

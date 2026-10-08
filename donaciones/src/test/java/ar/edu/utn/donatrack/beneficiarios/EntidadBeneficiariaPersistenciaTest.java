@@ -3,6 +3,7 @@ package ar.edu.utn.donatrack.beneficiarios;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -34,8 +35,14 @@ class EntidadBeneficiariaPersistenciaTest implements SimplePersistenceTest {
     SubCategoria alimentos = new SubCategoria("Alimentos no perecederos", Categoria.ALIMENTO);
     EntidadBeneficiaria entidad =
         new EntidadBeneficiaria("Hogar Test", "Av. Siempreviva 742", "1145557777");
+    assertNull(
+        entidad.getId(),
+        "Una entidad recién construida no tiene id: lo asigna el proveedor al persistirla");
     entidad.agregarNecesidadExtraordinaria(
         new Necesidad(alimentos, 10.0, UnidadMedida.KILOGRAMOS, "Fideos extraordinarios"));
+    assertNull(
+        entidad.getNecesidadesExtraordinarias().get(0).getId(),
+        "Una necesidad recién construida no tiene id: lo asigna el proveedor al persistirla");
     NecesidadRecurrente recurrente =
         new NecesidadRecurrente(alimentos, 20.0, UnidadMedida.KILOGRAMOS, "Fideos recurrentes");
     recurrente.setPeriodo(TipoPeriodo.MENSUAL);
@@ -44,7 +51,11 @@ class EntidadBeneficiariaPersistenciaTest implements SimplePersistenceTest {
 
     persist(alimentos);
     persist(entidad);
+    assertNotNull(entidad.getId(), "El proveedor debe asignar el id de la entidad al persistirla");
     entityManager().flush();
+    assertNotNull(
+        entidad.getNecesidadesExtraordinarias().get(0).getId(),
+        "El proveedor debe asignar el UUID de la necesidad al persistir el agregado");
     entityManager().clear();
 
     EntidadBeneficiaria recargada = find(EntidadBeneficiaria.class, entidad.getId());

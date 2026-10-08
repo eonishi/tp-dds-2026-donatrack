@@ -1,7 +1,5 @@
 package ar.edu.utn.donatrack.donaciones;
 
-import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaDonacion;
-import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaEntidad;
 import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
@@ -16,6 +14,7 @@ import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -121,11 +120,15 @@ class PropuestaRepositoryTest {
             null,
             EstadoUso.NO_APLICA,
             new SubCategoria("X", Categoria.ALIMENTO));
-    return nuevaDonacion(crearDonanteDummy(), List.of(bien));
+    // El repositorio en memoria indexa por identidad de donación: cada donación lleva un UUID
+    // explícito para que dos instancias no colisionen en la misma clave.
+    return new Donacion(UUID.randomUUID(), crearDonanteDummy(), List.of(bien));
   }
 
   private static List<RankingMatchmaking> crearRankingsDummy() {
-    EntidadBeneficiaria entidad = nuevaEntidad("Entidad");
+    // La entidad lleva un id explícito: confirmar() compara por identidad y este test no persiste
+    // la entidad para que el proveedor se la asigne.
+    EntidadBeneficiaria entidad = new EntidadBeneficiaria(1L, "Entidad", "Dir", "Tel");
     RankingMatchmaking ranking1 =
         new RankingMatchmaking("algoritmo-1", List.of(new MatchCandidato(entidad, 50)));
     RankingMatchmaking ranking2 =

@@ -10,16 +10,19 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 
 @Entity
 public class EntidadBeneficiaria implements Notificable {
-  @Id private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
   private String razonSocial;
   private String direccion;
@@ -44,17 +47,19 @@ public class EntidadBeneficiaria implements Notificable {
   protected EntidadBeneficiaria() {}
 
   /**
-   * Crea una entidad beneficiaria con un identificador nuevo.
+   * Crea una entidad beneficiaria sin identificador.
    *
-   * <p>El alta sin identificador explícito resuelve la asignación en el borde del servicio, igual
-   * que {@code UUID.randomUUID()} resolvía el alta sin id en el modelo anterior.
+   * <p>El identificador lo asigna el proveedor de persistencia al guardar la entidad; una entidad
+   * recién construida todavía no lo tiene.
    *
    * @param razonSocial razón social de la entidad
    * @param direccion dirección de la entidad
    * @param telefono teléfono de contacto de la entidad
    */
   public EntidadBeneficiaria(String razonSocial, String direccion, String telefono) {
-    this(ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE), razonSocial, direccion, telefono);
+    this.razonSocial = razonSocial;
+    this.direccion = direccion;
+    this.telefono = telefono;
   }
 
   public EntidadBeneficiaria(Long id, String razonSocial, String direccion, String telefono) {

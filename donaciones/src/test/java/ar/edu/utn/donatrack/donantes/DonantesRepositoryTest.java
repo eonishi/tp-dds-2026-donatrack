@@ -2,6 +2,8 @@ package ar.edu.utn.donatrack.donantes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
@@ -30,11 +32,15 @@ class DonantesRepositoryTest implements SimplePersistenceTest {
             "Av. Siempreviva 742");
     donante.addMedioDeContacto(new Sms("1145558888"));
     donante.addMedioDeContacto(new Whatsapp("1145559999"));
-    UUID id = donante.getId();
+    assertNull(
+        donante.getId(),
+        "Una persona recién construida no tiene id: lo asigna el proveedor al guardarla");
 
-    new DonantesRepository().save(donante);
+    Donante guardado = new DonantesRepository().save(donante);
+    assertNotNull(guardado.getId(), "El proveedor debe asignar el UUID al fusionar el donante");
     entityManager().flush();
     entityManager().clear();
+    UUID id = guardado.getId();
 
     DonantesRepository repositorio = new DonantesRepository();
     Donante porIdentidad = repositorio.findById(id).orElseThrow();
@@ -101,11 +107,16 @@ class DonantesRepositoryTest implements SimplePersistenceTest {
             "Alimentos");
     organizacion.addMedioDeContacto(new Whatsapp("1145550000"));
     organizacion.agregarRepresentante(new Representante("Maria", "Perez"));
-    UUID id = organizacion.getId();
+    assertNull(
+        organizacion.getId(),
+        "Una organización recién construida no tiene id: lo asigna el proveedor al guardarla");
 
-    new DonantesRepository().save(organizacion);
+    Donante guardada = new DonantesRepository().save(organizacion);
+    assertNotNull(
+        guardada.getId(), "El proveedor debe asignar el UUID al fusionar la organización");
     entityManager().flush();
     entityManager().clear();
+    UUID id = guardada.getId();
 
     DonantesRepository repositorio = new DonantesRepository();
     Donante porIdentidad = repositorio.findById(id).orElseThrow();
@@ -180,12 +191,9 @@ class DonantesRepositoryTest implements SimplePersistenceTest {
             "Fundación Test",
             TipoOrganizacion.ONG,
             "Alimentos");
-    UUID idPersona = persona.getId();
-    UUID idOrganizacion = organizacion.getId();
-
     DonantesRepository repositorio = new DonantesRepository();
-    repositorio.save(persona);
-    repositorio.save(organizacion);
+    UUID idPersona = repositorio.save(persona).getId();
+    UUID idOrganizacion = repositorio.save(organizacion).getId();
     entityManager().flush();
     entityManager().clear();
 
