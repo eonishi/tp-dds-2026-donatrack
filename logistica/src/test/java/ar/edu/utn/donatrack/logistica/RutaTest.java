@@ -2,12 +2,13 @@ package ar.edu.utn.donatrack.logistica;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-class RutaTest {
+class RutaTest implements SimplePersistenceTest {
 
   // ── Helpers ────────────────────────────────────────────────────────
 
@@ -31,7 +32,9 @@ class RutaTest {
 
     Ruta ruta = new Ruta(camion, destinos);
 
-    assertNotNull(ruta.getId());
+    assertNull(
+        ruta.getId(),
+        "Una ruta recién construida no tiene id: lo asigna el proveedor al persistirla");
     assertSame(camion, ruta.getCamion());
     assertFalse(ruta.isEnCurso());
     List<Destino> obtenidos = ruta.getDestinos();
@@ -127,22 +130,21 @@ class RutaTest {
   }
 
   @Test
-  void mismaUuid_EqualsDevuelveTrue() throws Exception {
-    Ruta a = new Ruta(crearCamionDummy(), List.of());
-    Ruta b = new Ruta(crearCamionDummy(), List.of());
+  void mismaUuid_EqualsDevuelveTrue() {
+    UUID id = UUID.randomUUID();
+    Ruta a = new Ruta(id, crearCamionDummy(), List.of());
+    Ruta b = new Ruta(id, crearCamionDummy(), List.of());
 
-    java.lang.reflect.Field field = Ruta.class.getDeclaredField("id");
-    field.setAccessible(true);
-    field.set(b, a.getId());
-
+    assertEquals(id, a.getId());
+    assertEquals(id, b.getId());
     assertEquals(a, b);
     assertEquals(a.hashCode(), b.hashCode());
   }
 
   @Test
   void distintaUuid_EqualsDevuelveFalse() {
-    Ruta a = new Ruta(crearCamionDummy(), List.of());
-    Ruta b = new Ruta(crearCamionDummy(), List.of());
+    Ruta a = new Ruta(UUID.randomUUID(), crearCamionDummy(), List.of());
+    Ruta b = new Ruta(UUID.randomUUID(), crearCamionDummy(), List.of());
 
     assertNotEquals(a, b);
   }
@@ -151,14 +153,27 @@ class RutaTest {
 
   @Test
   void agregarRuta_LuegoBuscarPorId_DevuelveRuta() {
+    Camion camion = crearCamionDummy();
+    Ruta ruta = new Ruta(camion, List.of());
     RutaRepository repo = new RutaRepository();
-    Ruta ruta = new Ruta(crearCamionDummy(), List.of());
 
+    persist(camion);
     repo.agregar(ruta);
-    Optional<Ruta> resultado = repo.buscarPorId(ruta.getId());
+    entityManager().flush();
+
+    UUID id = ruta.getId();
+    assertNotNull(id, "El proveedor debe asignar el UUID al persistir la ruta");
+    entityManager().clear();
+
+    Optional<Ruta> resultado = new RutaRepository().buscarPorId(id);
 
     assertTrue(resultado.isPresent());
-    assertSame(ruta, resultado.get());
+    Ruta recargada = resultado.get();
+    assertNotSame(
+        ruta, recargada, "La recarga debe salir de la base y no de una instancia en memoria");
+    assertEquals(id, recargada.getId(), "La recarga debe conservar el id persistido");
+    assertEquals(camion.getPatente(), recargada.getCamion().getPatente());
+    assertFalse(recargada.isEnCurso());
   }
 
   @Test
@@ -171,20 +186,64 @@ class RutaTest {
   }
 
   @Test
-  void listarTodas_Con3Rutas_DevuelveLas3() {
-    RutaRepository repo = new RutaRepository();
-    Ruta r1 = new Ruta(crearCamionDummy(), List.of());
-    Ruta r2 = new Ruta(crearCamionDummy(), List.of());
-    Ruta r3 = new Ruta(crearCamionDummy(), List.of());
+  void buscarPorCamion_ConRutaActiva_DevuelveLaRutaActiva() {
+    Camion camion = crearCamionDummy();
+    Ruta activa = new Ruta(camion, List.of());
+    activa.iniciar();
+    Ruta inactiva = new Ruta(camion, List.of());
 
+    RutaRepository repo = new RutaRepository();
+    persist(camion);
+    repo.agregar(activa);
+    repo.agregar(inactiva);
+    entityManager().flush();
+    entityManager().clear();
+
+    Optional<Ruta> resultado = new RutaRepository().buscarPorCamion(camion);
+
+    assertTrue(resultado.isPresent());
+    assertEquals(activa.getId(), resultado.get().getId(), "Debe devolver la ruta en curso");
+    assertTrue(resultado.get().isEnCurso());
+    assertEquals(camion.getPatente(), resultado.get().getCamion().getPatente());
+  }
+
+  @Test
+  void listarTodas_Con3Rutas_DevuelveLas3() {
+    Camion camion = crearCamionDummy();
+    Ruta r1 = new Ruta(camion, List.of());
+    Ruta r2 = new Ruta(camion, List.of());
+    Ruta r3 = new Ruta(camion, List.of());
+
+    RutaRepository repo = new RutaRepository();
+    persist(camion);
     repo.agregar(r1);
     repo.agregar(r2);
     repo.agregar(r3);
+    entityManager().flush();
+    entityManager().clear();
 
     List<Ruta> todas = repo.listarTodas();
     assertEquals(3, todas.size());
     assertTrue(todas.contains(r1));
     assertTrue(todas.contains(r2));
     assertTrue(todas.contains(r3));
+  }
+
+  @Test
+  void eliminar_LaRutaEliminada_NoSeEncuentra() {
+    Camion camion = crearCamionDummy();
+    Ruta ruta = new Ruta(camion, List.of());
+    RutaRepository repo = new RutaRepository();
+
+    persist(camion);
+    repo.agregar(ruta);
+    entityManager().flush();
+    entityManager().clear();
+
+    repo.eliminar(ruta.getId());
+    entityManager().flush();
+    entityManager().clear();
+
+    assertTrue(repo.buscarPorId(ruta.getId()).isEmpty());
   }
 }

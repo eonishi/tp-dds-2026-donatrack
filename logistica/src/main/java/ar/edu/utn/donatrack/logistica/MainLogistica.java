@@ -48,6 +48,8 @@ public class MainLogistica implements WithSimplePersistenceUnit {
     PosicionController posicionController =
         new PosicionController(monitorRutas, camionRepo, rutaRepo);
 
+    // Este UUID es el id del lote que devuelve el planificador externo (stub), no la clave de una
+    // entidad: el @GeneratedValue de las entidades no aplica acá.
     PlanificadorRutas planificadorRutas = lote -> UUID.randomUUID();
     ServicioPlanificacionRutas servicioPlanificacion =
         new ServicioPlanificacionRutas(donacionesRemotas, camionRepo, planificadorRutas, rutaRepo);

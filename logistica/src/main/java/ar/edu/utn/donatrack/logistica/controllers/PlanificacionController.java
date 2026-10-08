@@ -5,13 +5,14 @@ import ar.edu.utn.donatrack.logistica.CamionRepository;
 import ar.edu.utn.donatrack.logistica.Destino;
 import ar.edu.utn.donatrack.logistica.planificacion.ResultadoPlanificacion;
 import ar.edu.utn.donatrack.logistica.planificacion.ServicioPlanificacionRutas;
+import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class PlanificacionController {
+public class PlanificacionController implements WithSimplePersistenceUnit {
 
   private final ServicioPlanificacionRutas servicio;
   private final CamionRepository camionRepo;
@@ -39,7 +40,9 @@ public class PlanificacionController {
     }
 
     try {
-      servicio.procesarResultado(resultado);
+      // Las rutas del lote se persisten dentro de la transacción que abre este controlador como
+      // dueño de la unidad de trabajo. El servicio no abre transacciones por su cuenta.
+      withTransaction(() -> servicio.procesarResultado(resultado));
       ctx.status(200);
     } catch (IllegalStateException e) {
       ctx.status(404).result(mensajeDe(e, "Lote no encontrado"));

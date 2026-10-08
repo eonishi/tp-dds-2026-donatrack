@@ -8,13 +8,14 @@ import static org.mockito.Mockito.when;
 
 import ar.edu.utn.donatrack.logistica.Camion;
 import ar.edu.utn.donatrack.logistica.CamionRepository;
+import ar.edu.utn.donatrack.logistica.Ruta;
 import ar.edu.utn.donatrack.logistica.RutaRepository;
 import ar.edu.utn.donatrack.logistica.monitoreo.Coordenada;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionPlanificable;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
 import ar.edu.utn.donatrack.logistica.planificacion.PlanificadorRutas;
 import ar.edu.utn.donatrack.logistica.planificacion.ServicioPlanificacionRutas;
-import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
+import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import io.javalin.Javalin;
 import io.javalin.testtools.JavalinTest;
 import java.util.List;
@@ -24,7 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class PlanificacionControllerTest implements WithSimplePersistenceUnit {
+public class PlanificacionControllerTest implements SimplePersistenceTest {
 
   private static final String PATENTE = "AB123CD";
   private static final long ENTIDAD_ID = 45L;
@@ -67,11 +68,17 @@ public class PlanificacionControllerTest implements WithSimplePersistenceUnit {
 
   @AfterEach
   void limpiarPersistencia() {
+    // Las solicitudes HTTP confirman sus propias transacciones, a diferencia de las pruebas
+    // transaccionales que revierten: se borran las rutas y los camiones confirmados por el
+    // controlador para que no contaminen los conteos de las demás pruebas. Las rutas van primero
+    // porque referencian al camión. Después se limpia el contexto para que el próximo test no
+    // reutilice una instancia administrada con el mismo id.
     withTransaction(
-        () ->
-            createQuery("select c from Camion c", Camion.class)
-                .getResultList()
-                .forEach(this::remove));
+        () -> {
+          createQuery("select r from Ruta r", Ruta.class).getResultList().forEach(this::remove);
+          entityManager().flush();
+          createQuery("select c from Camion c", Camion.class).getResultList().forEach(this::remove);
+        });
     entityManager().clear();
   }
 

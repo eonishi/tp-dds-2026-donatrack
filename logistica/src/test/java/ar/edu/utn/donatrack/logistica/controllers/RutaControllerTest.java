@@ -1,19 +1,24 @@
 package ar.edu.utn.donatrack.logistica.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import ar.edu.utn.donatrack.logistica.Camion;
 import ar.edu.utn.donatrack.logistica.CamionRepository;
+import ar.edu.utn.donatrack.logistica.Ruta;
 import ar.edu.utn.donatrack.logistica.RutaRepository;
-import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
+import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
+import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import io.javalin.Javalin;
 import io.javalin.testtools.JavalinTest;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class RutaControllerTest implements WithSimplePersistenceUnit {
+public class RutaControllerTest implements SimplePersistenceTest {
 
   private RutaRepository rutaRepo;
   private CamionRepository camionRepo;
@@ -23,14 +28,16 @@ public class RutaControllerTest implements WithSimplePersistenceUnit {
   @AfterEach
   void limpiarPersistencia() {
     // Las solicitudes HTTP confirman sus propias transacciones, a diferencia de las pruebas
-    // transaccionales que revierten: se borran los camiones confirmados en el setUp para que no
-    // contaminen los conteos de las demás pruebas. Después se limpia el contexto para que el
-    // próximo test no reutilice una instancia administrada con la misma patente.
+    // transaccionales que revierten: se borran las rutas y los camiones confirmados por el
+    // controlador para que no contaminen los conteos de las demás pruebas. Las rutas van primero
+    // porque referencian al camión. Después se limpia el contexto para que el próximo test no
+    // reutilice una instancia administrada con el mismo id.
     withTransaction(
-        () ->
-            createQuery("select c from Camion c", Camion.class)
-                .getResultList()
-                .forEach(this::remove));
+        () -> {
+          createQuery("select r from Ruta r", Ruta.class).getResultList().forEach(this::remove);
+          entityManager().flush();
+          createQuery("select c from Camion c", Camion.class).getResultList().forEach(this::remove);
+        });
     entityManager().clear();
   }
 
@@ -38,23 +45,32 @@ public class RutaControllerTest implements WithSimplePersistenceUnit {
   public void setUp() {
     rutaRepo = new RutaRepository();
     camionRepo = new CamionRepository();
-    controlador =
-        new RutaController(
-            rutaRepo,
-            camionRepo,
-            org.mockito.Mockito.mock(
-                ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas.class));
+    controlador = new RutaController(rutaRepo, camionRepo, mock(DonacionesRemotas.class));
 
     // Pre-cargamos un camión válido porque la ruta necesita uno para crearse. El repositorio ya
     // no abre ninguna transacción por su cuenta y acá no hay una previa, así que el test es el
-    // dueño legítimo de esta unidad de trabajo.
+    // dueño legítimo de esta unidad de trabajo; la confirmación además hace visible el camión para
+    // el hilo que atiende la solicitud HTTP.
     Camion camionPrueba = new Camion("AB123CD", 20.0, 2.5, 10000.0);
     withTransaction(() -> camionRepo.agregar(camionPrueba));
 
     app =
         Javalin.create()
             .post("/logistica/rutas", controlador::crear)
-            .get("/logistica/rutas", controlador::listar);
+            .get("/logistica/rutas", controlador::listar)
+            .patch("/logistica/rutas/{id}", controlador::actualizar)
+            .delete("/logistica/rutas/{id}", controlador::eliminar);
+  }
+
+  /** Persiste una ruta sin destinos para el camión sembrado por el setUp. */
+  private Ruta guardarRuta() {
+    Camion camion = camionRepo.buscarPorPatente("AB123CD").orElseThrow();
+    return withTransaction(
+        () -> {
+          Ruta ruta = new Ruta(camion, List.of());
+          rutaRepo.agregar(ruta);
+          return ruta;
+        });
   }
 
   @Test
@@ -80,6 +96,8 @@ public class RutaControllerTest implements WithSimplePersistenceUnit {
 
           // Verificamos que la ruta efectivamente se haya guardado en el repositorio
           assertEquals(1, rutaRepo.listarTodas().size(), "El repositorio debería tener 1 ruta");
+          Ruta guardada = rutaRepo.listarTodas().get(0);
+          assertNotNull(guardada.getId(), "El proveedor debe asignar el UUID al persistir la ruta");
 
           // EXTRAEMOS EL BODY UNA SOLA VEZ
           String responseBody = response.body().string();
@@ -87,6 +105,48 @@ public class RutaControllerTest implements WithSimplePersistenceUnit {
           // Verificamos que el JSON de respuesta contenga los datos correctos
           assertTrue(responseBody.contains("AB123CD"));
           assertTrue(responseBody.contains("\"enCurso\":false"));
+          assertTrue(
+              responseBody.contains("\"id\":\"" + guardada.getId() + "\""),
+              "La respuesta debe exponer el id que asignó el proveedor");
+        });
+  }
+
+  @Test
+  public void testEliminarRutaExistenteDevuelve204YLaQuitaDeLaBase() {
+    Ruta ruta = guardarRuta();
+
+    JavalinTest.test(
+        app,
+        (server, client) -> {
+          var response = client.delete("/logistica/rutas/" + ruta.getId());
+
+          assertEquals(204, response.code());
+
+          entityManager().clear();
+          assertTrue(
+              rutaRepo.buscarPorId(ruta.getId()).isEmpty(),
+              "La ruta eliminada debe desaparecer de la base");
+        });
+  }
+
+  @Test
+  public void testActualizarRutaAEnCursoDevuelve200YPersisteElEstado() {
+    Ruta ruta = guardarRuta();
+
+    JavalinTest.test(
+        app,
+        (server, client) -> {
+          var response =
+              client.patch("/logistica/rutas/" + ruta.getId(), "{\"estado\": \"EN_CURSO\"}");
+
+          assertEquals(200, response.code());
+          assertTrue(response.body().string().contains("\"enCurso\":true"));
+
+          entityManager().clear();
+          Ruta recargada = rutaRepo.buscarPorId(ruta.getId()).orElseThrow();
+          assertTrue(
+              recargada.isEnCurso(),
+              "El cambio de estado debe quedar confirmado por la transacción del controlador");
         });
   }
 
