@@ -36,7 +36,7 @@ public final class NecesidadController implements WithSimplePersistenceUnit {
 
   public void routes() {
     path(
-        "/entidades/{entidadId}/necesidades",
+        "/beneficiarias/{entidadId}/necesidades",
         () -> {
           get(this::listar);
           post(this::crear);
@@ -65,19 +65,15 @@ public final class NecesidadController implements WithSimplePersistenceUnit {
     NecesidadRequest request = DtoValidator.validate(ctx.bodyAsClass(NecesidadRequest.class));
     validar(request);
     EntidadBeneficiaria entidad = entidad(ctx);
-    NecesidadResponse creada =
+    Necesidad nuevaNecesidad =
         withTransaction(
             () -> {
               Necesidad necesidad = construirNecesidad(request, new HashMap<>());
               agregar(entidad, necesidad);
               entidades.save(entidad);
-              // La necesidad se cuelga de una entidad ya administrada, así que su id lo asigna el
-              // proveedor recién al vaciar la colección: el flush lo fuerza antes de armar la
-              // respuesta, que necesita el id generado.
-              entityManager().flush();
-              return ApiMapper.necesidad(necesidad, entidad);
+              return necesidad;
             });
-    ctx.status(201).json(creada);
+    ctx.status(201).json(ApiMapper.necesidad(nuevaNecesidad, entidad));
   }
 
   private void actualizar(Context ctx) {
