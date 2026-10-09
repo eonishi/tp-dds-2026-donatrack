@@ -66,3 +66,7 @@ logistica/src/main/resources/META-INF/persistence.xml
 
 #persistencia
 persistence.xmlsrc/main/resources/META-INF/persistence.xml
+
+# dev env
+flake.nix
+flake.lock
