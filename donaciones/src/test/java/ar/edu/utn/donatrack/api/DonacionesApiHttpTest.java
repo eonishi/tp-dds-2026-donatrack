@@ -110,11 +110,12 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
 
     UUID necesidadId = crearNecesidad(entidadId, "Fideos");
     assertEquals(
-        200, request("GET", "/api/v1/entidades/" + entidadId + "/necesidades", null).statusCode());
+        200,
+        request("GET", "/api/v1/beneficiarias/" + entidadId + "/necesidades", null).statusCode());
     HttpResponse<String> necesidadActualizada =
         request(
             "PUT",
-            "/api/v1/entidades/" + entidadId + "/necesidades/" + necesidadId,
+            "/api/v1/beneficiarias/" + entidadId + "/necesidades/" + necesidadId,
             necesidadJson("Fideos", 20));
     assertEquals(200, necesidadActualizada.statusCode());
     assertEquals(20, json(necesidadActualizada).get("cantidadObjetivo").asInt());
@@ -133,7 +134,10 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     assertEquals(204, request("DELETE", "/api/v1/donaciones/" + donacionId, null).statusCode());
     assertEquals(
         204,
-        request("DELETE", "/api/v1/entidades/" + entidadId + "/necesidades/" + necesidadId, null)
+        request(
+                "DELETE",
+                "/api/v1/beneficiarias/" + entidadId + "/necesidades/" + necesidadId,
+                null)
             .statusCode());
     assertEquals(204, request("DELETE", "/api/v1/beneficiarias/" + entidadId, null).statusCode());
     assertEquals(204, request("DELETE", "/api/v1/donantes/" + donanteId, null).statusCode());
@@ -155,25 +159,26 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     long otraEntidadId = crearEntidad("Comedor Ajeno");
     UUID necesidadId = crearNecesidad(entidadId, "Harina");
 
-    String rutaAjena = "/api/v1/entidades/" + otraEntidadId + "/necesidades/" + necesidadId;
+    String rutaAjena = "/api/v1/beneficiarias/" + otraEntidadId + "/necesidades/" + necesidadId;
     assertEquals(404, request("GET", rutaAjena, null).statusCode());
     assertEquals(404, request("PUT", rutaAjena, necesidadJson("Harina", 20)).statusCode());
     assertEquals(404, request("DELETE", rutaAjena, null).statusCode());
     assertEquals(
         404,
-        request("GET", "/api/v1/entidades/" + Long.MAX_VALUE + "/necesidades", null).statusCode());
+        request("GET", "/api/v1/beneficiarias/" + Long.MAX_VALUE + "/necesidades", null)
+            .statusCode());
     assertEquals(
         404,
         request(
                 "POST",
-                "/api/v1/entidades/" + Long.MAX_VALUE + "/necesidades",
+                "/api/v1/beneficiarias/" + Long.MAX_VALUE + "/necesidades",
                 necesidadJson("Harina", 10))
             .statusCode());
     assertEquals(404, request("GET", "/api/v1/necesidades/" + necesidadId, null).statusCode());
 
     assertEquals(
         200,
-        request("GET", "/api/v1/entidades/" + entidadId + "/necesidades/" + necesidadId, null)
+        request("GET", "/api/v1/beneficiarias/" + entidadId + "/necesidades/" + necesidadId, null)
             .statusCode());
   }
 
@@ -395,7 +400,9 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
 
     HttpResponse<String> primera =
         request(
-            "POST", "/api/v1/entidades/" + entidadId + "/necesidades", necesidadJson(nombre, 10));
+            "POST",
+            "/api/v1/beneficiarias/" + entidadId + "/necesidades",
+            necesidadJson(nombre, 10));
     assertEquals(201, primera.statusCode(), primera.body());
     assertEquals(
         1,
@@ -404,7 +411,9 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
 
     HttpResponse<String> segunda =
         request(
-            "POST", "/api/v1/entidades/" + entidadId + "/necesidades", necesidadJson(nombre, 20));
+            "POST",
+            "/api/v1/beneficiarias/" + entidadId + "/necesidades",
+            necesidadJson(nombre, 20));
     assertEquals(201, segunda.statusCode(), segunda.body());
     assertEquals(
         1,
@@ -475,7 +484,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     HttpResponse<String> response =
         request(
             "POST",
-            "/api/v1/entidades/" + entidadId + "/necesidades",
+            "/api/v1/beneficiarias/" + entidadId + "/necesidades",
             necesidadJson(subcategoria, 10));
     assertEquals(201, response.statusCode(), response.body());
     return UUID.fromString(json(response).get("id").asText());
