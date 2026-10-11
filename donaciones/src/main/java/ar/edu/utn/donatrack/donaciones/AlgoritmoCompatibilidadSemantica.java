@@ -8,7 +8,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 
-public class AlgoritmoCompatibilidadSemantica extends Algoritmo {
+public class AlgoritmoCompatibilidadSemantica extends AlgoritmoMatchmaking {
   @Override
   public String getNombre() {
     return "compatibilidad-semantica";

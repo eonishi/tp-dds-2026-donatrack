@@ -2,7 +2,7 @@
 %% ENTREGA 2 — Requerimiento 3
 %% "El sistema debe garantizar la ejecución asincrónica de los algoritmos de
 %%  asignación de donaciones presentes en el depósito."
-%% Strategy (Algoritmo) + ejecución diaria en horario de baja carga
+%% Strategy (AlgoritmoMatchmaking) + ejecución diaria en horario de baja carga
 %% (MatchmakingScheduler) + propuestas pendientes de confirmación.
 %% Fragmento mínimo del dominio involucrado (incluye infraestructura).
 %% ============================================================================
@@ -32,7 +32,7 @@ classDiagram
         +save(propuesta: PropuestaDeAsignacion)
         +findPendingByDonacion(donacion: Donacion) Optional~PropuestaDeAsignacion~
     }
-    class Algoritmo {
+    class AlgoritmoMatchmaking {
         <<abstract>>
         -MAXIMO_CANDIDATOS: int = 10
         +getNombre() String
@@ -59,13 +59,13 @@ classDiagram
     class EntidadBeneficiaria
 
     MatchmakingScheduler ..> ServicioMatchmakingDonaciones : ejecuta diario
-    ServicioMatchmakingDonaciones o-- "*" Algoritmo : algoritmos
+    ServicioMatchmakingDonaciones o-- "*" AlgoritmoMatchmaking : algoritmos
     ServicioMatchmakingDonaciones ..> DonacionesRepository : en depósito
     ServicioMatchmakingDonaciones ..> BeneficiariosRepository : entidades
     ServicioMatchmakingDonaciones ..> PropuestaRepository : guarda propuestas
-    Algoritmo <|-- AlgoritmoCompatibilidadSemantica
-    Algoritmo <|-- AlgoritmoPrioridadSubAtendidos
-    Algoritmo ..> MatchCandidato : rankear() aplica el tope
+    AlgoritmoMatchmaking <|-- AlgoritmoCompatibilidadSemantica
+    AlgoritmoMatchmaking <|-- AlgoritmoPrioridadSubAtendidos
+    AlgoritmoMatchmaking ..> MatchCandidato : rankear() aplica el tope
     RankingAlgoritmo *-- "*" MatchCandidato : candidatos
     MatchCandidato --> EntidadBeneficiaria : candidata
     PropuestaDeAsignacion *-- Donacion : donacion

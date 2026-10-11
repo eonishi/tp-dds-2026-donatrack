@@ -10,13 +10,13 @@ public class ServicioMatchmakingDonaciones {
   private final DonacionesRepository donacionesRepository;
   private final BeneficiariosRepository beneficiariosRepository;
   private final PropuestaRepository propuestaRepository;
-  private final List<Algoritmo> algoritmos;
+  private final List<AlgoritmoMatchmaking> algoritmos;
 
   public ServicioMatchmakingDonaciones(
       DonacionesRepository donacionesRepository,
       BeneficiariosRepository beneficiariosRepository,
       PropuestaRepository propuestaRepository,
-      List<Algoritmo> algoritmos) {
+      List<AlgoritmoMatchmaking> algoritmos) {
     this.donacionesRepository = donacionesRepository;
     this.beneficiariosRepository = beneficiariosRepository;
     this.propuestaRepository = propuestaRepository;

@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 
-public abstract class Algoritmo {
+public abstract class AlgoritmoMatchmaking {
   /** Hasta diez entidades beneficiarias por algoritmo (enunciado-2.md:34). */
   static final int MAXIMO_CANDIDATOS = 10;
 

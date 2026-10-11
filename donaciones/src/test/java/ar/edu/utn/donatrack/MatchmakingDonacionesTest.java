@@ -12,8 +12,8 @@ import ar.edu.utn.donatrack.bienes.Categoria;
 import ar.edu.utn.donatrack.bienes.EstadoUso;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
-import ar.edu.utn.donatrack.donaciones.Algoritmo;
 import ar.edu.utn.donatrack.donaciones.AlgoritmoCompatibilidadSemantica;
+import ar.edu.utn.donatrack.donaciones.AlgoritmoMatchmaking;
 import ar.edu.utn.donatrack.donaciones.AlgoritmoPrioridadSubAtendidos;
 import ar.edu.utn.donatrack.donaciones.CargaDonacion;
 import ar.edu.utn.donatrack.donaciones.Donacion;
@@ -159,7 +159,7 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
             propuestaRepository,
             List.of(
                 new AlgoritmoCompatibilidadSemantica(),
-                new Algoritmo() {
+                new AlgoritmoMatchmaking() {
                   @Override
                   public String getNombre() {
                     return "algoritmo-manual";

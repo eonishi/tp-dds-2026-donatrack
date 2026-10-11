@@ -9,7 +9,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
-public class AlgoritmoPrioridadSubAtendidos extends Algoritmo {
+public class AlgoritmoPrioridadSubAtendidos extends AlgoritmoMatchmaking {
   private final DonacionesRepository donacionesRepository;
 
   public AlgoritmoPrioridadSubAtendidos(DonacionesRepository donacionesRepository) {
