@@ -1,9 +1,8 @@
 package ar.edu.utn.donatrack.propuestas;
 
+import ar.edu.utn.donatrack.donaciones.Donacion;
 import java.util.List;
 import java.util.Optional;
-
-import ar.edu.utn.donatrack.donaciones.Donacion;
 
 public interface PropuestaRepository {
   Optional<PropuestaDeAsignacion> findPendingByDonacion(Donacion donacion);

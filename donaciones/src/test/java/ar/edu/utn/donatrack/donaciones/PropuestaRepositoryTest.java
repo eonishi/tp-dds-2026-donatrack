@@ -18,7 +18,6 @@ import ar.edu.utn.donatrack.propuestas.PropuestaRepository;
 import ar.edu.utn.donatrack.propuestas.PropuestaRepositoryImpl;
 import ar.edu.utn.donatrack.propuestas.matchmaking.MatchCandidato;
 import ar.edu.utn.donatrack.propuestas.matchmaking.RankingAlgoritmo;
-
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;

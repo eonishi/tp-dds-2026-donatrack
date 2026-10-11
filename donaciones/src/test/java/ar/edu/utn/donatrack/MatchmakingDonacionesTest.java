@@ -166,7 +166,7 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
                   }
 
                   @Override
-                  protected List<MatchCandidato> candidatosOrdenados(
+                  protected List<MatchCandidato> ordenarCandidatos(
                       Donacion d,
                       Collection<EntidadBeneficiaria> entidades,
                       LocalDate fechaReferencia) {

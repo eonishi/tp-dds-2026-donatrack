@@ -37,7 +37,7 @@ classDiagram
         -MAXIMO_CANDIDATOS: int = 10
         +getNombre() String
         +rankear(donacion: Donacion, entidades: Collection~EntidadBeneficiaria~, fechaReferencia: LocalDate) List~MatchCandidato~
-        #candidatosOrdenados(donacion: Donacion, entidades: Collection~EntidadBeneficiaria~, fechaReferencia: LocalDate) List~MatchCandidato~
+        #ordenarCandidatos(donacion: Donacion, entidades: Collection~EntidadBeneficiaria~, fechaReferencia: LocalDate) List~MatchCandidato~
     }
     class AlgoritmoCompatibilidadSemantica
     class AlgoritmoPrioridadSubAtendidos

@@ -3,7 +3,6 @@ package ar.edu.utn.donatrack.propuestas.matchmaking;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.beneficiarios.Necesidad;
 import ar.edu.utn.donatrack.donaciones.Donacion;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,7 +16,7 @@ public class AlgoritmoCompatibilidadSemantica extends AlgoritmoMatchmaking {
   }
 
   @Override
-  protected List<MatchCandidato> candidatosOrdenados(
+  protected List<MatchCandidato> ordenarCandidatos(
       Donacion donacion,
       Collection<EntidadBeneficiaria> entidadesBeneficiarias,
       LocalDate fechaReferencia) {

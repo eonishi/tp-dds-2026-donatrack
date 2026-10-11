@@ -18,7 +18,6 @@ import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.propuestas.matchmaking.AlgoritmoCompatibilidadSemantica;
 import ar.edu.utn.donatrack.propuestas.matchmaking.MatchCandidato;
-
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;

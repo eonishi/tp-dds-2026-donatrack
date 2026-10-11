@@ -1,12 +1,11 @@
 package ar.edu.utn.donatrack.propuestas;
 
+import ar.edu.utn.donatrack.donaciones.Donacion;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-
-import ar.edu.utn.donatrack.donaciones.Donacion;
 
 public class PropuestaRepositoryImpl implements PropuestaRepository {
   private final Map<UUID, PropuestaDeAsignacion> propuestas = new HashMap<>();

@@ -4,7 +4,6 @@ import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.beneficiarios.Necesidad;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,7 +25,7 @@ public class AlgoritmoPrioridadSubAtendidos extends AlgoritmoMatchmaking {
   }
 
   @Override
-  protected List<MatchCandidato> candidatosOrdenados(
+  protected List<MatchCandidato> ordenarCandidatos(
       Donacion donacion,
       Collection<EntidadBeneficiaria> entidadesBeneficiarias,
       LocalDate fechaReferencia) {
