@@ -22,7 +22,7 @@ class PropuestaDeAsignacionTest {
   @Test
   void propuestaCreada_ConPendienteTrue_AndReferenciaDonacionYRankings() {
     Donacion donacion = crearDonacionDummy();
-    List<RankingMatchmaking> rankings = crearRankingsDummy();
+    List<RankingAlgoritmo> rankings = crearRankingsDummy();
 
     PropuestaDeAsignacion propuesta = new PropuestaDeAsignacion(donacion, rankings);
 
@@ -113,18 +113,18 @@ class PropuestaDeAsignacionTest {
     return nuevaDonacion(crearDonanteDummy(), List.of(bien));
   }
 
-  private static List<RankingMatchmaking> crearRankingsDummy() {
+  private static List<RankingAlgoritmo> crearRankingsDummy() {
     // La entidad lleva un id explícito: confirmar() compara la elegida contra el ranking por
     // identidad, y este test no persiste la entidad para que el proveedor se la asigne.
     EntidadBeneficiaria entidad = new EntidadBeneficiaria(1L, "Entidad", "Dir", "Tel");
-    RankingMatchmaking ranking1 =
-        new RankingMatchmaking("algoritmo-1", List.of(new MatchCandidato(entidad, 50)));
-    RankingMatchmaking ranking2 =
-        new RankingMatchmaking("algoritmo-2", List.of(new MatchCandidato(entidad, 80)));
+    RankingAlgoritmo ranking1 =
+        new RankingAlgoritmo("algoritmo-1", List.of(new MatchCandidato(entidad, 50)));
+    RankingAlgoritmo ranking2 =
+        new RankingAlgoritmo("algoritmo-2", List.of(new MatchCandidato(entidad, 80)));
     return List.of(ranking1, ranking2);
   }
 
   private static EntidadBeneficiaria entidadRankeada(PropuestaDeAsignacion propuesta) {
-    return propuesta.getRankings().get(0).getCandidatos().get(0).getEntidadBeneficiaria();
+    return propuesta.getRankings().get(0).candidatos().get(0).getEntidadBeneficiaria();
   }
 }

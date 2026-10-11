@@ -10,13 +10,13 @@ public class ServicioMatchmakingDonaciones {
   private final DonacionesRepository donacionesRepository;
   private final BeneficiariosRepository beneficiariosRepository;
   private final PropuestaRepository propuestaRepository;
-  private final List<AlgoritmoMatchmaking> algoritmos;
+  private final List<Algoritmo> algoritmos;
 
   public ServicioMatchmakingDonaciones(
       DonacionesRepository donacionesRepository,
       BeneficiariosRepository beneficiariosRepository,
       PropuestaRepository propuestaRepository,
-      List<AlgoritmoMatchmaking> algoritmos) {
+      List<Algoritmo> algoritmos) {
     this.donacionesRepository = donacionesRepository;
     this.beneficiariosRepository = beneficiariosRepository;
     this.propuestaRepository = propuestaRepository;
@@ -81,12 +81,14 @@ public class ServicioMatchmakingDonaciones {
 
   // Calcula el ranking de la donación, persiste la propuesta y la devuelve.
   private PropuestaDeAsignacion generarPropuesta(Donacion donacion, LocalDate fechaReferencia) {
-    List<RankingMatchmaking> rankings =
+    List<RankingAlgoritmo> rankings =
         algoritmos.stream()
             .map(
                 algoritmo ->
-                    algoritmo.rankear(
-                        donacion, beneficiariosRepository.getBeneficiarios(), fechaReferencia))
+                    new RankingAlgoritmo(
+                        algoritmo.getNombre(),
+                        algoritmo.rankear(
+                            donacion, beneficiariosRepository.getBeneficiarios(), fechaReferencia)))
             .toList();
     PropuestaDeAsignacion propuesta = new PropuestaDeAsignacion(donacion, rankings);
     propuestaRepository.save(propuesta);

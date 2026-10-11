@@ -6,10 +6,10 @@ import java.util.Objects;
 
 public class PropuestaDeAsignacion {
   private final Donacion donacion;
-  private final List<RankingMatchmaking> rankings;
+  private final List<RankingAlgoritmo> rankings;
   private boolean pendiente = true;
 
-  public PropuestaDeAsignacion(Donacion donacion, List<RankingMatchmaking> rankings) {
+  public PropuestaDeAsignacion(Donacion donacion, List<RankingAlgoritmo> rankings) {
     this.donacion = Objects.requireNonNull(donacion, "donacion no puede ser null");
     this.rankings = List.copyOf(rankings);
   }
@@ -41,7 +41,7 @@ public class PropuestaDeAsignacion {
 
   private boolean incluye(EntidadBeneficiaria entidad) {
     return rankings.stream()
-        .flatMap(ranking -> ranking.getCandidatos().stream())
+        .flatMap(ranking -> ranking.candidatos().stream())
         .anyMatch(candidato -> candidato.getEntidadBeneficiaria().getId().equals(entidad.getId()));
   }
 
@@ -49,7 +49,7 @@ public class PropuestaDeAsignacion {
     return donacion;
   }
 
-  public List<RankingMatchmaking> getRankings() {
+  public List<RankingAlgoritmo> getRankings() {
     return rankings;
   }
 

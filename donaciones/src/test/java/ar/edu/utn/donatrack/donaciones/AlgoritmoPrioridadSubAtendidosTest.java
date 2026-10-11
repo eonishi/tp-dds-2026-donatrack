@@ -68,22 +68,18 @@ class AlgoritmoPrioridadSubAtendidosTest implements SimplePersistenceTest {
     persist(fideos);
     entidades.forEach(this::persist);
 
-    var ranking =
+    var candidatos =
         new AlgoritmoPrioridadSubAtendidos(new DonacionesRepository())
             .rankear(donacion, entidades, LocalDate.of(2026, 7, 11));
 
     assertTrue(
-        ranking.getCandidatos().size() <= 10,
-        "Prioridad sub-atendidos debe retornar máximo 10 candidatos");
+        candidatos.size() <= 10, "Prioridad sub-atendidos debe retornar máximo 10 candidatos");
     assertEquals(
-        10,
-        ranking.getCandidatos().size(),
-        "Con 15 entidades sub-atendidas debe retornar exactamente 10");
+        10, candidatos.size(), "Con 15 entidades sub-atendidas debe retornar exactamente 10");
     // Verify sort order: highest puntaje first
-    for (int i = 1; i < ranking.getCandidatos().size(); i++) {
+    for (int i = 1; i < candidatos.size(); i++) {
       assertTrue(
-          ranking.getCandidatos().get(i - 1).getPuntaje()
-              >= ranking.getCandidatos().get(i).getPuntaje(),
+          candidatos.get(i - 1).getPuntaje() >= candidatos.get(i).getPuntaje(),
           "Candidatos deben estar ordenados por puntaje descendente");
     }
   }
@@ -118,11 +114,11 @@ class AlgoritmoPrioridadSubAtendidosTest implements SimplePersistenceTest {
     persist(e2);
     persist(e3);
 
-    var ranking =
+    var candidatos =
         new AlgoritmoPrioridadSubAtendidos(new DonacionesRepository())
             .rankear(donacion, List.of(e1, e2, e3), LocalDate.of(2026, 7, 11));
 
-    assertEquals(3, ranking.getCandidatos().size(), "Con 3 entidades debe retornar las 3");
+    assertEquals(3, candidatos.size(), "Con 3 entidades debe retornar las 3");
   }
 
   @Test
@@ -139,13 +135,11 @@ class AlgoritmoPrioridadSubAtendidosTest implements SimplePersistenceTest {
     entidad.agregarNecesidadExtraordinaria(
         new Necesidad(fideos, 5.0, UnidadMedida.KILOGRAMOS, "Fideos"));
 
-    var ranking =
+    var candidatos =
         new AlgoritmoPrioridadSubAtendidos(new DonacionesRepository())
             .rankear(donacion, List.of(entidad), LocalDate.of(2026, 7, 11));
 
-    assertTrue(
-        ranking.getCandidatos().isEmpty(),
-        "Sin entidades con necesidad compatible debe retornar vacío");
+    assertTrue(candidatos.isEmpty(), "Sin entidades con necesidad compatible debe retornar vacío");
   }
 
   @Test
@@ -184,21 +178,19 @@ class AlgoritmoPrioridadSubAtendidosTest implements SimplePersistenceTest {
       donacionesRepository.addDonacion(crearDonacionEntregada(donante, conMuchas, fideos));
     }
 
-    var ranking =
+    var candidatos =
         new AlgoritmoPrioridadSubAtendidos(donacionesRepository)
             .rankear(donacion, List.of(sinEntregas, conMuchas), LocalDate.now());
 
-    assertEquals(2, ranking.getCandidatos().size());
+    assertEquals(2, candidatos.size());
     assertTrue(
-        ranking.getCandidatos().get(0).getPuntaje() > ranking.getCandidatos().get(1).getPuntaje(),
+        candidatos.get(0).getPuntaje() > candidatos.get(1).getPuntaje(),
         "Entidad sin entregas debe tener mayor puntaje que la que ya recibió mucho");
     assertEquals(
-        100,
-        ranking.getCandidatos().get(0).getPuntaje(),
-        "Entidad sin entregas debería tener puntaje 100");
+        100, candidatos.get(0).getPuntaje(), "Entidad sin entregas debería tener puntaje 100");
     assertEquals(
         50,
-        ranking.getCandidatos().get(1).getPuntaje(),
+        candidatos.get(1).getPuntaje(),
         "Entidad con 50 entregas debería tener puntaje 100 - 50 = 50");
   }
 
@@ -233,14 +225,14 @@ class AlgoritmoPrioridadSubAtendidosTest implements SimplePersistenceTest {
     EntidadBeneficiaria menor = primera.getId() < segunda.getId() ? primera : segunda;
     EntidadBeneficiaria mayor = menor == primera ? segunda : primera;
 
-    var ranking =
+    var candidatos =
         new AlgoritmoPrioridadSubAtendidos(new DonacionesRepository())
             .rankear(donacion, List.of(mayor, menor), LocalDate.of(2026, 7, 11));
 
-    assertEquals(2, ranking.getCandidatos().size());
+    assertEquals(2, candidatos.size());
     assertEquals(
         menor.getId(),
-        ranking.getCandidatos().get(0).getEntidadBeneficiaria().getId(),
+        candidatos.get(0).getEntidadBeneficiaria().getId(),
         "Con puntaje y razón social empatados debe desempatar por id");
   }
 

@@ -8,14 +8,14 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 
-public class AlgoritmoCompatibilidadSemantica implements AlgoritmoMatchmaking {
+public class AlgoritmoCompatibilidadSemantica extends Algoritmo {
   @Override
   public String getNombre() {
     return "compatibilidad-semantica";
   }
 
   @Override
-  public RankingMatchmaking rankear(
+  protected List<MatchCandidato> candidatosOrdenados(
       Donacion donacion,
       Collection<EntidadBeneficiaria> entidadesBeneficiarias,
       LocalDate fechaReferencia) {
@@ -28,7 +28,7 @@ public class AlgoritmoCompatibilidadSemantica implements AlgoritmoMatchmaking {
     }
 
     candidatos.sort(Comparator.comparingInt(MatchCandidato::getPuntaje).reversed());
-    return new RankingMatchmaking(getNombre(), candidatos.stream().limit(10).toList());
+    return candidatos;
   }
 
   private int calcularPuntaje(Donacion donacion, EntidadBeneficiaria entidad) {

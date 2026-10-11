@@ -9,7 +9,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
-public class AlgoritmoPrioridadSubAtendidos implements AlgoritmoMatchmaking {
+public class AlgoritmoPrioridadSubAtendidos extends Algoritmo {
   private final DonacionesRepository donacionesRepository;
 
   public AlgoritmoPrioridadSubAtendidos(DonacionesRepository donacionesRepository) {
@@ -23,7 +23,7 @@ public class AlgoritmoPrioridadSubAtendidos implements AlgoritmoMatchmaking {
   }
 
   @Override
-  public RankingMatchmaking rankear(
+  protected List<MatchCandidato> candidatosOrdenados(
       Donacion donacion,
       Collection<EntidadBeneficiaria> entidadesBeneficiarias,
       LocalDate fechaReferencia) {
@@ -45,7 +45,7 @@ public class AlgoritmoPrioridadSubAtendidos implements AlgoritmoMatchmaking {
             .reversed()
             .thenComparing(candidato -> candidato.getEntidadBeneficiaria().getRazonSocial())
             .thenComparing(candidato -> candidato.getEntidadBeneficiaria().getId()));
-    return new RankingMatchmaking(getNombre(), candidatos.stream().limit(10).toList());
+    return candidatos;
   }
 
   private boolean tieneNecesidadCompatible(Donacion donacion, EntidadBeneficiaria entidad) {

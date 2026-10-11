@@ -12,8 +12,8 @@ import ar.edu.utn.donatrack.bienes.Categoria;
 import ar.edu.utn.donatrack.bienes.EstadoUso;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
+import ar.edu.utn.donatrack.donaciones.Algoritmo;
 import ar.edu.utn.donatrack.donaciones.AlgoritmoCompatibilidadSemantica;
-import ar.edu.utn.donatrack.donaciones.AlgoritmoMatchmaking;
 import ar.edu.utn.donatrack.donaciones.AlgoritmoPrioridadSubAtendidos;
 import ar.edu.utn.donatrack.donaciones.CargaDonacion;
 import ar.edu.utn.donatrack.donaciones.Donacion;
@@ -24,7 +24,7 @@ import ar.edu.utn.donatrack.donaciones.MatchmakingScheduler;
 import ar.edu.utn.donatrack.donaciones.PropuestaDeAsignacion;
 import ar.edu.utn.donatrack.donaciones.PropuestaRepository;
 import ar.edu.utn.donatrack.donaciones.PropuestaRepositoryImpl;
-import ar.edu.utn.donatrack.donaciones.RankingMatchmaking;
+import ar.edu.utn.donatrack.donaciones.RankingAlgoritmo;
 import ar.edu.utn.donatrack.donaciones.ServicioMatchmakingDonaciones;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
@@ -36,6 +36,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Collection;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -119,6 +120,10 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
         2,
         propuesta.getRankings().size(),
         "Propuesta debe contener los rankings de ambos algoritmos");
+    assertEquals(
+        List.of("compatibilidad-semantica", "prioridad-sub-atendidos"),
+        propuesta.getRankings().stream().map(RankingAlgoritmo::algoritmo).toList(),
+        "Las dos ejecuciones siguen siendo distinguibles");
   }
 
   @Test
@@ -154,19 +159,18 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
             propuestaRepository,
             List.of(
                 new AlgoritmoCompatibilidadSemantica(),
-                new AlgoritmoMatchmaking() {
+                new Algoritmo() {
                   @Override
                   public String getNombre() {
                     return "algoritmo-manual";
                   }
 
                   @Override
-                  public RankingMatchmaking rankear(
+                  protected List<MatchCandidato> candidatosOrdenados(
                       Donacion d,
-                      java.util.Collection<EntidadBeneficiaria> entidades,
+                      Collection<EntidadBeneficiaria> entidades,
                       LocalDate fechaReferencia) {
-                    return new RankingMatchmaking(
-                        getNombre(), List.of(new MatchCandidato(noCompatible, 99)));
+                    return List.of(new MatchCandidato(noCompatible, 99));
                   }
                 }));
 
@@ -321,15 +325,14 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
 
     assertEquals(
         98,
-        rankingEnVentana.getCandidatos().get(0).getPuntaje(),
+        rankingEnVentana.get(0).getPuntaje(),
         "Las dos entregas dentro del trimestre deben descontar dos puntos del puntaje");
     assertEquals(
         100,
-        rankingFueraDeVentana.getCandidatos().get(0).getPuntaje(),
+        rankingFueraDeVentana.get(0).getPuntaje(),
         "Las entregas fuera del trimestre no deben contar: el puntaje debe quedar completo");
     assertTrue(
-        rankingEnVentana.getCandidatos().get(0).getPuntaje()
-            < rankingFueraDeVentana.getCandidatos().get(0).getPuntaje(),
+        rankingEnVentana.get(0).getPuntaje() < rankingFueraDeVentana.get(0).getPuntaje(),
         "Las entregas dentro del trimestre deben bajar el puntaje y las de afuera no deben contar");
   }
 

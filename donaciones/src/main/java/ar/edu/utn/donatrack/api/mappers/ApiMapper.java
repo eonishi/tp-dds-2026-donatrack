@@ -134,8 +134,8 @@ public final class ApiMapper {
             .map(
                 ranking ->
                     new RankingResponse(
-                        ranking.getAlgoritmo(),
-                        ranking.getCandidatos().stream()
+                        ranking.algoritmo(),
+                        ranking.candidatos().stream()
                             .map(
                                 candidato ->
                                     new CandidatoResponse(
