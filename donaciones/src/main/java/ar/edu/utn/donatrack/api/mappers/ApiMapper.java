@@ -16,12 +16,12 @@ import ar.edu.utn.donatrack.beneficiarios.Necesidad;
 import ar.edu.utn.donatrack.beneficiarios.NecesidadRecurrente;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.HistorialEstado;
-import ar.edu.utn.donatrack.donaciones.PropuestaDeAsignacion;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
 import ar.edu.utn.donatrack.donantes.Whatsapp;
+import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
 import ar.edu.utn.donatrack.utilidades.TipoPersona;
 import java.util.List;
 

@@ -1,7 +1,13 @@
-package ar.edu.utn.donatrack.donaciones;
+package ar.edu.utn.donatrack.propuestas;
 
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
+import ar.edu.utn.donatrack.donaciones.Donacion;
+import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
+import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
+import ar.edu.utn.donatrack.propuestas.matchmaking.AlgoritmoMatchmaking;
+import ar.edu.utn.donatrack.propuestas.matchmaking.RankingAlgoritmo;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;

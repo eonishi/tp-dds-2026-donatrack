@@ -1,4 +1,4 @@
-package ar.edu.utn.donatrack.donaciones;
+package ar.edu.utn.donatrack.propuestas.matchmaking;
 
 import java.util.List;
 

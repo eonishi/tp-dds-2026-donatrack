@@ -1,4 +1,4 @@
-package ar.edu.utn.donatrack.donaciones;
+package ar.edu.utn.donatrack.propuestas.matchmaking;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -8,6 +8,8 @@ import java.time.LocalTime;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import ar.edu.utn.donatrack.propuestas.ServicioMatchmakingDonaciones;
 
 public class MatchmakingScheduler {
   private final ServicioMatchmakingDonaciones servicioMatchmakingDonaciones;

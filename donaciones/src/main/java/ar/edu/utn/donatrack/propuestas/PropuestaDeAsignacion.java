@@ -1,6 +1,9 @@
-package ar.edu.utn.donatrack.donaciones;
+package ar.edu.utn.donatrack.propuestas;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
+import ar.edu.utn.donatrack.donaciones.Donacion;
+import ar.edu.utn.donatrack.propuestas.matchmaking.RankingAlgoritmo;
+
 import java.util.List;
 import java.util.Objects;
 

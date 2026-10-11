@@ -13,6 +13,12 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
+import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
+import ar.edu.utn.donatrack.propuestas.PropuestaRepository;
+import ar.edu.utn.donatrack.propuestas.PropuestaRepositoryImpl;
+import ar.edu.utn.donatrack.propuestas.matchmaking.MatchCandidato;
+import ar.edu.utn.donatrack.propuestas.matchmaking.RankingAlgoritmo;
+
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
