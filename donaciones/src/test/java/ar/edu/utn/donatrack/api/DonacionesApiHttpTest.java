@@ -252,7 +252,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
         request("POST", "/api/v1/donaciones/" + donacionId + "/propuesta-asignacion", null);
     assertEquals(201, ejecucion.statusCode());
     assertEquals(donacionId.toString(), json(ejecucion).get("donacionId").asText());
-    assertFalse(json(ejecucion).get("rankings").isEmpty());
+    assertFalse(json(ejecucion).get("candidatos").isEmpty());
     assertEquals(
         201,
         request("POST", "/api/v1/donaciones/" + idOtraDonacion + "/propuesta-asignacion", null)

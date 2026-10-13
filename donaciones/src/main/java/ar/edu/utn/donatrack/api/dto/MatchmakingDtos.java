@@ -8,8 +8,6 @@ public final class MatchmakingDtos {
 
   public record CandidatoResponse(long entidadBeneficiariaId, String razonSocial, int puntaje) {}
 
-  public record RankingResponse(String algoritmo, List<CandidatoResponse> candidatos) {}
-
   public record PropuestaResponse(
-      UUID donacionId, boolean pendiente, List<RankingResponse> rankings) {}
+      UUID donacionId, boolean pendiente, List<CandidatoResponse> candidatos) {}
 }

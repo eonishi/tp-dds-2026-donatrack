@@ -30,7 +30,6 @@ import ar.edu.utn.donatrack.propuestas.matchmaking.AlgoritmoMatchmaking;
 import ar.edu.utn.donatrack.propuestas.matchmaking.AlgoritmoPrioridadSubAtendidos;
 import ar.edu.utn.donatrack.propuestas.matchmaking.MatchCandidato;
 import ar.edu.utn.donatrack.propuestas.matchmaking.MatchmakingScheduler;
-import ar.edu.utn.donatrack.propuestas.matchmaking.RankingAlgoritmo;
 import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.time.Clock;
 import java.time.Instant;
@@ -117,17 +116,16 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
     assertNotNull(propuesta, "Matchmaking debe crear una PropuestaDeAsignacion");
     assertTrue(propuesta.isPendiente(), "Propuesta debe estar pendiente");
     assertEquals(
-        2,
-        propuesta.getRankings().size(),
-        "Propuesta debe contener los rankings de ambos algoritmos");
-    assertEquals(
-        List.of("compatibilidad-semantica", "prioridad-sub-atendidos"),
-        propuesta.getRankings().stream().map(RankingAlgoritmo::algoritmo).toList(),
-        "Las dos ejecuciones siguen siendo distinguibles");
+        List.of(hogarA.getId(), hogarB.getId()),
+        propuesta.getCandidatos().stream()
+            .map(candidato -> candidato.getEntidadBeneficiaria().getId())
+            .sorted()
+            .toList(),
+        "Las dos entidades aparecen en ambas ejecuciones y deben quedar como candidatas");
   }
 
   @Test
-  void matchmakingGuardaRankingsSeparadosCuandoNoHayCoincidencias() {
+  void matchmakingMuestraLaUnionCuandoNoHayCoincidencias() {
     LocalDate fecha = LocalDate.of(2026, 7, 6);
     SubCategoria alimentos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     SubCategoria ropa = new SubCategoria("Abrigos", Categoria.VESTIMENTA);
@@ -180,9 +178,65 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
         propuestaRepository.findPendingByDonacion(donacion).orElse(null);
     assertNotNull(propuesta, "Matchmaking debe crear una PropuestaDeAsignacion");
     assertEquals(
-        2,
-        propuesta.getRankings().size(),
-        "Propuesta debe contener los rankings de ambos algoritmos");
+        List.of("Compatible", "Sin match semántico"),
+        propuesta.getCandidatos().stream()
+            .map(candidato -> candidato.getEntidadBeneficiaria().getRazonSocial())
+            .sorted()
+            .toList(),
+        "Sin coincidencias deben aparecer las entidades de ambas ejecuciones");
+  }
+
+  @Test
+  void confirmarAsignacionAdministrativa_AplicaLaTransicionSobreLaDonacionAdministrada() {
+    LocalDate fecha = LocalDate.of(2026, 7, 6);
+    SubCategoria alimentos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
+    Donante donante = crearDonanteDummy();
+    Donacion donacion =
+        nuevaDonacion(donante, List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+    // El repositorio persiste la donación que recibe: el donante y la subcategoría de su bien ya
+    // deben estar almacenados.
+    persist(alimentos);
+    persist(donante);
+    DonacionesRepository donacionesRepository = new DonacionesRepository();
+    donacionesRepository.addDonacion(donacion);
+    BeneficiariosRepository beneficiariosRepository = new BeneficiariosRepository();
+    EntidadBeneficiaria entidad =
+        crearEntidadConNecesidad("Hogar", alimentos, 5, fecha.plusMonths(4));
+    persist(entidad);
+    beneficiariosRepository.addBeneficiario(entidad);
+
+    // La propuesta puede sobrevivir a la solicitud que la creó y conservar una copia de la
+    // donación separada del contexto de persistencia: se guarda una propuesta sobre una instancia
+    // distinta con el mismo identificador para reproducir ese caso.
+    Donacion copiaSeparada =
+        new Donacion(
+            donacion.getId(),
+            donante,
+            List.of(crearBien("Fideos", 10, alimentos, fecha.plusMonths(6))));
+    PropuestaRepository propuestaRepository = new PropuestaRepositoryImpl();
+    propuestaRepository.save(
+        new PropuestaDeAsignacion(
+            copiaSeparada, List.of(List.of(new MatchCandidato(entidad, 100)))));
+    ServicioMatchmakingDonaciones servicio =
+        new ServicioMatchmakingDonaciones(
+            donacionesRepository,
+            beneficiariosRepository,
+            propuestaRepository,
+            List.of(new AlgoritmoCompatibilidadSemantica()));
+
+    servicio.confirmarAsignacionAdministrativa(donacion, entidad, fecha);
+
+    assertEquals(
+        EstadoDonacion.ASIGNACION_REALIZADA,
+        donacion.getEstado(),
+        "La donación administrada debe recibir la transición aunque la propuesta guarde otra copia");
+    assertEquals(
+        entidad,
+        donacion.getEntidadBeneficiaria(),
+        "La donación administrada debe quedar con la entidad elegida");
+    assertTrue(
+        propuestaRepository.findPendingByDonacion(donacion).isEmpty(),
+        "La propuesta debe ser removida del repositorio tras confirmar");
   }
 
   @Test

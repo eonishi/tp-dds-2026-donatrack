@@ -6,7 +6,7 @@ import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
 import ar.edu.utn.donatrack.propuestas.matchmaking.AlgoritmoMatchmaking;
-import ar.edu.utn.donatrack.propuestas.matchmaking.RankingAlgoritmo;
+import ar.edu.utn.donatrack.propuestas.matchmaking.MatchCandidato;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -69,7 +69,10 @@ public class ServicioMatchmakingDonaciones {
             .orElseThrow(
                 () ->
                     new IllegalStateException("No hay una propuesta pendiente para la donación."));
-    propuesta.confirmar(entidadBeneficiaria, donacion);
+    propuesta.confirmar(entidadBeneficiaria);
+    // La propuesta vive en memoria y puede guardar una copia de la donación separada del contexto
+    // de persistencia, así que la transición se aplica acá sobre la donación administrada.
+    donacion.confirmarEntidadBeneficiaria(entidadBeneficiaria);
     propuestaRepository.remove(donacion);
     // La confirmación cambia el estado y la entidad de la donación: hay que guardarla para que
     // esos cambios lleguen a la base. Este camino no pasa por DonacionController.
@@ -84,18 +87,16 @@ public class ServicioMatchmakingDonaciones {
     generarPropuesta(donacion, fechaReferencia);
   }
 
-  // Calcula el ranking de la donación, persiste la propuesta y la devuelve.
+  // Calcula los candidatos de la donación, persiste la propuesta y la devuelve.
   private PropuestaDeAsignacion generarPropuesta(Donacion donacion, LocalDate fechaReferencia) {
-    List<RankingAlgoritmo> rankings =
+    List<List<MatchCandidato>> listasDeCandidatos =
         algoritmos.stream()
             .map(
                 algoritmo ->
-                    new RankingAlgoritmo(
-                        algoritmo.getNombre(),
-                        algoritmo.rankear(
-                            donacion, beneficiariosRepository.getBeneficiarios(), fechaReferencia)))
+                    algoritmo.rankear(
+                        donacion, beneficiariosRepository.getBeneficiarios(), fechaReferencia))
             .toList();
-    PropuestaDeAsignacion propuesta = new PropuestaDeAsignacion(donacion, rankings);
+    PropuestaDeAsignacion propuesta = new PropuestaDeAsignacion(donacion, listasDeCandidatos);
     propuestaRepository.save(propuesta);
     return propuesta;
   }

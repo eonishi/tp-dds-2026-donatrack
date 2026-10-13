@@ -17,47 +17,123 @@ import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.propuestas.EntidadFueraDeRankingException;
 import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
 import ar.edu.utn.donatrack.propuestas.matchmaking.MatchCandidato;
-import ar.edu.utn.donatrack.propuestas.matchmaking.RankingAlgoritmo;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class PropuestaDeAsignacionTest {
 
   @Test
-  void propuestaCreada_ConPendienteTrue_AndReferenciaDonacionYRankings() {
+  void propuestaCreada_ConPendienteTrue_AndReferenciaDonacionYCandidatos() {
     Donacion donacion = crearDonacionDummy();
-    List<RankingAlgoritmo> rankings = crearRankingsDummy();
 
-    PropuestaDeAsignacion propuesta = new PropuestaDeAsignacion(donacion, rankings);
+    PropuestaDeAsignacion propuesta =
+        new PropuestaDeAsignacion(donacion, crearListasDeCandidatosDummy());
 
     assertTrue(propuesta.isPendiente(), "Propuesta recién creada debe estar pendiente");
     assertSame(donacion, propuesta.getDonacion(), "Propuesta debe referenciar la donación");
-    assertEquals(2, propuesta.getRankings().size(), "Propuesta debe contener los rankings");
+    assertEquals(
+        List.of(1L),
+        idsDe(propuesta),
+        "Propuesta debe exponer solo la entidad que aparece en todas las listas");
   }
 
   @Test
-  void confirmar_TransicionaPendienteYAsignaDonacion() {
+  void candidatos_ConInterseccion_ConservaLasCoincidentesConSuPuntajePromedio() {
+    EntidadBeneficiaria primera = entidad(1L, "Uno");
+    EntidadBeneficiaria coincidente = entidad(2L, "Dos");
+    EntidadBeneficiaria ultima = entidad(3L, "Tres");
+
+    PropuestaDeAsignacion propuesta =
+        new PropuestaDeAsignacion(
+            crearDonacionDummy(),
+            List.of(
+                List.of(new MatchCandidato(primera, 10), new MatchCandidato(coincidente, 80)),
+                List.of(new MatchCandidato(coincidente, 60), new MatchCandidato(ultima, 90))));
+
+    assertEquals(
+        List.of(coincidente),
+        propuesta.getCandidatos().stream().map(MatchCandidato::getEntidadBeneficiaria).toList(),
+        "Solo la entidad presente en todas las listas debe quedar como candidata");
+    assertEquals(
+        70,
+        propuesta.getCandidatos().get(0).getPuntaje(),
+        "El puntaje de la coincidencia debe ser el promedio de sus puntajes");
+  }
+
+  @Test
+  void candidatos_SinInterseccion_ExponeLaUnionEnOrdenDePrimeraAparicion() {
+    EntidadBeneficiaria uno = entidad(1L, "Uno");
+    EntidadBeneficiaria dos = entidad(2L, "Dos");
+    EntidadBeneficiaria tres = entidad(3L, "Tres");
+    EntidadBeneficiaria cuatro = entidad(4L, "Cuatro");
+
+    PropuestaDeAsignacion propuesta =
+        new PropuestaDeAsignacion(
+            crearDonacionDummy(),
+            List.of(
+                List.of(new MatchCandidato(uno, 100), new MatchCandidato(dos, 31)),
+                List.of(new MatchCandidato(tres, 10), new MatchCandidato(cuatro, 50))));
+
+    assertEquals(
+        List.of(1L, 2L, 3L, 4L),
+        idsDe(propuesta),
+        "Sin coincidencias deben aparecer todas las entidades de ambas listas");
+    assertEquals(
+        List.of(50, 15, 5, 25),
+        propuesta.getCandidatos().stream().map(MatchCandidato::getPuntaje).toList(),
+        "Cada puntaje se divide por la cantidad de listas y se trunca a entero");
+  }
+
+  @Test
+  void candidatos_ConUnaSolaLista_ConservaTodosLosCandidatosConSuPuntaje() {
+    EntidadBeneficiaria uno = entidad(1L, "Uno");
+    EntidadBeneficiaria dos = entidad(2L, "Dos");
+
+    PropuestaDeAsignacion propuesta =
+        new PropuestaDeAsignacion(
+            crearDonacionDummy(),
+            List.of(List.of(new MatchCandidato(uno, 70), new MatchCandidato(dos, 30))));
+
+    assertEquals(
+        List.of(1L, 2L), idsDe(propuesta), "Con una sola lista todos sus candidatos coinciden");
+    assertEquals(
+        List.of(70, 30),
+        propuesta.getCandidatos().stream().map(MatchCandidato::getPuntaje).toList(),
+        "Con una sola lista el promedio conserva el puntaje original");
+  }
+
+  @Test
+  void candidatos_SinEjecucionesDeAlgoritmos_ListaVacia() {
+    PropuestaDeAsignacion propuesta = new PropuestaDeAsignacion(crearDonacionDummy(), List.of());
+
+    assertTrue(
+        propuesta.getCandidatos().isEmpty(), "Sin ejecuciones no hay candidatos que ofrecer");
+  }
+
+  @Test
+  void confirmar_MarcaLaPropuestaComoConfirmadaSinTocarSuCopiaDeLaDonacion() {
     Donacion donacion = crearDonacionDummy();
-    PropuestaDeAsignacion propuesta = new PropuestaDeAsignacion(donacion, crearRankingsDummy());
-    EntidadBeneficiaria entidad = entidadRankeada(propuesta);
+    PropuestaDeAsignacion propuesta =
+        new PropuestaDeAsignacion(donacion, crearListasDeCandidatosDummy());
+    EntidadBeneficiaria entidad = candidata(propuesta);
 
     propuesta.confirmar(entidad);
 
     assertFalse(propuesta.isPendiente(), "confirmar() debe setear pendiente=false");
-    assertSame(
-        entidad,
+    assertNull(
         donacion.getEntidadBeneficiaria(),
-        "Donacion debe tener la entidad beneficiaria asignada");
+        "La copia de la donación que guarda la propuesta no debe recibir la transición");
     assertEquals(
-        EstadoDonacion.ASIGNACION_REALIZADA,
+        EstadoDonacion.EN_DEPOSITO,
         donacion.getEstado(),
-        "Donacion debe transicionar a AsignacionRealizada");
+        "La transición la aplica el llamador sobre la donación administrada");
   }
 
   @Test
   void confirmar_EntidadFueraDelRanking_LanzaExcepcionDeDominio() {
     Donacion donacion = crearDonacionDummy();
-    PropuestaDeAsignacion propuesta = new PropuestaDeAsignacion(donacion, crearRankingsDummy());
+    PropuestaDeAsignacion propuesta =
+        new PropuestaDeAsignacion(donacion, crearListasDeCandidatosDummy());
     EntidadBeneficiaria entidadNoRankeada = new EntidadBeneficiaria("Otra Entidad", "Dir", "Tel");
 
     EntidadFueraDeRankingException error =
@@ -72,22 +148,18 @@ class PropuestaDeAsignacionTest {
   @Test
   void confirmar_DobleConfirmacion_EsNoOp() {
     Donacion donacion = crearDonacionDummy();
-    PropuestaDeAsignacion propuesta = new PropuestaDeAsignacion(donacion, crearRankingsDummy());
-    EntidadBeneficiaria entidad = entidadRankeada(propuesta);
+    PropuestaDeAsignacion propuesta =
+        new PropuestaDeAsignacion(donacion, crearListasDeCandidatosDummy());
+    EntidadBeneficiaria entidad = candidata(propuesta);
     EntidadBeneficiaria otraEntidad = new EntidadBeneficiaria("Otro Hogar", "Dir2", "Tel2");
 
     // First confirm
     propuesta.confirmar(entidad);
     assertFalse(propuesta.isPendiente());
-    assertSame(entidad, donacion.getEntidadBeneficiaria());
 
-    // Second confirm — silent no-op, donacion already in AsignacionRealizada
+    // Second confirm — silent no-op: the proposal does not even validate the entity again
     assertDoesNotThrow(() -> propuesta.confirmar(otraEntidad));
     assertFalse(propuesta.isPendiente(), "Debe seguir siendo false");
-    assertSame(
-        entidad,
-        donacion.getEntidadBeneficiaria(),
-        "La entidad no debe cambiar en doble confirmación");
   }
 
   // ── Helpers ────────────────────────────────────────────────────────
@@ -117,18 +189,25 @@ class PropuestaDeAsignacionTest {
     return nuevaDonacion(crearDonanteDummy(), List.of(bien));
   }
 
-  private static List<RankingAlgoritmo> crearRankingsDummy() {
-    // La entidad lleva un id explícito: confirmar() compara la elegida contra el ranking por
-    // identidad, y este test no persiste la entidad para que el proveedor se la asigne.
-    EntidadBeneficiaria entidad = new EntidadBeneficiaria(1L, "Entidad", "Dir", "Tel");
-    RankingAlgoritmo ranking1 =
-        new RankingAlgoritmo("algoritmo-1", List.of(new MatchCandidato(entidad, 50)));
-    RankingAlgoritmo ranking2 =
-        new RankingAlgoritmo("algoritmo-2", List.of(new MatchCandidato(entidad, 80)));
-    return List.of(ranking1, ranking2);
+  private static EntidadBeneficiaria entidad(long id, String razonSocial) {
+    // La entidad lleva un id explícito: la intersección compara por identidad y este test no
+    // persiste la entidad para que el proveedor se la asigne.
+    return new EntidadBeneficiaria(id, razonSocial, "Dir", "Tel");
   }
 
-  private static EntidadBeneficiaria entidadRankeada(PropuestaDeAsignacion propuesta) {
-    return propuesta.getRankings().get(0).candidatos().get(0).getEntidadBeneficiaria();
+  private static List<List<MatchCandidato>> crearListasDeCandidatosDummy() {
+    EntidadBeneficiaria entidad = entidad(1L, "Entidad");
+    return List.of(
+        List.of(new MatchCandidato(entidad, 50)), List.of(new MatchCandidato(entidad, 80)));
+  }
+
+  private static List<Long> idsDe(PropuestaDeAsignacion propuesta) {
+    return propuesta.getCandidatos().stream()
+        .map(candidato -> candidato.getEntidadBeneficiaria().getId())
+        .toList();
+  }
+
+  private static EntidadBeneficiaria candidata(PropuestaDeAsignacion propuesta) {
+    return propuesta.getCandidatos().get(0).getEntidadBeneficiaria();
   }
 }

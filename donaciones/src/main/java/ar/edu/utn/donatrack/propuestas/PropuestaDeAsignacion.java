@@ -18,6 +18,17 @@ public class PropuestaDeAsignacion {
             Objects.requireNonNull(listasDeCandidatos, "listasDeCandidatos no puede ser null"));
   }
 
+  /**
+   * Confirma la propuesta con la entidad elegida.
+   *
+   * <p>La propuesta vive en memoria y puede sobrevivir a la solicitud que la creó: la donación que
+   * referencia queda separada del contexto de persistencia y su historial no se puede inicializar.
+   * Por eso acá solo se valida la elegida y se marca la propuesta como confirmada; la transición de
+   * la donación la aplica el llamador sobre la instancia administrada.
+   *
+   * @param elegida entidad beneficiaria elegida, que debe pertenecer a los candidatos
+   * @throws EntidadFueraDeRankingException si la entidad no pertenece a los candidatos
+   */
   public void confirmar(EntidadBeneficiaria elegida) {
     if (!pendiente) {
       return; // no-op on double-confirm
@@ -27,7 +38,6 @@ public class PropuestaDeAsignacion {
       throw new EntidadFueraDeRankingException();
     }
 
-    donacion.confirmarEntidadBeneficiaria(elegida);
     this.pendiente = false;
   }
 

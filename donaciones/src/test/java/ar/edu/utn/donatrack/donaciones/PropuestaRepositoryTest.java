@@ -17,7 +17,6 @@ import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
 import ar.edu.utn.donatrack.propuestas.PropuestaRepository;
 import ar.edu.utn.donatrack.propuestas.PropuestaRepositoryImpl;
 import ar.edu.utn.donatrack.propuestas.matchmaking.MatchCandidato;
-import ar.edu.utn.donatrack.propuestas.matchmaking.RankingAlgoritmo;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +32,7 @@ class PropuestaRepositoryTest {
   void setUp() {
     repository = new PropuestaRepositoryImpl();
     donacion = crearDonacionDummy();
-    propuesta = new PropuestaDeAsignacion(donacion, crearRankingsDummy());
+    propuesta = new PropuestaDeAsignacion(donacion, crearCandidatosDummy());
   }
 
   @Test
@@ -50,7 +49,7 @@ class PropuestaRepositoryTest {
   @Test
   void findPendingByDonacion_PropuestaConfirmada_RetornaEmpty() {
     repository.save(propuesta);
-    propuesta.confirmar(entidadRankeada(propuesta));
+    propuesta.confirmar(candidata(propuesta));
 
     var encontrada = repository.findPendingByDonacion(donacion);
 
@@ -60,13 +59,13 @@ class PropuestaRepositoryTest {
   @Test
   void findAllPending_RetornaSoloPendientes() {
     Donacion donacionB = crearDonacionDummy();
-    PropuestaDeAsignacion propuestaB = new PropuestaDeAsignacion(donacionB, crearRankingsDummy());
+    PropuestaDeAsignacion propuestaB = new PropuestaDeAsignacion(donacionB, crearCandidatosDummy());
 
     repository.save(propuesta);
     repository.save(propuestaB);
 
     // Confirmar la primera
-    propuesta.confirmar(entidadRankeada(propuesta));
+    propuesta.confirmar(candidata(propuesta));
 
     List<PropuestaDeAsignacion> pendientes = repository.findAllPending();
 
@@ -93,7 +92,7 @@ class PropuestaRepositoryTest {
   void save_UpsertReemplazaPropuestaExistente() {
     repository.save(propuesta);
 
-    PropuestaDeAsignacion reemplazo = new PropuestaDeAsignacion(donacion, crearRankingsDummy());
+    PropuestaDeAsignacion reemplazo = new PropuestaDeAsignacion(donacion, crearCandidatosDummy());
     repository.save(reemplazo);
 
     var encontrada = repository.findPendingByDonacion(donacion);
@@ -130,18 +129,15 @@ class PropuestaRepositoryTest {
     return new Donacion(UUID.randomUUID(), crearDonanteDummy(), List.of(bien));
   }
 
-  private static List<RankingAlgoritmo> crearRankingsDummy() {
-    // La entidad lleva un id explícito: confirmar() compara por identidad y este test no persiste
-    // la entidad para que el proveedor se la asigne.
+  private static List<List<MatchCandidato>> crearCandidatosDummy() {
+    // La entidad lleva un id explícito: confirmar() compara la elegida contra los candidatos por
+    // identidad y este test no persiste la entidad para que el proveedor se la asigne.
     EntidadBeneficiaria entidad = new EntidadBeneficiaria(1L, "Entidad", "Dir", "Tel");
-    RankingAlgoritmo ranking1 =
-        new RankingAlgoritmo("algoritmo-1", List.of(new MatchCandidato(entidad, 50)));
-    RankingAlgoritmo ranking2 =
-        new RankingAlgoritmo("algoritmo-2", List.of(new MatchCandidato(entidad, 80)));
-    return List.of(ranking1, ranking2);
+    return List.of(
+        List.of(new MatchCandidato(entidad, 50)), List.of(new MatchCandidato(entidad, 80)));
   }
 
-  private static EntidadBeneficiaria entidadRankeada(PropuestaDeAsignacion propuesta) {
-    return propuesta.getRankings().get(0).candidatos().get(0).getEntidadBeneficiaria();
+  private static EntidadBeneficiaria candidata(PropuestaDeAsignacion propuesta) {
+    return propuesta.getCandidatos().get(0).getEntidadBeneficiaria();
   }
 }

@@ -9,7 +9,6 @@ import ar.edu.utn.donatrack.api.dto.DonanteDtos.RepresentanteRequest;
 import ar.edu.utn.donatrack.api.dto.EntidadDtos.EntidadResponse;
 import ar.edu.utn.donatrack.api.dto.MatchmakingDtos.CandidatoResponse;
 import ar.edu.utn.donatrack.api.dto.MatchmakingDtos.PropuestaResponse;
-import ar.edu.utn.donatrack.api.dto.MatchmakingDtos.RankingResponse;
 import ar.edu.utn.donatrack.api.dto.NecesidadDtos.NecesidadResponse;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.beneficiarios.Necesidad;
@@ -128,23 +127,26 @@ public final class ApiMapper {
         historial.getFecha(), historial.getEstadoAlcanzado(), historial.getJustificacion());
   }
 
+  /**
+   * Traduce una propuesta de asignación al contrato HTTP.
+   *
+   * <p>La propuesta expone una sola lista plana de candidatos: la intersección de los algoritmos
+   * cuando existe, su unión cuando no.
+   *
+   * @param propuesta propuesta que se traduce
+   * @return la propuesta con su lista de candidatos
+   */
   public static PropuestaResponse propuesta(PropuestaDeAsignacion propuesta) {
-    List<RankingResponse> rankings =
-        propuesta.getRankings().stream()
+    List<CandidatoResponse> candidatos =
+        propuesta.getCandidatos().stream()
             .map(
-                ranking ->
-                    new RankingResponse(
-                        ranking.algoritmo(),
-                        ranking.candidatos().stream()
-                            .map(
-                                candidato ->
-                                    new CandidatoResponse(
-                                        candidato.getEntidadBeneficiaria().getId(),
-                                        candidato.getEntidadBeneficiaria().getRazonSocial(),
-                                        candidato.getPuntaje()))
-                            .toList()))
+                candidato ->
+                    new CandidatoResponse(
+                        candidato.getEntidadBeneficiaria().getId(),
+                        candidato.getEntidadBeneficiaria().getRazonSocial(),
+                        candidato.getPuntaje()))
             .toList();
     return new PropuestaResponse(
-        propuesta.getDonacion().getId(), propuesta.isPendiente(), rankings);
+        propuesta.getDonacion().getId(), propuesta.isPendiente(), candidatos);
   }
 }
