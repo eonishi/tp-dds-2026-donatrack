@@ -74,7 +74,7 @@ Cada diagrama es el **fragmento mínimo del dominio** que cumple ese requerimien
 
 ### R3 — Ejecución asíncrona de los algoritmos de asignación
 
-**Decisión:** Strategy: `AlgoritmoMatchmaking` con dos implementaciones intercambiables. `MatchmakingScheduler` dispara `ServicioMatchmakingDonaciones` cada día (asíncrono, baja carga), que genera `PropuestaDeAsignacion` con los rankings para confirmación administrativa (reificación).
+**Decisión:** Strategy: `AlgoritmoMatchmaking` con dos implementaciones intercambiables. `MatchmakingScheduler` dispara `ServicioMatchmakingDonaciones` cada día (asíncrono, baja carga), que genera `PropuestaDeAsignacion` con la intersección de las ejecuciones —o su unión cuando no hay coincidencias— para confirmación administrativa (reificación).
 
 **⚠️ Solucionar :**  cambiar planificación interna por planificación externa (cronjobs)
 ![R3 — Ejecución asíncrona de los algoritmos de asignación](assets/e2-req3-matchmaking-asincrono.svg)

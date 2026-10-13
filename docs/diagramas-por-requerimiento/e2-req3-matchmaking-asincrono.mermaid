@@ -41,17 +41,13 @@ classDiagram
     }
     class AlgoritmoCompatibilidadSemantica
     class AlgoritmoPrioridadSubAtendidos
-    class RankingAlgoritmo {
-        -algoritmo: String
-        -candidatos: List~MatchCandidato~
-    }
     class MatchCandidato {
         -entidadBeneficiaria: EntidadBeneficiaria
         -puntaje: int
     }
     class PropuestaDeAsignacion {
         -donacion: Donacion
-        -rankings: List~RankingAlgoritmo~
+        -candidatos: List~MatchCandidato~
         -pendiente: boolean
         +confirmar(elegida: EntidadBeneficiaria)
     }
@@ -66,7 +62,6 @@ classDiagram
     AlgoritmoMatchmaking <|-- AlgoritmoCompatibilidadSemantica
     AlgoritmoMatchmaking <|-- AlgoritmoPrioridadSubAtendidos
     AlgoritmoMatchmaking ..> MatchCandidato : rankear() aplica el tope
-    RankingAlgoritmo *-- "*" MatchCandidato : candidatos
     MatchCandidato --> EntidadBeneficiaria : candidata
     PropuestaDeAsignacion *-- Donacion : donacion
-    PropuestaDeAsignacion *-- "*" RankingAlgoritmo : rankings
+    PropuestaDeAsignacion *-- "*" MatchCandidato : candidatos (intersección, o unión si no hay coincidencias)
