@@ -15,6 +15,10 @@ public class MatchCandidato {
     return entidadBeneficiaria;
   }
 
+  public boolean coincideBeneficiaria(EntidadBeneficiaria entidadElegida) {
+    return entidadBeneficiaria.equals(entidadElegida);
+  }
+
   public int getPuntaje() {
     return puntaje;
   }
