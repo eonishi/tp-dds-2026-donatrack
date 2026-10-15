@@ -61,7 +61,36 @@ class PropuestaDeAsignacionTest {
   }
 
   @Test
-  void candidatos_SinInterseccion_ExponeLaUnionEnOrdenDePrimeraAparicion() {
+  void candidatos_ConInterseccion_OrdenaPorPuntajeDescendente() {
+    EntidadBeneficiaria baja = entidad(1L, "Baja");
+    EntidadBeneficiaria alta = entidad(2L, "Alta");
+    EntidadBeneficiaria media = entidad(3L, "Media");
+
+    PropuestaDeAsignacion propuesta =
+        new PropuestaDeAsignacion(
+            crearDonacionDummy(),
+            List.of(
+                List.of(
+                    new MatchCandidato(baja, 20),
+                    new MatchCandidato(media, 60),
+                    new MatchCandidato(alta, 100)),
+                List.of(
+                    new MatchCandidato(baja, 40),
+                    new MatchCandidato(media, 60),
+                    new MatchCandidato(alta, 80))));
+
+    assertEquals(
+        List.of(2L, 3L, 1L),
+        idsDe(propuesta),
+        "Las coincidentes se ordenan por su puntaje, de mayor a menor");
+    assertEquals(
+        List.of(90, 60, 30),
+        propuesta.getCandidatos().stream().map(MatchCandidato::getPuntaje).toList(),
+        "El orden se decide con el puntaje promedio de cada entidad");
+  }
+
+  @Test
+  void candidatos_SinInterseccion_ExponeLaUnionOrdenadaPorPuntajeDescendente() {
     EntidadBeneficiaria uno = entidad(1L, "Uno");
     EntidadBeneficiaria dos = entidad(2L, "Dos");
     EntidadBeneficiaria tres = entidad(3L, "Tres");
@@ -75,13 +104,13 @@ class PropuestaDeAsignacionTest {
                 List.of(new MatchCandidato(tres, 10), new MatchCandidato(cuatro, 50))));
 
     assertEquals(
-        List.of(1L, 2L, 3L, 4L),
+        List.of(1L, 4L, 2L, 3L),
         idsDe(propuesta),
-        "Sin coincidencias deben aparecer todas las entidades de ambas listas");
+        "Sin coincidencias deben aparecer todas las entidades de ambas listas, ordenadas por puntaje");
     assertEquals(
-        List.of(50, 15, 5, 25),
+        List.of(50, 25, 15, 5),
         propuesta.getCandidatos().stream().map(MatchCandidato::getPuntaje).toList(),
-        "Cada puntaje se divide por la cantidad de listas y se trunca a entero");
+        "Cada puntaje se divide por la cantidad de listas, se trunca a entero y ordena la lista");
   }
 
   @Test

@@ -3,6 +3,7 @@ package ar.edu.utn.donatrack.propuestas;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.propuestas.matchmaking.MatchCandidato;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -45,19 +46,43 @@ public class PropuestaDeAsignacion {
     return candidatos.stream().anyMatch(c -> c.coincideBeneficiaria(entidadElegida));
   }
 
+  /**
+   * Arma la lista plana de candidatos que expone la propuesta.
+   *
+   * <p>Si todas las listas comparten entidades, expone la intersección; si no hay ninguna
+   * coincidencia, expone la unión de las entidades disponibles, una sola vez cada una. En ambos
+   * casos los candidatos quedan ordenados por puntaje, de mayor a menor.
+   *
+   * @param listasDeCandidatos candidatos propuestos por cada algoritmo
+   * @return la intersección o la unión, ordenada por puntaje descendente
+   */
   private List<MatchCandidato> intersectarCandidatos(
       List<List<MatchCandidato>> listasDeCandidatos) {
     List<EntidadBeneficiaria> beneficiariosCoincidentes =
         getBeneficiariosCoincidentes(listasDeCandidatos);
 
-    if (!beneficiariosCoincidentes.isEmpty()) {
-      return construirCandidatosConPromedio(listasDeCandidatos, beneficiariosCoincidentes);
-    }
-
     // Sin entidades coincidentes se expone una lista plana: todas las entidades disponibles, una
     // sola vez cada una, con su puntaje promediado sobre todas las listas.
-    return construirCandidatosConPromedio(
-        listasDeCandidatos, getBeneficiariosDisponibles(listasDeCandidatos));
+    List<EntidadBeneficiaria> beneficiarios =
+        beneficiariosCoincidentes.isEmpty()
+            ? getBeneficiariosDisponibles(listasDeCandidatos)
+            : beneficiariosCoincidentes;
+
+    return ordenarPorPuntaje(construirCandidatosConPromedio(listasDeCandidatos, beneficiarios));
+  }
+
+  /**
+   * Ordena los candidatos por puntaje, de mayor a menor.
+   *
+   * <p>El orden es estable: los empates conservan el orden en el que se armó la lista.
+   *
+   * @param candidatos candidatos a ordenar
+   * @return los candidatos ordenados por puntaje descendente
+   */
+  private List<MatchCandidato> ordenarPorPuntaje(List<MatchCandidato> candidatos) {
+    return candidatos.stream()
+        .sorted(Comparator.comparingInt(MatchCandidato::getPuntaje).reversed())
+        .toList();
   }
 
   /**
