@@ -18,6 +18,7 @@ import java.time.Clock;
 
 public class MainLogistica implements WithSimplePersistenceUnit {
   public static void main(String[] args) {
+    ConfiguracionBase.desdeEntorno();
     new MainLogistica().iniciar();
   }
 
