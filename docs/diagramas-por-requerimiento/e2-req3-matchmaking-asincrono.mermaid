@@ -41,11 +41,14 @@ classDiagram
         -MAXIMO_CANDIDATOS: int = 10
         +getNombre() String
         +rankear(donacion: Donacion, entidades: Collection~EntidadBeneficiaria~, fechaReferencia: LocalDate) List~MatchCandidato~
-        +rankear(donacion: Donacion, entidades: Collection~EntidadBeneficiaria~, fechaReferencia: LocalDate, entregas: Collection~Donacion~) List~MatchCandidato~
-        #ordenarCandidatos(donacion: Donacion, entidades: Collection~EntidadBeneficiaria~, fechaReferencia: LocalDate, entregas: Collection~Donacion~) List~MatchCandidato~
+        +actualizarDonacionesEntregadas(entregas: Collection~Donacion~)
+        #ordenarCandidatos(donacion: Donacion, entidades: Collection~EntidadBeneficiaria~, fechaReferencia: LocalDate) List~MatchCandidato~
     }
     class AlgoritmoCompatibilidadSemantica
     class AlgoritmoPrioridadSubAtendidos {
+        -donacionesEntregadas: List~Donacion~
+        +AlgoritmoPrioridadSubAtendidos(entregas: Collection~Donacion~)
+        +actualizarDonacionesEntregadas(entregas: Collection~Donacion~)
         -cantidadEntregadasA(entregas: Collection~Donacion~, entidad: EntidadBeneficiaria, fechaDesde: LocalDate) long
     }
     class MatchCandidato {
@@ -85,7 +88,8 @@ classDiagram
     AlgoritmoMatchmaking <|-- AlgoritmoPrioridadSubAtendidos
     AlgoritmoMatchmaking ..> MatchCandidato : rankear() aplica el tope
     AlgoritmoCompatibilidadSemantica ..> EntidadBeneficiaria : calcularPuntajeCompatibilidad()
-    AlgoritmoPrioridadSubAtendidos ..> Donacion : fueEntregadaA() sobre las entregas
+    AlgoritmoPrioridadSubAtendidos ..> Donacion : fueEntregadaA() sobre su atributo de entregas
+    ServicioMatchmakingDonaciones ..> AlgoritmoMatchmaking : inyecta las entregas previas
     EntidadBeneficiaria ..> Donacion : tieneNecesidadCompatible()
     Donacion ..> Necesidad : esCompatibleCon()
     MatchCandidato --> EntidadBeneficiaria : candidata

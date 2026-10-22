@@ -114,7 +114,10 @@ public class ServicioMatchmakingDonaciones {
   }
 
   /**
-   * Calcula la propuesta de la donación sin tocar ningún repositorio.
+   * Calcula la propuesta de la donación sin leer repositorios.
+   *
+   * <p>Recibe los datos ya leídos y deja la lectura en sus llamadores: la única escritura que hace
+   * es inyectar las entregas previas en los algoritmos antes de rankear.
    *
    * @param donacion donación para la que se calcula la propuesta
    * @param beneficiarios entidades candidatas
@@ -133,7 +136,10 @@ public class ServicioMatchmakingDonaciones {
   }
 
   /**
-   * Ejecuta cada algoritmo con los datos recibidos y devuelve un ranking por algoritmo.
+   * Inyecta las entregas previas en cada algoritmo y devuelve un ranking por algoritmo.
+   *
+   * <p>La lectura de las entregas queda en el borde del caso de uso: cada algoritmo recibe el dato
+   * en su atributo y sigue sin conocer el repositorio de donaciones.
    *
    * @param donacion donación para la que se calculan los rankings
    * @param beneficiarios entidades candidatas
@@ -147,9 +153,7 @@ public class ServicioMatchmakingDonaciones {
       Collection<Donacion> donacionesEntregadas,
       LocalDate fechaReferencia) {
     return algoritmos.stream()
-        .map(
-            algoritmo ->
-                algoritmo.rankear(donacion, beneficiarios, fechaReferencia, donacionesEntregadas))
+        .map(algoritmo -> algoritmo.rankear(donacion, beneficiarios, fechaReferencia))
         .toList();
   }
 

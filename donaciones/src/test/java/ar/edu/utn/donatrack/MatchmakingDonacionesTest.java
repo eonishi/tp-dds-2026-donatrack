@@ -163,10 +163,9 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
 
                   @Override
                   protected List<MatchCandidato> ordenarCandidatos(
-                      Donacion d,
+                      Donacion donacion,
                       Collection<EntidadBeneficiaria> entidades,
-                      LocalDate fechaReferencia,
-                      Collection<Donacion> donacionesEntregadas) {
+                      LocalDate fechaReferencia) {
                     return List.of(new MatchCandidato(noCompatible, 99));
                   }
                 }));
@@ -358,18 +357,17 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
         nuevaDonacion(
             donante, List.of(crearBien("Fideos", 10, alimentos, LocalDate.now().plusMonths(6))));
 
-    // Las entregas llegan como datos: el algoritmo aplica la ventana de tres meses sobre la fecha
-    // de la transición a ENTREGADA registrada en cada donación.
+    // Las entregas son un atributo del algoritmo: el caso de uso las inyecta y el algoritmo aplica
+    // la ventana de tres meses sobre la fecha de la transición a ENTREGADA de cada donación.
     List<Donacion> entregadas =
         List.of(
             crearDonacionEntregada(donante, entidad, alimentos),
             crearDonacionEntregada(donante, entidad, alimentos));
-    AlgoritmoPrioridadSubAtendidos algoritmo = new AlgoritmoPrioridadSubAtendidos();
+    AlgoritmoPrioridadSubAtendidos algoritmo = new AlgoritmoPrioridadSubAtendidos(entregadas);
 
-    var rankingEnVentana =
-        algoritmo.rankear(donacion, List.of(entidad), LocalDate.now(), entregadas);
+    var rankingEnVentana = algoritmo.rankear(donacion, List.of(entidad), LocalDate.now());
     var rankingFueraDeVentana =
-        algoritmo.rankear(donacion, List.of(entidad), LocalDate.now().plusMonths(4), entregadas);
+        algoritmo.rankear(donacion, List.of(entidad), LocalDate.now().plusMonths(4));
 
     assertEquals(
         98,

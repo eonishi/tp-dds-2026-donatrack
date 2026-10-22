@@ -89,7 +89,7 @@ class AlgoritmoPrioridadSubAtendidosTest {
     EntidadBeneficiaria sinEntregas = entidadQueNecesita(1L, "Sin Recibir", fideos);
     EntidadBeneficiaria conMuchas = entidadQueNecesita(2L, "Ya Recibio", fideos);
 
-    // Las entregas llegan como datos: el algoritmo no consulta ningún repositorio.
+    // Las entregas se inyectan como atributo del algoritmo: no consulta ningún repositorio.
     Donante donante = crearDonanteDummy();
     List<Donacion> entregadas =
         IntStream.range(0, 50)
@@ -97,8 +97,8 @@ class AlgoritmoPrioridadSubAtendidosTest {
             .toList();
 
     var candidatos =
-        new AlgoritmoPrioridadSubAtendidos()
-            .rankear(donacion, List.of(sinEntregas, conMuchas), LocalDate.now(), entregadas);
+        new AlgoritmoPrioridadSubAtendidos(entregadas)
+            .rankear(donacion, List.of(sinEntregas, conMuchas), LocalDate.now());
 
     assertEquals(2, candidatos.size());
     assertTrue(
@@ -110,6 +110,32 @@ class AlgoritmoPrioridadSubAtendidosTest {
         50,
         candidatos.get(1).getPuntaje(),
         "Entidad con 50 entregas debería tener puntaje 100 - 50 = 50");
+  }
+
+  @Test
+  void actualizarDonacionesEntregadas_ReemplazaElHistorialDelAlgoritmo() {
+    SubCategoria fideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
+    Donacion donacion = donacionDe(fideos, 15.0);
+    EntidadBeneficiaria entidad = entidadQueNecesita(2L, "Ya Recibio", fideos);
+    Donante donante = crearDonanteDummy();
+    List<Donacion> entregadas =
+        IntStream.range(0, 3)
+            .mapToObj(i -> crearDonacionEntregada(donante, entidad, fideos))
+            .toList();
+    AlgoritmoPrioridadSubAtendidos algoritmo = new AlgoritmoPrioridadSubAtendidos();
+
+    var sinHistorial = algoritmo.rankear(donacion, List.of(entidad), FECHA_REFERENCIA);
+    algoritmo.actualizarDonacionesEntregadas(entregadas);
+    var conHistorial = algoritmo.rankear(donacion, List.of(entidad), FECHA_REFERENCIA);
+
+    assertEquals(
+        100,
+        sinHistorial.get(0).getPuntaje(),
+        "Sin entregas inyectadas el puntaje debe quedar completo");
+    assertEquals(
+        97,
+        conHistorial.get(0).getPuntaje(),
+        "Las entregas inyectadas deben descontarse en el ranking siguiente");
   }
 
   @Test
