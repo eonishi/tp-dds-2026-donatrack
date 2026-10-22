@@ -1,6 +1,7 @@
 package ar.edu.utn.donatrack.donaciones;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
+import ar.edu.utn.donatrack.beneficiarios.Necesidad;
 import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
@@ -160,6 +161,56 @@ public class Donacion {
 
   public UnidadMedida getUnidad() {
     return bienes.get(0).getUnidad();
+  }
+
+  /**
+   * Indica si alguno de los bienes donados satisface la necesidad indicada.
+   *
+   * @param necesidad necesidad contra la que se compara la donación (no nula)
+   * @return {@code true} si algún bien es de la subcategoría de la necesidad
+   * @throws NullPointerException si {@code necesidad} es {@code null}
+   */
+  public boolean esCompatibleCon(Necesidad necesidad) {
+    Objects.requireNonNull(necesidad, "necesidad no puede ser null");
+    return bienes.stream().anyMatch(necesidad::esCompatibleCon);
+  }
+
+  /**
+   * Calcula cuánto aporta esta donación al cumplimiento de una necesidad.
+   *
+   * <p>La escala es 50 puntos por compartir la subcategoría, 15 más si todos los bienes se miden en
+   * la unidad de la necesidad y 10 más si la cantidad total alcanza el objetivo.
+   *
+   * @param necesidad necesidad contra la que se puntúa la donación (no nula)
+   * @return el puntaje de compatibilidad, o {@code 0} si la donación no es compatible
+   * @throws NullPointerException si {@code necesidad} es {@code null}
+   */
+  public int calcularPuntajeCompatibilidad(Necesidad necesidad) {
+    Objects.requireNonNull(necesidad, "necesidad no puede ser null");
+    if (!esCompatibleCon(necesidad)) {
+      return 0;
+    }
+    int puntaje = 50;
+    if (bienes.stream().allMatch(necesidad::tieneMismaUnidadQue)) {
+      puntaje += 15;
+    }
+    if (necesidad.alcanzaObjetivoCon(getCantidadTotal())) {
+      puntaje += 10;
+    }
+    return puntaje;
+  }
+
+  /**
+   * Registra esta donación en la necesidad indicada si es compatible con ella.
+   *
+   * @param necesidad necesidad que recibe la donación (no nula)
+   * @throws NullPointerException si {@code necesidad} es {@code null}
+   */
+  public void aplicarA(Necesidad necesidad) {
+    Objects.requireNonNull(necesidad, "necesidad no puede ser null");
+    if (esCompatibleCon(necesidad)) {
+      necesidad.recibirDonacion(getCantidadTotal());
+    }
   }
 
   public boolean esPerecedera() {

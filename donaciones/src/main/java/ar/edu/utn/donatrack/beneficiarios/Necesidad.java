@@ -1,5 +1,6 @@
 package ar.edu.utn.donatrack.beneficiarios;
 
+import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
 import java.util.Objects;
@@ -76,6 +77,40 @@ public class Necesidad {
 
   public UnidadMedida getUnidad() {
     return unidad;
+  }
+
+  /**
+   * Indica si un bien satisface esta necesidad por pertenecer a su subcategoría.
+   *
+   * @param bien bien que se evalúa (no nulo)
+   * @return {@code true} si el bien es de la subcategoría de la necesidad
+   * @throws NullPointerException si {@code bien} es {@code null}
+   */
+  public boolean esCompatibleCon(Bien bien) {
+    Objects.requireNonNull(bien, "bien no puede ser null");
+    return bien.esDeSubcategoria(this.subcategoria);
+  }
+
+  /**
+   * Indica si un bien se mide en la misma unidad que esta necesidad.
+   *
+   * @param bien bien que se evalúa (no nulo)
+   * @return {@code true} si la unidad del bien coincide con la de la necesidad
+   * @throws NullPointerException si {@code bien} es {@code null}
+   */
+  public boolean tieneMismaUnidadQue(Bien bien) {
+    Objects.requireNonNull(bien, "bien no puede ser null");
+    return bien.tieneUnidad(this.unidad);
+  }
+
+  /**
+   * Indica si una cantidad alcanza el objetivo de esta necesidad.
+   *
+   * @param cantidad cantidad que se compara contra el objetivo
+   * @return {@code true} si la cantidad iguala o supera el objetivo
+   */
+  public boolean alcanzaObjetivoCon(double cantidad) {
+    return Double.compare(cantidad, this.cantidadObjetivo) >= 0;
   }
 
   public boolean estaSatisfecha() {

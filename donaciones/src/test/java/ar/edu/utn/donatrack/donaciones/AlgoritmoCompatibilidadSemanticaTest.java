@@ -37,7 +37,7 @@ class AlgoritmoCompatibilidadSemanticaTest {
   }
 
   @Test
-  void puntajeMaximo_ConTodosLosCriterios_NoSupera75() {
+  void puntaje_ConTodosLosCriterios_CoincideConElPuntajeDeLaEntidad() {
     SubCategoria fideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     EntidadBeneficiaria entidad = nuevaEntidad("Comedor");
     entidad.agregarNecesidadExtraordinaria(
@@ -50,14 +50,52 @@ class AlgoritmoCompatibilidadSemanticaTest {
 
     var algoritmo = new AlgoritmoCompatibilidadSemantica();
 
-    // En lugar de llamar puntajeNecesidad directamente (privado),
-    // rankeamos y verificamos que el puntaje max sea ≤ 75
     List<MatchCandidato> candidatos =
-        algoritmo.rankear(donacion, List.of(entidad), LocalDate.now());
+        algoritmo.rankear(donacion, List.of(entidad), LocalDate.of(2026, 7, 9));
 
-    if (!candidatos.isEmpty()) {
-      assertTrue(candidatos.get(0).getPuntaje() <= 75);
-    }
+    assertEquals(
+        75,
+        entidad.calcularPuntajeCompatibilidad(donacion),
+        "La entidad responde la compatibilidad con la donación");
+    assertEquals(1, candidatos.size());
+    assertEquals(
+        entidad.calcularPuntajeCompatibilidad(donacion),
+        candidatos.get(0).getPuntaje(),
+        "El algoritmo publica el puntaje que calcula la entidad");
+  }
+
+  @Test
+  void rankear_ConNecesidadesDeDistintaUnidadYObjetivo_UsaElPuntajeMaximo() {
+    SubCategoria fideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
+    EntidadBeneficiaria objetivoLejano = nuevaEntidad("Objetivo lejano");
+    objetivoLejano.agregarNecesidadExtraordinaria(
+        new Necesidad(fideos, 100.0, UnidadMedida.KILOGRAMOS, "Muchos fideos"));
+    EntidadBeneficiaria objetivoCercano = nuevaEntidad("Objetivo cercano");
+    objetivoCercano.agregarNecesidadExtraordinaria(
+        new Necesidad(fideos, 5.0, UnidadMedida.KILOGRAMOS, "Pocos fideos"));
+    Donacion donacion =
+        nuevaDonacion(
+            crearDonanteDummy(),
+            List.of(
+                new Bien(
+                    "Fideos",
+                    "",
+                    15.0,
+                    UnidadMedida.KILOGRAMOS,
+                    null,
+                    EstadoUso.NO_APLICA,
+                    fideos)));
+
+    var candidatos =
+        new AlgoritmoCompatibilidadSemantica()
+            .rankear(donacion, List.of(objetivoLejano, objetivoCercano), LocalDate.of(2026, 7, 9));
+
+    assertEquals(2, candidatos.size());
+    assertEquals(
+        "Objetivo cercano",
+        candidatos.get(0).getEntidadBeneficiaria().getRazonSocial(),
+        "Quien alcanza su objetivo con la donación puntúa más alto");
+    assertEquals(65, candidatos.get(1).getPuntaje(), "Subcategoría y unidad suman 65");
   }
 
   @Test
@@ -136,11 +174,10 @@ class AlgoritmoCompatibilidadSemanticaTest {
 
     var algoritmo = new AlgoritmoCompatibilidadSemantica();
 
-    // Accedemos via helper: test directo del puntaje interno
-    // creamos solo una entidad con una necesidad y verificamos ranking
     List<MatchCandidato> candidatos =
         algoritmo.rankear(donacion, List.of(entidad), LocalDate.of(2026, 7, 9));
 
+    assertEquals(75, entidad.calcularPuntajeCompatibilidad(donacion));
     assertEquals(1, candidatos.size());
     assertEquals(75, candidatos.get(0).getPuntaje());
   }

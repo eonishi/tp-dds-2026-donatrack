@@ -1,7 +1,6 @@
 package ar.edu.utn.donatrack.propuestas.matchmaking;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-import ar.edu.utn.donatrack.beneficiarios.Necesidad;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import java.time.LocalDate;
@@ -33,7 +32,7 @@ public class AlgoritmoPrioridadSubAtendidos extends AlgoritmoMatchmaking {
     List<MatchCandidato> candidatos = new ArrayList<>();
 
     for (EntidadBeneficiaria entidad : entidadesBeneficiarias) {
-      if (!tieneNecesidadCompatible(donacion, entidad)) {
+      if (!entidad.tieneNecesidadCompatible(donacion)) {
         continue;
       }
 
@@ -48,12 +47,5 @@ public class AlgoritmoPrioridadSubAtendidos extends AlgoritmoMatchmaking {
             .thenComparing(candidato -> candidato.getEntidadBeneficiaria().getRazonSocial())
             .thenComparing(candidato -> candidato.getEntidadBeneficiaria().getId()));
     return candidatos;
-  }
-
-  private boolean tieneNecesidadCompatible(Donacion donacion, EntidadBeneficiaria entidad) {
-    List<Necesidad> necesidades = new ArrayList<>(entidad.getNecesidadesExtraordinarias());
-    necesidades.addAll(entidad.getNecesidadesRecurrentes());
-    return necesidades.stream()
-        .anyMatch(necesidad -> necesidad.getSubcategoria().equals(donacion.getSubcategoria()));
   }
 }

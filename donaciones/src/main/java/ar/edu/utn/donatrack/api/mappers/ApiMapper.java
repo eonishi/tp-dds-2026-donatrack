@@ -71,7 +71,20 @@ public final class ApiMapper {
         entidad.getDireccion(),
         entidad.getTelefono(),
         entidad.getCorreos().stream().map(CorreoElectronico::getContacto).toList(),
-        entidad.necesidades().stream().map(Necesidad::getId).toList());
+        necesidades(entidad).stream().map(NecesidadResponse::id).toList());
+  }
+
+  /**
+   * Traduce las necesidades de una entidad al contrato HTTP.
+   *
+   * <p>Es el único punto que recorre la colección completa de necesidades de la entidad: el resto
+   * del sistema consulta la entidad por los mensajes del dominio.
+   *
+   * @param entidad entidad cuyas necesidades se traducen
+   * @return las necesidades de la entidad, extraordinarias y recurrentes
+   */
+  public static List<NecesidadResponse> necesidades(EntidadBeneficiaria entidad) {
+    return entidad.necesidades().stream().map(necesidad -> necesidad(necesidad, entidad)).toList();
   }
 
   public static NecesidadResponse necesidad(Necesidad necesidad, EntidadBeneficiaria entidad) {
