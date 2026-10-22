@@ -9,20 +9,6 @@ import java.util.Comparator;
 import java.util.List;
 
 public class AlgoritmoPrioridadSubAtendidos extends AlgoritmoMatchmaking {
-  /**
-   * Donaciones ya entregadas que alimentan el puntaje.
-   *
-   * <p>Es un atributo del algoritmo, no una dependencia del repositorio de donaciones: el caso de
-   * uso lo reemplaza con {@link #actualizarDonacionesEntregadas(Collection)} antes de cada ranking.
-   * La copia guardada es inmutable y la lectura es volátil para que un ranking nunca vea una lista
-   * a medio publicar cuando el servicio la refresca mientras se calcula.
-   */
-  private volatile Collection<Donacion> donacionesEntregadas = List.of();
-
-  public AlgoritmoPrioridadSubAtendidos(Collection<Donacion> donacionesEntregadasEnUnLapso) {
-    this.donacionesEntregadas = donacionesEntregadasEnUnLapso;
-  }
-
   @Override
   public String getNombre() {
     return "prioridad-sub-atendidos";
@@ -32,9 +18,8 @@ public class AlgoritmoPrioridadSubAtendidos extends AlgoritmoMatchmaking {
   protected List<MatchCandidato> ordenarCandidatos(
       Donacion donacion,
       Collection<EntidadBeneficiaria> entidadesBeneficiarias,
-      LocalDate fechaReferencia) {
-    // Una sola lectura del atributo: el ranking trabaja con un historial consistente.
-    Collection<Donacion> entregas = donacionesEntregadas;
+      LocalDate fechaReferencia,
+      Collection<Donacion> donacionesEntregadas) {
     LocalDate fechaDesde = fechaReferencia.minusMonths(3);
     List<MatchCandidato> candidatos = new ArrayList<>();
 
@@ -43,7 +28,7 @@ public class AlgoritmoPrioridadSubAtendidos extends AlgoritmoMatchmaking {
         continue;
       }
 
-      long recibidas = cantidadEntregadasA(entregas, entidad, fechaDesde);
+      long recibidas = cantidadEntregadasA(donacionesEntregadas, entidad, fechaDesde);
       int puntaje = (int) Math.max(0, 100 - recibidas);
       candidatos.add(new MatchCandidato(entidad, puntaje));
     }
@@ -59,14 +44,16 @@ public class AlgoritmoPrioridadSubAtendidos extends AlgoritmoMatchmaking {
   /**
    * Cuenta las entregas de la ventana que recibió la entidad indicada.
    *
-   * @param entregas donaciones ya entregadas que alimentan el cálculo
+   * @param donacionesEntregadas donaciones ya entregadas que alimentan el cálculo
    * @param entidad entidad beneficiaria que se evalúa
    * @param fechaDesde primer día de la ventana
    * @return la cantidad de donaciones entregadas a la entidad en o después de {@code fechaDesde}
    */
   private long cantidadEntregadasA(
-      Collection<Donacion> entregas, EntidadBeneficiaria entidad, LocalDate fechaDesde) {
-    return entregas.stream()
+      Collection<Donacion> donacionesEntregadas,
+      EntidadBeneficiaria entidad,
+      LocalDate fechaDesde) {
+    return donacionesEntregadas.stream()
         .filter(donacion -> donacion.fueEntregadaA(entidad, fechaDesde))
         .count();
   }

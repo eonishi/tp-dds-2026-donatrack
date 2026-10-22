@@ -12,23 +12,26 @@ public abstract class AlgoritmoMatchmaking {
   public abstract String getNombre();
 
   /**
-   * Rankea las entidades candidatas con el historial de entregas que ya tiene el algoritmo.
+   * Rankea las entidades candidatas con las entregas previas que recibe como dato.
    *
-   * <p>Es un template method: el tope de candidatos lo aplica esta clase y cada algoritmo solo
-   * ordena. El algoritmo no consulta repositorios: las entregas previas, si las necesita, se
-   * inyectan con {@link #actualizarDonacionesEntregadas(Collection)} y quedan guardadas en un
-   * atributo del algoritmo.
+   * <p>Es la única entrada del ranking: el tope de candidatos lo aplica esta clase y cada algoritmo
+   * solo ordena. El algoritmo no consulta repositorios; la persistencia queda en el borde del caso
+   * de uso y las entregas viajan como parámetro hasta el algoritmo que las necesita.
    *
    * @param donacion donación a asignar
    * @param entidadesBeneficiarias entidades que se evalúan como candidatas
    * @param fechaReferencia fecha desde la que se calcula el ranking
+   * @param donacionesEntregadas donaciones ya entregadas que alimentan el cálculo
    * @return los candidatos ordenados por el algoritmo, hasta {@link #MAXIMO_CANDIDATOS}
    */
   public final List<MatchCandidato> rankear(
       Donacion donacion,
       Collection<EntidadBeneficiaria> entidadesBeneficiarias,
-      LocalDate fechaReferencia) {
-    return ordenarCandidatos(donacion, entidadesBeneficiarias, fechaReferencia).stream()
+      LocalDate fechaReferencia,
+      Collection<Donacion> donacionesEntregadas) {
+    return ordenarCandidatos(
+            donacion, entidadesBeneficiarias, fechaReferencia, donacionesEntregadas)
+        .stream()
         .limit(MAXIMO_CANDIDATOS)
         .toList();
   }
@@ -37,5 +40,6 @@ public abstract class AlgoritmoMatchmaking {
   protected abstract List<MatchCandidato> ordenarCandidatos(
       Donacion donacion,
       Collection<EntidadBeneficiaria> entidadesBeneficiarias,
-      LocalDate fechaReferencia);
+      LocalDate fechaReferencia,
+      Collection<Donacion> donacionesEntregadas);
 }

@@ -36,7 +36,8 @@ class AlgoritmoPrioridadSubAtendidosTest {
             .toList();
 
     var candidatos =
-        new AlgoritmoPrioridadSubAtendidos().rankear(donacion, entidades, FECHA_REFERENCIA);
+        new AlgoritmoPrioridadSubAtendidos()
+            .rankear(donacion, entidades, FECHA_REFERENCIA, List.of());
 
     assertTrue(
         candidatos.size() <= 10, "Prioridad sub-atendidos debe retornar máximo 10 candidatos");
@@ -60,7 +61,7 @@ class AlgoritmoPrioridadSubAtendidosTest {
 
     var candidatos =
         new AlgoritmoPrioridadSubAtendidos()
-            .rankear(donacion, List.of(e1, e2, e3), FECHA_REFERENCIA);
+            .rankear(donacion, List.of(e1, e2, e3), FECHA_REFERENCIA, List.of());
 
     assertEquals(3, candidatos.size(), "Con 3 entidades debe retornar las 3");
   }
@@ -77,7 +78,8 @@ class AlgoritmoPrioridadSubAtendidosTest {
     EntidadBeneficiaria entidad = entidadQueNecesita(1L, "Comedor", fideos);
 
     var candidatos =
-        new AlgoritmoPrioridadSubAtendidos().rankear(donacion, List.of(entidad), FECHA_REFERENCIA);
+        new AlgoritmoPrioridadSubAtendidos()
+            .rankear(donacion, List.of(entidad), FECHA_REFERENCIA, List.of());
 
     assertTrue(candidatos.isEmpty(), "Sin entidades con necesidad compatible debe retornar vacío");
   }
@@ -89,7 +91,7 @@ class AlgoritmoPrioridadSubAtendidosTest {
     EntidadBeneficiaria sinEntregas = entidadQueNecesita(1L, "Sin Recibir", fideos);
     EntidadBeneficiaria conMuchas = entidadQueNecesita(2L, "Ya Recibio", fideos);
 
-    // Las entregas se inyectan como atributo del algoritmo: no consulta ningún repositorio.
+    // Las entregas viajan como dato hasta el ranking: no consulta ningún repositorio.
     Donante donante = crearDonanteDummy();
     List<Donacion> entregadas =
         IntStream.range(0, 50)
@@ -97,8 +99,8 @@ class AlgoritmoPrioridadSubAtendidosTest {
             .toList();
 
     var candidatos =
-        new AlgoritmoPrioridadSubAtendidos(entregadas)
-            .rankear(donacion, List.of(sinEntregas, conMuchas), LocalDate.now());
+        new AlgoritmoPrioridadSubAtendidos()
+            .rankear(donacion, List.of(sinEntregas, conMuchas), LocalDate.now(), entregadas);
 
     assertEquals(2, candidatos.size());
     assertTrue(
@@ -113,7 +115,7 @@ class AlgoritmoPrioridadSubAtendidosTest {
   }
 
   @Test
-  void actualizarDonacionesEntregadas_ReemplazaElHistorialDelAlgoritmo() {
+  void rankear_ConEntregasDistintas_UsaElHistorialDeCadaLlamada() {
     SubCategoria fideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     Donacion donacion = donacionDe(fideos, 15.0);
     EntidadBeneficiaria entidad = entidadQueNecesita(2L, "Ya Recibio", fideos);
@@ -124,18 +126,17 @@ class AlgoritmoPrioridadSubAtendidosTest {
             .toList();
     AlgoritmoPrioridadSubAtendidos algoritmo = new AlgoritmoPrioridadSubAtendidos();
 
-    var sinHistorial = algoritmo.rankear(donacion, List.of(entidad), FECHA_REFERENCIA);
-    algoritmo.actualizarDonacionesEntregadas(entregadas);
-    var conHistorial = algoritmo.rankear(donacion, List.of(entidad), FECHA_REFERENCIA);
+    var sinHistorial = algoritmo.rankear(donacion, List.of(entidad), FECHA_REFERENCIA, List.of());
+    var conHistorial = algoritmo.rankear(donacion, List.of(entidad), FECHA_REFERENCIA, entregadas);
 
     assertEquals(
         100,
         sinHistorial.get(0).getPuntaje(),
-        "Sin entregas inyectadas el puntaje debe quedar completo");
+        "Sin entregas en la llamada el puntaje debe quedar completo");
     assertEquals(
         97,
         conHistorial.get(0).getPuntaje(),
-        "Las entregas inyectadas deben descontarse en el ranking siguiente");
+        "Las entregas de la llamada deben descontarse en ese ranking");
   }
 
   @Test
@@ -147,7 +148,7 @@ class AlgoritmoPrioridadSubAtendidosTest {
 
     var candidatos =
         new AlgoritmoPrioridadSubAtendidos()
-            .rankear(donacion, List.of(segunda, primera), FECHA_REFERENCIA);
+            .rankear(donacion, List.of(segunda, primera), FECHA_REFERENCIA, List.of());
 
     assertEquals(2, candidatos.size());
     assertEquals(

@@ -34,15 +34,15 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 /**
- * Verifica que el caso de uso inyecte las donaciones entregadas como atributo del algoritmo antes
- * de rankear, sin que el algoritmo conozca el repositorio de donaciones.
+ * Verifica que el caso de uso le pase al algoritmo las donaciones entregadas que leyó, sin que el
+ * algoritmo conozca el repositorio de donaciones.
  */
 class MatchmakingInyeccionEntregasTest {
 
   private static final LocalDate FECHA_REFERENCIA = LocalDate.of(2026, 7, 6);
 
   @Test
-  void ejecutarMatchmakingInyectaLasEntregadasEnElAlgoritmoAntesDeRankear() {
+  void ejecutarMatchmakingLePasaLasEntregadasDelRepositorioAlRanking() {
     SubCategoria alimentos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     Donante donante = crearDonanteDummy();
     Donacion donacion = nuevaDonacion(donante, List.of(bienDe(alimentos)));
@@ -66,7 +66,7 @@ class MatchmakingInyeccionEntregasTest {
     assertEquals(
         List.of(entregada),
         algoritmo.entregadasAlRankear,
-        "El algoritmo debe recibir las entregadas del repositorio como atributo antes de rankear");
+        "El algoritmo debe recibir las entregadas del repositorio al rankear");
     assertFalse(
         propuesta.getCandidatos().isEmpty(),
         "La propuesta debe conservar los candidatos rankeados");
@@ -98,13 +98,12 @@ class MatchmakingInyeccionEntregasTest {
   }
 
   /**
-   * Algoritmo de prueba que registra las entregadas que recibe y las que ve al rankear.
+   * Algoritmo de prueba que registra las entregadas que recibe al rankear.
    *
-   * <p>No consulta repositorios: solo expone el atributo inyectado para que el test lo compare.
+   * <p>No consulta repositorios: solo expone el parámetro del ranking para que el test lo compare.
    */
   private static final class AlgoritmoRegistrador extends AlgoritmoMatchmaking {
     private final EntidadBeneficiaria entidad;
-    private List<Donacion> donacionesEntregadas = List.of();
     private List<Donacion> entregadasAlRankear;
 
     private AlgoritmoRegistrador(EntidadBeneficiaria entidad) {
@@ -117,16 +116,12 @@ class MatchmakingInyeccionEntregasTest {
     }
 
     @Override
-    public void actualizarDonacionesEntregadas(Collection<Donacion> donacionesEntregadas) {
-      this.donacionesEntregadas = List.copyOf(donacionesEntregadas);
-    }
-
-    @Override
     protected List<MatchCandidato> ordenarCandidatos(
         Donacion donacion,
         Collection<EntidadBeneficiaria> entidadesBeneficiarias,
-        LocalDate fechaReferencia) {
-      this.entregadasAlRankear = donacionesEntregadas;
+        LocalDate fechaReferencia,
+        Collection<Donacion> donacionesEntregadas) {
+      this.entregadasAlRankear = List.copyOf(donacionesEntregadas);
       return List.of(new MatchCandidato(entidad, 100));
     }
   }

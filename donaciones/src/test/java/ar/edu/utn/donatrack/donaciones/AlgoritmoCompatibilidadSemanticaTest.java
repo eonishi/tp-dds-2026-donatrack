@@ -51,7 +51,7 @@ class AlgoritmoCompatibilidadSemanticaTest {
     var algoritmo = new AlgoritmoCompatibilidadSemantica();
 
     List<MatchCandidato> candidatos =
-        algoritmo.rankear(donacion, List.of(entidad), LocalDate.of(2026, 7, 9));
+        algoritmo.rankear(donacion, List.of(entidad), LocalDate.of(2026, 7, 9), List.of());
 
     assertEquals(
         75,
@@ -88,7 +88,11 @@ class AlgoritmoCompatibilidadSemanticaTest {
 
     var candidatos =
         new AlgoritmoCompatibilidadSemantica()
-            .rankear(donacion, List.of(objetivoLejano, objetivoCercano), LocalDate.of(2026, 7, 9));
+            .rankear(
+                donacion,
+                List.of(objetivoLejano, objetivoCercano),
+                LocalDate.of(2026, 7, 9),
+                List.of());
 
     assertEquals(2, candidatos.size());
     assertEquals(
@@ -128,7 +132,7 @@ class AlgoritmoCompatibilidadSemanticaTest {
 
     var candidatos =
         new AlgoritmoCompatibilidadSemantica()
-            .rankear(donacion, entidades, LocalDate.of(2026, 7, 9));
+            .rankear(donacion, entidades, LocalDate.of(2026, 7, 9), List.of());
 
     assertTrue(
         candidatos.size() <= 10, "Compatibilidad semantica debe retornar máximo 10 candidatos");
@@ -156,7 +160,7 @@ class AlgoritmoCompatibilidadSemanticaTest {
 
     var candidatos =
         new AlgoritmoCompatibilidadSemantica()
-            .rankear(donacion, List.of(entidad), LocalDate.of(2026, 7, 9));
+            .rankear(donacion, List.of(entidad), LocalDate.of(2026, 7, 9), List.of());
 
     assertTrue(candidatos.isEmpty());
   }
@@ -175,7 +179,7 @@ class AlgoritmoCompatibilidadSemanticaTest {
     var algoritmo = new AlgoritmoCompatibilidadSemantica();
 
     List<MatchCandidato> candidatos =
-        algoritmo.rankear(donacion, List.of(entidad), LocalDate.of(2026, 7, 9));
+        algoritmo.rankear(donacion, List.of(entidad), LocalDate.of(2026, 7, 9), List.of());
 
     assertEquals(75, entidad.calcularPuntajeCompatibilidad(donacion));
     assertEquals(1, candidatos.size());
