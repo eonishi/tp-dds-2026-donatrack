@@ -300,6 +300,65 @@ class DonacionTest {
     assertThrows(NullPointerException.class, () -> donacion.aplicarA(null));
   }
 
+  // ── Entregas previas (prioridad a sub-atendidos) ──────────────────
+
+  @Test
+  void fueEntregadaA_EntidadReceptoraDentroDeLaVentana_DevuelveTrue() {
+    EntidadBeneficiaria receptora = new EntidadBeneficiaria(1L, "Hogar", "Dir", "Tel");
+    Donacion donacion = entregadaA(receptora);
+
+    assertTrue(
+        donacion.fueEntregadaA(receptora, LocalDate.now().minusDays(1)),
+        "La entrega registrada en el historial cae dentro de la ventana pedida");
+  }
+
+  @Test
+  void fueEntregadaA_EntregaAnteriorALaFechaDesde_DevuelveFalse() {
+    EntidadBeneficiaria receptora = new EntidadBeneficiaria(1L, "Hogar", "Dir", "Tel");
+    Donacion donacion = entregadaA(receptora);
+
+    assertFalse(
+        donacion.fueEntregadaA(receptora, LocalDate.now().plusDays(1)),
+        "Una entrega previa al inicio de la ventana no cuenta");
+  }
+
+  @Test
+  void fueEntregadaA_EntidadDistintaALaReceptora_DevuelveFalse() {
+    EntidadBeneficiaria receptora = new EntidadBeneficiaria(1L, "Hogar", "Dir", "Tel");
+    EntidadBeneficiaria otra = new EntidadBeneficiaria(2L, "Otro Comedor", "Dir", "Tel");
+    Donacion donacion = entregadaA(receptora);
+
+    assertFalse(
+        donacion.fueEntregadaA(otra, LocalDate.now().minusDays(1)),
+        "La entrega es de otra entidad: no cuenta para la entidad consultada");
+  }
+
+  @Test
+  void fueEntregadaA_DonacionNoEntregada_DevuelveFalse() {
+    EntidadBeneficiaria receptora = new EntidadBeneficiaria(1L, "Hogar", "Dir", "Tel");
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.confirmarEntidadBeneficiaria(receptora);
+
+    assertFalse(
+        donacion.fueEntregadaA(receptora, LocalDate.now().minusDays(1)),
+        "Sin una transición a ENTREGADA en el historial la donación no cuenta como entrega");
+  }
+
+  @Test
+  void fueEntregadaA_EntidadNull_LanzaNullPointerException() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+
+    assertThrows(NullPointerException.class, () -> donacion.fueEntregadaA(null, LocalDate.now()));
+  }
+
+  @Test
+  void fueEntregadaA_FechaDesdeNull_LanzaNullPointerException() {
+    EntidadBeneficiaria receptora = new EntidadBeneficiaria(1L, "Hogar", "Dir", "Tel");
+    Donacion donacion = entregadaA(receptora);
+
+    assertThrows(NullPointerException.class, () -> donacion.fueEntregadaA(receptora, null));
+  }
+
   // ── Camión (patente de logística) ─────────────────────────────────
 
   @Test
@@ -431,6 +490,13 @@ class DonacionTest {
         IllegalStateException.class,
         () -> donacion.confirmarEntidadBeneficiaria(nuevaEntidad("Otro")),
         "Llamar confirmarEntidadBeneficiaria desde AsignacionRealizada debe lanzar excepción");
+  }
+
+  private static Donacion entregadaA(EntidadBeneficiaria entidad) {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.confirmarEntidadBeneficiaria(entidad);
+    donacion.cambiarEstado(EstadoDonacion.ENTREGADA, null);
+    return donacion;
   }
 
   private static Bien bienDe(SubCategoria subcategoria, double cantidad, UnidadMedida unidad) {

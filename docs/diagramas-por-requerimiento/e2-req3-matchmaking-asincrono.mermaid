@@ -18,10 +18,14 @@ classDiagram
         <<infraestructura>>
         +ejecutarMatchmakingDiario(fechaReferencia: LocalDate)
         +confirmarAsignacionAdministrativa(donacion: Donacion, entidad: EntidadBeneficiaria, fecha: LocalDate)
+        -generarPropuestaSiNoHayPendiente(donacion: Donacion, beneficiarios: Collection~EntidadBeneficiaria~, entregas: Collection~Donacion~, fechaReferencia: LocalDate)
+        -generarPropuesta(donacion: Donacion, beneficiarios: Collection~EntidadBeneficiaria~, entregas: Collection~Donacion~, fechaReferencia: LocalDate) PropuestaDeAsignacion
+        -generarRankings(donacion: Donacion, beneficiarios: Collection~EntidadBeneficiaria~, entregas: Collection~Donacion~, fechaReferencia: LocalDate)
     }
     class DonacionesRepository {
         <<infraestructura>>
         +getDonacionesEnDeposito() List~Donacion~
+        +getDonacionesEntregadas() List~Donacion~
     }
     class BeneficiariosRepository {
         <<infraestructura>>
@@ -37,10 +41,13 @@ classDiagram
         -MAXIMO_CANDIDATOS: int = 10
         +getNombre() String
         +rankear(donacion: Donacion, entidades: Collection~EntidadBeneficiaria~, fechaReferencia: LocalDate) List~MatchCandidato~
-        #ordenarCandidatos(donacion: Donacion, entidades: Collection~EntidadBeneficiaria~, fechaReferencia: LocalDate) List~MatchCandidato~
+        +rankear(donacion: Donacion, entidades: Collection~EntidadBeneficiaria~, fechaReferencia: LocalDate, entregas: Collection~Donacion~) List~MatchCandidato~
+        #ordenarCandidatos(donacion: Donacion, entidades: Collection~EntidadBeneficiaria~, fechaReferencia: LocalDate, entregas: Collection~Donacion~) List~MatchCandidato~
     }
     class AlgoritmoCompatibilidadSemantica
-    class AlgoritmoPrioridadSubAtendidos
+    class AlgoritmoPrioridadSubAtendidos {
+        -cantidadEntregadasA(entregas: Collection~Donacion~, entidad: EntidadBeneficiaria, fechaDesde: LocalDate) long
+    }
     class MatchCandidato {
         -entidadBeneficiaria: EntidadBeneficiaria
         -puntaje: int
@@ -51,8 +58,23 @@ classDiagram
         -pendiente: boolean
         +confirmar(elegida: EntidadBeneficiaria)
     }
-    class Donacion
-    class EntidadBeneficiaria
+    class Donacion {
+        +fueEntregadaA(entidad: EntidadBeneficiaria, fechaDesde: LocalDate) boolean
+        +esCompatibleCon(necesidad: Necesidad) boolean
+        +calcularPuntajeCompatibilidad(necesidad: Necesidad) int
+        +aplicarA(necesidad: Necesidad)
+    }
+    class EntidadBeneficiaria {
+        +tieneNecesidadCompatible(donacion: Donacion) boolean
+        +calcularPuntajeCompatibilidad(donacion: Donacion) int
+        +aplicarDonacionRecibida(donacion: Donacion)
+    }
+    class Necesidad {
+        +esCompatibleCon(bien: Bien) boolean
+        +tieneMismaUnidadQue(bien: Bien) boolean
+        +alcanzaObjetivoCon(cantidad: double) boolean
+        +recibirDonacion(cantidad: double)
+    }
 
     MatchmakingScheduler ..> ServicioMatchmakingDonaciones : ejecuta diario
     ServicioMatchmakingDonaciones o-- "*" AlgoritmoMatchmaking : algoritmos
@@ -62,6 +84,10 @@ classDiagram
     AlgoritmoMatchmaking <|-- AlgoritmoCompatibilidadSemantica
     AlgoritmoMatchmaking <|-- AlgoritmoPrioridadSubAtendidos
     AlgoritmoMatchmaking ..> MatchCandidato : rankear() aplica el tope
+    AlgoritmoCompatibilidadSemantica ..> EntidadBeneficiaria : calcularPuntajeCompatibilidad()
+    AlgoritmoPrioridadSubAtendidos ..> Donacion : fueEntregadaA() sobre las entregas
+    EntidadBeneficiaria ..> Donacion : tieneNecesidadCompatible()
+    Donacion ..> Necesidad : esCompatibleCon()
     MatchCandidato --> EntidadBeneficiaria : candidata
     PropuestaDeAsignacion *-- Donacion : donacion
     PropuestaDeAsignacion *-- "*" MatchCandidato : candidatos (intersección, o unión si no hay coincidencias)

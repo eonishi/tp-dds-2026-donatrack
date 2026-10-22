@@ -18,7 +18,9 @@ public class AlgoritmoCompatibilidadSemantica extends AlgoritmoMatchmaking {
   protected List<MatchCandidato> ordenarCandidatos(
       Donacion donacion,
       Collection<EntidadBeneficiaria> entidadesBeneficiarias,
-      LocalDate fechaReferencia) {
+      LocalDate fechaReferencia,
+      Collection<Donacion> donacionesEntregadas) {
+    // La compatibilidad semántica no depende del historial de entregas.
     List<MatchCandidato> candidatos = new ArrayList<>();
     for (EntidadBeneficiaria entidad : entidadesBeneficiarias) {
       int puntaje = entidad.calcularPuntajeCompatibilidad(donacion);

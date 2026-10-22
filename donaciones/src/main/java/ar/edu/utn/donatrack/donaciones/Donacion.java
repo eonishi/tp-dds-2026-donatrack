@@ -213,6 +213,31 @@ public class Donacion {
     }
   }
 
+  /**
+   * Indica si esta donación fue entregada a la entidad indicada dentro de la ventana pedida.
+   *
+   * <p>La entrega se evalúa sobre el estado propio de la donación: cuenta toda transición a {@link
+   * EstadoDonacion#ENTREGADA} registrada en el historial en o después de {@code fechaDesde}. Quien
+   * consulta no necesita el repositorio de donaciones.
+   *
+   * @param entidad entidad beneficiaria receptora (no nula)
+   * @param fechaDesde primer día de la ventana (no nulo)
+   * @return {@code true} si la donación se entregó a la entidad en o después de {@code fechaDesde}
+   * @throws NullPointerException si {@code entidad} o {@code fechaDesde} son {@code null}
+   */
+  public boolean fueEntregadaA(EntidadBeneficiaria entidad, LocalDate fechaDesde) {
+    Objects.requireNonNull(entidad, "entidad no puede ser null");
+    Objects.requireNonNull(fechaDesde, "fechaDesde no puede ser null");
+    if (!entidad.equals(this.entidadBeneficiaria)) {
+      return false;
+    }
+    return historialEstado.stream()
+        .anyMatch(
+            entrada ->
+                entrada.getEstadoAlcanzado() == EstadoDonacion.ENTREGADA
+                    && !entrada.getFecha().isBefore(fechaDesde.atStartOfDay()));
+  }
+
   public boolean esPerecedera() {
     return bienes.get(0).esPerecedero();
   }

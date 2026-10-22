@@ -67,6 +67,11 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
       donacion.confirmarEntidadBeneficiaria(entidadBeneficiaria);
       return donacion;
     }
+    if (estado == EstadoDonacion.ENTREGADA) {
+      donacion.confirmarEntidadBeneficiaria(entidadBeneficiaria);
+      donacion.cambiarEstado(EstadoDonacion.ENTREGADA, null);
+      return donacion;
+    }
     throw new IllegalArgumentException("Estado no soportado en helper: " + estado);
   }
 
@@ -96,6 +101,27 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
     List<Donacion> resultado = repo.getDonacionesEnAsignacionRealizada();
 
     assertTrue(resultado.isEmpty());
+  }
+
+  @Test
+  void getDonacionesEntregadas_ConMezcla_DebeRetornarSoloLasEntregadas() {
+    DonacionesRepository repo = new DonacionesRepository();
+    Donacion enDeposito = crearDonacionConEstado(EstadoDonacion.EN_DEPOSITO);
+    Donacion asignada = crearDonacionConEstado(EstadoDonacion.ASIGNACION_REALIZADA);
+    Donacion entregada1 = crearDonacionConEstado(EstadoDonacion.ENTREGADA);
+    Donacion entregada2 = crearDonacionConEstado(EstadoDonacion.ENTREGADA);
+    repo.addDonacion(enDeposito);
+    repo.addDonacion(asignada);
+    repo.addDonacion(entregada1);
+    repo.addDonacion(entregada2);
+
+    List<Donacion> resultado = repo.getDonacionesEntregadas();
+
+    assertEquals(2, resultado.size());
+    assertTrue(resultado.contains(entregada1));
+    assertTrue(resultado.contains(entregada2));
+    assertFalse(resultado.contains(enDeposito));
+    assertFalse(resultado.contains(asignada));
   }
 
   @Test

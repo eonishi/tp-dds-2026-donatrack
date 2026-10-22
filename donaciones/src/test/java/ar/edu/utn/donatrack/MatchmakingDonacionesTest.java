@@ -105,9 +105,7 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
             donacionesRepository,
             beneficiariosRepository,
             propuestaRepository,
-            List.of(
-                new AlgoritmoCompatibilidadSemantica(),
-                new AlgoritmoPrioridadSubAtendidos(donacionesRepository)));
+            List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos()));
 
     servicio.ejecutarMatchmakingDiario(fecha);
 
@@ -167,7 +165,8 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
                   protected List<MatchCandidato> ordenarCandidatos(
                       Donacion d,
                       Collection<EntidadBeneficiaria> entidades,
-                      LocalDate fechaReferencia) {
+                      LocalDate fechaReferencia,
+                      Collection<Donacion> donacionesEntregadas) {
                     return List.of(new MatchCandidato(noCompatible, 99));
                   }
                 }));
@@ -255,8 +254,8 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
     BeneficiariosRepository beneficiariosRepository = new BeneficiariosRepository();
     EntidadBeneficiaria entidad =
         crearEntidadConNecesidad("Entidad", alimentos, 5, fecha.plusMonths(4));
-    // El ranking real consulta las entregas por entidad: la entidad debe estar almacenada.
-    persist(entidad);
+    // El ranking real recibe las entregas leídas por el caso de uso: la entidad debe estar
+    // almacenada para que el repositorio de beneficiarios la devuelva.
     beneficiariosRepository.addBeneficiario(entidad);
 
     PropuestaRepository propuestaRepository = new PropuestaRepositoryImpl();
@@ -265,9 +264,7 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
             donacionesRepository,
             beneficiariosRepository,
             propuestaRepository,
-            List.of(
-                new AlgoritmoCompatibilidadSemantica(),
-                new AlgoritmoPrioridadSubAtendidos(donacionesRepository)));
+            List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos()));
 
     // First execution creates Propuesta
     servicio.ejecutarMatchmakingDiario(fecha);
@@ -308,9 +305,7 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
             donacionesRepository,
             beneficiariosRepository,
             propuestaRepository,
-            List.of(
-                new AlgoritmoCompatibilidadSemantica(),
-                new AlgoritmoPrioridadSubAtendidos(donacionesRepository)));
+            List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos()));
 
     // Run matchmaking to create Propuesta first
     servicio.ejecutarMatchmakingDiario(fecha);
@@ -356,26 +351,25 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
     SubCategoria alimentos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     Donante donante = crearDonanteDummy();
     EntidadBeneficiaria entidad =
-        crearEntidadConNecesidad("Sub Atendida", alimentos, 5, LocalDate.now().plusMonths(4));
+        new EntidadBeneficiaria(1L, "Sub Atendida", "Direccion", "Telefono");
+    entidad.agregarNecesidadExtraordinaria(
+        new Necesidad(alimentos, 5, UnidadMedida.KILOGRAMOS, "Necesidad"));
     Donacion donacion =
         nuevaDonacion(
             donante, List.of(crearBien("Fideos", 10, alimentos, LocalDate.now().plusMonths(6))));
-    DonacionesRepository donacionesRepository = new DonacionesRepository();
-    // Las donaciones entregadas referencian a la entidad y la consulta de entregas la recibe como
-    // parámetro: la entidad debe estar almacenada.
-    persist(alimentos);
-    persist(donante);
-    persist(entidad);
 
-    donacionesRepository.addDonacion(crearDonacionEntregada(donante, entidad, alimentos));
-    donacionesRepository.addDonacion(crearDonacionEntregada(donante, entidad, alimentos));
+    // Las entregas llegan como datos: el algoritmo aplica la ventana de tres meses sobre la fecha
+    // de la transición a ENTREGADA registrada en cada donación.
+    List<Donacion> entregadas =
+        List.of(
+            crearDonacionEntregada(donante, entidad, alimentos),
+            crearDonacionEntregada(donante, entidad, alimentos));
+    AlgoritmoPrioridadSubAtendidos algoritmo = new AlgoritmoPrioridadSubAtendidos();
 
-    AlgoritmoPrioridadSubAtendidos algoritmo =
-        new AlgoritmoPrioridadSubAtendidos(donacionesRepository);
-
-    var rankingEnVentana = algoritmo.rankear(donacion, List.of(entidad), LocalDate.now());
+    var rankingEnVentana =
+        algoritmo.rankear(donacion, List.of(entidad), LocalDate.now(), entregadas);
     var rankingFueraDeVentana =
-        algoritmo.rankear(donacion, List.of(entidad), LocalDate.now().plusMonths(4));
+        algoritmo.rankear(donacion, List.of(entidad), LocalDate.now().plusMonths(4), entregadas);
 
     assertEquals(
         98,

@@ -11,12 +11,45 @@ public abstract class AlgoritmoMatchmaking {
 
   public abstract String getNombre();
 
-  // template method
+  /**
+   * Rankea las entidades candidatas sin considerar entregas previas.
+   *
+   * <p>Delega en la sobrecarga con una colección de entregas vacía: los algoritmos que priorizan a
+   * los sub-atendidos necesitan que el caso de uso les pase las entregas como dato.
+   *
+   * @param donacion donación a asignar
+   * @param entidadesBeneficiarias entidades que se evalúan como candidatas
+   * @param fechaReferencia fecha desde la que se calcula el ranking
+   * @return los candidatos ordenados por el algoritmo, hasta {@link #MAXIMO_CANDIDATOS}
+   */
   public final List<MatchCandidato> rankear(
       Donacion donacion,
       Collection<EntidadBeneficiaria> entidadesBeneficiarias,
       LocalDate fechaReferencia) {
-    return ordenarCandidatos(donacion, entidadesBeneficiarias, fechaReferencia).stream()
+    return rankear(donacion, entidadesBeneficiarias, fechaReferencia, List.of());
+  }
+
+  /**
+   * Rankea las entidades candidatas con las entregas previas que recibe como dato.
+   *
+   * <p>Es un template method: el tope de candidatos lo aplica esta clase y cada algoritmo solo
+   * ordena. El algoritmo no consulta repositorios; la persistencia queda en el borde del caso de
+   * uso.
+   *
+   * @param donacion donación a asignar
+   * @param entidadesBeneficiarias entidades que se evalúan como candidatas
+   * @param fechaReferencia fecha desde la que se calcula el ranking
+   * @param donacionesEntregadas donaciones ya entregadas que alimentan el cálculo
+   * @return los candidatos ordenados por el algoritmo, hasta {@link #MAXIMO_CANDIDATOS}
+   */
+  public final List<MatchCandidato> rankear(
+      Donacion donacion,
+      Collection<EntidadBeneficiaria> entidadesBeneficiarias,
+      LocalDate fechaReferencia,
+      Collection<Donacion> donacionesEntregadas) {
+    return ordenarCandidatos(
+            donacion, entidadesBeneficiarias, fechaReferencia, donacionesEntregadas)
+        .stream()
         .limit(MAXIMO_CANDIDATOS)
         .toList();
   }
@@ -25,5 +58,6 @@ public abstract class AlgoritmoMatchmaking {
   protected abstract List<MatchCandidato> ordenarCandidatos(
       Donacion donacion,
       Collection<EntidadBeneficiaria> entidadesBeneficiarias,
-      LocalDate fechaReferencia);
+      LocalDate fechaReferencia,
+      Collection<Donacion> donacionesEntregadas);
 }
