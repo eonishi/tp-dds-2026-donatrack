@@ -45,7 +45,7 @@ A continuación se detallan las pantallas que se deben soportar como mínimo.
 
 5. La persona donante debe poder filtrar sus donaciones realizadas por estado y categoría o subcategoría/s de bienes entregados.  
 6. La persona donante debe poder navegar por las entidades beneficiarias registradas.  
-7. La persona humana donante debe poder acceder a una sección de Incentivos y consultar misiones a realizar e insignias obtenidas.   
+7. La persona humana donante debe poder acceder a una sección de Incentivos y consultar misiones a realizar e insignias obtenidas.   ??????????
 8. La persona donante debe recibir notificaciones cuando una donación realizada por ella es asignada, cuando cumplió una misión, cuando sube de categoría o cuando la entidad beneficiaria asignada recibe la donación realizada.   
 9. La persona donante debe poder seguir en un mapa las entregas activas de las donaciones que realizó, visualizando el/los camiones asociados con ubicación y última actualización.
 
