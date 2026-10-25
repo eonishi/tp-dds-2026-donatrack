@@ -1,0 +1,462 @@
+/* Personalización de Bootstrap: lo que hace que no parezca "otra página de Bootstrap" */
+
+:root {
+    /* Verdes sacados del logo */
+    --verde: #2b8a3e;
+    --verde-oscuro: #1f6b2f;
+    --verde-claro: #e9f6ec;
+    --tinta: #1b2a1f;                      /* texto principal, casi negro con un toque verde */
+
+    /* Degradé al estilo Gemini, pero en la paleta de DonaTrack */
+    --degrade: linear-gradient(90deg, #1f8a3e 0%, #18a37a 45%, #7cc95a 100%);
+
+    --bs-body-font-family: "Inter", system-ui, sans-serif;
+    --bs-body-color: var(--tinta);
+    --bs-body-bg: #ffffff;
+    --bs-border-radius: 0.75rem;           /* bordes más redondeados en todo */
+    --bs-link-color-rgb: 43, 138, 62;      /* links en verde (va en R, G, B) */
+    --bs-link-hover-color-rgb: 31, 107, 47;
+}
+
+h1, h2, h3, .marca { font-family: "Outfit", "Inter", sans-serif; }
+
+/* Cada componente tiene sus propias variables: cambiar --bs-primary NO alcanza */
+.btn-primary {
+    --bs-btn-bg: var(--verde);
+    --bs-btn-border-color: var(--verde);
+    --bs-btn-hover-bg: var(--verde-oscuro);
+    --bs-btn-hover-border-color: var(--verde-oscuro);
+    --bs-btn-active-bg: var(--verde-oscuro);
+    --bs-btn-active-border-color: var(--verde-oscuro);
+    font-weight: 500;
+    box-shadow: 0 6px 20px rgba(43, 138, 62, 0.25);
+}
+
+.btn-outline-primary {
+    --bs-btn-color: var(--verde);
+    --bs-btn-border-color: var(--verde);
+    --bs-btn-hover-bg: var(--verde);
+    --bs-btn-hover-border-color: var(--verde);
+    --bs-btn-active-bg: var(--verde-oscuro);
+    --bs-btn-active-border-color: var(--verde-oscuro);
+    font-weight: 500;
+}
+
+.pagination {
+    --bs-pagination-color: var(--verde);
+    --bs-pagination-active-bg: var(--verde);
+    --bs-pagination-active-border-color: var(--verde);
+}
+
+/* El anillo de foco de los inputs, en verde en vez de azul */
+.form-control:focus, .form-select:focus, .form-check-input:focus {
+    border-color: var(--verde);
+    box-shadow: 0 0 0 0.25rem rgba(43, 138, 62, 0.2);
+}
+.form-check-input:checked {
+    background-color: var(--verde);
+    border-color: var(--verde);
+}
+
+a { text-decoration: none; }
+a:hover { text-decoration: underline; }
+.btn:hover, .nav-link:hover, .navbar-brand:hover, .page-link:hover { text-decoration: none; }
+
+/* ---------- Navbar ---------- */
+
+.barra {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);            /* efecto vidrio al scrollear */
+    border-bottom: 1px solid #edf0ec;
+}
+.barra .nav-link { color: #4a5a4e; font-weight: 500; }
+.barra .nav-link:hover { color: var(--verde); }
+
+.marca {
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: var(--verde);
+}
+.marca:hover { text-decoration: none; color: var(--verde-oscuro); }
+.logo { border-radius: 50%; }
+
+/* ---------- Piezas reutilizables ---------- */
+
+/* Texto con degradé: el sello visual de la página */
+.degrade {
+    background: var(--degrade);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.chip {
+    display: inline-block;
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    background: var(--verde-claro);
+    color: var(--verde-oscuro);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.tarjeta {
+    background: #fff;
+    border: 1px solid #e6ebe6;
+    border-radius: 1.5rem;
+    padding: 1.75rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card { border-color: #e6ebe6; }
+.table > thead th {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--bs-secondary-color);
+    font-weight: 600;
+}
+
+/* Cajitas de datos en el detalle */
+.dato {
+    background: var(--verde-claro);
+    border-radius: var(--bs-border-radius);
+    padding: 0.75rem 1rem;
+}
+
+/* Inicial del usuario en el perfil: muestra solo la primera letra */
+.avatar {
+    width: 3.5rem;
+    height: 3.5rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--verde);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0;                          /* oculta el nombre completo... */
+    text-transform: uppercase;
+}
+.avatar::first-letter { font-size: 1.5rem; font-weight: 600; }   /* ...menos la primera letra */
+
+/* ---------- Landing: hero ---------- */
+
+.hero {
+    position: relative;
+    overflow: hidden;
+    padding: 5rem 0 4rem;
+}
+
+/* Manchas de color difuminadas detrás del contenido, como en Gemini */
+.hero-brillo {
+    position: absolute;
+    inset: -20% -10% auto -10%;
+    height: 520px;
+    background:
+        radial-gradient(40% 60% at 20% 30%, rgba(124, 201, 90, 0.28), transparent 70%),
+        radial-gradient(35% 55% at 75% 20%, rgba(24, 163, 122, 0.22), transparent 70%),
+        radial-gradient(30% 50% at 55% 70%, rgba(43, 138, 62, 0.15), transparent 70%);
+    filter: blur(30px);
+    pointer-events: none;
+}
+
+.hero-titulo {
+    font-size: clamp(2.3rem, 5vw, 3.8rem);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+.hero-titulo .degrade { display: block; }
+
+.hero-bajada {
+    font-size: 1.15rem;
+    color: #4a5a4e;
+    max-width: 38rem;
+    margin: 1.25rem auto 0;
+}
+
+.enlace-flecha { color: var(--verde); font-weight: 500; }
+
+.confianza { font-size: 0.9rem; color: #6b7a6f; }
+
+.datos-fila { margin-top: 4rem; }
+.dato-hero {
+    height: 100%;
+    text-align: center;
+    padding: 1.25rem;
+    border-radius: 1.25rem;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid #e6ebe6;
+}
+.dato-hero strong {
+    display: block;
+    font-family: "Outfit", sans-serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--verde);
+}
+.dato-hero span { font-size: 0.9rem; color: #6b7a6f; }
+
+/* ---------- Landing: secciones ---------- */
+
+.seccion { padding: 5rem 0; }
+.seccion-suave { background: #f6faf6; }
+.contenedor-angosto { max-width: 48rem; }
+
+.encabezado {
+    text-align: center;
+    max-width: 40rem;
+    margin: 0 auto 3rem;
+}
+.encabezado h2 {
+    font-size: clamp(1.9rem, 3.5vw, 2.6rem);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+.encabezado p { color: #6b7a6f; font-size: 1.05rem; margin: 0; }
+
+.tarjeta h3 { font-size: 1.2rem; font-weight: 600; }
+.tarjeta p { color: #5b6b5f; margin-bottom: 0; }
+
+.categoria:hover, .paso:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(27, 42, 31, 0.08);
+}
+.icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 1rem;
+    background: var(--verde-claro);
+    font-size: 1.6rem;
+    margin-bottom: 1rem;
+}
+
+/* Lista numerada 01-04 */
+.numerado { display: flex; gap: 1.25rem; }
+.numero {
+    font-family: "Outfit", sans-serif;
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 1;
+    background: var(--degrade);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+.numerado h3 { font-size: 1.2rem; font-weight: 600; }
+.numerado p { color: #5b6b5f; margin: 0; }
+
+/* Pasos */
+.pasos {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+}
+.paso { text-align: center; }
+.paso-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: var(--degrade);
+    color: #fff;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.lista-check {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 0.75rem 2rem;
+}
+
+/* "Siempre incluido": título y ítems centrados, en una grilla pareja de dos columnas */
+.incluido { text-align: center; }
+.incluido .lista-check {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 44rem;
+    margin: 0 auto;
+}
+@media (max-width: 575.98px) {
+    .incluido .lista-check { grid-template-columns: 1fr; }
+}
+.lista-check li::before {
+    content: "✓";
+    color: var(--verde);
+    font-weight: 700;
+    margin-right: 0.6rem;
+}
+
+/* Preguntas frecuentes */
+.faq { display: flex; flex-direction: column; gap: 0.75rem; }
+.faq details { padding: 1.1rem 1.5rem; }
+.faq summary {
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; color: var(--verde); font-size: 1.3rem; line-height: 1; }
+.faq details[open] summary::after { content: "−"; }
+.faq details p { margin-top: 0.75rem; }
+
+/* Llamado a la acción final */
+.cta {
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    padding: 4rem 1.5rem;
+    border-radius: 2rem;
+    background: #f6faf6;
+    border: 1px solid #e6ebe6;
+}
+.cta h2 { font-size: clamp(1.9rem, 4vw, 2.8rem); font-weight: 600; }
+.cta p { color: #5b6b5f; font-size: 1.1rem; }
+
+/* Acceso al mapa público de entregas */
+.entregas-acceso {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 2.5rem;
+    background: linear-gradient(135deg, #ffffff 0%, #f1f9f2 100%);
+}
+.entregas-acceso h2 { font-size: clamp(1.6rem, 3vw, 2.1rem); font-weight: 600; }
+
+/* ---------- Páginas simples (próximamente) ---------- */
+
+.pagina-simple {
+    max-width: 44rem;
+    margin: 3rem auto;
+}
+.pagina-simple h1 { font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 600; }
+
+/* ---------- Registro ---------- */
+
+.registro {
+    position: relative;
+    overflow: hidden;
+    padding: 3.5rem 0 5rem;
+}
+
+.registro-titulo {
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+/* Selector de rol: dos radios con forma de tarjeta. El input real es .btn-check de
+   Bootstrap (oculto pero navegable por teclado); el estilo se aplica al label. */
+.opcion-rol {
+    display: block;
+    height: 100%;
+    padding: 1rem;
+    border: 1px solid #e6ebe6;
+    border-radius: 1rem;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.opcion-rol:hover { border-color: var(--verde); }
+.opcion-rol .icono {
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0.75rem;
+    font-size: 1.25rem;
+}
+.opcion-rol-nombre {
+    display: block;
+    font-family: "Outfit", sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+.opcion-rol-texto {
+    display: block;
+    font-size: 0.875rem;
+    color: #5b6b5f;
+}
+.btn-check:checked + .opcion-rol {
+    border-color: var(--verde);
+    background: var(--verde-claro);
+    box-shadow: inset 0 0 0 1px var(--verde);
+}
+.btn-check:focus-visible + .opcion-rol {
+    outline: 2px solid var(--verde-oscuro);
+    outline-offset: 2px;
+}
+
+/* El formulario envía los dos bloques de campos y solo se muestra el del rol elegido */
+.panel-rol[data-rol="entidad"] { display: none; }
+.registro-form:has(#rol-entidad:checked) .panel-rol[data-rol="donante"] { display: none; }
+.registro-form:has(#rol-entidad:checked) .panel-rol[data-rol="entidad"] { display: block; }
+
+.registro-grupo {
+    margin: 1.75rem 0 0;
+    min-width: 0;
+}
+
+/* legend: Bootstrap lo deja flotando y a tamaño de título de página */
+.registro-leyenda {
+    float: none;
+    width: auto;
+    padding: 0;
+    margin-bottom: 0.85rem;
+    font-family: "Outfit", sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--tinta);
+}
+
+.registro-form .form-label { font-weight: 500; }
+
+.registro-lateral-titulo {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+.registro-beneficios { grid-template-columns: 1fr; }
+
+/* ---------- Footer ---------- */
+
+.pie {
+    padding: 3.5rem 0 2rem;
+    border-top: 1px solid #edf0ec;
+    background: #fff;
+}
+.pie-titulo {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6b7a6f;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+.pie-links li { margin-bottom: 0.4rem; color: #5b6b5f; }
+.pie-links a { color: #5b6b5f; }
+.pie-links a:hover { color: var(--verde); }
+
+@media (max-width: 991.98px) {
+    .hero { padding-top: 3rem; }
+    .barra .d-flex.gap-2 { margin: 0.75rem 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tarjeta, .opcion-rol { transition: none; }
+}

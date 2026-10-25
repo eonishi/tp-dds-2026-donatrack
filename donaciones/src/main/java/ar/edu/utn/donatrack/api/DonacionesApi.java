@@ -20,8 +20,11 @@ import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import ar.edu.utn.donatrack.notificaciones.NotificacionesRepository;
 import ar.edu.utn.donatrack.notificaciones.NotificadorDesdeEntorno;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
+import ar.edu.utn.donatrack.web.HandlebarsRenderer;
+import ar.edu.utn.donatrack.web.controller.PaginasPublicasController;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.Javalin;
+import io.javalin.http.staticfiles.Location;
 import java.time.Clock;
 import java.util.List;
 
@@ -69,23 +72,30 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
                 new AlgoritmoPrioridadSubAtendidos(donaciones)));
     MatchmakingController matchmakingController =
         new MatchmakingController(matchmakingDomain, donaciones, entidades, notificaciones, clock);
+    PaginasPublicasController paginasPublicas = new PaginasPublicasController();
 
     Javalin app =
         Javalin.create(
             config -> {
               config.showJavalinBanner = false;
+              // Vistas (MVC): las pantallas se renderizan acá con Handlebars sobre el mismo dominio
+              // que expone la API; los estáticos (CSS, imágenes) salen de resources/public.
+              config.fileRenderer(new HandlebarsRenderer());
+              config.staticFiles.add("/public", Location.CLASSPATH);
               config.router.apiBuilder(
-                  () ->
-                      io.javalin.apibuilder.ApiBuilder.path(
-                          "/api/v1",
-                          () -> {
-                            donanteController.routes();
-                            entidadController.routes();
-                            necesidadController.routes();
-                            donacionController.routes();
-                            subcategoriasController.routes();
-                            matchmakingController.routes();
-                          }));
+                  () -> {
+                    io.javalin.apibuilder.ApiBuilder.path(
+                        "/api/v1",
+                        () -> {
+                          donanteController.routes();
+                          entidadController.routes();
+                          necesidadController.routes();
+                          donacionController.routes();
+                          subcategoriasController.routes();
+                          matchmakingController.routes();
+                        });
+                    paginasPublicas.routes();
+                  });
             });
 
     java.util.concurrent.ScheduledExecutorService scheduler =

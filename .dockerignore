@@ -1,0 +1,11 @@
+**/target/
+.git/
+.vscode/
+.idea/
+docs/
+db/
+**/*.iml
+# El persistence.xml local de cada uno no entra a la imagen: se usa el example + variables de entorno
+**/META-INF/persistence.xml
+!**/src/test/resources/META-INF/persistence.xml
+.env

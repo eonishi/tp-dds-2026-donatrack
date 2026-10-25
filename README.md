@@ -27,10 +27,96 @@ Cada módulo es un proyecto Maven independiente; el `pom.xml` raíz solo los agr
 
 La integración REST entre los dos microservicios ya está implementada y funcional. Cuando `donaciones` necesita iniciar un traslado, se comunica con `logistica`, y viceversa, permitiendo una planificación distribuida.
 
+## Interfaz web (MVC)
+
+La interfaz es un cliente liviano renderizado del lado del servidor dentro de
+`donaciones`, que es el servidor principal.
+
+| Capa | Dónde |
+| --- | --- |
+| Model | El dominio y los repositorios de `donaciones` |
+| View | Plantillas Handlebars en `donaciones/src/main/resources/templates/` (`layout.hbs` + una por página) |
+| Controller | `donaciones/src/main/java/ar/edu/utn/donatrack/web/controller/` |
+| Estáticos | `donaciones/src/main/resources/public/` (CSS, imágenes) |
+
+La API JSON sigue en `/api/v1` para la integración con logística.
+
+## Cómo levantar el proyecto
+
+### Requisitos
+
+- [Docker](https://docs.docker.com/get-docker/) con Docker Compose v2 (`docker compose`, sin guion).
+- Una base Postgres: el proyecto de Supabase del grupo, o la local que trae el compose.
+
+No hace falta tener Java ni Maven instalados: la imagen compila todo adentro.
+
+### 1. Crear el `.env`
+
+```bash
+cp .env.example .env
+```
+
+El `.env` está en el `.gitignore`: cada uno tiene el suyo y **nunca se commitea**. Lo leen los dos
+servicios.
+
+#### Opción A: Supabase (por defecto)
+
+En Supabase: **Project Settings → Database → Connection string → Session pooler**. De
+*Connection parameters* se arma así:
+
+```dotenv
+DB_URL=jdbc:postgresql://aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require
+DB_USER=postgres.<referencia-del-proyecto>
+DB_PASSWORD=<contraseña de la base>
+```
+
+#### Opción B: Postgres local
+
+Sin Supabase (o sin internet), descomentar en el `.env` el bloque local:
+
+```dotenv
+DB_URL=jdbc:postgresql://postgres:5432/postgres
+DB_USER=postgres
+DB_PASSWORD=postgres
+```
+
+### 2. Levantar
+
+```bash
+docker compose up --build                   # contra Supabase
+docker compose --profile local up --build   # con el Postgres local (opción B)
+```
+
+Agregando `-d` queda corriendo en segundo plano.
+
+| Servicio | URL |
+| --- | --- |
+| Landing (donaciones) | http://localhost:7070 |
+| API de donaciones | http://localhost:7070/api/v1 |
+| Logística | http://localhost:9001/logistica |
+| Postgres local (solo perfil `local`) | `localhost:5432`, usuario y contraseña `postgres` |
+
+
+### Comandos útiles
+
+```bash
+docker compose ps                               # estado de los servicios
+docker compose logs -f donaciones               # logs en vivo (o logistica)
+docker compose up -d --build donaciones         # aplicar cambios de código o de la landing
+docker compose restart donaciones               # reiniciar sin recompilar
+docker compose down                             # bajar todo
+docker compose --profile local down -v          # bajar y BORRAR los datos del Postgres local
+```
+
+Las plantillas y el CSS van adentro de la imagen: **después de tocar la landing hay que reconstruir**
+con `docker compose up -d --build donaciones`. Si el navegador muestra el CSS viejo, recargar con
+Ctrl+Shift+R.
+
 ## Notificaciones reales para la demo
 
 El microservicio `donaciones` usa Resend para correo y Twilio Trial para SMS y WhatsApp. Las
-credenciales se leen exclusivamente desde variables de entorno:
+credenciales se leen exclusivamente desde variables de entorno. Con Docker van en el `.env` (están
+comentadas en `.env.example`); sin Docker:
 
 ```bash
 export RESEND_API_KEY="re_..."
