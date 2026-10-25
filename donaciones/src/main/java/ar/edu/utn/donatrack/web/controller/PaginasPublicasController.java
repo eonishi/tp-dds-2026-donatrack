@@ -16,12 +16,15 @@ public final class PaginasPublicasController {
     get("/legal", ctx -> proximamente(ctx, "Legal y privacidad"));
     get("/entregas", ctx -> proximamente(ctx, "Donaciones entregadas"));
     get("/login", ctx -> proximamente(ctx, "Iniciar sesión"));
-    get("/registro", ctx -> proximamente(ctx, "Registro de personas donantes"));
-    get("/registro-entidad", ctx -> proximamente(ctx, "Registro de entidades beneficiarias"));
+    get("/registro", this::registro);
   }
 
   private void landing(Context ctx) {
     ctx.render("index");
+  }
+
+  private void registro(Context ctx) {
+    ctx.render("registro");
   }
 
   private void proximamente(Context ctx, String seccion) {

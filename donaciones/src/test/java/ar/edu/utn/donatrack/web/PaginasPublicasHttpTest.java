@@ -1,6 +1,7 @@
 package ar.edu.utn.donatrack.web;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ar.edu.utn.donatrack.api.DonacionesApi;
@@ -49,6 +50,29 @@ class PaginasPublicasHttpTest {
   void lasSeccionesEnlazadasResponden() throws Exception {
     for (String ruta : new String[] {"/legal", "/entregas", "/login", "/registro"}) {
       assertEquals(200, get(ruta).statusCode(), ruta);
+    }
+  }
+
+  @Test
+  void elRegistroUnificaDonantesYEntidadesConUnSelectorDeRol() throws Exception {
+    for (String ruta : new String[] {"/registro", "/register", "/registro-entidad"}) {
+      HttpResponse<String> response = get(ruta);
+      assertEquals(200, response.statusCode(), ruta);
+
+      String html = response.body();
+      assertTrue(html.contains("<nav"), ruta + " debería incluir el layout");
+      assertTrue(html.contains("name=\"rol\""), ruta + " debería enviar el rol elegido");
+      assertTrue(html.contains("id=\"rol-donante\""), ruta + " debería ofrecer el rol donante");
+      assertTrue(
+          html.contains("id=\"rol-entidad\""),
+          ruta + " debería ofrecer el rol entidad beneficiaria");
+      assertTrue(
+          html.contains("data-rol=\"donante\""), ruta + " debería traer los datos del donante");
+      assertTrue(
+          html.contains("data-rol=\"entidad\""), ruta + " debería traer los datos de la entidad");
+      assertTrue(html.contains("href=\"/login\""), ruta + " debería ofrecer iniciar sesión");
+      assertFalse(
+          html.contains("Estamos construyendo"), ruta + " ya no debería ser una página próxima");
     }
   }
 
