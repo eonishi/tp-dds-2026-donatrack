@@ -1,6 +1,7 @@
 package ar.edu.utn.donatrack.web.controller;
 
 import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.post;
 
 import io.javalin.http.Context;
 import java.util.Map;
@@ -17,6 +18,7 @@ public final class PaginasPublicasController {
     get("/entregas", ctx -> proximamente(ctx, "Donaciones entregadas"));
     get("/login", ctx -> proximamente(ctx, "Iniciar sesión"));
     get("/registro", this::registro);
+    post("/registro", ctx -> proximamente(ctx, "Registro"));
   }
 
   private void landing(Context ctx) {

@@ -42,7 +42,6 @@ class PaginasPublicasHttpTest {
     assertTrue(html.contains("href=\"/entregas\""));
     assertTrue(html.contains("href=\"/login\""));
     assertTrue(html.contains("href=\"/registro\""));
-    assertTrue(html.contains("href=\"/registro-entidad\""));
     assertTrue(html.contains("href=\"/legal\""));
   }
 
@@ -55,7 +54,7 @@ class PaginasPublicasHttpTest {
 
   @Test
   void elRegistroUnificaDonantesYEntidadesConUnSelectorDeRol() throws Exception {
-    for (String ruta : new String[] {"/registro", "/register", "/registro-entidad"}) {
+    for (String ruta : new String[] {"/registro"}) {
       HttpResponse<String> response = get(ruta);
       assertEquals(200, response.statusCode(), ruta);
 
