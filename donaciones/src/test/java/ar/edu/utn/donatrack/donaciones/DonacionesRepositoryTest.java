@@ -16,6 +16,7 @@ import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
+import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,9 +32,9 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
     donante = crearDonanteDummy();
     subCategoria = new SubCategoria("X", Categoria.ALIMENTO);
     entidadBeneficiaria = nuevaEntidad("Ent");
-    // Donacion cascadea a su Bien y a su HistorialEstado, pero no al donante, a la subcategoría de
-    // cada bien ni a la entidad beneficiaria: esos ya deben estar almacenados al persistir una
-    // donación.
+    // Donacion cascadea a su Bien y guarda su HistorialEstado, pero no cascadea al donante, a la
+    // subcategoría de cada bien ni a la entidad beneficiaria: esos ya deben estar almacenados al
+    // persistir una donación.
     persist(donante);
     persist(subCategoria);
     persist(entidadBeneficiaria);
@@ -106,5 +107,27 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
     List<Donacion> resultado = repo.getDonacionesEnAsignacionRealizada();
 
     assertThrows(UnsupportedOperationException.class, () -> resultado.add(null));
+  }
+
+  @Test
+  void cantidadEntregadasDesde_CuentaUnaVezLaDonacionAunqueTengaVariasEntregasEnLaVentana() {
+    DonacionesRepository repo = new DonacionesRepository();
+    Donacion entregada = crearDonacionConEstado(EstadoDonacion.ASIGNACION_REALIZADA);
+    entregada.cambiarEstado(EstadoDonacion.ENTREGADA, null);
+    entregada.cambiarEstado(EstadoDonacion.ENTREGADA, null);
+    repo.addDonacion(entregada);
+    repo.addDonacion(crearDonacionConEstado(EstadoDonacion.ASIGNACION_REALIZADA));
+
+    assertEquals(1, repo.cantidadEntregadasDesde(entidadBeneficiaria, LocalDate.now()));
+  }
+
+  @Test
+  void cantidadEntregadasDesde_IgnoraLasEntregasAnterioresALaFecha() {
+    DonacionesRepository repo = new DonacionesRepository();
+    Donacion entregada = crearDonacionConEstado(EstadoDonacion.ASIGNACION_REALIZADA);
+    entregada.cambiarEstado(EstadoDonacion.ENTREGADA, null);
+    repo.addDonacion(entregada);
+
+    assertEquals(0, repo.cantidadEntregadasDesde(entidadBeneficiaria, LocalDate.now().plusDays(1)));
   }
 }

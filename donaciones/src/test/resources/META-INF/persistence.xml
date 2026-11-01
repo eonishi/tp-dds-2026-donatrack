@@ -14,7 +14,6 @@
         <class>ar.edu.utn.donatrack.bienes.Bien</class>
         <class>ar.edu.utn.donatrack.bienes.SubCategoria</class>
         <class>ar.edu.utn.donatrack.donaciones.Donacion</class>
-        <class>ar.edu.utn.donatrack.donaciones.HistorialEstado</class>
         <class>ar.edu.utn.donatrack.donantes.CorreoElectronico</class>
         <class>ar.edu.utn.donatrack.donantes.Donante</class>
         <class>ar.edu.utn.donatrack.donantes.MedioDeContacto</class>

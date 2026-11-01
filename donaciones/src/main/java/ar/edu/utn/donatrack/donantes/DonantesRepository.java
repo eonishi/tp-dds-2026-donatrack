@@ -142,7 +142,7 @@ public class DonantesRepository implements WithSimplePersistenceUnit {
                 + "(select don from Donacion don where don.donante = d and "
                 + "exists (select h from don.historialEstado h where h.fecha >= :limite))",
             Donante.class)
-        .setParameter("limite", limite)
+        .setParameter("limite", limite.atStartOfDay())
         .getResultList();
   }
 }

@@ -58,8 +58,7 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
 
     List<HistorialEstado> historial = recargada.getHistorialEstado();
     assertEquals(2, historial.size(), "Las dos transiciones deben persistirse");
-    // No hay columna de orden persistente para el historial: el orden recargado depende de que
-    // la base devuelva las filas en el orden de inserción.
+    // El orden recargado lo garantiza la columna de orden del historial, no la base.
     assertEquals(EstadoDonacion.EN_TRASLADO, historial.get(0).getEstadoAlcanzado());
     assertNotNull(historial.get(0).getFecha(), "La fecha del primer evento debe persistirse");
     assertEquals(
@@ -82,6 +81,42 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
     assertEquals(EstadoUso.NO_APLICA, bienes.get(0).getEstadoDeUso());
     assertEquals(alimentos.getNombre(), bienes.get(0).getSubcategoria().getNombre());
     assertEquals(Categoria.ALIMENTO, bienes.get(0).getSubcategoria().getCategoria());
+  }
+
+  @Test
+  void elHistorialConservaElOrdenAlRecargarYAlAgregarUnaEntradaNueva() {
+    SubCategoria alimentos = new SubCategoria(nombreUnicoAlimentos(), Categoria.ALIMENTO);
+    Donante donante = crearDonante();
+    Donacion donacion =
+        new Donacion(DonacionId.generar(), donante, List.of(crearBien(alimentos, "Yerba", 1.0)));
+    donacion.cambiarEstado(EstadoDonacion.ASIGNACION_REALIZADA, "primera");
+    donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, "segunda");
+    UUID id = donacion.getId().value();
+
+    persist(alimentos);
+    persist(donante);
+    persist(donacion);
+    entityManager().flush();
+    entityManager().clear();
+
+    find(Donacion.class, id).cambiarEstado(EstadoDonacion.ENTREGADA, "tercera");
+    entityManager().flush();
+    entityManager().clear();
+
+    assertEquals(
+        List.of("primera", "segunda", "tercera"),
+        find(Donacion.class, id).getHistorialEstado().stream()
+            .map(HistorialEstado::getJustificacion)
+            .toList(),
+        "Las entradas deben recargarse en el orden en que ocurrieron");
+    assertEquals(
+        List.of(0, 1, 2),
+        entityManager()
+            .createNativeQuery(
+                "SELECT orden FROM HistorialEstado WHERE donacion_id = :id ORDER BY orden")
+            .setParameter("id", id)
+            .getResultList(),
+        "La entrada agregada debe continuar la numeración, sin reescribir las anteriores");
   }
 
   @Test
