@@ -1,0 +1,229 @@
+{{#partial "titulo"}}Información legal y privacidad · DonaTrack{{/partial}}
+
+{{#partial "contenido"}}
+{{!-- El main del layout ya es "container py-4": acá no hace falta otro container --}}
+<section class="position-relative overflow-hidden py-4">
+    <div class="hero-brillo" aria-hidden="true"></div>
+    <div class="position-relative">
+        <div class="encabezado">
+            <span class="chip mb-3">✦ Transparencia y privacidad</span>
+            <h1 class="fs-1 fw-semibold" id="legal-titulo">
+                Información legal y <span class="degrade">privacidad</span>
+            </h1>
+            <p>
+                Cómo cuidamos tus datos en DonaTrack, qué información es pública para transparentar
+                las entregas y qué requiere iniciar sesión.
+            </p>
+            <p class="confianza mt-2 mb-0">Última actualización: noviembre de 2026</p>
+        </div>
+
+        <div class="row g-4 g-lg-5 justify-content-center align-items-start">
+            {{!-- Índice de secciones y accesos rápidos --}}
+            <div class="col-lg-4">
+                <aside class="tarjeta" aria-labelledby="indice-legal">
+                    <h2 class="fs-6 text-uppercase text-body-secondary fw-semibold mb-3" id="indice-legal">Contenido</h2>
+                    <nav aria-label="Secciones de información legal y privacidad">
+                        <ol class="list-unstyled d-flex flex-column gap-1 mb-0">
+                            <li><a class="d-block py-1" href="#que-datos-guardamos">1. Qué datos guardamos y para qué</a></li>
+                            <li><a class="d-block py-1" href="#uso-de-cookies">2. Uso de cookies de sesión</a></li>
+                            <li><a class="d-block py-1" href="#quien-puede-ver-que">3. Quién puede ver qué</a></li>
+                            <li><a class="d-block py-1" href="#conservacion-y-contacto">4. Conservación, baja y contacto</a></li>
+                        </ol>
+                    </nav>
+                    <hr class="my-4">
+                    <div class="dato small">
+                        <strong>Responsable:</strong> UTN Solidaria (FRBA)<br>
+                        <strong>Contacto:</strong>
+                        <a href="mailto:solidaria@frba.utn.edu.ar">solidaria@frba.utn.edu.ar</a>
+                    </div>
+                    <div class="d-grid gap-2 mt-3">
+                        <a class="btn btn-primary rounded-pill" href="/registro">Crear mi cuenta</a>
+                        <a class="btn btn-outline-primary rounded-pill" href="/">Volver al inicio</a>
+                    </div>
+                </aside>
+            </div>
+
+            {{!-- Secciones de contenido --}}
+            <div class="col-lg-8 d-flex flex-column gap-4">
+                <article class="tarjeta" id="que-datos-guardamos">
+                    <span class="chip mb-3">01 · Datos recolectados</span>
+                    <h2 class="fs-4 fw-semibold mb-3">Qué datos guardamos y <span class="degrade">para qué</span></h2>
+                    <p class="mb-4">
+                        DonaTrack registra únicamente los datos necesarios sobre donantes,
+                        entidades beneficiarias, donaciones, fotos y posiciones de camiones para
+                        recibir bienes en el depósito, asignarlos a las instituciones que los
+                        necesitan y seguir cada traslado hasta su entrega efectiva.
+                    </p>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="h-100 p-3 border rounded-4">
+                                <h3 class="fs-6 fw-semibold">🎁 Donantes</h3>
+                                <p class="small mb-0">
+                                    Nombre y apellido o razón social, documento (DNI o CUIT), fecha de
+                                    nacimiento, género, representantes (en personas jurídicas), dirección,
+                                    teléfono y medio de contacto preferido (correo, SMS o WhatsApp). Se
+                                    usan para acreditar la donación y enviarte avisos en cada etapa.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="h-100 p-3 border rounded-4">
+                                <h3 class="fs-6 fw-semibold">🏥 Entidades beneficiarias</h3>
+                                <p class="small mb-0">
+                                    Razón social, dirección de entrega, teléfono de contacto y las
+                                    necesidades de bienes que registran. Se usan para cruzar lo que falta
+                                    con el inventario disponible y coordinar el envío.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="h-100 p-3 border rounded-4">
+                                <h3 class="fs-6 fw-semibold">📦 Donaciones</h3>
+                                <p class="small mb-0">
+                                    Categoría, subcategoría, descripción, cantidad, estado de uso, fecha
+                                    de vencimiento cuando corresponde e historial de estados desde la
+                                    recepción en depósito hasta la confirmación de entrega.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="h-100 p-3 border rounded-4">
+                                <h3 class="fs-6 fw-semibold">📷 Fotos y comprobantes</h3>
+                                <p class="small mb-0">
+                                    Fotos opcionales de los bienes al momento de cargarlos y las fotos
+                                    que suben las entidades al confirmar que recibieron la donación, para
+                                    dejar constancia real de cada entrega.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="h-100 p-3 border rounded-4">
+                                <h3 class="fs-6 fw-semibold">🚚 Posiciones de camiones</h3>
+                                <p class="small mb-0">
+                                    Ubicación geográfica y recorrido de los camiones asignados a una ruta
+                                    activa. Se guardan exclusivamente durante los traslados para monitorear
+                                    el viaje en tiempo real, detectar demoras o desvíos y certificar la
+                                    llegada al destino.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="tarjeta" id="uso-de-cookies">
+                    <span class="chip mb-3">02 · Cookies HTTP</span>
+                    <h2 class="fs-4 fw-semibold mb-3">Uso de <span class="degrade">cookies</span></h2>
+                    <p>
+                        Esta plataforma utiliza <strong>cookies HTTP de sesión</strong> estrictamente
+                        necesarias para el funcionamiento técnico del sitio cuando iniciás sesión o
+                        enviás un formulario.
+                    </p>
+                    <ul class="lista-check mt-3 mb-4">
+                        <li>Mantener tu sesión activa mientras navegás por tu cuenta</li>
+                        <li>Proteger los formularios contra envíos no autorizados (tokens CSRF)</li>
+                        <li>Mostrar avisos breves de confirmación luego de una acción</li>
+                        <li>Sin cookies publicitarias ni rastreadores de terceros</li>
+                    </ul>
+                    <div class="dato small">
+                        La cookie de sesión solo guarda un identificador técnico temporal y se
+                        elimina cuando cerrás tu sesión con el botón <strong>Salir</strong> o cuando
+                        expira por inactividad.
+                    </div>
+                </article>
+
+                <article class="tarjeta" id="quien-puede-ver-que">
+                    <span class="chip mb-3">03 · Visibilidad y roles</span>
+                    <h2 class="fs-4 fw-semibold mb-3">Quién puede <span class="degrade">ver qué</span></h2>
+                    <p class="mb-4">
+                        Para combinar trazabilidad pública con resguardo de datos personales, DonaTrack
+                        separa lo que se muestra sin iniciar sesión de lo que requiere una cuenta
+                        autenticada según cada rol.
+                    </p>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="h-100 p-3 border rounded-4">
+                                <h3 class="fs-6 fw-semibold">🌐 Público sin iniciar sesión</h3>
+                                <p class="small mb-0">
+                                    Cualquier visitante puede ver la página de inicio, esta política y la
+                                    sección de <a href="/entregas">donaciones entregadas</a> con el mapa
+                                    de entregas realizadas y las fotos cargadas por las entidades al
+                                    recibirlas. <strong>Nunca se publican sin login el DNI, teléfono,
+                                    correo electrónico ni domicilio de las personas donantes.</strong>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="h-100 p-3 border rounded-4">
+                                <h3 class="fs-6 fw-semibold">👤 Rol Donante</h3>
+                                <p class="small mb-0">
+                                    Requiere sesión. Ve únicamente su propio perfil, el estado e historial
+                                    de sus donaciones y los avisos de asignación y entrega.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="h-100 p-3 border rounded-4">
+                                <h3 class="fs-6 fw-semibold">🏛️ Rol Entidad</h3>
+                                <p class="small mb-0">
+                                    Requiere sesión. Administra sus necesidades, consulta las donaciones
+                                    asignadas a su institución y carga las fotos de recepción.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="h-100 p-3 border rounded-4">
+                                <h3 class="fs-6 fw-semibold">🔑 Rol Administración</h3>
+                                <p class="small mb-0">
+                                    Equipo de UTN Solidaria con sesión autorizada. Gestiona el depósito,
+                                    el padrón de donantes y entidades, las asignaciones y el monitoreo de
+                                    camiones.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="tarjeta" id="conservacion-y-contacto">
+                    <span class="chip mb-3">04 · Tus derechos</span>
+                    <h2 class="fs-4 fw-semibold mb-3">Conservación de datos, baja y <span class="degrade">contacto</span></h2>
+                    <p>
+                        Conservamos los datos de tu cuenta mientras mantengas tu perfil activo en la
+                        plataforma. Los registros de trazabilidad de las donaciones entregadas y sus
+                        fotos de comprobante se preservan como respaldo histórico de UTN Solidaria; si
+                        pedís la baja de tu cuenta, se desvinculan tus datos personales de contacto.
+                    </p>
+                    <div class="dato mt-3">
+                        <p class="mb-2">
+                            <strong>¿Querés corregir tus datos o pedir la baja de tu cuenta?</strong>
+                        </p>
+                        <p class="small mb-0">
+                            Podés editar tus datos desde la sección <em>Mi perfil</em> al iniciar sesión,
+                            o escribirnos en cualquier momento a
+                            <a href="mailto:solidaria@frba.utn.edu.ar">solidaria@frba.utn.edu.ar</a>
+                            indicando tu nombre o razón social y el correo con el que te registraste
+                            para solicitar el acceso, la rectificación o la supresión de tus datos.
+                        </p>
+                    </div>
+                </article>
+
+                {{!-- Mismo bloque de cierre que la landing, sin clases nuevas --}}
+                <div class="cta">
+                    <div class="hero-brillo" aria-hidden="true"></div>
+                    <div class="position-relative">
+                        <h2>¿Todo claro? Sumate a <span class="degrade">DonaTrack.</span></h2>
+                        <p>
+                            Podés volver a la página principal para conocer más o crear tu propia cuenta.
+                        </p>
+                        <div class="d-flex flex-wrap justify-content-center gap-3 mt-4">
+                            <a class="btn btn-primary btn-lg rounded-pill px-4" href="/registro">Ir al registro</a>
+                            <a class="btn btn-outline-primary btn-lg rounded-pill px-4" href="/">Volver</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{{/partial}}
+
+{{> layout}}

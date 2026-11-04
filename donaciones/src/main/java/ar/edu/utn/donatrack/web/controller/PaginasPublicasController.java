@@ -14,7 +14,7 @@ public final class PaginasPublicasController {
 
   public void routes() {
     get("/", this::landing);
-    get("/legal", ctx -> proximamente(ctx, "Legal y privacidad"));
+    get("/legal", this::legal);
     get("/entregas", ctx -> proximamente(ctx, "Donaciones entregadas"));
     get("/login", ctx -> proximamente(ctx, "Iniciar sesión"));
     get("/registro", this::registro);
@@ -23,6 +23,10 @@ public final class PaginasPublicasController {
 
   private void landing(Context ctx) {
     ctx.render("index");
+  }
+
+  private void legal(Context ctx) {
+    ctx.render("legal");
   }
 
   private void registro(Context ctx) {
