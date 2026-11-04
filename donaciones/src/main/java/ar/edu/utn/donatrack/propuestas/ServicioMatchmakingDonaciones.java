@@ -34,8 +34,9 @@ public class ServicioMatchmakingDonaciones {
     Collection<EntidadBeneficiaria> beneficiarios = beneficiariosRepository.getBeneficiarios();
     List<Donacion> donacionesEntregadas = donacionesRepository.getDonacionesEntregadas();
     for (Donacion donacion : donacionesRepository.getDonacionesEnDeposito()) {
-      generarPropuestaSiNoHayPendiente(
-          donacion, beneficiarios, donacionesEntregadas, fechaReferencia);
+      PropuestaDeAsignacion propuesta =
+          generarPropuesta(donacion, beneficiarios, donacionesEntregadas, fechaReferencia);
+      propuestaRepository.save(propuesta);
     }
   }
 
@@ -48,8 +49,6 @@ public class ServicioMatchmakingDonaciones {
             beneficiariosRepository.getBeneficiarios(),
             donacionesRepository.getDonacionesEntregadas(),
             fechaReferencia);
-    // La persistencia queda en el borde: regenerar descarta la propuesta anterior de la donación.
-    propuestaRepository.remove(donacion);
     propuestaRepository.save(propuesta);
     return propuesta;
   }
@@ -87,30 +86,6 @@ public class ServicioMatchmakingDonaciones {
     // La confirmación cambia el estado y la entidad de la donación: hay que guardarla para que
     // esos cambios lleguen a la base. Este camino no pasa por DonacionController.
     donacionesRepository.save(donacion);
-  }
-
-  /**
-   * Genera la propuesta de la donación si todavía no tiene una pendiente.
-   *
-   * <p>Reemplaza al antiguo {@code recalcular}: el nombre dice qué hace. La lectura de repositorios
-   * y el guardado de la propuesta quedan acá, en el borde del caso de uso.
-   *
-   * @param donacion donación para la que se genera la propuesta
-   * @param beneficiarios entidades candidatas ya leídas
-   * @param donacionesEntregadas entregas previas ya leídas
-   * @param fechaReferencia fecha desde la que se calcula el ranking
-   */
-  private void generarPropuestaSiNoHayPendiente(
-      Donacion donacion,
-      Collection<EntidadBeneficiaria> beneficiarios,
-      Collection<Donacion> donacionesEntregadas,
-      LocalDate fechaReferencia) {
-    if (propuestaRepository.findPendingByDonacion(donacion).isPresent()) {
-      return; // La donación ya tiene una propuesta pendiente: no se reemplaza.
-    }
-    PropuestaDeAsignacion propuesta =
-        generarPropuesta(donacion, beneficiarios, donacionesEntregadas, fechaReferencia);
-    propuestaRepository.save(propuesta);
   }
 
   /**

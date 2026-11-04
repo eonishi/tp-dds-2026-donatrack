@@ -17,39 +17,55 @@ import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
 import ar.edu.utn.donatrack.propuestas.PropuestaRepository;
 import ar.edu.utn.donatrack.propuestas.PropuestaRepositoryImpl;
 import ar.edu.utn.donatrack.propuestas.matchmaking.MatchCandidato;
+import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.util.List;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class PropuestaRepositoryTest {
+class PropuestaRepositoryTest implements SimplePersistenceTest {
 
   private PropuestaRepository repository;
+  private Donante donante;
+  private SubCategoria subCategoria;
+  private EntidadBeneficiaria entidad;
   private Donacion donacion;
   private PropuestaDeAsignacion propuesta;
 
   @BeforeEach
   void setUp() {
     repository = new PropuestaRepositoryImpl();
+    donante = crearDonanteDummy();
+    subCategoria = new SubCategoria("X", Categoria.ALIMENTO);
+    entidad = new EntidadBeneficiaria("Entidad", "Dir", "Tel");
+    persist(donante);
+    persist(subCategoria);
+    persist(entidad);
     donacion = crearDonacionDummy();
-    propuesta = new PropuestaDeAsignacion(donacion, crearCandidatosDummy());
+    persist(donacion);
+    propuesta = new PropuestaDeAsignacion(donacion, crearCandidatosDummy(entidad, 50, 80));
   }
 
   @Test
-  void saveYFindPendingByDonacion_RetornaPropuestaPendiente() {
+  void saveYFindPendingByDonacion_PersisteYRecuperaDesdeLaBase() {
     repository.save(propuesta);
+    entityManager().flush();
+    entityManager().clear();
 
-    var encontrada = repository.findPendingByDonacion(donacion);
+    var encontrada = new PropuestaRepositoryImpl().findPendingByDonacion(donacion);
 
-    assertTrue(encontrada.isPresent(), "Debe encontrar la propuesta guardada");
+    assertTrue(encontrada.isPresent(), "Debe encontrar la propuesta guardada en la base");
     assertTrue(encontrada.get().isPendiente(), "La propuesta debe estar pendiente");
-    assertSame(propuesta, encontrada.get(), "Debe ser la misma propuesta");
+    assertEquals(donacion.getId(), encontrada.get().getDonacion().getId());
+    assertEquals(1, encontrada.get().getCandidatos().size());
+    assertEquals(65, encontrada.get().getCandidatos().get(0).getPuntaje());
   }
 
   @Test
   void findPendingByDonacion_PropuestaConfirmada_RetornaEmpty() {
     repository.save(propuesta);
     propuesta.confirmar(candidata(propuesta));
+    entityManager().flush();
+    entityManager().clear();
 
     var encontrada = repository.findPendingByDonacion(donacion);
 
@@ -59,18 +75,25 @@ class PropuestaRepositoryTest {
   @Test
   void findAllPending_RetornaSoloPendientes() {
     Donacion donacionB = crearDonacionDummy();
-    PropuestaDeAsignacion propuestaB = new PropuestaDeAsignacion(donacionB, crearCandidatosDummy());
+    persist(donacionB);
+    PropuestaDeAsignacion propuestaB =
+        new PropuestaDeAsignacion(donacionB, crearCandidatosDummy(entidad, 50, 80));
 
     repository.save(propuesta);
     repository.save(propuestaB);
 
     // Confirmar la primera
     propuesta.confirmar(candidata(propuesta));
+    entityManager().flush();
+    entityManager().clear();
 
     List<PropuestaDeAsignacion> pendientes = repository.findAllPending();
 
     assertEquals(1, pendientes.size(), "Solo debe haber una propuesta pendiente");
-    assertSame(propuestaB, pendientes.get(0), "Debe ser la que no se confirmó");
+    assertEquals(
+        donacionB.getId(),
+        pendientes.get(0).getDonacion().getId(),
+        "Debe ser la que no se confirmó");
   }
 
   @Test
@@ -82,22 +105,36 @@ class PropuestaRepositoryTest {
   @Test
   void remove_EliminaPropuesta() {
     repository.save(propuesta);
+    entityManager().flush();
+
     repository.remove(donacion);
+    entityManager().flush();
+    entityManager().clear();
 
     var encontrada = repository.findPendingByDonacion(donacion);
     assertTrue(encontrada.isEmpty(), "Propuesta eliminada no debe ser encontrada");
   }
 
   @Test
-  void save_UpsertReemplazaPropuestaExistente() {
+  void save_ActualizaListaDeCandidatosDePropuestaExistente() {
     repository.save(propuesta);
 
-    PropuestaDeAsignacion reemplazo = new PropuestaDeAsignacion(donacion, crearCandidatosDummy());
+    EntidadBeneficiaria otraEntidad = new EntidadBeneficiaria("Otra Entidad", "Dir 2", "Tel 2");
+    persist(otraEntidad);
+    PropuestaDeAsignacion reemplazo =
+        new PropuestaDeAsignacion(donacion, crearCandidatosDummy(otraEntidad, 90, 100));
     repository.save(reemplazo);
+    entityManager().flush();
+    entityManager().clear();
 
     var encontrada = repository.findPendingByDonacion(donacion);
     assertTrue(encontrada.isPresent());
-    assertSame(reemplazo, encontrada.get(), "Debe devolver la última propuesta guardada");
+    assertEquals(1, encontrada.get().getCandidatos().size());
+    assertEquals(
+        otraEntidad.getId(),
+        encontrada.get().getCandidatos().get(0).getEntidadBeneficiaria().getId(),
+        "Debe actualizar los candidatos sobre la propuesta de la donación");
+    assertEquals(95, encontrada.get().getCandidatos().get(0).getPuntaje());
   }
 
   // ── Helpers ────────────────────────────────────────────────────────
@@ -114,27 +151,17 @@ class PropuestaRepositoryTest {
         "Calle Falsa 123");
   }
 
-  private static Donacion crearDonacionDummy() {
+  private Donacion crearDonacionDummy() {
     Bien bien =
-        new Bien(
-            "Test",
-            "",
-            1.0,
-            UnidadMedida.UNIDADES,
-            null,
-            EstadoUso.NO_APLICA,
-            new SubCategoria("X", Categoria.ALIMENTO));
-    // El repositorio en memoria indexa por identidad de donación: cada donación lleva un UUID
-    // explícito para que dos instancias no colisionen en la misma clave.
-    return new Donacion(UUID.randomUUID(), crearDonanteDummy(), List.of(bien));
+        new Bien("Test", "", 1.0, UnidadMedida.UNIDADES, null, EstadoUso.NO_APLICA, subCategoria);
+    return new Donacion(donante, List.of(bien));
   }
 
-  private static List<List<MatchCandidato>> crearCandidatosDummy() {
-    // La entidad lleva un id explícito: confirmar() compara la elegida contra los candidatos por
-    // identidad y este test no persiste la entidad para que el proveedor se la asigne.
-    EntidadBeneficiaria entidad = new EntidadBeneficiaria(1L, "Entidad", "Dir", "Tel");
+  private static List<List<MatchCandidato>> crearCandidatosDummy(
+      EntidadBeneficiaria entidad, int puntajeA, int puntajeB) {
     return List.of(
-        List.of(new MatchCandidato(entidad, 50)), List.of(new MatchCandidato(entidad, 80)));
+        List.of(new MatchCandidato(entidad, puntajeA)),
+        List.of(new MatchCandidato(entidad, puntajeB)));
   }
 
   private static EntidadBeneficiaria candidata(PropuestaDeAsignacion propuesta) {

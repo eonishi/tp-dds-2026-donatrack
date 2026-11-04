@@ -138,6 +138,8 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
         crearEntidadConNecesidad("Compatible", alimentos, 5, fecha.plusMonths(4));
     EntidadBeneficiaria noCompatible =
         crearEntidadConNecesidadNoPerecedera("Sin match semántico", ropa, 2);
+    persist(compatible);
+    persist(noCompatible);
 
     BeneficiariosRepository beneficiariosRepository = new BeneficiariosRepository();
     beneficiariosRepository.addBeneficiario(compatible);
@@ -267,13 +269,21 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
     PropuestaDeAsignacion primera =
         propuestaRepository.findPendingByDonacion(donacion).orElse(null);
     assertNotNull(primera, "Primer matchmaking debe crear Propuesta");
+    assertEquals(1, primera.getCandidatos().size());
 
-    // Second execution should NOT replace
+    // Second execution updates candidates on the same Propuesta instance
+    EntidadBeneficiaria otraEntidad =
+        crearEntidadConNecesidad("Otra Entidad", alimentos, 5, fecha.plusMonths(4));
+    beneficiariosRepository.addBeneficiario(otraEntidad);
     servicio.ejecutarMatchmakingDiario(fecha);
     PropuestaDeAsignacion segunda =
         propuestaRepository.findPendingByDonacion(donacion).orElse(null);
     assertNotNull(segunda, "Propuesta debe seguir existiendo");
-    assertSame(primera, segunda, "Segundo matchmaking no debe reemplazar la Propuesta pendiente");
+    assertSame(primera, segunda, "Segundo matchmaking debe conservar la misma Propuesta");
+    assertEquals(
+        2,
+        segunda.getCandidatos().size(),
+        "Segundo matchmaking debe actualizar la lista de candidatos de la propuesta");
   }
 
   @Test

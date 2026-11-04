@@ -61,11 +61,13 @@ public final class MatchmakingController implements WithSimplePersistenceUnit {
   }
 
   private void ejecutar(Context ctx) {
-    ctx.status(201)
-        .json(
-            ApiMapper.propuesta(
+    UUID donacionId = HttpSupport.id(ctx, "donacionId");
+    PropuestaDeAsignacion propuesta =
+        withTransaction(
+            () ->
                 matchmaking.ejecutarMatchmakingParaDonacion(
-                    donacion(HttpSupport.id(ctx, "donacionId")), LocalDate.now(clock))));
+                    donacion(donacionId), LocalDate.now(clock)));
+    ctx.status(201).json(ApiMapper.propuesta(propuesta));
   }
 
   private void ranking(Context ctx) {
