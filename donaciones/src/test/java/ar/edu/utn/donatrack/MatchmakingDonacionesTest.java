@@ -29,12 +29,8 @@ import ar.edu.utn.donatrack.propuestas.matchmaking.AlgoritmoCompatibilidadSemant
 import ar.edu.utn.donatrack.propuestas.matchmaking.AlgoritmoMatchmaking;
 import ar.edu.utn.donatrack.propuestas.matchmaking.AlgoritmoPrioridadSubAtendidos;
 import ar.edu.utn.donatrack.propuestas.matchmaking.MatchCandidato;
-import ar.edu.utn.donatrack.propuestas.matchmaking.MatchmakingScheduler;
 import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
-import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.Collection;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -382,15 +378,6 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
     assertTrue(
         rankingEnVentana.get(0).getPuntaje() < rankingFueraDeVentana.get(0).getPuntaje(),
         "Las entregas dentro del trimestre deben bajar el puntaje y las de afuera no deben contar");
-  }
-
-  @Test
-  void schedulerCalculaDemoraHastaLaProximaMedianoche() {
-    Clock clock = Clock.fixed(Instant.parse("2026-07-06T21:30:00Z"), ZoneId.of("UTC"));
-
-    long demora = MatchmakingScheduler.milisegundosHastaProximaMedianoche(clock);
-
-    assertEquals(9_000_000L, demora);
   }
 
   private static Bien crearBien(

@@ -3,16 +3,16 @@
 %% "El sistema debe garantizar la ejecución asincrónica de los algoritmos de
 %%  asignación de donaciones presentes en el depósito."
 %% Strategy (AlgoritmoMatchmaking) + ejecución diaria en horario de baja carga
-%% (MatchmakingScheduler) + propuestas pendientes de confirmación.
+%% (MatchmakingRunner, invocado por un planificador externo) + propuestas pendientes
+%% de confirmación.
 %% Fragmento mínimo del dominio involucrado (incluye infraestructura).
 %% ============================================================================
 classDiagram
     direction TB
 
-    class MatchmakingScheduler {
+    class MatchmakingRunner {
         <<infraestructura>>
-        +iniciar()
-        +detener()
+        +ejecutar()
     }
     class ServicioMatchmakingDonaciones {
         <<infraestructura>>
@@ -75,7 +75,7 @@ classDiagram
         +recibirDonacion(cantidad: double)
     }
 
-    MatchmakingScheduler ..> ServicioMatchmakingDonaciones : ejecuta diario
+    MatchmakingRunner ..> ServicioMatchmakingDonaciones : ejecuta diario (cron externo)
     ServicioMatchmakingDonaciones o-- "*" AlgoritmoMatchmaking : algoritmos
     ServicioMatchmakingDonaciones ..> DonacionesRepository : en depósito
     ServicioMatchmakingDonaciones ..> BeneficiariosRepository : entidades
