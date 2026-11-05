@@ -106,8 +106,7 @@ public final class MatchmakingController implements WithSimplePersistenceUnit {
     }
     try {
       notificaciones.enviar(
-          matchmaking.confirmarAsignacionAdministrativa(
-              donacion, entidad, LocalDate.now(clock)));
+          matchmaking.confirmarAsignacionAdministrativa(donacion, entidad, LocalDate.now(clock)));
     } catch (EntidadFueraDeRankingException error) {
       throw ApiException.conflict(error.getMessage());
     }

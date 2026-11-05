@@ -19,8 +19,7 @@ public final class NotificadorDesdeEntorno {
     validarConfiguracion(entorno);
     HttpClient client = HttpClient.newHttpClient();
     GatewayCorreo correo =
-        new GatewayCorreoResend(
-            client, entorno.get("RESEND_API_KEY"), entorno.get("RESEND_FROM"));
+        new GatewayCorreoResend(client, entorno.get("RESEND_API_KEY"), entorno.get("RESEND_FROM"));
     GatewaySms sms =
         new GatewayTwilio(
             client,

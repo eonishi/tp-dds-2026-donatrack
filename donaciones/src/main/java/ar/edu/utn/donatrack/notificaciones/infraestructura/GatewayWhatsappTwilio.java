@@ -28,9 +28,7 @@ public class GatewayWhatsappTwilio implements GatewayWhatsapp {
     this.authorization =
         "Basic "
             + Base64.getEncoder()
-                .encodeToString(
-                    (accountSid + ":" + authToken)
-                        .getBytes(StandardCharsets.UTF_8));
+                .encodeToString((accountSid + ":" + authToken).getBytes(StandardCharsets.UTF_8));
     this.remitente = Objects.requireNonNull(remitente);
   }
 

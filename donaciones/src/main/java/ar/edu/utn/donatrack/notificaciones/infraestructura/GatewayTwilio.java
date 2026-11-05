@@ -28,9 +28,7 @@ public class GatewayTwilio implements GatewaySms {
     this.authorization =
         "Basic "
             + Base64.getEncoder()
-                .encodeToString(
-                    (accountSid + ":" + authToken)
-                        .getBytes(StandardCharsets.UTF_8));
+                .encodeToString((accountSid + ":" + authToken).getBytes(StandardCharsets.UTF_8));
     this.smsRemitente = Objects.requireNonNull(smsRemitente);
   }
 

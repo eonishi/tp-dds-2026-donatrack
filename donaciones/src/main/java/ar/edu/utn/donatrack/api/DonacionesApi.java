@@ -94,8 +94,7 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
     java.util.concurrent.ScheduledExecutorService scheduler =
         java.util.concurrent.Executors.newSingleThreadScheduledExecutor();
     scheduler.scheduleAtFixedRate(
-        new ar.edu.utn.donatrack.notificaciones.TareaAusenciaDonantes(
-            donantes, notificaciones),
+        new ar.edu.utn.donatrack.notificaciones.TareaAusenciaDonantes(donantes, notificaciones),
         0,
         1,
         java.util.concurrent.TimeUnit.DAYS);

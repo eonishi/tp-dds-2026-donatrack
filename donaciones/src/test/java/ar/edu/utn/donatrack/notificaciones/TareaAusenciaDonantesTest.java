@@ -33,8 +33,7 @@ class TareaAusenciaDonantesTest {
     Notificador notificador = mock(Notificador.class);
     when(notificador.enviarNotificacion(any(), any()))
         .thenReturn(ResultadoEnvio.fallido("proveedor caído"));
-    ServicioNotificaciones servicio =
-        new ServicioNotificaciones(notificador, repository, 1);
+    ServicioNotificaciones servicio = new ServicioNotificaciones(notificador, repository, 1);
 
     new TareaAusenciaDonantes(donantes, servicio).run();
 

@@ -200,8 +200,7 @@ public class RutaControllerTest implements SimplePersistenceTest {
     Camion camion = camionRepo.buscarPorPatente("AB123CD").orElseThrow();
     return withTransaction(
         () -> {
-          Ruta ruta =
-              new Ruta(camion, List.of(new Destino(1L, "Calle 123", List.of(donacionId))));
+          Ruta ruta = new Ruta(camion, List.of(new Destino(1L, "Calle 123", List.of(donacionId))));
           rutaRepo.agregar(ruta);
           return ruta;
         });

@@ -78,8 +78,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
                 org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
         .thenReturn(ResultadoEnvio.fallido("proveedor caído"));
     ServicioNotificaciones notificaciones =
-        new ServicioNotificaciones(
-            notificador, notificacionesRepository, 1);
+        new ServicioNotificaciones(notificador, notificacionesRepository, 1);
     Clock clock = Clock.fixed(Instant.parse("2026-09-11T12:00:00Z"), ZoneOffset.UTC);
     app = DonacionesApi.create(clock, notificaciones).start(0);
     baseUrl = "http://localhost:" + app.port();
@@ -89,8 +88,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
 
     assertEquals(201, response.statusCode(), response.body());
     assertEquals(1, notificacionesRepository.getNotificaciones().size());
-    assertEquals(
-        "FALLIDA", notificacionesRepository.getNotificaciones().get(0).getEstado().name());
+    assertEquals("FALLIDA", notificacionesRepository.getNotificaciones().get(0).getEstado().name());
   }
 
   @AfterEach
@@ -637,10 +635,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     assertEquals(2, nuevas.size());
     for (Notificacion notificacion : nuevas) {
       assertEquals(
-          1,
-          apariciones(
-              notificacion.getMensaje(),
-              "https://mapa.donatrack.org/tracking/AB123CD"));
+          1, apariciones(notificacion.getMensaje(), "https://mapa.donatrack.org/tracking/AB123CD"));
     }
   }
 
@@ -683,10 +678,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     assertEquals(2, nuevas.size());
     for (Notificacion notificacion : nuevas) {
       assertEquals(
-          1,
-          apariciones(
-              notificacion.getMensaje(),
-              "https://mapa.donatrack.org/tracking/AC456DE"));
+          1, apariciones(notificacion.getMensaje(), "https://mapa.donatrack.org/tracking/AC456DE"));
     }
   }
 

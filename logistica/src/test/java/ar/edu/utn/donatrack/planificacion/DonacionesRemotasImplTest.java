@@ -36,8 +36,7 @@ class DonacionesRemotasImplTest {
     remotas.notificarInicioTraslado(
         List.of(UUID.fromString("11111111-1111-1111-1111-111111111111")), "AB123CD");
 
-    assertEquals(
-        "http://donaciones/api/v1/donaciones/estado", request.getValue().uri().toString());
+    assertEquals("http://donaciones/api/v1/donaciones/estado", request.getValue().uri().toString());
     String body = body(request.getValue());
     assertTrue(body.contains("\"idCamion\":\"AB123CD\""));
     assertFalse(body.contains("https://mapa.donatrack.org"));
