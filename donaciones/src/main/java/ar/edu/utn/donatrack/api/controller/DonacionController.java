@@ -116,10 +116,10 @@ public final class DonacionController implements WithSimplePersistenceUnit {
     }
     DonacionUpdateRequest request =
         DtoValidator.validate(ctx.bodyAsClass(DonacionUpdateRequest.class));
-    propuestas.remove(donacion);
     DonacionResponse actualizada =
         withTransaction(
             () -> {
+              propuestas.remove(donacion);
               donacion.reemplazarBienes(bienes(request.bienes(), new HashMap<>()));
               return donacion(donaciones.save(donacion));
             });
@@ -131,8 +131,11 @@ public final class DonacionController implements WithSimplePersistenceUnit {
     if (donacion.getEstado() != EstadoDonacion.EN_DEPOSITO) {
       throw ApiException.conflict("Sólo se puede eliminar una donación en depósito.");
     }
-    propuestas.remove(donacion);
-    withTransaction(() -> donaciones.deleteById(donacion.getId()));
+    withTransaction(
+        () -> {
+          propuestas.remove(donacion);
+          donaciones.deleteById(donacion.getId());
+        });
     ctx.status(204);
   }
 

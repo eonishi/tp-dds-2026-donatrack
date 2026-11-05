@@ -27,6 +27,34 @@ Cada módulo es un proyecto Maven independiente; el `pom.xml` raíz solo los agr
 
 La integración REST entre los dos microservicios ya está implementada y funcional. Cuando `donaciones` necesita iniciar un traslado, se comunica con `logistica`, y viceversa, permitiendo una planificación distribuida.
 
+### Programas de planificación externa (`schedules`)
+
+Los programas que viven en el paquete `schedules` de un microservicio son puntos de entrada
+autónomos: tienen su propio `main`, arman las dependencias que necesitan y terminan al finalizar. No
+los ejecuta el proceso HTTP: los invoca un planificador externo (por ejemplo, un cronjob) con la
+frecuencia que se configure fuera del código.
+
+| Microservicio | Programa | Qué hace |
+| --- | --- | --- |
+| `donaciones` | `ar.edu.utn.donatrack.schedules.MatchmakingRunner` | Genera las propuestas de asignación del matchmaking para la fecha actual. |
+
+Ejecución manual (arma el classpath del módulo):
+
+```bash
+mvn -q -pl donaciones dependency:build-classpath -Dmdep.outputFile=target/cp.txt
+java -cp "donaciones/target/classes:$(cat donaciones/target/cp.txt)" \
+  ar.edu.utn.donatrack.schedules.MatchmakingRunner
+```
+
+Ejemplo de cronjob diario a las 03:00, hora local:
+
+```cron
+0 3 * * * cd /ruta/a/tp-dds-2026-donatrack && java -cp "donaciones/target/classes:$(cat donaciones/target/cp.txt)" ar.edu.utn.donatrack.schedules.MatchmakingRunner
+```
+
+El horario, la frecuencia y los reintentos pertenecen al planificador externo: no hay
+planificación interna dentro de los microservicios.
+
 ## Notificaciones reales para la demo
 
 El microservicio `donaciones` usa Resend para correo y Twilio Trial para SMS y WhatsApp. Las

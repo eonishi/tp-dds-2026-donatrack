@@ -51,9 +51,7 @@ public final class NecesidadController implements WithSimplePersistenceUnit {
   }
 
   private void listar(Context ctx) {
-    EntidadBeneficiaria entidad = entidad(ctx);
-    ctx.json(
-        entidad.necesidades().stream().map(necesidad -> response(necesidad, entidad)).toList());
+    ctx.json(ApiMapper.necesidades(entidad(ctx)));
   }
 
   private void obtener(Context ctx) {

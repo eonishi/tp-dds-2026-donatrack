@@ -3,20 +3,62 @@ package ar.edu.utn.donatrack.propuestas;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.propuestas.matchmaking.MatchCandidato;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
+import javax.persistence.CollectionTable;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
+import javax.persistence.OrderColumn;
 
+@Entity
 public class PropuestaDeAsignacion {
-  private final Donacion donacion;
-  private final List<MatchCandidato> candidatos;
+  @Id
+  @GeneratedValue(strategy = GenerationType.AUTO)
+  private UUID id;
+
+  @OneToOne
+  @JoinColumn(name = "donacion_id", nullable = false, unique = true)
+  private Donacion donacion;
+
+  @ElementCollection
+  @CollectionTable(name = "propuesta_candidatos", joinColumns = @JoinColumn(name = "propuesta_id"))
+  @OrderColumn(name = "orden")
+  private List<MatchCandidato> candidatos = new ArrayList<>();
+
+  @Column(nullable = false)
   private boolean pendiente = true;
+
+  protected PropuestaDeAsignacion() {}
 
   public PropuestaDeAsignacion(Donacion donacion, List<List<MatchCandidato>> listasDeCandidatos) {
     this.donacion = Objects.requireNonNull(donacion, "donacion no puede ser null");
     this.candidatos =
-        intersectarCandidatos(
-            Objects.requireNonNull(listasDeCandidatos, "listasDeCandidatos no puede ser null"));
+        new ArrayList<>(
+            intersectarCandidatos(
+                Objects.requireNonNull(
+                    listasDeCandidatos, "listasDeCandidatos no puede ser null")));
+  }
+
+  /**
+   * Reemplaza la lista de candidatos de la propuesta y la vuelve a dejar pendiente.
+   *
+   * @param nuevosCandidatos nueva lista ordenada de candidatos (no nula)
+   */
+  public void reemplazarCandidatos(List<MatchCandidato> nuevosCandidatos) {
+    Objects.requireNonNull(nuevosCandidatos, "nuevosCandidatos no puede ser null");
+    this.candidatos.clear();
+    this.candidatos.addAll(nuevosCandidatos);
+    this.pendiente = true;
   }
 
   /**
@@ -162,7 +204,7 @@ public class PropuestaDeAsignacion {
   }
 
   public List<MatchCandidato> getCandidatos() {
-    return candidatos;
+    return Collections.unmodifiableList(candidatos);
   }
 
   public boolean isPendiente() {

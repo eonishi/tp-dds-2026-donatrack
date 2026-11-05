@@ -1,24 +1,14 @@
 package ar.edu.utn.donatrack.propuestas.matchmaking;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-import ar.edu.utn.donatrack.beneficiarios.Necesidad;
 import ar.edu.utn.donatrack.donaciones.Donacion;
-import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 
 public class AlgoritmoPrioridadSubAtendidos extends AlgoritmoMatchmaking {
-  private final DonacionesRepository donacionesRepository;
-
-  public AlgoritmoPrioridadSubAtendidos(DonacionesRepository donacionesRepository) {
-    this.donacionesRepository =
-        Objects.requireNonNull(donacionesRepository, "donacionesRepository no puede ser null");
-  }
-
   @Override
   public String getNombre() {
     return "prioridad-sub-atendidos";
@@ -28,16 +18,17 @@ public class AlgoritmoPrioridadSubAtendidos extends AlgoritmoMatchmaking {
   protected List<MatchCandidato> ordenarCandidatos(
       Donacion donacion,
       Collection<EntidadBeneficiaria> entidadesBeneficiarias,
-      LocalDate fechaReferencia) {
+      LocalDate fechaReferencia,
+      Collection<Donacion> donacionesEntregadas) {
     LocalDate fechaDesde = fechaReferencia.minusMonths(3);
     List<MatchCandidato> candidatos = new ArrayList<>();
 
     for (EntidadBeneficiaria entidad : entidadesBeneficiarias) {
-      if (!tieneNecesidadCompatible(donacion, entidad)) {
+      if (!entidad.tieneNecesidadCompatible(donacion)) {
         continue;
       }
 
-      long recibidas = donacionesRepository.cantidadEntregadasDesde(entidad, fechaDesde);
+      long recibidas = cantidadEntregadasA(donacionesEntregadas, entidad, fechaDesde);
       int puntaje = (int) Math.max(0, 100 - recibidas);
       candidatos.add(new MatchCandidato(entidad, puntaje));
     }
@@ -50,10 +41,20 @@ public class AlgoritmoPrioridadSubAtendidos extends AlgoritmoMatchmaking {
     return candidatos;
   }
 
-  private boolean tieneNecesidadCompatible(Donacion donacion, EntidadBeneficiaria entidad) {
-    List<Necesidad> necesidades = new ArrayList<>(entidad.getNecesidadesExtraordinarias());
-    necesidades.addAll(entidad.getNecesidadesRecurrentes());
-    return necesidades.stream()
-        .anyMatch(necesidad -> necesidad.getSubcategoria().equals(donacion.getSubcategoria()));
+  /**
+   * Cuenta las entregas de la ventana que recibió la entidad indicada.
+   *
+   * @param donacionesEntregadas donaciones ya entregadas que alimentan el cálculo
+   * @param entidad entidad beneficiaria que se evalúa
+   * @param fechaDesde primer día de la ventana
+   * @return la cantidad de donaciones entregadas a la entidad en o después de {@code fechaDesde}
+   */
+  private long cantidadEntregadasA(
+      Collection<Donacion> donacionesEntregadas,
+      EntidadBeneficiaria entidad,
+      LocalDate fechaDesde) {
+    return donacionesEntregadas.stream()
+        .filter(donacion -> donacion.fueEntregadaA(entidad, fechaDesde))
+        .count();
   }
 }

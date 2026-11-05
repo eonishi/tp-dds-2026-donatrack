@@ -69,9 +69,7 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
             donaciones,
             entidades,
             propuestas,
-            List.of(
-                new AlgoritmoCompatibilidadSemantica(),
-                new AlgoritmoPrioridadSubAtendidos(donaciones)));
+            List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos()));
     MatchmakingController matchmakingController =
         new MatchmakingController(matchmakingDomain, donaciones, entidades, notificaciones, clock);
 

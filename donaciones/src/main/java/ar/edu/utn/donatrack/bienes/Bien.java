@@ -83,4 +83,27 @@ public class Bien {
   public EstadoUso getEstadoDeUso() {
     return estadoDeUso;
   }
+
+  /**
+   * Indica si el bien pertenece a la subcategoría indicada.
+   *
+   * @param otraSubcategoria subcategoría con la que se compara (no nula)
+   * @return {@code true} si el bien pertenece a esa subcategoría
+   * @throws NullPointerException si {@code otraSubcategoria} es {@code null}
+   */
+  public boolean esDeSubcategoria(SubCategoria otraSubcategoria) {
+    return this.subcategoria.equals(
+        Objects.requireNonNull(otraSubcategoria, "otraSubcategoria no puede ser null"));
+  }
+
+  /**
+   * Indica si el bien se mide en la unidad indicada.
+   *
+   * @param otraUnidad unidad con la que se compara (no nula)
+   * @return {@code true} si el bien se mide en esa unidad
+   * @throws NullPointerException si {@code otraUnidad} es {@code null}
+   */
+  public boolean tieneUnidad(UnidadMedida otraUnidad) {
+    return this.unidad.equals(Objects.requireNonNull(otraUnidad, "unidad no puede ser null"));
+  }
 }

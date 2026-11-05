@@ -17,6 +17,7 @@ import ar.edu.utn.donatrack.notificaciones.Notificador;
 import ar.edu.utn.donatrack.notificaciones.NotificadorSimulado;
 import ar.edu.utn.donatrack.notificaciones.ResultadoEnvio;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
+import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -112,6 +113,9 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     // previa, así que este método es el dueño legítimo de la transacción de limpieza.
     withTransaction(
         () -> {
+          createQuery("select p from PropuestaDeAsignacion p", PropuestaDeAsignacion.class)
+              .getResultList()
+              .forEach(this::remove);
           createQuery("select b from Bien b", Bien.class).getResultList().forEach(this::remove);
           createQuery("select n from Necesidad n", Necesidad.class)
               .getResultList()
@@ -346,6 +350,12 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     assertEquals(200, pendientes.statusCode());
     assertEquals(1, json(pendientes).size());
     assertEquals(idOtraDonacion.toString(), json(pendientes).get(0).get("donacionId").asText());
+    assertEquals(
+        201,
+        request("POST", "/api/v1/donaciones/" + idOtraDonacion + "/propuesta-asignacion", null)
+            .statusCode());
+    assertEquals(204, request("DELETE", "/api/v1/donaciones/" + idOtraDonacion, null).statusCode());
+    assertEquals(0, json(request("GET", "/api/v1/propuestas-asignacion", null)).size());
     assertEquals(
         404, request("PUT", "/api/v1/donaciones/" + donacionId + "/asignacion", null).statusCode());
     assertEquals(404, request("POST", "/api/v1/propuestas-asignacion", null).statusCode());

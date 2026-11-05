@@ -1,7 +1,6 @@
 package ar.edu.utn.donatrack.donaciones;
 
 import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaDonacion;
-import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaEntidad;
 import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
@@ -17,61 +16,28 @@ import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.propuestas.matchmaking.AlgoritmoPrioridadSubAtendidos;
-import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 
-class AlgoritmoPrioridadSubAtendidosTest implements SimplePersistenceTest {
+class AlgoritmoPrioridadSubAtendidosTest {
 
-  private static Donante crearDonanteDummy() {
-    return new PersonaHumana(
-        new CorreoElectronico("test@test.com"),
-        "Juan",
-        "Perez",
-        30,
-        "12345678",
-        TipoDocumento.DNI,
-        Genero.MASCULINO,
-        "Calle Falsa 123");
-  }
+  private static final LocalDate FECHA_REFERENCIA = LocalDate.of(2026, 7, 11);
 
   @Test
   void rankear_ConMasDe10Entidades_RetornaMaximo10Candidatos() {
     SubCategoria fideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
-    Donacion donacion =
-        nuevaDonacion(
-            crearDonanteDummy(),
-            List.of(
-                new Bien(
-                    "Fideos",
-                    "",
-                    15.0,
-                    UnidadMedida.KILOGRAMOS,
-                    null,
-                    EstadoUso.NO_APLICA,
-                    fideos)));
+    Donacion donacion = donacionDe(fideos, 15.0);
 
-    // Create 15 entities with matching subcategoria and no entregas (all get score 100)
     var entidades =
-        java.util.stream.IntStream.range(0, 15)
-            .mapToObj(
-                i -> {
-                  EntidadBeneficiaria e = nuevaEntidad("Entidad " + i);
-                  e.agregarNecesidadExtraordinaria(
-                      new Necesidad(fideos, 5.0, UnidadMedida.KILOGRAMOS, "Fideos"));
-                  return e;
-                })
+        IntStream.range(0, 15)
+            .mapToObj(i -> entidadQueNecesita(100L + i, "Entidad " + i, fideos))
             .toList();
 
-    // El ranking real consulta las entregas por entidad: las subcategorías de las necesidades y
-    // las entidades deben estar almacenadas.
-    persist(fideos);
-    entidades.forEach(this::persist);
-
     var candidatos =
-        new AlgoritmoPrioridadSubAtendidos(new DonacionesRepository())
-            .rankear(donacion, entidades, LocalDate.of(2026, 7, 11));
+        new AlgoritmoPrioridadSubAtendidos()
+            .rankear(donacion, entidades, FECHA_REFERENCIA, List.of());
 
     assertTrue(
         candidatos.size() <= 10, "Prioridad sub-atendidos debe retornar máximo 10 candidatos");
@@ -88,36 +54,14 @@ class AlgoritmoPrioridadSubAtendidosTest implements SimplePersistenceTest {
   @Test
   void rankear_ConMenosDe10Entidades_RetornaTodas() {
     SubCategoria fideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
-    Donacion donacion =
-        nuevaDonacion(
-            crearDonanteDummy(),
-            List.of(
-                new Bien(
-                    "Fideos",
-                    "",
-                    15.0,
-                    UnidadMedida.KILOGRAMOS,
-                    null,
-                    EstadoUso.NO_APLICA,
-                    fideos)));
-
-    EntidadBeneficiaria e1 = nuevaEntidad("Comedor A");
-    e1.agregarNecesidadExtraordinaria(
-        new Necesidad(fideos, 5.0, UnidadMedida.KILOGRAMOS, "Fideos"));
-    EntidadBeneficiaria e2 = nuevaEntidad("Comedor B");
-    e2.agregarNecesidadExtraordinaria(
-        new Necesidad(fideos, 3.0, UnidadMedida.KILOGRAMOS, "Fideos"));
-    EntidadBeneficiaria e3 = nuevaEntidad("Comedor C");
-    e3.agregarNecesidadExtraordinaria(
-        new Necesidad(fideos, 8.0, UnidadMedida.KILOGRAMOS, "Fideos"));
-    persist(fideos);
-    persist(e1);
-    persist(e2);
-    persist(e3);
+    Donacion donacion = donacionDe(fideos, 15.0);
+    EntidadBeneficiaria e1 = entidadQueNecesita(1L, "Comedor A", fideos);
+    EntidadBeneficiaria e2 = entidadQueNecesita(2L, "Comedor B", fideos);
+    EntidadBeneficiaria e3 = entidadQueNecesita(3L, "Comedor C", fideos);
 
     var candidatos =
-        new AlgoritmoPrioridadSubAtendidos(new DonacionesRepository())
-            .rankear(donacion, List.of(e1, e2, e3), LocalDate.of(2026, 7, 11));
+        new AlgoritmoPrioridadSubAtendidos()
+            .rankear(donacion, List.of(e1, e2, e3), FECHA_REFERENCIA, List.of());
 
     assertEquals(3, candidatos.size(), "Con 3 entidades debe retornar las 3");
   }
@@ -131,14 +75,11 @@ class AlgoritmoPrioridadSubAtendidosTest implements SimplePersistenceTest {
             crearDonanteDummy(),
             List.of(
                 new Bien("Silla", "", 1.0, UnidadMedida.UNIDADES, null, EstadoUso.NUEVO, sillas)));
-
-    EntidadBeneficiaria entidad = nuevaEntidad("Comedor");
-    entidad.agregarNecesidadExtraordinaria(
-        new Necesidad(fideos, 5.0, UnidadMedida.KILOGRAMOS, "Fideos"));
+    EntidadBeneficiaria entidad = entidadQueNecesita(1L, "Comedor", fideos);
 
     var candidatos =
-        new AlgoritmoPrioridadSubAtendidos(new DonacionesRepository())
-            .rankear(donacion, List.of(entidad), LocalDate.of(2026, 7, 11));
+        new AlgoritmoPrioridadSubAtendidos()
+            .rankear(donacion, List.of(entidad), FECHA_REFERENCIA, List.of());
 
     assertTrue(candidatos.isEmpty(), "Sin entidades con necesidad compatible debe retornar vacío");
   }
@@ -146,42 +87,20 @@ class AlgoritmoPrioridadSubAtendidosTest implements SimplePersistenceTest {
   @Test
   void puntaje_EntidadConMuchasEntregas_RetornaPuntajeMenor() {
     SubCategoria fideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
-    Donacion donacion =
-        nuevaDonacion(
-            crearDonanteDummy(),
-            List.of(
-                new Bien(
-                    "Fideos",
-                    "",
-                    15.0,
-                    UnidadMedida.KILOGRAMOS,
-                    null,
-                    EstadoUso.NO_APLICA,
-                    fideos)));
+    Donacion donacion = donacionDe(fideos, 15.0);
+    EntidadBeneficiaria sinEntregas = entidadQueNecesita(1L, "Sin Recibir", fideos);
+    EntidadBeneficiaria conMuchas = entidadQueNecesita(2L, "Ya Recibio", fideos);
 
-    EntidadBeneficiaria sinEntregas = nuevaEntidad("Sin Recibir");
-    sinEntregas.agregarNecesidadExtraordinaria(
-        new Necesidad(fideos, 5.0, UnidadMedida.KILOGRAMOS, "Fideos"));
-
-    EntidadBeneficiaria conMuchas = nuevaEntidad("Ya Recibio");
-    conMuchas.agregarNecesidadExtraordinaria(
-        new Necesidad(fideos, 5.0, UnidadMedida.KILOGRAMOS, "Fideos"));
-    // Simulate 50 entregas
-    // El ranking real consulta las entregas por entidad: el donante, la subcategoría de la
-    // necesidad y las entidades deben estar almacenados.
+    // Las entregas viajan como dato hasta el ranking: no consulta ningún repositorio.
     Donante donante = crearDonanteDummy();
-    persist(fideos);
-    persist(donante);
-    persist(sinEntregas);
-    persist(conMuchas);
-    DonacionesRepository donacionesRepository = new DonacionesRepository();
-    for (int i = 0; i < 50; i++) {
-      donacionesRepository.addDonacion(crearDonacionEntregada(donante, conMuchas, fideos));
-    }
+    List<Donacion> entregadas =
+        IntStream.range(0, 50)
+            .mapToObj(i -> crearDonacionEntregada(donante, conMuchas, fideos))
+            .toList();
 
     var candidatos =
-        new AlgoritmoPrioridadSubAtendidos(donacionesRepository)
-            .rankear(donacion, List.of(sinEntregas, conMuchas), LocalDate.now());
+        new AlgoritmoPrioridadSubAtendidos()
+            .rankear(donacion, List.of(sinEntregas, conMuchas), LocalDate.now(), entregadas);
 
     assertEquals(2, candidatos.size());
     assertTrue(
@@ -196,45 +115,80 @@ class AlgoritmoPrioridadSubAtendidosTest implements SimplePersistenceTest {
   }
 
   @Test
+  void rankear_ConEntregasDistintas_UsaElHistorialDeCadaLlamada() {
+    SubCategoria fideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
+    Donacion donacion = donacionDe(fideos, 15.0);
+    EntidadBeneficiaria entidad = entidadQueNecesita(2L, "Ya Recibio", fideos);
+    Donante donante = crearDonanteDummy();
+    List<Donacion> entregadas =
+        IntStream.range(0, 3)
+            .mapToObj(i -> crearDonacionEntregada(donante, entidad, fideos))
+            .toList();
+    AlgoritmoPrioridadSubAtendidos algoritmo = new AlgoritmoPrioridadSubAtendidos();
+
+    var sinHistorial = algoritmo.rankear(donacion, List.of(entidad), FECHA_REFERENCIA, List.of());
+    var conHistorial = algoritmo.rankear(donacion, List.of(entidad), FECHA_REFERENCIA, entregadas);
+
+    assertEquals(
+        100,
+        sinHistorial.get(0).getPuntaje(),
+        "Sin entregas en la llamada el puntaje debe quedar completo");
+    assertEquals(
+        97,
+        conHistorial.get(0).getPuntaje(),
+        "Las entregas de la llamada deben descontarse en ese ranking");
+  }
+
+  @Test
   void rankear_ConEntidadesHomonimasEmpatadas_DesempataPorId() {
     SubCategoria fideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
-    Donacion donacion =
-        nuevaDonacion(
-            crearDonanteDummy(),
-            List.of(
-                new Bien(
-                    "Fideos",
-                    "",
-                    15.0,
-                    UnidadMedida.KILOGRAMOS,
-                    null,
-                    EstadoUso.NO_APLICA,
-                    fideos)));
-
-    EntidadBeneficiaria primera = new EntidadBeneficiaria("Comedor Los Pibes", "Dir", "Tel");
-    EntidadBeneficiaria segunda = new EntidadBeneficiaria("Comedor Los Pibes", "Dir", "Tel");
-    for (EntidadBeneficiaria entidad : List.of(primera, segunda)) {
-      entidad.agregarNecesidadExtraordinaria(
-          new Necesidad(fideos, 5.0, UnidadMedida.KILOGRAMOS, "Fideos"));
-    }
-    persist(fideos);
-    persist(primera);
-    persist(segunda);
-
-    // El proveedor asigna los ids al persistir: el desempate por id se verifica comparando el
-    // ranking contra la entidad que quedó con el id menor, sin fijar los ids de antemano.
-    EntidadBeneficiaria menor = primera.getId() < segunda.getId() ? primera : segunda;
-    EntidadBeneficiaria mayor = menor == primera ? segunda : primera;
+    Donacion donacion = donacionDe(fideos, 15.0);
+    EntidadBeneficiaria primera = entidadQueNecesita(1L, "Comedor Los Pibes", fideos);
+    EntidadBeneficiaria segunda = entidadQueNecesita(2L, "Comedor Los Pibes", fideos);
 
     var candidatos =
-        new AlgoritmoPrioridadSubAtendidos(new DonacionesRepository())
-            .rankear(donacion, List.of(mayor, menor), LocalDate.of(2026, 7, 11));
+        new AlgoritmoPrioridadSubAtendidos()
+            .rankear(donacion, List.of(segunda, primera), FECHA_REFERENCIA, List.of());
 
     assertEquals(2, candidatos.size());
     assertEquals(
-        menor.getId(),
+        primera.getId(),
         candidatos.get(0).getEntidadBeneficiaria().getId(),
         "Con puntaje y razón social empatados debe desempatar por id");
+  }
+
+  private static Donacion donacionDe(SubCategoria subCategoria, double cantidad) {
+    return nuevaDonacion(
+        crearDonanteDummy(),
+        List.of(
+            new Bien(
+                "Fideos",
+                "",
+                cantidad,
+                UnidadMedida.KILOGRAMOS,
+                null,
+                EstadoUso.NO_APLICA,
+                subCategoria)));
+  }
+
+  private static EntidadBeneficiaria entidadQueNecesita(
+      Long id, String razonSocial, SubCategoria subCategoria) {
+    EntidadBeneficiaria entidad = new EntidadBeneficiaria(id, razonSocial, "Direccion", "Telefono");
+    entidad.agregarNecesidadExtraordinaria(
+        new Necesidad(subCategoria, 5.0, UnidadMedida.KILOGRAMOS, "Fideos"));
+    return entidad;
+  }
+
+  private static Donante crearDonanteDummy() {
+    return new PersonaHumana(
+        new CorreoElectronico("test@test.com"),
+        "Juan",
+        "Perez",
+        30,
+        "12345678",
+        TipoDocumento.DNI,
+        Genero.MASCULINO,
+        "Calle Falsa 123");
   }
 
   private static Donacion crearDonacionEntregada(

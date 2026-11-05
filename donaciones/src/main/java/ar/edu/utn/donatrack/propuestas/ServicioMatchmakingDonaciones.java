@@ -10,6 +10,7 @@ import ar.edu.utn.donatrack.propuestas.matchmaking.AlgoritmoMatchmaking;
 import ar.edu.utn.donatrack.propuestas.matchmaking.MatchCandidato;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class ServicioMatchmakingDonaciones {
@@ -30,19 +31,27 @@ public class ServicioMatchmakingDonaciones {
   }
 
   public void ejecutarMatchmakingDiario(LocalDate fechaReferencia) {
-    donacionesRepository
-        .getDonacionesEnDeposito()
-        .forEach(donacion -> recalcular(donacion, fechaReferencia));
+    // Las lecturas quedan en el borde del caso de uso: el cálculo recibe los datos ya leídos.
+    Collection<EntidadBeneficiaria> beneficiarios = beneficiariosRepository.getBeneficiarios();
+    List<Donacion> donacionesEntregadas = donacionesRepository.getDonacionesEntregadas();
+    for (Donacion donacion : donacionesRepository.getDonacionesEnDeposito()) {
+      PropuestaDeAsignacion propuesta =
+          generarPropuesta(donacion, beneficiarios, donacionesEntregadas, fechaReferencia);
+      propuestaRepository.save(propuesta);
+    }
   }
 
   public PropuestaDeAsignacion ejecutarMatchmakingParaDonacion(
       Donacion donacion, LocalDate fechaReferencia) {
-    if (donacion.getEstado() != EstadoDonacion.EN_DEPOSITO) {
-      throw new IllegalStateException(
-          "El matchmaking sólo puede ejecutarse para donaciones en depósito.");
-    }
-    propuestaRepository.remove(donacion);
-    return generarPropuesta(donacion, fechaReferencia);
+    validarEnDeposito(donacion);
+    PropuestaDeAsignacion propuesta =
+        generarPropuesta(
+            donacion,
+            beneficiariosRepository.getBeneficiarios(),
+            donacionesRepository.getDonacionesEntregadas(),
+            fechaReferencia);
+    propuestaRepository.save(propuesta);
+    return propuesta;
   }
 
   public List<PropuestaDeAsignacion> ejecutarMatchmakingTotal(LocalDate fechaReferencia) {
@@ -82,25 +91,59 @@ public class ServicioMatchmakingDonaciones {
     return notificaciones;
   }
 
-  private void recalcular(Donacion donacion, LocalDate fechaReferencia) {
-    if (propuestaRepository.findPendingByDonacion(donacion).isPresent()) {
-      return; // skip Donaciones with existing pending Propuesta
-    }
-
-    generarPropuesta(donacion, fechaReferencia);
+  /**
+   * Calcula la propuesta de la donación sin tocar ningún repositorio.
+   *
+   * @param donacion donación para la que se calcula la propuesta
+   * @param beneficiarios entidades candidatas
+   * @param donacionesEntregadas entregas previas que alimentan el cálculo
+   * @param fechaReferencia fecha desde la que se calcula el ranking
+   * @return la propuesta calculada, todavía sin persistir
+   */
+  private PropuestaDeAsignacion generarPropuesta(
+      Donacion donacion,
+      Collection<EntidadBeneficiaria> beneficiarios,
+      Collection<Donacion> donacionesEntregadas,
+      LocalDate fechaReferencia) {
+    List<List<MatchCandidato>> rankings =
+        generarRankings(donacion, beneficiarios, donacionesEntregadas, fechaReferencia);
+    return new PropuestaDeAsignacion(donacion, rankings);
   }
 
-  // Calcula los candidatos de la donación, persiste la propuesta y la devuelve.
-  private PropuestaDeAsignacion generarPropuesta(Donacion donacion, LocalDate fechaReferencia) {
-    List<List<MatchCandidato>> listasDeCandidatos =
-        algoritmos.stream()
-            .map(
-                algoritmo ->
-                    algoritmo.rankear(
-                        donacion, beneficiariosRepository.getBeneficiarios(), fechaReferencia))
-            .toList();
-    PropuestaDeAsignacion propuesta = new PropuestaDeAsignacion(donacion, listasDeCandidatos);
-    propuestaRepository.save(propuesta);
-    return propuesta;
+  /**
+   * Ejecuta cada algoritmo con los datos recibidos y devuelve un ranking por algoritmo.
+   *
+   * <p>La lectura de las entregas queda en el borde del caso de uso: cada algoritmo la recibe como
+   * parámetro y sigue sin conocer el repositorio de donaciones.
+   *
+   * @param donacion donación para la que se calculan los rankings
+   * @param beneficiarios entidades candidatas
+   * @param donacionesEntregadas entregas previas que alimentan el cálculo
+   * @param fechaReferencia fecha desde la que se calcula el ranking
+   * @return las listas de candidatos, una por algoritmo
+   */
+  private List<List<MatchCandidato>> generarRankings(
+      Donacion donacion,
+      Collection<EntidadBeneficiaria> beneficiarios,
+      Collection<Donacion> donacionesEntregadas,
+      LocalDate fechaReferencia) {
+    return algoritmos.stream()
+        .map(
+            algoritmo ->
+                algoritmo.rankear(donacion, beneficiarios, fechaReferencia, donacionesEntregadas))
+        .toList();
+  }
+
+  /**
+   * Verifica que la donación esté en depósito, el único estado admitido para el matchmaking.
+   *
+   * @param donacion donación que se quiere rankear
+   * @throws IllegalStateException si la donación no está en depósito
+   */
+  private void validarEnDeposito(Donacion donacion) {
+    if (donacion.getEstado() != EstadoDonacion.EN_DEPOSITO) {
+      throw new IllegalStateException(
+          "El matchmaking sólo puede ejecutarse para donaciones en depósito.");
+    }
   }
 }
