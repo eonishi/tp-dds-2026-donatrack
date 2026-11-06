@@ -52,7 +52,6 @@ class EventoNotificableTest {
     assertFalse(notificaciones.isEmpty());
     for (Notificacion n : notificaciones) {
       assertInstanceOf(SinPayload.class, n.getPayload());
-      assertEquals(EstadoNotificacion.PENDIENTE, n.getEstado());
     }
   }
 
@@ -117,7 +116,6 @@ class EventoNotificableTest {
     assertEquals(2, notificaciones.size());
     for (Notificacion n : notificaciones) {
       assertInstanceOf(SinPayload.class, n.getPayload());
-      assertEquals(EstadoNotificacion.PENDIENTE, n.getEstado());
     }
   }
 
@@ -143,7 +141,6 @@ class EventoNotificableTest {
     assertFalse(notificaciones.isEmpty());
     for (Notificacion n : notificaciones) {
       assertInstanceOf(SinPayload.class, n.getPayload());
-      assertEquals(EstadoNotificacion.PENDIENTE, n.getEstado());
       assertTrue(n.getMensaje().contains("20 días"));
     }
   }
@@ -159,7 +156,6 @@ class EventoNotificableTest {
     assertEquals(2, notificaciones.size());
     for (Notificacion n : notificaciones) {
       assertInstanceOf(SinPayload.class, n.getPayload());
-      assertEquals(EstadoNotificacion.PENDIENTE, n.getEstado());
       assertTrue(n.getMensaje().contains("Destino cerrado"));
     }
   }
@@ -176,7 +172,6 @@ class EventoNotificableTest {
     assertEquals(2, notificaciones.size());
     for (Notificacion n : notificaciones) {
       assertInstanceOf(InfoMapa.class, n.getPayload());
-      assertEquals(EstadoNotificacion.PENDIENTE, n.getEstado());
       InfoMapa mapa = (InfoMapa) n.getPayload();
       assertEquals("https://maps.example.com/ruta/1", mapa.url());
       assertEquals(1, apariciones(n.getMensaje(), "https://maps.example.com/ruta/1"));

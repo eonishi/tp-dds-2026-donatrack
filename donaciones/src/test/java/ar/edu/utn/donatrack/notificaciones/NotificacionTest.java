@@ -7,36 +7,27 @@ import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.notificaciones.payloads.SinPayload;
 import org.junit.jupiter.api.Test;
 
-/** Verifies {@link Notificacion} state transitions: PENDIENTE → ENVIADA, PENDIENTE → FALLIDA. */
+/** Verifies {@link Notificacion} construction and invariants. */
 class NotificacionTest {
 
   private final MedioDeContacto medio = new CorreoElectronico("test@test.com");
 
   @Test
-  void notificacionNueva_estadoInicialPendiente() {
-    Notificacion notif =
-        new Notificacion(medio, "msg", SinPayload.INSTANCE, EstadoNotificacion.PENDIENTE);
+  void notificacionNueva_conservaDestinatarioMensajePayloadYFechaCreacion() {
+    Notificacion notif = new Notificacion(medio, "msg", SinPayload.INSTANCE);
 
-    assertEquals(EstadoNotificacion.PENDIENTE, notif.getEstado());
+    assertEquals(medio, notif.getDestinatario());
+    assertEquals("msg", notif.getMensaje());
+    assertEquals(SinPayload.INSTANCE, notif.getPayload());
+    assertNotNull(notif.getFechaCreacion());
   }
 
   @Test
-  void marcarEnviada_cambiaEstadoAEnviada() {
-    Notificacion notif =
-        new Notificacion(medio, "msg", SinPayload.INSTANCE, EstadoNotificacion.PENDIENTE);
-
-    notif.marcarEnviada();
-
-    assertEquals(EstadoNotificacion.ENVIADA, notif.getEstado());
-  }
-
-  @Test
-  void marcarFallida_cambiaEstadoAFallida() {
-    Notificacion notif =
-        new Notificacion(medio, "msg", SinPayload.INSTANCE, EstadoNotificacion.PENDIENTE);
-
-    notif.marcarFallida("El proveedor rechazó el envío.");
-
-    assertEquals(EstadoNotificacion.FALLIDA, notif.getEstado());
+  void constructor_rechazaArgumentosNulos() {
+    assertThrows(
+        NullPointerException.class, () -> new Notificacion(null, "msg", SinPayload.INSTANCE));
+    assertThrows(
+        NullPointerException.class, () -> new Notificacion(medio, null, SinPayload.INSTANCE));
+    assertThrows(NullPointerException.class, () -> new Notificacion(medio, "msg", null));
   }
 }

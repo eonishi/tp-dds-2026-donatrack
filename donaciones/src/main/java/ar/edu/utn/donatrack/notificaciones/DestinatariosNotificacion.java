@@ -13,8 +13,4 @@ public final class DestinatariosNotificacion {
     }
     return notificable.getMediosDeContacto();
   }
-
-  public static List<MedioDeContacto> todos(Notificable notificable) {
-    return notificable.getMediosDeContacto();
-  }
 }

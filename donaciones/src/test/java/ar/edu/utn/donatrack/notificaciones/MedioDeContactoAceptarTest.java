@@ -13,13 +13,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- * Verifies that {@link MedioDeContacto#aceptar(Notificador, String)} dispatches to the correct
- * {@code Notificador.enviar()} overload based on the concrete subclass type.
+ * Verifies that {@link MedioDeContacto#aceptar(NotificadorPorCanal, String)} dispatches to the
+ * correct {@code NotificadorPorCanal.enviar()} overload based on the concrete subclass type.
  */
 @ExtendWith(MockitoExtension.class)
 class MedioDeContactoAceptarTest {
 
-  @Mock Notificador notificador;
+  @Mock NotificadorPorCanal notificador;
 
   @Test
   void correoElectronico_aceptar_routerAlOverloadDeCorreo() {

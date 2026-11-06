@@ -15,6 +15,10 @@ Esta separación maximiza la **cohesión interna** y minimiza el **acoplamiento*
 **Decisión:** Integración sincrónica vía HTTP REST (`DonacionesRemotasImpl`).
 **Justificación:** Cuando el chofer inicia la ruta, se hace un llamado REST a Donaciones para cambiar el estado. Se eligió REST sincrónico para tener una respuesta inmediata de si el lote fue actualizado correctamente o hubo un error de negocio. Si fuera asincrónico (ej. Kafka/RabbitMQ), requeriría manejar complejidad extra de eventual consistency y sagas para un flujo que, por ahora, es secuencial e imperativo.
 
+### 1.3 Envío Inmediato de Notificaciones (Sin Estado ni Cola en Memoria)
+**Decisión:** Se eliminó el atributo `estado` (`EstadoNotificacion`: `PENDIENTE`, `ENVIADA`, `FALLIDA`), el contador de reintentos y el repositorio en memoria (`NotificacionesRepository`), así como el doble `NotificadorSimulado` del árbol de producción (`src/main`) y la interfaz intermedia `Notificador`.
+**Justificación:** Las notificaciones se despachan en el acto al ocurrir el evento mediante `ServicioNotificaciones` y `NotificadorPorCanal` hacia los gateways reales (Resend y Twilio). Mantener una lista en memoria y un estado de ciclo de vida en `Notificacion` respondía a un procesamiento diferido o en lote no requerido que ningún caso de uso leía; los dobles de prueba pertenecen exclusivamente a `src/test`.
+
 ## 2. Consideraciones de Diseño Relacional (ORM y JPA)
 
 ### 2.1 Aislamiento de Bases de Datos (Schemas Independientes)
