@@ -1,6 +1,7 @@
 package ar.edu.utn.donatrack.notificaciones;
 
 import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaEntidad;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
@@ -10,7 +11,6 @@ import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.Sms;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoBienvenida;
-import ar.edu.utn.donatrack.notificaciones.payloads.SinPayload;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -43,9 +43,6 @@ class NotificadorPorCanalTest {
     notificaciones.forEach(n -> n.enviarCon(notificador));
 
     assertEquals(List.of("sms|+541112345678"), invocaciones);
-    assertEquals(
-        List.of(new Envio(Canal.SMS, ResultadoEnvio.aceptado())),
-        notificaciones.get(0).getEnvios());
   }
 
   @Test
@@ -53,20 +50,15 @@ class NotificadorPorCanalTest {
     EntidadBeneficiaria entidad = nuevaEntidad("Fundación Test");
     entidad.agregarCorreo(new CorreoElectronico("uno@test.com"));
     entidad.agregarCorreo(new CorreoElectronico("dos@test.com"));
-    Notificacion notificacion = new Notificacion(entidad, "Hola", SinPayload.INSTANCE);
+    Notificacion notificacion = new Notificacion(entidad, "Hola");
 
     notificacion.enviarCon(notificador);
 
     assertEquals(List.of("correo|uno@test.com", "correo|dos@test.com"), invocaciones);
-    assertEquals(
-        List.of(
-            new Envio(Canal.CORREO, ResultadoEnvio.aceptado()),
-            new Envio(Canal.CORREO, ResultadoEnvio.aceptado())),
-        notificacion.getEnvios());
   }
 
   @Test
-  void gatewayQueLanzaExcepcion_registraEnvioFallidoYSigueConElSiguienteCorreo() {
+  void gatewayQueLanzaExcepcion_noSePropagaYSigueConElSiguienteCorreo() {
     NotificadorPorCanal conFalla =
         new NotificadorPorCanal(
             (destinatario, asunto, mensaje) -> {
@@ -80,16 +72,11 @@ class NotificadorPorCanalTest {
     EntidadBeneficiaria entidad = nuevaEntidad("Fundación Test");
     entidad.agregarCorreo(new CorreoElectronico("uno@test.com"));
     entidad.agregarCorreo(new CorreoElectronico("dos@test.com"));
-    Notificacion notificacion = new Notificacion(entidad, "Hola", SinPayload.INSTANCE);
+    Notificacion notificacion = new Notificacion(entidad, "Hola");
 
-    notificacion.enviarCon(conFalla);
+    assertDoesNotThrow(() -> notificacion.enviarCon(conFalla));
 
     assertEquals(List.of("correo|dos@test.com"), invocaciones);
-    assertEquals(
-        List.of(
-            new Envio(Canal.CORREO, ResultadoEnvio.fallido("Proveedor caído.")),
-            new Envio(Canal.CORREO, ResultadoEnvio.aceptado())),
-        notificacion.getEnvios());
   }
 
   private ResultadoEnvio registrar(String canal, String destinatario) {

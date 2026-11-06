@@ -2,7 +2,6 @@ package ar.edu.utn.donatrack.notificaciones.eventos;
 
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.notificaciones.Notificacion;
-import ar.edu.utn.donatrack.notificaciones.payloads.SinPayload;
 import java.util.List;
 import java.util.Objects;
 
@@ -17,8 +16,6 @@ public class EventoBienvenida implements EventoNotificable {
   public List<Notificacion> generarNotificaciones() {
     return List.of(
         new Notificacion(
-            donante,
-            "¡Bienvenido a DonaTrack! Gracias por registrarte como donante.",
-            SinPayload.INSTANCE));
+            donante, "¡Bienvenido a DonaTrack! Gracias por registrarte como donante."));
   }
 }
