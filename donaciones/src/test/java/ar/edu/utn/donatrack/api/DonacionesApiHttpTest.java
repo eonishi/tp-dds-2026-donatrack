@@ -17,6 +17,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.Javalin;
 import java.io.IOException;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -32,15 +34,31 @@ import org.junit.jupiter.api.Test;
 
 class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
   private final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
-  private final HttpClient client = HttpClient.newHttpClient();
+  private final HttpClient client =
+      HttpClient.newBuilder()
+          .cookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ALL))
+          .build();
   private Javalin app;
   private String baseUrl;
 
   @BeforeEach
-  void start() {
+  void start() throws IOException, InterruptedException {
     Clock clock = Clock.fixed(Instant.parse("2026-09-11T12:00:00Z"), ZoneOffset.UTC);
     app = DonacionesApi.create(clock).start(0);
     baseUrl = "http://localhost:" + app.port();
+    HttpRequest login =
+        HttpRequest.newBuilder(URI.create(baseUrl + "/login"))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .POST(
+                HttpRequest.BodyPublishers.ofString(
+                    "email=admin%40donatrack.local&password=admin123"))
+            .build();
+    HttpResponse<String> response = client.send(login, HttpResponse.BodyHandlers.ofString());
+    assertEquals(302, response.statusCode(), response.body());
+    assertTrue(
+        response.headers().allValues("Set-Cookie").stream()
+            .anyMatch(cookie -> cookie.startsWith("access_token=")),
+        "El login debe generar la cookie de autenticación");
   }
 
   @AfterEach
