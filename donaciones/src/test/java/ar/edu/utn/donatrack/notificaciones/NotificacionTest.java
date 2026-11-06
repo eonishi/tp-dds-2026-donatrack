@@ -6,7 +6,6 @@ import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
-import ar.edu.utn.donatrack.notificaciones.payloads.SinPayload;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -25,18 +24,15 @@ class NotificacionTest {
           "Calle 123");
 
   @Test
-  void notificacionNueva_conservaDestinatarioMensajePayloadYFechaCreacion() {
-    Notificacion notif = new Notificacion(donante, "msg", SinPayload.INSTANCE);
+  void notificacionNueva_conservaDestinatarioYMensaje() {
+    Notificacion notif = new Notificacion(donante, "msg");
 
-    assertSame(donante, notif.getDestinatario());
-    assertEquals("msg", notif.getMensaje());
-    assertEquals(SinPayload.INSTANCE, notif.getPayload());
-    assertNotNull(notif.getFechaCreacion());
-    assertTrue(notif.getEnvios().isEmpty());
+    assertSame(donante, notif.destinatario());
+    assertEquals("msg", notif.mensaje());
   }
 
   @Test
-  void enviarCon_delegaEnElDestinatarioYRegistraElCanal() {
+  void enviarCon_delegaEnElDestinatario() {
     List<String> correos = new ArrayList<>();
     NotificadorPorCanal canales =
         new NotificadorPorCanal(
@@ -46,21 +42,16 @@ class NotificacionTest {
             },
             (destinatario, mensaje) -> ResultadoEnvio.fallido("No corresponde"),
             (destinatario, mensaje) -> ResultadoEnvio.fallido("No corresponde"));
-    Notificacion notif = new Notificacion(donante, "Hola", SinPayload.INSTANCE);
+    Notificacion notif = new Notificacion(donante, "Hola");
 
-    List<Envio> envios = notif.enviarCon(canales);
+    notif.enviarCon(canales);
 
     assertEquals(List.of("donante@test.com|Hola"), correos);
-    assertEquals(List.of(new Envio(Canal.CORREO, ResultadoEnvio.aceptado())), envios);
-    assertEquals(envios, notif.getEnvios());
   }
 
   @Test
   void constructor_rechazaArgumentosNulos() {
-    assertThrows(
-        NullPointerException.class, () -> new Notificacion(null, "msg", SinPayload.INSTANCE));
-    assertThrows(
-        NullPointerException.class, () -> new Notificacion(donante, null, SinPayload.INSTANCE));
-    assertThrows(NullPointerException.class, () -> new Notificacion(donante, "msg", null));
+    assertThrows(NullPointerException.class, () -> new Notificacion(null, "msg"));
+    assertThrows(NullPointerException.class, () -> new Notificacion(donante, null));
   }
 }

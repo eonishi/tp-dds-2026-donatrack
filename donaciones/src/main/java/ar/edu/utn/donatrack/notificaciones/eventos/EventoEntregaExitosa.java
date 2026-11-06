@@ -3,7 +3,6 @@ package ar.edu.utn.donatrack.notificaciones.eventos;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.notificaciones.Notificacion;
-import ar.edu.utn.donatrack.notificaciones.payloads.ComprobanteEntrega;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -11,8 +10,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Evento de entrega exitosa: notifica al donante y a la entidad beneficiaria con un {@link
- * ComprobanteEntrega} que incluye la fecha de entrega y la patente del camión.
+ * Evento de entrega exitosa: notifica al donante y a la entidad beneficiaria con un comprobante en
+ * el mensaje que incluye la fecha de entrega y la patente del camión.
  */
 public class EventoEntregaExitosa implements EventoNotificable {
   private static final DateTimeFormatter FORMATO_FECHA_ENTREGA =
@@ -46,7 +45,6 @@ public class EventoEntregaExitosa implements EventoNotificable {
 
   @Override
   public List<Notificacion> generarNotificaciones() {
-    ComprobanteEntrega comprobante = new ComprobanteEntrega(fechaEntrega, idCamion);
     List<Notificacion> notificaciones = new ArrayList<>();
     String detalleEntrega =
         " Fecha y hora: "
@@ -59,9 +57,9 @@ public class EventoEntregaExitosa implements EventoNotificable {
             + entidad.getRazonSocial()
             + "."
             + detalleEntrega;
-    notificaciones.add(new Notificacion(donante, mensajeDonante, comprobante));
+    notificaciones.add(new Notificacion(donante, mensajeDonante));
     String mensajeEntidad = "Has recibido una donación exitosamente." + detalleEntrega;
-    notificaciones.add(new Notificacion(entidad, mensajeEntidad, comprobante));
+    notificaciones.add(new Notificacion(entidad, mensajeEntidad));
     return notificaciones;
   }
 }

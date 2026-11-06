@@ -1,7 +1,5 @@
 package ar.edu.utn.donatrack.notificaciones;
 
-import java.util.List;
-
 /** Destinatario de notificaciones: sabe por qué medios de contacto notificarse. */
 public interface Notificable {
   /**
@@ -9,7 +7,6 @@ public interface Notificable {
    *
    * @param mensaje texto a enviar
    * @param canales gateways disponibles para enviar
-   * @return un envío por cada medio usado
    */
-  List<Envio> notificar(String mensaje, NotificadorPorCanal canales);
+  void notificar(String mensaje, NotificadorPorCanal canales);
 }

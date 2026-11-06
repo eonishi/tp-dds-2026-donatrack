@@ -2,7 +2,6 @@ package ar.edu.utn.donatrack.notificaciones;
 
 import ar.edu.utn.donatrack.notificaciones.infraestructura.GatewayCorreoResend;
 import ar.edu.utn.donatrack.notificaciones.infraestructura.GatewayTwilio;
-import ar.edu.utn.donatrack.notificaciones.infraestructura.GatewayWhatsappTwilio;
 import java.net.http.HttpClient;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,14 +19,14 @@ public final class NotificadorDesdeEntorno {
     HttpClient client = HttpClient.newHttpClient();
     GatewayCorreo correo =
         new GatewayCorreoResend(client, entorno.get("RESEND_API_KEY"), entorno.get("RESEND_FROM"));
-    GatewaySms sms =
-        new GatewayTwilio(
+    GatewayMensajes sms =
+        GatewayTwilio.sms(
             client,
             entorno.get("TWILIO_ACCOUNT_SID"),
             entorno.get("TWILIO_AUTH_TOKEN"),
             entorno.get("TWILIO_SMS_FROM"));
-    GatewayWhatsapp whatsapp =
-        new GatewayWhatsappTwilio(
+    GatewayMensajes whatsapp =
+        GatewayTwilio.whatsapp(
             client,
             entorno.get("TWILIO_ACCOUNT_SID"),
             entorno.get("TWILIO_AUTH_TOKEN"),

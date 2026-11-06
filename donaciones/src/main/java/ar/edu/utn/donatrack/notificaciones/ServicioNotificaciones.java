@@ -1,13 +1,13 @@
 package ar.edu.utn.donatrack.notificaciones;
 
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoNotificable;
-import java.util.List;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ServicioNotificaciones implements PublicadorDeEventos {
   private static final Logger LOGGER = LoggerFactory.getLogger(ServicioNotificaciones.class);
+
   private final NotificadorPorCanal notificador;
 
   public ServicioNotificaciones(NotificadorPorCanal notificador) {
@@ -24,7 +24,7 @@ public class ServicioNotificaciones implements PublicadorDeEventos {
    */
   @Override
   public void publicar(EventoNotificable evento) {
-    enviar(evento.generarNotificaciones());
+    evento.generarNotificaciones().forEach(this::enviar);
   }
 
   /**
@@ -36,26 +36,20 @@ public class ServicioNotificaciones implements PublicadorDeEventos {
     return new PublicadorDiferido(this);
   }
 
-  private void enviar(List<Notificacion> notificaciones) {
-    notificaciones.forEach(this::enviar);
-  }
-
-  public Notificacion enviar(Notificacion notificacion) {
-    String destinatario = notificacion.getDestinatario().getClass().getSimpleName();
+  /**
+   * Envía una notificación. Los fallos de los gateways ya los registra el notificador; acá se
+   * contienen los errores del destinatario (por ejemplo, datos de contacto incompletos).
+   *
+   * @param notificacion aviso a enviar
+   */
+  public void enviar(Notificacion notificacion) {
     try {
-      for (Envio envio : notificacion.enviarCon(notificador)) {
-        if (!envio.resultado().exitoso()) {
-          LOGGER.warn(
-              "Fallo de notificación destinatario={} canal={} detalle={}",
-              destinatario,
-              envio.canal(),
-              envio.resultado().detalle());
-        }
-      }
+      notificacion.enviarCon(notificador);
     } catch (RuntimeException error) {
       LOGGER.warn(
-          "Fallo de notificación destinatario={} detalle={}", destinatario, error.getMessage());
+          "Fallo de notificación destinatario={} detalle={}",
+          notificacion.destinatario().getClass().getSimpleName(),
+          error.getMessage());
     }
-    return notificacion;
   }
 }

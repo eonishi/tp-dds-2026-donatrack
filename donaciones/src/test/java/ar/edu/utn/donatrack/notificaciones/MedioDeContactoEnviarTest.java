@@ -20,26 +20,23 @@ class MedioDeContactoEnviarTest {
 
   @Test
   void correoElectronico_enviaPorElGatewayDeCorreo() {
-    Envio envio = new CorreoElectronico("test@example.com").enviar("Mensaje", canales);
+    new CorreoElectronico("test@example.com").enviar("Mensaje", canales);
 
     assertEquals(List.of("correo|test@example.com|Mensaje"), invocaciones);
-    assertEquals(new Envio(Canal.CORREO, ResultadoEnvio.aceptado()), envio);
   }
 
   @Test
   void sms_enviaPorElGatewayDeSms() {
-    Envio envio = new Sms("+541112345679").enviar("Mensaje", canales);
+    new Sms("+541112345679").enviar("Mensaje", canales);
 
     assertEquals(List.of("sms|+541112345679|Mensaje"), invocaciones);
-    assertEquals(new Envio(Canal.SMS, ResultadoEnvio.aceptado()), envio);
   }
 
   @Test
   void whatsapp_enviaPorElGatewayDeWhatsapp() {
-    Envio envio = new Whatsapp("+541112345678").enviar("Mensaje", canales);
+    new Whatsapp("+541112345678").enviar("Mensaje", canales);
 
     assertEquals(List.of("whatsapp|+541112345678|Mensaje"), invocaciones);
-    assertEquals(new Envio(Canal.WHATSAPP, ResultadoEnvio.aceptado()), envio);
   }
 
   private ResultadoEnvio registrar(String canal, String destinatario, String mensaje) {

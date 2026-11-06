@@ -40,7 +40,7 @@ class GatewaysHttpErrorTest {
     doReturn(response).when(client).send(any(), any());
 
     ResultadoEnvio resultado =
-        new GatewayTwilio(client, "AC123", "auth-token-secreto", "+15005550006")
+        GatewayTwilio.sms(client, "AC123", "auth-token-secreto", "+15005550006")
             .enviar("+541112345678", "Mensaje");
 
     assertFalse(resultado.exitoso());
@@ -58,8 +58,7 @@ class GatewaysHttpErrorTest {
     doReturn(response).when(client).send(any(), any());
 
     ResultadoEnvio resultado =
-        new GatewayWhatsappTwilio(
-                client, "AC-secreto", "auth-token-secreto", "whatsapp:+15005550006")
+        GatewayTwilio.whatsapp(client, "AC-secreto", "auth-token-secreto", "whatsapp:+15005550006")
             .enviar("+541112345678", "Mensaje");
 
     assertFalse(resultado.exitoso());

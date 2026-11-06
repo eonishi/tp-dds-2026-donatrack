@@ -3,7 +3,6 @@ package ar.edu.utn.donatrack.beneficiarios;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.MedioDeContacto;
-import ar.edu.utn.donatrack.notificaciones.Envio;
 import ar.edu.utn.donatrack.notificaciones.Notificable;
 import ar.edu.utn.donatrack.notificaciones.NotificadorPorCanal;
 import java.util.ArrayList;
@@ -107,8 +106,8 @@ public class EntidadBeneficiaria implements Notificable {
 
   /** La entidad se notifica a todos sus correos. */
   @Override
-  public List<Envio> notificar(String mensaje, NotificadorPorCanal canales) {
-    return correos.stream().map(correo -> correo.enviar(mensaje, canales)).toList();
+  public void notificar(String mensaje, NotificadorPorCanal canales) {
+    correos.forEach(correo -> correo.enviar(mensaje, canales));
   }
 
   public List<MedioDeContacto> getMediosDeContacto() {

@@ -8,7 +8,6 @@ import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.Sms;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
-import ar.edu.utn.donatrack.notificaciones.payloads.SinPayload;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
@@ -44,8 +43,7 @@ class ServicioNotificacionesTest {
                 TipoDocumento.DNI,
                 Genero.FEMENINO,
                 "Calle 123"),
-            "Tu donación fue asignada.",
-            SinPayload.INSTANCE);
+            "Tu donación fue asignada.");
 
     servicio.enviar(notificacion);
 
@@ -57,7 +55,7 @@ class ServicioNotificacionesTest {
   @Test
   void envioFallido_intentaUnaSolaVezYNoPropagaExcepcion() {
     AtomicInteger intentos = new AtomicInteger();
-    GatewaySms sms =
+    GatewayMensajes sms =
         (destinatario, mensaje) -> {
           intentos.incrementAndGet();
           return ResultadoEnvio.fallido("Número no verificado en trial.");
@@ -81,8 +79,7 @@ class ServicioNotificacionesTest {
     Sms predeterminado = new Sms("+541112345678");
     donante.addMedioDeContacto(predeterminado);
     donante.setContactoPredeterminado(predeterminado);
-    Notificacion notificacion =
-        new Notificacion(donante, "Tu donación fue asignada.", SinPayload.INSTANCE);
+    Notificacion notificacion = new Notificacion(donante, "Tu donación fue asignada.");
 
     assertDoesNotThrow(() -> servicio.enviar(notificacion));
     assertEquals(1, intentos.get());

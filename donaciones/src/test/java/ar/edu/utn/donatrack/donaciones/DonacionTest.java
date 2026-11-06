@@ -22,9 +22,9 @@ import ar.edu.utn.donatrack.notificaciones.NotificadorPorCanal;
 import ar.edu.utn.donatrack.notificaciones.ResultadoEnvio;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoEntregaExitosa;
-import ar.edu.utn.donatrack.notificaciones.payloads.ComprobanteEntrega;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -444,16 +444,12 @@ class DonacionTest {
         new EventoEntregaExitosa(
             donante, entidad, fechaEntrega, donacion.getIdCamion().orElseThrow());
 
-    ComprobanteEntrega comprobante =
-        evento.generarNotificaciones().stream()
-            .map(Notificacion::getPayload)
-            .filter(ComprobanteEntrega.class::isInstance)
-            .map(ComprobanteEntrega.class::cast)
-            .findFirst()
-            .orElseThrow();
-
-    assertEquals(fechaEntrega, comprobante.fechaEntrega());
-    assertEquals("AF123ZZ", comprobante.idCamion());
+    String fechaEsperada =
+        fechaEntrega.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+    for (Notificacion notificacion : evento.generarNotificaciones()) {
+      assertTrue(notificacion.mensaje().contains(fechaEsperada));
+      assertTrue(notificacion.mensaje().contains("AF123ZZ"));
+    }
   }
 
   // ── Transición -> evento -> notificación ─────────────────────────
