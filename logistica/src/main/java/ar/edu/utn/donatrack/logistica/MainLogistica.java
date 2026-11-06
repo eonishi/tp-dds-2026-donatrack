@@ -10,6 +10,8 @@ import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotasImpl;
 import ar.edu.utn.donatrack.logistica.planificacion.LoteId;
 import ar.edu.utn.donatrack.logistica.planificacion.PlanificadorRutas;
 import ar.edu.utn.donatrack.logistica.planificacion.ServicioPlanificacionRutas;
+import ar.edu.utn.donatrack.logistica.security.LogisticaSecurity;
+import ar.edu.utn.donatrack.logistica.security.Role;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.Javalin;
@@ -56,6 +58,18 @@ public class MainLogistica implements WithSimplePersistenceUnit {
         new PlanificacionController(servicioPlanificacion, camionRepo);
 
     // 3. Registramos los Endpoints
+
+    // Toda operación de logística requiere un usuario ADMIN o REPARTIDOR. El callback es la
+    // excepción: lo invoca el servicio de planificación y se autentica con la API key S2S.
+    app.before(ctx -> {
+      if ("/logistica/planificacion/callback".equals(ctx.path())
+          && LogisticaSecurity.isServiceRequest(ctx)) {
+        return;
+      }
+      if (ctx.path().startsWith("/logistica/")) {
+        LogisticaSecurity.enforce(ctx, Role.REPARTIDOR);
+      }
+    });
 
     // --- Endpoints de Camiones ---
     app.get("/logistica/camiones", camionController::listar);
