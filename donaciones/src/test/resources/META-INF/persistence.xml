@@ -22,6 +22,7 @@
         <class>ar.edu.utn.donatrack.donantes.Representante</class>
         <class>ar.edu.utn.donatrack.donantes.Sms</class>
         <class>ar.edu.utn.donatrack.donantes.Whatsapp</class>
+        <class>ar.edu.utn.donatrack.security.Usuario</class>
 
         <properties>
             <property name="javax.persistence.jdbc.url" value="jdbc:hsqldb:mem:donatrack-test"/>

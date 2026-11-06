@@ -6,6 +6,7 @@ import ar.edu.utn.donatrack.api.controller.EntidadController;
 import ar.edu.utn.donatrack.api.controller.MatchmakingController;
 import ar.edu.utn.donatrack.api.controller.NecesidadController;
 import ar.edu.utn.donatrack.api.controller.SubcategoriasController;
+import ar.edu.utn.donatrack.api.controller.UsuarioController;
 import ar.edu.utn.donatrack.api.error.ApiExceptionHandler;
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.bienes.SubcategoriasRepository;
@@ -23,8 +24,11 @@ import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.security.AuthController;
 import ar.edu.utn.donatrack.security.AuthService;
 import ar.edu.utn.donatrack.security.SecurityRules;
+import ar.edu.utn.donatrack.seguimiento.PosicionesCamiones;
+import ar.edu.utn.donatrack.seguimiento.PosicionesCamionesHttp;
 import ar.edu.utn.donatrack.web.HandlebarsRenderer;
 import ar.edu.utn.donatrack.web.controller.PaginasPublicasController;
+import ar.edu.utn.donatrack.web.controller.RegistroController;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
@@ -39,10 +43,15 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
   }
 
   public static Javalin create(Clock clock) {
-    return new DonacionesApi().build(clock);
+    return create(clock, PosicionesCamionesHttp.desdeEntorno());
   }
 
-  private Javalin build(Clock clock) {
+  /** Permite reemplazar la consulta a logística, por ejemplo en las pruebas. */
+  public static Javalin create(Clock clock, PosicionesCamiones posicionesCamiones) {
+    return new DonacionesApi().build(clock, posicionesCamiones);
+  }
+
+  private Javalin build(Clock clock, PosicionesCamiones posicionesCamiones) {
     DonacionesRepository donaciones = new DonacionesRepository();
     DonantesRepository donantes = new DonantesRepository();
     BeneficiariosRepository entidades = new BeneficiariosRepository();
@@ -62,7 +71,8 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
             propuestas,
             new CargaDonacion(donaciones),
             notificaciones,
-            subcategorias);
+            subcategorias,
+            posicionesCamiones);
     SubcategoriasController subcategoriasController = new SubcategoriasController(subcategorias);
 
     ServicioMatchmakingDonaciones matchmakingDomain =
@@ -77,7 +87,11 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
         new MatchmakingController(matchmakingDomain, donaciones, entidades, notificaciones, clock);
     AuthService authService = new AuthService();
     AuthController authController = new AuthController(authService);
-    PaginasPublicasController paginasPublicas = new PaginasPublicasController(authService);
+    UsuarioController usuarioController = new UsuarioController(authService, donantes, entidades);
+    PaginasPublicasController paginasPublicas =
+        new PaginasPublicasController(authService, donaciones);
+    RegistroController registroController =
+        new RegistroController(authService, donantes, entidades);
 
     Javalin app =
         Javalin.create(
@@ -98,9 +112,11 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
                           donacionController.routes();
                           subcategoriasController.routes();
                           matchmakingController.routes();
+                          usuarioController.routes();
                         });
                     authController.routes();
                     paginasPublicas.routes();
+                    registroController.routes();
                   });
             });
 

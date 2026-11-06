@@ -16,6 +16,20 @@
     return response.status === 204 ? null : response.json();
   }
 
+  // Muestra la última posición del camión con un enlace al mapa. Se arma con nodos y textContent
+  // para no interpretar como HTML nada de lo que devuelve la API.
+  function showTracking(posicion) {
+    const lat = Number(posicion.latitud);
+    const lng = Number(posicion.longitud);
+    const link = document.createElement('a');
+    link.href = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=15/${lat}/${lng}`;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = 'Ver en el mapa';
+    alertBox.replaceChildren(`Camión ${posicion.patente}: ${lat.toFixed(5)}, ${lng.toFixed(5)} · actualizado ${posicion.actualizadaEn || 'sin fecha'} · `, link);
+    alertBox.className = 'alert alert-info';
+  }
+
   function card(title, body, actions = '') {
     return `<div class="col-md-6 col-xl-4"><article class="tarjeta p-4 h-100"><h3 class="h5">${title}</h3><div class="small text-body-secondary">${body}</div>${actions ? `<div class="mt-3 d-flex flex-wrap gap-2">${actions}</div>` : ''}</article></div>`;
   }
@@ -24,10 +38,11 @@
     const container = document.querySelector('#donaciones-lista');
     try {
       const items = await request(`${base}/donaciones`);
-      container.innerHTML = items.length ? items.map(d => card(d.id, `Estado: <strong>${d.estado}</strong><br>Entidad: ${d.entidadBeneficiariaId || 'sin asignar'}<br>Bienes: ${d.bienes?.length || 0}<br>Fotos: ${d.fotos?.length || 0}`, `<button class="btn btn-sm btn-outline-primary" data-detail="${d.id}">Detalle</button><button class="btn btn-sm btn-outline-secondary" data-edit="${d.id}">Editar</button><button class="btn btn-sm btn-outline-secondary" data-history="${d.id}">Historial</button><button class="btn btn-sm btn-outline-secondary" data-photo="${d.id}">Foto</button><button class="btn btn-sm btn-outline-secondary" data-state="${d.id}">Estado</button><button class="btn btn-sm btn-outline-danger" data-delete-donation="${d.id}">Eliminar</button>`)).join('') : '<p class="text-body-secondary">No hay donaciones.</p>';
+      container.innerHTML = items.length ? items.map(d => card(d.id, `Estado: <strong>${d.estado}</strong><br>Entidad: ${d.entidadBeneficiariaId || 'sin asignar'}<br>Bienes: ${d.bienes?.length || 0}<br>Fotos: ${d.fotos?.length || 0}`, `<button class="btn btn-sm btn-outline-primary" data-detail="${d.id}">Detalle</button><button class="btn btn-sm btn-outline-secondary" data-edit="${d.id}">Editar</button><button class="btn btn-sm btn-outline-secondary" data-history="${d.id}">Historial</button>${d.estado === 'EN_TRASLADO' ? `<button class="btn btn-sm btn-primary" data-track="${d.id}">Ver camión</button>` : ''}<button class="btn btn-sm btn-outline-secondary" data-photo="${d.id}">Foto</button><button class="btn btn-sm btn-outline-secondary" data-state="${d.id}">Estado</button><button class="btn btn-sm btn-outline-danger" data-delete-donation="${d.id}">Eliminar</button>`)).join('') : '<p class="text-body-secondary">No hay donaciones.</p>';
       container.querySelectorAll('[data-detail]').forEach(b => b.onclick = async () => showAlert(JSON.stringify(await request(`${base}/donaciones/${b.dataset.detail}`), null, 2), 'info'));
       container.querySelectorAll('[data-edit]').forEach(b => b.onclick = async () => { try { const d = await request(`${base}/donaciones/${b.dataset.edit}`); const descripcion = prompt('Descripción del bien', d.bienes?.[0]?.descripcion || ''); if (!descripcion) return; const bienes = (d.bienes || []).map((bien, i) => ({ ...bien, descripcion: i === 0 ? descripcion : bien.descripcion })); await request(`${base}/donaciones/${b.dataset.edit}`, { method: 'PUT', body: JSON.stringify({ bienes }) }); await loadDonaciones(); } catch (e) { showAlert(e.message); } });
       container.querySelectorAll('[data-history]').forEach(b => b.onclick = async () => showAlert(JSON.stringify(await request(`${base}/donaciones/${b.dataset.history}/historial-estados`), null, 2), 'info'));
+      container.querySelectorAll('[data-track]').forEach(b => b.onclick = async () => { try { showTracking(await request(`${base}/donaciones/${b.dataset.track}/seguimiento`)); } catch (e) { showAlert(e.message); } });
       container.querySelectorAll('[data-photo]').forEach(b => b.onclick = async () => { const url = prompt('URL de la foto'); if (!url) return; try { await request(`${base}/donaciones/${b.dataset.photo}/fotos`, { method: 'POST', body: JSON.stringify({ url }) }); await loadDonaciones(); } catch (e) { showAlert(e.message); } });
       container.querySelectorAll('[data-state]').forEach(b => b.onclick = async () => { const estado = prompt('Nuevo estado (LISTA_PARA_ENTREGAR, EN_TRASLADO, ENTREGADA, ENTREGA_FALLIDA, VENCIDA, EN_DEPOSITO)'); if (!estado) return; try { await request(`${base}/donaciones/${b.dataset.state}/estado`, { method: 'PATCH', body: JSON.stringify({ estado }) }); await loadDonaciones(); } catch (e) { showAlert(e.message); } });
       container.querySelectorAll('[data-delete-donation]').forEach(b => b.onclick = async () => { if (!confirm('¿Eliminar esta donación?')) return; try { await request(`${base}/donaciones/${b.dataset.deleteDonation}`, { method: 'DELETE' }); await loadDonaciones(); } catch (e) { showAlert(e.message); } });

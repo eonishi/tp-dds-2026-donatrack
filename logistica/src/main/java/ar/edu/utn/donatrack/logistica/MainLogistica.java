@@ -3,6 +3,7 @@ package ar.edu.utn.donatrack.logistica;
 import ar.edu.utn.donatrack.logistica.controllers.CamionController;
 import ar.edu.utn.donatrack.logistica.controllers.PlanificacionController;
 import ar.edu.utn.donatrack.logistica.controllers.PosicionController;
+import ar.edu.utn.donatrack.logistica.controllers.RepartidorController;
 import ar.edu.utn.donatrack.logistica.controllers.RutaController;
 import ar.edu.utn.donatrack.logistica.monitoreo.MonitorRutas;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
@@ -11,7 +12,6 @@ import ar.edu.utn.donatrack.logistica.planificacion.LoteId;
 import ar.edu.utn.donatrack.logistica.planificacion.PlanificadorRutas;
 import ar.edu.utn.donatrack.logistica.planificacion.ServicioPlanificacionRutas;
 import ar.edu.utn.donatrack.logistica.security.LogisticaSecurity;
-import ar.edu.utn.donatrack.logistica.security.Role;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.Javalin;
@@ -56,6 +56,8 @@ public class MainLogistica implements WithSimplePersistenceUnit {
     // 1. Instanciamos dependencias
     CamionRepository camionRepo = new CamionRepository();
     RutaRepository rutaRepo = new RutaRepository();
+    RepartidorRepository repartidorRepo = new RepartidorRepository();
+    cargarRepartidoresDePrueba(repartidorRepo);
     MonitorRutas monitorRutas = new MonitorRutas(Clock.systemUTC(), rutaRepo);
 
     // 2. Instanciamos Controladores
@@ -64,11 +66,14 @@ public class MainLogistica implements WithSimplePersistenceUnit {
     ObjectMapper objectMapper = new ObjectMapper();
     HttpClient httpClient = HttpClient.newHttpClient();
     String apiUrl = System.getenv().getOrDefault("DONACIONES_API_URL", "http://localhost:7070");
-    String apiKey = System.getenv().getOrDefault("DONACIONES_API_KEY", "S2S_SECRET_KEY");
+    // La misma clave interna que valida donaciones (ver .env.example).
+    String apiKey = System.getenv().getOrDefault("DONATRACK_API_KEY", "S2S_SECRET_KEY");
     DonacionesRemotas donacionesRemotas =
         new DonacionesRemotasImpl(apiUrl, apiKey, httpClient, objectMapper);
 
     RutaController rutaController = new RutaController(rutaRepo, camionRepo, donacionesRemotas);
+    RepartidorController repartidorController =
+        new RepartidorController(repartidorRepo, rutaRepo, Clock.systemUTC());
     PosicionController posicionController =
         new PosicionController(monitorRutas, camionRepo, rutaRepo);
 
@@ -80,21 +85,15 @@ public class MainLogistica implements WithSimplePersistenceUnit {
 
     // 3. Registramos los Endpoints
 
-    // Toda operación de logística requiere un usuario ADMIN o REPARTIDOR. El callback es la
-    // excepción: lo invoca el servicio de planificación y se autentica con la API key S2S.
-    app.before(
-        ctx -> {
-          if ("OPTIONS".equals(ctx.method().toString())) {
-            return;
-          }
-          if ("/logistica/planificacion/callback".equals(ctx.path())
-              && LogisticaSecurity.isServiceRequest(ctx)) {
-            return;
-          }
-          if (ctx.path().startsWith("/logistica/")) {
-            LogisticaSecurity.enforce(ctx, Role.REPARTIDOR);
-          }
-        });
+    // Las reglas de acceso por rol están en LogisticaSecurity: la gestión es solo de ADMIN, y el
+    // repartidor opera únicamente sus rutas. El login y el callback del planificador quedan afuera.
+    app.before(LogisticaSecurity::autorizar);
+
+    // --- Endpoints de Repartidores ---
+    app.post("/logistica/login", repartidorController::login);
+    app.post("/logistica/logout", repartidorController::logout);
+    app.get("/logistica/repartidores", repartidorController::listar);
+    app.post("/logistica/rutas/{id}/repartidores", repartidorController::asignarRuta);
 
     // --- Endpoints de Camiones ---
     app.get("/logistica/camiones", camionController::listar);
@@ -118,5 +117,20 @@ public class MainLogistica implements WithSimplePersistenceUnit {
     app.post("/logistica/planificacion/callback", planificacionController::procesarResultado);
 
     return app;
+  }
+
+  // Mientras no haya alta de repartidores, se cargan usuarios de prueba al iniciar, igual que hace
+  // donaciones con sus usuarios. Si ya están en la base no se tocan.
+  private void cargarRepartidoresDePrueba(RepartidorRepository repartidorRepo) {
+    withTransaction(
+        () -> {
+          for (String email :
+              new String[] {"repartidor1@donatrack.local", "repartidor2@donatrack.local"}) {
+            if (repartidorRepo.buscarPorEmail(email).isEmpty()) {
+              repartidorRepo.agregar(
+                  new Repartidor(email.substring(0, email.indexOf('@')), email, "repartidor123"));
+            }
+          }
+        });
   }
 }

@@ -7,6 +7,7 @@ import ar.edu.utn.donatrack.logistica.DonacionId;
 import ar.edu.utn.donatrack.logistica.Ruta;
 import ar.edu.utn.donatrack.logistica.RutaRepository;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
+import ar.edu.utn.donatrack.logistica.security.LogisticaSecurity;
 import io.javalin.http.Context;
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +28,13 @@ public class RutaController {
 
   // GET /logistica/rutas
   public void listar(Context ctx) {
-    ctx.json(rutaRepo.listarTodas());
+    UUID repartidor = ctx.attribute(LogisticaSecurity.ATRIBUTO_REPARTIDOR);
+    if (repartidor == null) {
+      ctx.json(rutaRepo.listarTodas());
+      return;
+    }
+    // El repartidor ve en su aplicación solo las rutas que tiene asignadas.
+    ctx.json(rutaRepo.listarTodas().stream().filter(r -> r.tieneAsignado(repartidor)).toList());
   }
 
   // GET /logistica/rutas/{id}
@@ -133,6 +140,12 @@ public class RutaController {
           .buscarPorId(id)
           .ifPresentOrElse(
               ruta -> {
+                UUID repartidor = ctx.attribute(LogisticaSecurity.ATRIBUTO_REPARTIDOR);
+                if (repartidor != null && !ruta.tieneAsignado(repartidor)) {
+                  ctx.status(403).result("El repartidor no está asignado a esta ruta");
+                  return;
+                }
+
                 // Leemos la actualización desde el body
                 RutaUpdateDto dto = ctx.bodyAsClass(RutaUpdateDto.class);
 

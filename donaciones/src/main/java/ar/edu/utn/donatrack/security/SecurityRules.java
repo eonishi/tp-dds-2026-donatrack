@@ -8,6 +8,15 @@ import java.security.MessageDigest;
 import java.util.Optional;
 
 public final class SecurityRules {
+  /**
+   * Atributo del request con el {@link Usuario} autenticado. Los controladores lo usan para que la
+   * persona donante y la entidad beneficiaria vean solo lo suyo. No está en las llamadas de
+   * logística con la clave interna, que tienen acceso completo a las donaciones.
+   */
+  public static final String ATRIBUTO_USUARIO = "usuario";
+
+  // Clave interna con la que logística consulta las donaciones a planificar y les cambia el
+  // estado al iniciar una ruta. Sin configurar queda desactivada.
   private static final String API_KEY =
       System.getenv()
           .getOrDefault(
@@ -16,6 +25,7 @@ public final class SecurityRules {
   private SecurityRules() {}
 
   public static void enforceApi(Context ctx, AuthService authService) {
+    // Solo logística, y solo sobre las donaciones: el resto de la API exige un usuario.
     if (isServiceRequest(ctx) && ctx.path().startsWith("/api/v1/donaciones")) {
       return;
     }
@@ -28,6 +38,7 @@ public final class SecurityRules {
       throw new UnauthorizedResponse("Debe iniciar sesión para acceder a esta operación.");
     }
     Usuario usuario = current.get();
+    ctx.attribute(ATRIBUTO_USUARIO, usuario);
     if (usuario.hasRole(Role.ADMIN)) {
       return;
     }
@@ -78,13 +89,24 @@ public final class SecurityRules {
       }
       return new Role[] {Role.ADMIN, Role.BENEFICIARIO};
     }
+    if (path.startsWith("/api/v1/usuarios")) {
+      return new Role[] {Role.ADMIN};
+    }
     if (path.startsWith("/api/v1/donaciones")) {
-      if (path.endsWith("/estado")) {
-        if ("PATCH".equals(method)) {
-          return new Role[] {Role.ADMIN, Role.REPARTIDOR, Role.DONANTE};
-        }
+      if (path.contains("/propuesta-asignacion")) {
+        return new Role[] {Role.ADMIN, Role.BENEFICIARIO};
       }
-      return new Role[] {Role.ADMIN, Role.DONANTE, Role.BENEFICIARIO, Role.REPARTIDOR};
+      // Consultas: el controlador filtra para que cada una vea solo sus donaciones.
+      if ("GET".equals(method)) {
+        return new Role[] {Role.ADMIN, Role.DONANTE, Role.BENEFICIARIO};
+      }
+      // La entidad confirma la recepción (o informa que no llegó) y carga las fotos de lo que le
+      // asignaron; el controlador verifica que la donación sea suya.
+      if (path.endsWith("/estado") || path.endsWith("/fotos")) {
+        return new Role[] {Role.ADMIN, Role.BENEFICIARIO};
+      }
+      // Alta, edición y baja las hace la persona administradora en el depósito.
+      return new Role[] {Role.ADMIN};
     }
     if (path.startsWith("/api/v1/entidades/") && path.contains("/necesidades")) {
       return new Role[] {Role.ADMIN, Role.BENEFICIARIO};

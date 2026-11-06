@@ -2,10 +2,15 @@ package ar.edu.utn.donatrack.logistica;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
@@ -39,6 +44,16 @@ public class Ruta {
   private List<Destino> destinos;
 
   private boolean enCurso;
+
+  // Una ruta la operan varios repartidores (chofer y acompañantes). Se guardan por id porque el
+  // repartidor es un usuario de logística, no parte del agregado de la ruta.
+  @ElementCollection
+  @CollectionTable(
+      schema = "logistica",
+      name = "ruta_repartidores",
+      joinColumns = @JoinColumn(name = "ruta_id"))
+  @Column(name = "repartidor_id")
+  private Set<UUID> repartidores = new HashSet<>();
 
   protected Ruta() {}
 
@@ -95,6 +110,32 @@ public class Ruta {
    */
   public boolean isEnCurso() {
     return enCurso;
+  }
+
+  /**
+   * @return copia inmodificable de los ids de los repartidores asignados a la ruta
+   */
+  public Set<UUID> getRepartidores() {
+    return Set.copyOf(repartidores);
+  }
+
+  /**
+   * Asigna un repartidor a la ruta. Asignar dos veces al mismo repartidor no tiene efecto.
+   *
+   * @param repartidor el repartidor a asignar (no nulo)
+   */
+  public void asignarRepartidor(Repartidor repartidor) {
+    Objects.requireNonNull(repartidor, "repartidor no debe ser nulo");
+    repartidores.add(
+        Objects.requireNonNull(repartidor.getId(), "el repartidor tiene que estar persistido"));
+  }
+
+  /**
+   * @param idRepartidor el id del repartidor a consultar
+   * @return {@code true} si el repartidor está asignado a esta ruta
+   */
+  public boolean tieneAsignado(UUID idRepartidor) {
+    return repartidores.contains(idRepartidor);
   }
 
   // ── Lifecycle ───────────────────────────────────────

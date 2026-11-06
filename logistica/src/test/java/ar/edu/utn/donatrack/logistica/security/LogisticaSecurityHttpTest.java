@@ -85,7 +85,8 @@ class LogisticaSecurityHttpTest {
 
   @Test
   void tokenSinExpiracionSeRechazaCon401() throws Exception {
-    String token = JWT.create().withClaim("roles", List.of("ADMIN")).sign(Algorithm.HMAC256(SECRET));
+    String token =
+        JWT.create().withClaim("roles", List.of("ADMIN")).sign(Algorithm.HMAC256(SECRET));
     assertEquals(401, getConCookie(token).statusCode());
   }
 

@@ -16,6 +16,7 @@
             {{!-- El formulario va primero en el HTML: en el celular aparece apenas se entra --}}
             <div class="col-lg-7">
                 <form class="tarjeta registro-form" method="post" action="/registro" aria-labelledby="registro-titulo">
+                    {{#if error}}<div class="alert alert-danger" role="alert">{{error}}</div>{{/if}}
                     {{!--
                       Selector de rol: dos radios con forma de tarjeta. El input real usa .btn-check de
                       Bootstrap (queda oculto pero sigue siendo navegable con teclado) y el CSS muestra

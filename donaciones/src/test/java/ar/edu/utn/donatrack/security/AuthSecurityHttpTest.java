@@ -135,6 +135,40 @@ class AuthSecurityHttpTest {
     assertEquals(302, get("/dashboard", cookie).statusCode());
   }
 
+  @Test
+  void logisticaConLaClaveInternaConsultaDonacionesSinSesion() throws Exception {
+    HttpRequest request =
+        HttpRequest.newBuilder(URI.create(baseUrl + "/api/v1/donaciones"))
+            .header("Authorization", "clave-interna-de-prueba")
+            .GET()
+            .build();
+
+    assertEquals(200, client.send(request, HttpResponse.BodyHandlers.ofString()).statusCode());
+  }
+
+  @Test
+  void laClaveInternaNoAbreElRestoDeLaApi() throws Exception {
+    HttpRequest request =
+        HttpRequest.newBuilder(URI.create(baseUrl + "/api/v1/donantes"))
+            .header("Authorization", "clave-interna-de-prueba")
+            .GET()
+            .build();
+
+    assertEquals(401, client.send(request, HttpResponse.BodyHandlers.ofString()).statusCode());
+  }
+
+  @Test
+  void elPanelDeLogisticaEsSoloParaAdministradores() throws Exception {
+    HttpResponse<String> loginResponse =
+        post(
+            "/login",
+            "email=donante%40donatrack.local&password=donante123",
+            "application/x-www-form-urlencoded");
+
+    String cookie = loginResponse.headers().firstValue("Set-Cookie").orElse("");
+    assertEquals(403, get("/logistica", cookie).statusCode());
+  }
+
   private HttpResponse<String> get(String ruta) throws IOException, InterruptedException {
     return get(ruta, "");
   }

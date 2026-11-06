@@ -19,6 +19,12 @@
     -->
 
     <dependencies>
+        <!-- Hash de contraseñas con BCrypt: cada hash lleva su propia sal aleatoria. -->
+        <dependency>
+            <groupId>org.mindrot</groupId>
+            <artifactId>jbcrypt</artifactId>
+            <version>0.4</version>
+        </dependency>
       <!-- Javalin Bundle (Core + Jackson + Logback + TestTools) -->
     <dependency>
         <groupId>io.javalin</groupId>

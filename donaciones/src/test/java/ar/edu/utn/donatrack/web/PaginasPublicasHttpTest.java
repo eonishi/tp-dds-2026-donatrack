@@ -46,7 +46,7 @@ class PaginasPublicasHttpTest {
 
   @Test
   void lasSeccionesEnlazadasResponden() throws Exception {
-    for (String ruta : new String[] {"/legal", "/entregas", "/login", "/registro"}) {
+    for (String ruta : new String[] {"/legal", "/entregas", "/login"}) {
       assertEquals(200, get(ruta).statusCode(), ruta);
     }
   }

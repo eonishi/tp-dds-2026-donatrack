@@ -32,6 +32,9 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import ar.edu.utn.donatrack.notificaciones.Notificacion;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
+import ar.edu.utn.donatrack.seguimiento.LogisticaNoDisponibleException;
+import ar.edu.utn.donatrack.seguimiento.PosicionCamion;
+import ar.edu.utn.donatrack.seguimiento.PosicionesCamiones;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
 import jakarta.validation.constraints.NotNull;
@@ -39,6 +42,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public final class DonacionController implements WithSimplePersistenceUnit {
@@ -48,6 +52,12 @@ public final class DonacionController implements WithSimplePersistenceUnit {
   private final CargaDonacion cargaDonacion;
   private final ServicioNotificaciones notificaciones;
   private final SubcategoriasRepository subcategorias;
+  private final PosicionesCamiones posicionesCamiones;
+
+  // Lo único que la entidad beneficiaria puede hacer con el estado: confirmar que la recibió o
+  // informar que no llegó.
+  private static final Set<EstadoDonacion> ESTADOS_DE_LA_BENEFICIARIA =
+      Set.of(EstadoDonacion.ENTREGADA, EstadoDonacion.ENTREGA_FALLIDA);
 
   public DonacionController(
       DonacionesRepository donaciones,
@@ -55,7 +65,9 @@ public final class DonacionController implements WithSimplePersistenceUnit {
       PropuestaRepository propuestas,
       CargaDonacion cargaDonacion,
       ServicioNotificaciones notificaciones,
-      SubcategoriasRepository subcategorias) {
+      SubcategoriasRepository subcategorias,
+      PosicionesCamiones posicionesCamiones) {
+    this.posicionesCamiones = posicionesCamiones;
     this.donaciones = donaciones;
     this.donantes = donantes;
     this.propuestas = propuestas;
@@ -79,17 +91,65 @@ public final class DonacionController implements WithSimplePersistenceUnit {
                 delete(this::eliminar);
                 patch("/estado", this::transicionar);
                 get("/historial-estados", this::historial);
+                get("/seguimiento", this::seguimiento);
                 post("/fotos", this::agregarFoto);
               });
         });
   }
 
+  // GET /donaciones?estado=ASIGNACION_REALIZADA: logística filtra las que tiene que planificar.
   private void listar(Context ctx) {
-    ctx.json(donaciones.getDonaciones().stream().map(ApiMapper::donacion).toList());
+    EstadoDonacion estado = estadoFiltro(ctx.queryParam("estado"));
+    ctx.json(
+        donaciones.getDonaciones().stream()
+            .filter(d -> estado == null || d.getEstado() == estado)
+            .filter(d -> AccesoDonaciones.puedeVer(ctx, d))
+            .map(ApiMapper::donacion)
+            .toList());
+  }
+
+  private static EstadoDonacion estadoFiltro(String estado) {
+    if (estado == null || estado.isBlank()) {
+      return null;
+    }
+    try {
+      return EstadoDonacion.valueOf(estado.trim().toUpperCase());
+    } catch (IllegalArgumentException e) {
+      throw ApiException.badRequest("Estado inválido: " + estado);
+    }
   }
 
   private void obtener(Context ctx) {
-    ctx.json(donacion(buscar(HttpSupport.id(ctx, "id"))));
+    ctx.json(donacion(buscarVisible(ctx)));
+  }
+
+  /**
+   * Dónde está el camión que lleva la donación. Solo mientras está en traslado y solo para quien
+   * puede verla: la donante que la hizo, la entidad que la recibe y la administradora.
+   */
+  private void seguimiento(Context ctx) {
+    Donacion donacion = buscarVisible(ctx);
+    if (donacion.getEstado() != EstadoDonacion.EN_TRASLADO) {
+      throw ApiException.conflict("La donación no está en traslado.");
+    }
+    String patente =
+        donacion
+            .getIdCamion()
+            .orElseThrow(() -> ApiException.conflict("La donación no tiene un camión registrado."));
+    try {
+      PosicionCamion posicion =
+          posicionesCamiones
+              .ultimaPosicion(patente)
+              .orElseThrow(
+                  () ->
+                      new ApiException(
+                          404,
+                          "NOT_FOUND",
+                          "El camión " + patente + " todavía no reportó posición."));
+      ctx.json(posicion);
+    } catch (LogisticaNoDisponibleException e) {
+      throw new ApiException(502, "BAD_GATEWAY", e.getMessage());
+    }
   }
 
   private void crear(Context ctx) {
@@ -140,7 +200,13 @@ public final class DonacionController implements WithSimplePersistenceUnit {
   private void transicionar(Context ctx) {
     TransicionEstadoRequest request =
         DtoValidator.validate(ctx.bodyAsClass(TransicionEstadoRequest.class));
-    Donacion donacion = buscar(HttpSupport.id(ctx, "id"));
+    Donacion donacion = buscarVisible(ctx);
+    if (!AccesoDonaciones.accesoCompleto(ctx)
+        && (!AccesoDonaciones.puedeOperarComoBeneficiaria(ctx, donacion)
+            || !ESTADOS_DE_LA_BENEFICIARIA.contains(request.estado()))) {
+      throw new ApiException(
+          403, "FORBIDDEN", "Sólo puede confirmar o rechazar la recepción de sus donaciones.");
+    }
     List<Notificacion> generadas = new ArrayList<>();
 
     withTransaction(
@@ -154,16 +220,16 @@ public final class DonacionController implements WithSimplePersistenceUnit {
   }
 
   private void historial(Context ctx) {
-    ctx.json(
-        buscar(HttpSupport.id(ctx, "id")).getHistorialEstado().stream()
-            .map(ApiMapper::historial)
-            .toList());
+    ctx.json(buscarVisible(ctx).getHistorialEstado().stream().map(ApiMapper::historial).toList());
   }
 
   private void agregarFoto(Context ctx) {
     FotoRequest request = DtoValidator.validate(ctx.bodyAsClass(FotoRequest.class));
     var id = HttpSupport.id(ctx, "id");
-    Donacion donacion = buscar(id);
+    Donacion donacion = buscarVisible(ctx);
+    if (!AccesoDonaciones.puedeOperarComoBeneficiaria(ctx, donacion)) {
+      throw new ApiException(403, "FORBIDDEN", "Sólo puede cargar fotos de sus donaciones.");
+    }
 
     withTransaction(
         () -> {
@@ -172,6 +238,16 @@ public final class DonacionController implements WithSimplePersistenceUnit {
         });
 
     ctx.status(201).json(new FotoResponse(id, request.url()));
+  }
+
+  // Si no la puede ver, responde como si no existiera para no revelar ids de otros.
+  private Donacion buscarVisible(Context ctx) {
+    UUID id = HttpSupport.id(ctx, "id");
+    Donacion donacion = buscar(id);
+    if (!AccesoDonaciones.puedeVer(ctx, donacion)) {
+      throw ApiException.notFound("Donación", id);
+    }
+    return donacion;
   }
 
   private Donacion buscar(UUID id) {
@@ -218,6 +294,10 @@ public final class DonacionController implements WithSimplePersistenceUnit {
       String idCamion) {}
 
   private void transicionarMasivo(Context ctx) {
+    // La usan logística (con la clave interna) y la administración; no es para las beneficiarias.
+    if (!AccesoDonaciones.accesoCompleto(ctx)) {
+      throw new ApiException(403, "FORBIDDEN", "No tiene permisos para esta operación.");
+    }
     TransicionMasivaRequest[] requests = ctx.bodyAsClass(TransicionMasivaRequest[].class);
 
     for (TransicionMasivaRequest req : requests) {
@@ -239,6 +319,11 @@ public final class DonacionController implements WithSimplePersistenceUnit {
                     donacion,
                     new TransicionEstadoRequest(
                         req.nuevoEstado(), req.justificacion(), urlGenerada)));
+            // Queda registrado qué camión la lleva: lo usan el seguimiento en el mapa y el
+            // comprobante de entrega.
+            if (req.nuevoEstado() == EstadoDonacion.EN_TRASLADO && req.idCamion() != null) {
+              donacion.registrarCamion(req.idCamion());
+            }
             donaciones.save(donacion);
           }
         });

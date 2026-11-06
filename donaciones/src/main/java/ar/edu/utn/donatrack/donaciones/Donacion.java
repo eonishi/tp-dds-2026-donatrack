@@ -5,6 +5,7 @@ import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
 import ar.edu.utn.donatrack.donantes.Donante;
+import ar.edu.utn.donatrack.notificaciones.Notificacion;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -208,35 +209,34 @@ public class Donacion {
     this.setEntidadBeneficiaria(entidadBeneficiaria);
   }
 
-  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> asignar() {
+  public List<Notificacion> asignar() {
     return this.estado.asignar(this);
   }
 
-  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> planificarRuta() {
+  public List<Notificacion> planificarRuta() {
     return this.estado.planificarRuta(this);
   }
 
-  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> iniciarTraslado(String urlMapa) {
+  public List<Notificacion> iniciarTraslado(String urlMapa) {
     return this.estado.iniciarTraslado(this, urlMapa);
   }
 
-  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> confirmarEntrega() {
+  public List<Notificacion> confirmarEntrega() {
     return this.estado.confirmarEntrega(this);
   }
 
-  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> reportarFalla(
-      String justificacion) {
+  public List<Notificacion> reportarFalla(String justificacion) {
     if (justificacion == null || justificacion.isBlank()) {
       throw new IllegalArgumentException("La justificación es obligatoria.");
     }
     return this.estado.reportarFalla(this, justificacion);
   }
 
-  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> marcarVencida() {
+  public List<Notificacion> marcarVencida() {
     return this.estado.marcarVencida(this);
   }
 
-  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> retornarAlDeposito() {
+  public List<Notificacion> retornarAlDeposito() {
     return this.estado.retornarAlDeposito(this);
   }
 }

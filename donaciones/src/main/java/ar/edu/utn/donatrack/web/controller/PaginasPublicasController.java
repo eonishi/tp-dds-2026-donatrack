@@ -2,9 +2,18 @@ package ar.edu.utn.donatrack.web.controller;
 
 import static io.javalin.apibuilder.ApiBuilder.get;
 
+import ar.edu.utn.donatrack.bienes.Bien;
+import ar.edu.utn.donatrack.donaciones.Donacion;
+import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
+import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
+import ar.edu.utn.donatrack.donaciones.HistorialEstado;
 import ar.edu.utn.donatrack.security.AuthService;
 import io.javalin.http.Context;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -12,16 +21,20 @@ import java.util.Map;
  * autenticado se manejan por AuthController con cookies JWT y sesión en memoria.
  */
 public final class PaginasPublicasController {
-  private final AuthService authService;
+  private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-  public PaginasPublicasController(AuthService authService) {
+  private final AuthService authService;
+  private final DonacionesRepository donaciones;
+
+  public PaginasPublicasController(AuthService authService, DonacionesRepository donaciones) {
     this.authService = authService;
+    this.donaciones = donaciones;
   }
 
   public void routes() {
     get("/", this::landing);
     get("/legal", this::legal);
-    get("/entregas", ctx -> proximamente(ctx, "Donaciones entregadas"));
+    get("/entregas", this::entregas);
     get("/registro", this::registro);
   }
 
@@ -37,10 +50,98 @@ public final class PaginasPublicasController {
     ctx.render("registro", modeloPublico(ctx));
   }
 
-  private void proximamente(Context ctx, String seccion) {
+  /**
+   * Donaciones entregadas con éxito, visibles sin iniciar sesión. Por la política de privacidad
+   * solo se publica qué se entregó, a qué entidad, cuándo y las fotos que cargó: nunca datos de la
+   * persona donante.
+   */
+  private void entregas(Context ctx) {
+    List<EntregaPublica> entregas =
+        donaciones.getDonaciones().stream()
+            .filter(d -> d.getEstado() == EstadoDonacion.ENTREGADA)
+            .filter(d -> d.getEntidadBeneficiaria() != null)
+            .map(PaginasPublicasController::entregaPublica)
+            .sorted(Comparator.comparing(EntregaPublica::orden).reversed())
+            .toList();
     Map<String, Object> modelo = modeloPublico(ctx);
-    modelo.put("seccion", seccion);
-    ctx.render("proximamente", modelo);
+    modelo.put("entregas", entregas);
+    ctx.render("entregas", modelo);
+  }
+
+  private static EntregaPublica entregaPublica(Donacion donacion) {
+    LocalDateTime fecha =
+        donacion.getHistorialEstado().stream()
+            .filter(h -> h.getEstadoAlcanzado() == EstadoDonacion.ENTREGADA)
+            .map(HistorialEstado::getFecha)
+            .max(Comparator.naturalOrder())
+            .orElse(LocalDateTime.MIN);
+    return new EntregaPublica(
+        donacion.getEntidadBeneficiaria().getRazonSocial(),
+        fecha.equals(LocalDateTime.MIN) ? "" : fecha.format(FORMATO_FECHA),
+        donacion.getBienes().stream().map(PaginasPublicasController::describir).toList(),
+        // Solo enlaces http(s): la URL la carga la entidad y se muestra en un <img>.
+        donacion.getFotos().stream()
+            .filter(url -> url != null && url.matches("(?i)^https?://.+"))
+            .toList(),
+        fecha);
+  }
+
+  private static String describir(Bien bien) {
+    double cantidad = bien.getCantidad();
+    String numero =
+        cantidad == Math.rint(cantidad)
+            ? String.valueOf((long) cantidad)
+            : String.valueOf(cantidad);
+    return numero
+        + " "
+        + bien.getUnidad().name().toLowerCase().replace('_', ' ')
+        + " de "
+        + bien.getSubcategoria().getNombre();
+  }
+
+  /**
+   * Lo que se muestra de cada entrega en la página pública. Tiene getters porque Handlebars lee las
+   * propiedades como JavaBean.
+   */
+  public static final class EntregaPublica {
+    private final String entidad;
+    private final String fecha;
+    private final List<String> bienes;
+    private final List<String> fotos;
+    private final LocalDateTime orden;
+
+    EntregaPublica(
+        String entidad,
+        String fecha,
+        List<String> bienes,
+        List<String> fotos,
+        LocalDateTime orden) {
+      this.entidad = entidad;
+      this.fecha = fecha;
+      this.bienes = bienes;
+      this.fotos = fotos;
+      this.orden = orden;
+    }
+
+    public String getEntidad() {
+      return entidad;
+    }
+
+    public String getFecha() {
+      return fecha;
+    }
+
+    public List<String> getBienes() {
+      return bienes;
+    }
+
+    public List<String> getFotos() {
+      return fotos;
+    }
+
+    LocalDateTime orden() {
+      return orden;
+    }
   }
 
   private Map<String, Object> modeloPublico(Context ctx) {
