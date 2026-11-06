@@ -49,7 +49,7 @@ class AuthSecurityHttpTest {
     HttpResponse<String> dashboard =
         get("/dashboard", loginResponse.headers().firstValue("Set-Cookie").orElse(""));
     assertEquals(200, dashboard.statusCode());
-    assertTrue(dashboard.body().contains("Bienvenido"));
+    assertTrue(dashboard.body().contains("Hola, admin"));
   }
 
   @Test

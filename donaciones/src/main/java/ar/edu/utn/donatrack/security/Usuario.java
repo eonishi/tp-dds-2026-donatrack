@@ -98,6 +98,14 @@ public class Usuario {
     return hasRole(Role.ADMIN);
   }
 
+  public boolean isEsDonante() {
+    return hasRole(Role.DONANTE);
+  }
+
+  public boolean isEsEntidad() {
+    return hasRole(Role.BENEFICIARIO);
+  }
+
   public boolean hasRole(Role role) {
     return roles.contains(role);
   }

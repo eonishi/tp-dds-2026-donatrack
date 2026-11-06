@@ -5,6 +5,7 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 import io.javalin.http.Context;
 import io.javalin.http.ForbiddenResponse;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -24,8 +25,8 @@ public final class AuthController {
     get("/donaciones", ctx -> panel(ctx, "donaciones", "Donaciones"));
     get("/necesidades", ctx -> panel(ctx, "necesidades", "Necesidades"));
     get("/logistica", ctx -> panel(ctx, "logistica", "Logística"));
+    get("/catalogo", ctx -> panel(ctx, "catalogo", "Catálogo"));
     get("/matchmaking", ctx -> panel(ctx, "matchmaking", "Asignación de donaciones"));
-    get("/catalogo", ctx -> panel(ctx, "catalogo", "Catálogo de subcategorías"));
   }
 
   private void loginPage(Context ctx) {
@@ -41,7 +42,10 @@ public final class AuthController {
     String password = ctx.formParam("password");
     Optional<Usuario> usuario = authService.login(ctx, email, password);
     if (usuario.isEmpty()) {
-      ctx.render("login", Map.of("error", "Credenciales inválidas."));
+      // Se conserva el correo para no tener que reescribirlo; la contraseña nunca vuelve.
+      ctx.render(
+          "login",
+          Map.of("error", "Correo o contraseña incorrectos.", "email", email == null ? "" : email));
       return;
     }
     ctx.redirect("/dashboard");
@@ -72,6 +76,14 @@ public final class AuthController {
         && !usuario.hasRole(Role.ADMIN)) {
       throw new ForbiddenResponse("Sólo administradores pueden acceder a esta sección.");
     }
-    ctx.render("panel", Map.of("usuario", usuario, "seccion", seccion, "titulo", titulo));
+    Map<String, Object> modelo = new HashMap<>();
+    modelo.put("usuario", usuario);
+    modelo.put("seccion", seccion);
+    modelo.put("titulo", titulo);
+    // Una entidad opera sobre sus propias necesidades: el formulario no le pide elegir entidad.
+    if (!usuario.hasRole(Role.ADMIN)) {
+      usuario.getEntidadId().ifPresent(id -> modelo.put("entidadId", id));
+    }
+    ctx.render("panel", modelo);
   }
 }

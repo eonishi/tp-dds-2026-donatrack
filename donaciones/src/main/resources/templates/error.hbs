@@ -1,0 +1,21 @@
+{{#partial "titulo"}}{{titulo}} · DonaTrack{{/partial}}
+
+{{#partial "contenido"}}
+{{!-- Página de error propia (404, 403, 500), dentro del layout para no perder la navegación --}}
+<section class="pagina-simple text-center" aria-labelledby="error-titulo">
+    <img src="/DonaTrack.png" alt="" width="96" height="96" class="logo d-block mx-auto mb-4">
+    <span class="chip mb-3">Error {{codigo}}</span>
+    <h1 id="error-titulo">{{titulo}}</h1>
+    <p class="text-body-secondary">{{mensaje}}</p>
+    <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
+        <a class="btn btn-primary rounded-pill px-4" href="/">Volver al inicio</a>
+        {{#if usuario}}
+        <a class="btn btn-outline-primary rounded-pill px-4" href="/dashboard">Ir a mi panel</a>
+        {{else}}
+        <a class="btn btn-outline-primary rounded-pill px-4" href="/login">Iniciar sesión</a>
+        {{/if}}
+    </div>
+</section>
+{{/partial}}
+
+{{> layout}}

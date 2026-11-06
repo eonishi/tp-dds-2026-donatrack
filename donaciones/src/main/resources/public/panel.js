@@ -49,6 +49,25 @@
     } catch (e) { container.innerHTML = ''; showAlert(e.message); }
   }
 
+  // Los formularios eligen donantes, entidades y donaciones de una lista: nadie tipea un UUID.
+  function opcion(valor, texto) {
+    const o = document.createElement('option');
+    o.value = valor;
+    o.textContent = texto;
+    return o;
+  }
+
+  async function llenarSelect(select, url, texto, vacio) {
+    if (!select || select.tagName !== 'SELECT') return;
+    try {
+      const items = await request(url);
+      select.replaceChildren(opcion('', items.length ? 'Elegí una opción' : vacio), ...items.map(i => opcion(i.id, texto(i))));
+    } catch (e) { select.replaceChildren(opcion('', 'No se pudo cargar la lista')); showAlert(e.message); }
+  }
+
+  const nombreDonante = d => d.razonSocial || `${d.nombre || ''} ${d.apellido || ''}`.trim() + (d.numeroDocumento ? ` · ${d.tipoDocumento || 'DOC'} ${d.numeroDocumento}` : '');
+  const resumenDonacion = d => (d.bienes || []).map(b => `${b.cantidad} ${String(b.unidad).toLowerCase()} de ${b.subcategoria}`).join(', ') || 'Donación sin bienes';
+
   async function loadNecesidades(entidadId) {
     if (!entidadId) return;
     const container = document.querySelector('#necesidades-lista');
@@ -102,11 +121,18 @@
   document.querySelector('#form-subcategoria')?.addEventListener('submit', async e => { e.preventDefault(); const f = new FormData(e.target); try { await request(`${base}/subcategorias`, { method: 'POST', body: JSON.stringify({ nombre: f.get('nombre'), categoria: f.get('categoria') }) }); e.target.reset(); await loadCatalogo(); } catch (err) { showAlert(err.message); } });
   document.querySelector('#form-matchmaking')?.addEventListener('submit', async e => { e.preventDefault(); const id = new FormData(e.target).get('donacionId'); try { await request(`${base}/donaciones/${encodeURIComponent(id)}/propuesta-asignacion`, { method: 'POST' }); await loadMatchmaking(); } catch (err) { showAlert(err.message); } });
 
+  const selectEntidad = document.querySelector('#select-entidad');
+  selectEntidad?.addEventListener('change', () => loadNecesidades(selectEntidad.value));
+
   const section = root.dataset.seccion;
   document.querySelectorAll('.panel-vista').forEach(v => v.classList.add('d-none'));
   document.querySelector(`#vista-${section}`)?.classList.remove('d-none');
-  if (section === 'donaciones') loadDonaciones();
+  if (section === 'donaciones') { loadDonaciones(); llenarSelect(document.querySelector('#select-donante'), `${base}/donantes`, nombreDonante, 'No hay donantes registrados'); }
+  if (section === 'necesidades') {
+    if (selectEntidad?.tagName === 'SELECT') llenarSelect(selectEntidad, `${base}/beneficiarias`, e => e.razonSocial, 'No hay entidades registradas');
+    else if (selectEntidad?.value) loadNecesidades(selectEntidad.value);
+  }
   if (section === 'logistica') loadLogistica();
   if (section === 'catalogo') loadCatalogo();
-  if (section === 'matchmaking') loadMatchmaking();
+  if (section === 'matchmaking') { loadMatchmaking(); llenarSelect(document.querySelector('#select-donacion'), `${base}/donaciones?estado=EN_DEPOSITO`, resumenDonacion, 'No hay donaciones en depósito'); }
 })();

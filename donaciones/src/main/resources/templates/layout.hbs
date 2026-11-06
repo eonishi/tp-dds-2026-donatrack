@@ -28,6 +28,8 @@
         <div class="collapse navbar-collapse" id="menu">
             {{#if usuario}}
                 <ul class="navbar-nav me-auto ms-lg-4">
+                    <li class="nav-item"><a class="nav-link" href="/dashboard">Inicio</a></li>
+                    {{#if usuario.esEntidad}}<li class="nav-item"><a class="nav-link" href="/entidad/recepciones">Recibir donaciones</a></li>{{/if}}
                     <li class="nav-item"><a class="nav-link" href="/donaciones">Donaciones</a></li>
                     <li class="nav-item"><a class="nav-link" href="/necesidades">Necesidades</a></li>
                     {{#if usuario.esAdmin}}<li class="nav-item"><a class="nav-link" href="/logistica">Logística</a></li>{{/if}}
@@ -98,7 +100,7 @@
             <div class="col-6 col-md-4">
                 <h3 class="pie-titulo">Contacto</h3>
                 <ul class="list-unstyled pie-links">
-                    <li><a href="mailto:solidaria@frba.utn.edu.ar">solidaria@frba.utn.edu.ar</a></li>
+                    <li><a class="text-break" href="mailto:solidaria@frba.utn.edu.ar">solidaria@frba.utn.edu.ar</a></li>
                 </ul>
             </div>
         </div>

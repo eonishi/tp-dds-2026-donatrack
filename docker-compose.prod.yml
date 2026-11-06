@@ -4,7 +4,12 @@
 #   docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d
 
 x-comun: &comun
-  env_file: .env
+  env_file:
+    - path: .env
+    # Lo escribe el job "deploy" desde los GitHub Secrets (Resend/Twilio). Opcional para que el
+    # compose ande igual en una VM recién creada, antes del primer deploy.
+    - path: .env.notificaciones
+      required: false
   restart: unless-stopped
   logging:
     driver: json-file
