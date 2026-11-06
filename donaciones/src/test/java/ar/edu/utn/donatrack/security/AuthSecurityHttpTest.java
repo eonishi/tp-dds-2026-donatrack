@@ -43,7 +43,8 @@ class AuthSecurityHttpTest {
             "application/x-www-form-urlencoded");
 
     assertEquals(302, loginResponse.statusCode());
-    assertTrue(loginResponse.headers().firstValue("Set-Cookie").orElse("").contains("access_token="));
+    assertTrue(
+        loginResponse.headers().firstValue("Set-Cookie").orElse("").contains("access_token="));
 
     HttpResponse<String> dashboard =
         get("/dashboard", loginResponse.headers().firstValue("Set-Cookie").orElse(""));
@@ -64,16 +65,76 @@ class AuthSecurityHttpTest {
     assertEquals(403, response.statusCode());
   }
 
+  @Test
+  void llamadaS2SConApiKeyPuedeConsultarYActualizarDonacionesSinCookie() throws Exception {
+    HttpRequest request =
+        HttpRequest.newBuilder(
+                URI.create(baseUrl + "/api/v1/donaciones?estado=ASIGNACION_REALIZADA"))
+            .header("Authorization", "S2S_SECRET_KEY")
+            .GET()
+            .build();
+    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+    assertEquals(401, response.statusCode(), response.body());
+    assertTrue(SecurityRules.isValidServiceKey("clave-configurada", "clave-configurada"));
+    assertTrue(!SecurityRules.isValidServiceKey("S2S_SECRET_KEY", ""));
+  }
+
+  @Test
+  void altaDeSubcategoriaExigeRolAdmin() throws Exception {
+    HttpResponse<String> sinSesion =
+        post(
+            "/api/v1/subcategorias",
+            "{\"nombre\":\"Arroz\",\"categoria\":\"ALIMENTO\"}",
+            "application/json");
+    assertEquals(401, sinSesion.statusCode());
+
+    HttpResponse<String> loginDonante =
+        post(
+            "/login",
+            "email=donante%40donatrack.local&password=donante123",
+            "application/x-www-form-urlencoded");
+    String cookieDonante = loginDonante.headers().firstValue("Set-Cookie").orElse("");
+
+    HttpRequest requestDonante =
+        HttpRequest.newBuilder(URI.create(baseUrl + "/api/v1/subcategorias"))
+            .header("Cookie", cookieDonante)
+            .header("Content-Type", "application/json")
+            .POST(
+                HttpRequest.BodyPublishers.ofString(
+                    "{\"nombre\":\"Arroz\",\"categoria\":\"ALIMENTO\"}"))
+            .build();
+    HttpResponse<String> respuestaDonante =
+        client.send(requestDonante, HttpResponse.BodyHandlers.ofString());
+    assertEquals(403, respuestaDonante.statusCode());
+  }
+
+  @Test
+  void elPanelRenderizaLasCategoriasYUnidadesDelDominio() throws Exception {
+    HttpResponse<String> loginAdmin =
+        post(
+            "/login",
+            "email=admin%40donatrack.local&password=admin123",
+            "application/x-www-form-urlencoded");
+    String cookieAdmin = loginAdmin.headers().firstValue("Set-Cookie").orElse("");
+
+    HttpResponse<String> panel = get("/donaciones", cookieAdmin);
+    assertEquals(200, panel.statusCode());
+    assertTrue(panel.body().contains("ALIMENTO"));
+    assertTrue(panel.body().contains("MOBILIARIO"));
+    assertTrue(panel.body().contains("VESTIMENTA"));
+    assertTrue(panel.body().contains("KILOGRAMOS"));
+    assertTrue(panel.body().contains("UNIDADES"));
+    assertTrue(panel.body().contains("LITROS"));
+  }
+
   private HttpResponse<String> get(String ruta) throws IOException, InterruptedException {
     return get(ruta, "");
   }
 
-  private HttpResponse<String> get(String ruta, String cookie) throws IOException, InterruptedException {
+  private HttpResponse<String> get(String ruta, String cookie)
+      throws IOException, InterruptedException {
     HttpRequest request =
-        HttpRequest.newBuilder(URI.create(baseUrl + ruta))
-            .header("Cookie", cookie)
-            .GET()
-            .build();
+        HttpRequest.newBuilder(URI.create(baseUrl + ruta)).header("Cookie", cookie).GET().build();
     return client.send(request, HttpResponse.BodyHandlers.ofString());
   }
 

@@ -104,10 +104,27 @@ public class AuthService {
   }
 
   private void seedUsers() {
-    registrarUsuario(new Usuario("u-admin", "admin@donatrack.local", hashPassword("admin123"), Set.of(Role.ADMIN)));
-    registrarUsuario(new Usuario("u-repartidor", "repartidor@donatrack.local", hashPassword("repartidor123"), Set.of(Role.REPARTIDOR)));
-    registrarUsuario(new Usuario("u-donante", "donante@donatrack.local", hashPassword("donante123"), Set.of(Role.DONANTE)));
-    registrarUsuario(new Usuario("u-beneficiario", "beneficiario@donatrack.local", hashPassword("beneficiario123"), Set.of(Role.BENEFICIARIO)));
+    registrarUsuario(
+        new Usuario(
+            "u-admin", "admin@donatrack.local", hashPassword("admin123"), Set.of(Role.ADMIN)));
+    registrarUsuario(
+        new Usuario(
+            "u-repartidor",
+            "repartidor@donatrack.local",
+            hashPassword("repartidor123"),
+            Set.of(Role.REPARTIDOR)));
+    registrarUsuario(
+        new Usuario(
+            "u-donante",
+            "donante@donatrack.local",
+            hashPassword("donante123"),
+            Set.of(Role.DONANTE)));
+    registrarUsuario(
+        new Usuario(
+            "u-beneficiario",
+            "beneficiario@donatrack.local",
+            hashPassword("beneficiario123"),
+            Set.of(Role.BENEFICIARIO)));
   }
 
   private void registrarUsuario(Usuario usuario) {
@@ -144,7 +161,8 @@ public class AuthService {
       return Optional.empty();
     }
     try {
-      String payloadJson = new String(Base64.getUrlDecoder().decode(partes[1]), StandardCharsets.UTF_8);
+      String payloadJson =
+          new String(Base64.getUrlDecoder().decode(partes[1]), StandardCharsets.UTF_8);
       Map<String, Object> claims = MAPPER.readValue(payloadJson, Map.class);
       long exp = ((Number) claims.get("exp")).longValue();
       if (Instant.now().getEpochSecond() > exp) {
@@ -175,7 +193,8 @@ public class AuthService {
       return Optional.empty();
     }
     try {
-      String payloadJson = new String(Base64.getUrlDecoder().decode(partes[1]), StandardCharsets.UTF_8);
+      String payloadJson =
+          new String(Base64.getUrlDecoder().decode(partes[1]), StandardCharsets.UTF_8);
       Map<String, Object> claims = MAPPER.readValue(payloadJson, Map.class);
       return Optional.ofNullable((String) claims.get("sid"));
     } catch (Exception e) {
@@ -188,7 +207,9 @@ public class AuthService {
   }
 
   private static String base64UrlEncode(String raw) {
-    return Base64.getUrlEncoder().withoutPadding().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
+    return Base64.getUrlEncoder()
+        .withoutPadding()
+        .encodeToString(raw.getBytes(StandardCharsets.UTF_8));
   }
 
   private static String base64UrlEncode(byte[] raw) {

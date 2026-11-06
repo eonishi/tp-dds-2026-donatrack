@@ -25,8 +25,14 @@ public class MainLogistica implements WithSimplePersistenceUnit {
   }
 
   private void iniciar() {
-    String webOrigin = System.getenv().getOrDefault("DONATRACK_WEB_ORIGIN", "http://localhost:7070");
-    var app = Javalin.create().start(9001);
+    crearApp().start(9001);
+    System.out.println("Microservicio de Logística corriendo en http://localhost:9001");
+  }
+
+  public Javalin crearApp() {
+    String webOrigin =
+        System.getenv().getOrDefault("DONATRACK_WEB_ORIGIN", "http://localhost:7070");
+    var app = Javalin.create();
 
     app.before(
         ctx -> {
@@ -40,6 +46,7 @@ public class MainLogistica implements WithSimplePersistenceUnit {
             ctx.status(204);
           }
         });
+    app.options("/logistica/*", ctx -> ctx.status(204));
 
     // El contexto de persistencia es por hilo y la biblioteca no lo limpia: sin este reseteo, un
     // hilo reutilizado serviría entidades cacheadas de una solicitud anterior. El reseteo es del
@@ -75,15 +82,19 @@ public class MainLogistica implements WithSimplePersistenceUnit {
 
     // Toda operación de logística requiere un usuario ADMIN o REPARTIDOR. El callback es la
     // excepción: lo invoca el servicio de planificación y se autentica con la API key S2S.
-    app.before(ctx -> {
-      if ("/logistica/planificacion/callback".equals(ctx.path())
-          && LogisticaSecurity.isServiceRequest(ctx)) {
-        return;
-      }
-      if (ctx.path().startsWith("/logistica/")) {
-        LogisticaSecurity.enforce(ctx, Role.REPARTIDOR);
-      }
-    });
+    app.before(
+        ctx -> {
+          if ("OPTIONS".equals(ctx.method().toString())) {
+            return;
+          }
+          if ("/logistica/planificacion/callback".equals(ctx.path())
+              && LogisticaSecurity.isServiceRequest(ctx)) {
+            return;
+          }
+          if (ctx.path().startsWith("/logistica/")) {
+            LogisticaSecurity.enforce(ctx, Role.REPARTIDOR);
+          }
+        });
 
     // --- Endpoints de Camiones ---
     app.get("/logistica/camiones", camionController::listar);
@@ -106,6 +117,6 @@ public class MainLogistica implements WithSimplePersistenceUnit {
     // --- Endpoints de Planificación ---
     app.post("/logistica/planificacion/callback", planificacionController::procesarResultado);
 
-    System.out.println("Microservicio de Logística corriendo en http://localhost:9001");
+    return app;
   }
 }

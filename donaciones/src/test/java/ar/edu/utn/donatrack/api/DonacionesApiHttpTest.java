@@ -35,12 +35,23 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
   private final HttpClient client = HttpClient.newHttpClient();
   private Javalin app;
   private String baseUrl;
+  private String sessionCookie;
 
   @BeforeEach
-  void start() {
+  void start() throws Exception {
     Clock clock = Clock.fixed(Instant.parse("2026-09-11T12:00:00Z"), ZoneOffset.UTC);
     app = DonacionesApi.create(clock).start(0);
     baseUrl = "http://localhost:" + app.port();
+    HttpRequest loginRequest =
+        HttpRequest.newBuilder(URI.create(baseUrl + "/login"))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .POST(
+                HttpRequest.BodyPublishers.ofString(
+                    "email=admin%40donatrack.local&password=admin123"))
+            .build();
+    HttpResponse<String> loginResponse =
+        client.send(loginRequest, HttpResponse.BodyHandlers.ofString());
+    sessionCookie = loginResponse.headers().firstValue("Set-Cookie").orElse("");
   }
 
   @AfterEach
@@ -560,6 +571,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     HttpRequest request =
         HttpRequest.newBuilder(URI.create(baseUrl + path))
             .header("Content-Type", "application/json")
+            .header("Cookie", sessionCookie)
             .method(method, publisher)
             .build();
     return client.send(request, HttpResponse.BodyHandlers.ofString());

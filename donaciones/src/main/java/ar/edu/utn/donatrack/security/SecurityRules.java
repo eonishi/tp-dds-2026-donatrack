@@ -3,12 +3,22 @@ package ar.edu.utn.donatrack.security;
 import io.javalin.http.Context;
 import io.javalin.http.ForbiddenResponse;
 import io.javalin.http.UnauthorizedResponse;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Optional;
 
 public final class SecurityRules {
+  private static final String API_KEY =
+      System.getenv()
+          .getOrDefault(
+              "DONATRACK_API_KEY", System.getenv().getOrDefault("DONACIONES_API_KEY", ""));
+
   private SecurityRules() {}
 
   public static void enforceApi(Context ctx, AuthService authService) {
+    if (isServiceRequest(ctx) && ctx.path().startsWith("/api/v1/donaciones")) {
+      return;
+    }
     Role[] required = requiredRolesFor(ctx.path(), ctx.method().toString());
     if (required == null) {
       return;
@@ -24,6 +34,22 @@ public final class SecurityRules {
     if (!usuario.hasAnyRole(required)) {
       throw new ForbiddenResponse("No tiene permisos para esta operación.");
     }
+  }
+
+  public static boolean isServiceRequest(Context ctx) {
+    return isValidServiceKey(ctx.header("Authorization"), API_KEY);
+  }
+
+  static boolean isValidServiceKey(String headerValue, String configuredKey) {
+    if (configuredKey == null
+        || configuredKey.isBlank()
+        || headerValue == null
+        || headerValue.isBlank()) {
+      return false;
+    }
+    return MessageDigest.isEqual(
+        configuredKey.getBytes(StandardCharsets.UTF_8),
+        headerValue.getBytes(StandardCharsets.UTF_8));
   }
 
   public static void enforceProtectedWeb(Context ctx, AuthService authService) {
@@ -63,8 +89,15 @@ public final class SecurityRules {
     if (path.startsWith("/api/v1/entidades/") && path.contains("/necesidades")) {
       return new Role[] {Role.ADMIN, Role.BENEFICIARIO};
     }
-    if (path.startsWith("/api/v1/propuestas-asignacion") || path.contains("/propuesta-asignacion")) {
+    if (path.startsWith("/api/v1/propuestas-asignacion")
+        || path.contains("/propuesta-asignacion")) {
       return new Role[] {Role.ADMIN, Role.BENEFICIARIO};
+    }
+    if (path.startsWith("/api/v1/subcategorias")) {
+      if ("GET".equals(method)) {
+        return new Role[] {Role.ADMIN, Role.DONANTE, Role.BENEFICIARIO};
+      }
+      return new Role[] {Role.ADMIN};
     }
     return null;
   }
