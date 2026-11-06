@@ -1,7 +1,11 @@
 package ar.edu.utn.donatrack.donaciones;
 
+import ar.edu.utn.donatrack.notificaciones.PublicadorDeEventos;
+import ar.edu.utn.donatrack.notificaciones.eventos.EventoAsignacion;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoEntregaExitosa;
+import ar.edu.utn.donatrack.notificaciones.eventos.EventoEntregaNoSatisfactoria;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoInicioRuta;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -10,6 +14,9 @@ import java.util.List;
  * <p>Reemplaza la jerarquía del patrón State: una clase abstracta y siete subclases concretas. Cada
  * constante declara el comportamiento que le corresponde, y las operaciones no soportadas heredan
  * el comportamiento por defecto, que lanza {@link IllegalStateException}.
+ *
+ * <p>Las transiciones que avisan a alguien publican su evento en el {@link PublicadorDeEventos} en
+ * el momento en que ocurren: el llamador entrega el publicador y no arma notificaciones a mano.
  *
  * <p>El estado se persiste por nombre y no por índice, así que el orden de declaración no es un
  * contrato de almacenamiento: reordenar las constantes no afecta a las filas ya guardadas. Lo que
@@ -20,147 +27,126 @@ import java.util.List;
 public enum EstadoDonacion {
   EN_DEPOSITO {
     @Override
-    public List<ar.edu.utn.donatrack.notificaciones.Notificacion> asignar(Donacion donacion) {
+    public void asignar(Donacion donacion, PublicadorDeEventos publicador) {
       transicionar(donacion, ASIGNACION_REALIZADA, null);
       if (donacion.getDonante() != null && donacion.getEntidadBeneficiaria() != null) {
-        return new ar.edu.utn.donatrack.notificaciones.eventos.EventoAsignacion(
-                donacion.getDonante(), donacion.getEntidadBeneficiaria())
-            .generarNotificaciones();
+        publicador.publicar(
+            new EventoAsignacion(donacion.getDonante(), donacion.getEntidadBeneficiaria()));
       }
-      return List.of();
     }
 
     @Override
-    public List<ar.edu.utn.donatrack.notificaciones.Notificacion> marcarVencida(Donacion donacion) {
+    public void marcarVencida(Donacion donacion) {
       transicionar(donacion, VENCIDA, null);
-      return List.of();
     }
   },
   ASIGNACION_REALIZADA {
     @Override
-    public List<ar.edu.utn.donatrack.notificaciones.Notificacion> planificarRuta(
-        Donacion donacion) {
+    public void planificarRuta(Donacion donacion) {
       transicionar(donacion, LISTA_PARA_ENTREGAR, null);
-      return List.of();
     }
 
     @Override
-    public List<ar.edu.utn.donatrack.notificaciones.Notificacion> marcarVencida(Donacion donacion) {
+    public void marcarVencida(Donacion donacion) {
       transicionar(donacion, VENCIDA, null);
-      return List.of();
     }
   },
   LISTA_PARA_ENTREGAR {
     @Override
-    public List<ar.edu.utn.donatrack.notificaciones.Notificacion> iniciarTraslado(
-        Donacion donacion, String urlMapa) {
+    public void iniciarTraslado(Donacion donacion, String urlMapa, PublicadorDeEventos publicador) {
       transicionar(donacion, EN_TRASLADO, null);
       if (donacion.getDonante() != null
           && donacion.getEntidadBeneficiaria() != null
           && urlMapa != null) {
-        return new EventoInicioRuta(
-                List.of(donacion.getDonante(), donacion.getEntidadBeneficiaria()), urlMapa)
-            .generarNotificaciones();
+        publicador.publicar(
+            new EventoInicioRuta(
+                List.of(donacion.getDonante(), donacion.getEntidadBeneficiaria()), urlMapa));
       }
-      return List.of();
     }
 
     @Override
-    public List<ar.edu.utn.donatrack.notificaciones.Notificacion> marcarVencida(Donacion donacion) {
+    public void marcarVencida(Donacion donacion) {
       transicionar(donacion, VENCIDA, null);
-      return List.of();
     }
   },
   EN_TRASLADO {
     @Override
-    public List<ar.edu.utn.donatrack.notificaciones.Notificacion> confirmarEntrega(
-        Donacion donacion) {
+    public void confirmarEntrega(Donacion donacion, PublicadorDeEventos publicador) {
       if (donacion.getEntidadBeneficiaria() == null) {
         throw new IllegalStateException(
             "No se puede confirmar la entrega sin una entidad beneficiaria asignada.");
       }
       transicionar(donacion, ENTREGADA, null);
       donacion.getEntidadBeneficiaria().aplicarDonacionRecibida(donacion);
-      if (donacion.getDonante() != null
-          && donacion.getEntidadBeneficiaria() != null
-          && donacion.getIdCamion().isPresent()) {
-        return new EventoEntregaExitosa(
+      if (donacion.getDonante() != null && donacion.getIdCamion().isPresent()) {
+        publicador.publicar(
+            new EventoEntregaExitosa(
                 donacion.getDonante(),
                 donacion.getEntidadBeneficiaria(),
-                java.time.LocalDateTime.now(),
-                donacion.getIdCamion().get())
-            .generarNotificaciones();
+                LocalDateTime.now(),
+                donacion.getIdCamion().get()));
       }
-      return List.of();
     }
 
     @Override
-    public List<ar.edu.utn.donatrack.notificaciones.Notificacion> reportarFalla(
-        Donacion donacion, String justificacion) {
+    public void reportarFalla(
+        Donacion donacion, String justificacion, PublicadorDeEventos publicador) {
       transicionar(donacion, ENTREGA_FALLIDA, justificacion);
       if (donacion.getDonante() != null && donacion.getEntidadBeneficiaria() != null) {
-        return new ar.edu.utn.donatrack.notificaciones.eventos.EventoEntregaNoSatisfactoria(
-                donacion.getDonante(), donacion.getEntidadBeneficiaria(), justificacion)
-            .generarNotificaciones();
+        publicador.publicar(
+            new EventoEntregaNoSatisfactoria(
+                donacion.getDonante(), donacion.getEntidadBeneficiaria(), justificacion));
       }
-      return List.of();
     }
 
     @Override
-    public List<ar.edu.utn.donatrack.notificaciones.Notificacion> marcarVencida(Donacion donacion) {
+    public void marcarVencida(Donacion donacion) {
       transicionar(donacion, VENCIDA, null);
-      return List.of();
     }
   },
   ENTREGADA,
   ENTREGA_FALLIDA {
     @Override
-    public List<ar.edu.utn.donatrack.notificaciones.Notificacion> marcarVencida(Donacion donacion) {
+    public void marcarVencida(Donacion donacion) {
       transicionar(donacion, VENCIDA, null);
-      return List.of();
     }
 
     @Override
-    public List<ar.edu.utn.donatrack.notificaciones.Notificacion> retornarAlDeposito(
-        Donacion donacion) {
+    public void retornarAlDeposito(Donacion donacion) {
       donacion.limpiarEntidadBeneficiaria();
       donacion.limpiarCamion();
       transicionar(donacion, EN_DEPOSITO, null);
-      return List.of();
     }
   },
   VENCIDA;
 
-  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> asignar(Donacion donacion) {
-    return noPermitido("asignar");
+  public void asignar(Donacion donacion, PublicadorDeEventos publicador) {
+    noPermitido("asignar");
   }
 
-  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> planificarRuta(Donacion donacion) {
-    return noPermitido("planificar la ruta");
+  public void planificarRuta(Donacion donacion) {
+    noPermitido("planificar la ruta");
   }
 
-  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> iniciarTraslado(
-      Donacion donacion, String urlMapa) {
-    return noPermitido("iniciar el traslado");
+  public void iniciarTraslado(Donacion donacion, String urlMapa, PublicadorDeEventos publicador) {
+    noPermitido("iniciar el traslado");
   }
 
-  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> confirmarEntrega(
-      Donacion donacion) {
-    return noPermitido("confirmar la entrega");
+  public void confirmarEntrega(Donacion donacion, PublicadorDeEventos publicador) {
+    noPermitido("confirmar la entrega");
   }
 
-  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> reportarFalla(
-      Donacion donacion, String justificacion) {
-    return noPermitido("reportar una falla");
+  public void reportarFalla(
+      Donacion donacion, String justificacion, PublicadorDeEventos publicador) {
+    noPermitido("reportar una falla");
   }
 
-  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> marcarVencida(Donacion donacion) {
-    return noPermitido("marcar como vencida");
+  public void marcarVencida(Donacion donacion) {
+    noPermitido("marcar como vencida");
   }
 
-  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> retornarAlDeposito(
-      Donacion donacion) {
-    return noPermitido("retornar al depósito");
+  public void retornarAlDeposito(Donacion donacion) {
+    noPermitido("retornar al depósito");
   }
 
   /**
@@ -183,7 +169,7 @@ public enum EstadoDonacion {
    * @param operacion descripción de la operación rechazada, tal como se lee en el mensaje
    * @throws IllegalStateException siempre
    */
-  private List<ar.edu.utn.donatrack.notificaciones.Notificacion> noPermitido(String operacion) {
+  private void noPermitido(String operacion) {
     throw new IllegalStateException("No se puede " + operacion + " en estado " + this);
   }
 }

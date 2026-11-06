@@ -1,5 +1,6 @@
 package ar.edu.utn.donatrack;
 
+import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.notificacionesDescartadas;
 import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaDonacion;
 import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaEntidad;
 import static org.junit.jupiter.api.Assertions.*;
@@ -221,7 +222,8 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
             propuestaRepository,
             List.of(new AlgoritmoCompatibilidadSemantica()));
 
-    servicio.confirmarAsignacionAdministrativa(donacion, entidad, fecha);
+    servicio.confirmarAsignacionAdministrativa(
+        donacion, entidad, fecha, notificacionesDescartadas());
 
     assertEquals(
         EstadoDonacion.ASIGNACION_REALIZADA,
@@ -317,7 +319,8 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
     servicio.ejecutarMatchmakingDiario(fecha);
 
     // Now confirm
-    servicio.confirmarAsignacionAdministrativa(donacion, entidad, fecha);
+    servicio.confirmarAsignacionAdministrativa(
+        donacion, entidad, fecha, notificacionesDescartadas());
 
     // Propuesta should be removed from repo
     assertTrue(
@@ -406,7 +409,7 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
       Donante donante, EntidadBeneficiaria entidad, SubCategoria subCategoria) {
     Donacion donacion =
         nuevaDonacion(donante, List.of(crearBien("Entregada", 1, subCategoria, null)));
-    donacion.confirmarEntidadBeneficiaria(entidad);
+    donacion.confirmarEntidadBeneficiaria(entidad, notificacionesDescartadas());
     donacion.cambiarEstado(EstadoDonacion.ENTREGADA, null);
     return donacion;
   }

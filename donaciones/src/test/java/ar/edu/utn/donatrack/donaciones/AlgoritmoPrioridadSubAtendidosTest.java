@@ -1,5 +1,6 @@
 package ar.edu.utn.donatrack.donaciones;
 
+import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.notificacionesDescartadas;
 import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaDonacion;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -205,7 +206,7 @@ class AlgoritmoPrioridadSubAtendidosTest {
                     null,
                     EstadoUso.NO_APLICA,
                     subCategoria)));
-    donacion.confirmarEntidadBeneficiaria(entidad);
+    donacion.confirmarEntidadBeneficiaria(entidad, notificacionesDescartadas());
     donacion.cambiarEstado(EstadoDonacion.ENTREGADA, null);
     return donacion;
   }

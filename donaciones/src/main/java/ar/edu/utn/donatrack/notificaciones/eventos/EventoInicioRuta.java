@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class EventoInicioRuta extends EventoNotificable {
+public class EventoInicioRuta implements EventoNotificable {
   private final List<Notificable> destinatarios;
   private final String urlMapa;
 

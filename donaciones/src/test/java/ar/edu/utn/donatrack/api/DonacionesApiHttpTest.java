@@ -651,6 +651,31 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
   }
 
   @Test
+  void transicionMasivaRevertidaNoEnviaAvisos() throws Exception {
+    UUID donanteId = crearDonante();
+    long entidadId = crearEntidad("Hogar Lote");
+    crearNecesidad(entidadId, "Fideos");
+    UUID enTraslado = crearDonacion(donanteId, "Fideos");
+    llevarATraslado(enTraslado, entidadId);
+    UUID enDeposito = crearDonacion(donanteId, "Fideos");
+
+    int antes = mensajesEnviados.size();
+    HttpResponse<String> response =
+        request(
+            "PATCH",
+            "/api/v1/donaciones/estado",
+            "[{\"idDonacion\":\""
+                + enTraslado
+                + "\",\"nuevoEstado\":\"ENTREGADA\"},"
+                + "{\"idDonacion\":\""
+                + enDeposito
+                + "\",\"nuevoEstado\":\"ENTREGADA\"}]");
+
+    assertEquals(409, response.statusCode(), response.body());
+    assertEquals(List.of(), mensajesEnviados.subList(antes, mensajesEnviados.size()));
+  }
+
+  @Test
   void transicionIndividualExigeCamionYRegistraPatenteConUrlUnaVez() throws Exception {
     UUID donanteId = crearDonante();
     long entidadId = crearEntidad("Hogar Ruta Individual");

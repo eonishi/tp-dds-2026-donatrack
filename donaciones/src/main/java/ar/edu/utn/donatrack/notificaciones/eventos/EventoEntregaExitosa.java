@@ -14,7 +14,7 @@ import java.util.Objects;
  * Evento de entrega exitosa: notifica al donante y a la entidad beneficiaria con un {@link
  * ComprobanteEntrega} que incluye la fecha de entrega y la patente del camión.
  */
-public class EventoEntregaExitosa extends EventoNotificable {
+public class EventoEntregaExitosa implements EventoNotificable {
   private static final DateTimeFormatter FORMATO_FECHA_ENTREGA =
       DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 

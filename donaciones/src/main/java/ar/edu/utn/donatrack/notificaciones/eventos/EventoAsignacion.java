@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class EventoAsignacion extends EventoNotificable {
+public class EventoAsignacion implements EventoNotificable {
   private final Donante donante;
   private final EntidadBeneficiaria entidad;
 

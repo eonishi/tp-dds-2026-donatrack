@@ -1,5 +1,6 @@
 package ar.edu.utn.donatrack;
 
+import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.notificacionesDescartadas;
 import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaDonacion;
 import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaEntidad;
 import static org.junit.jupiter.api.Assertions.*;
@@ -147,7 +148,7 @@ class DonaTrackTest implements SimplePersistenceTest {
     assertEquals(EstadoDonacion.EN_DEPOSITO, donacion.getEstado());
 
     // Transición: En Depósito -> Asignada
-    donacion.asignar();
+    donacion.asignar(notificacionesDescartadas());
     assertEquals(EstadoDonacion.ASIGNACION_REALIZADA, donacion.getEstado());
 
     // Transición: Asignada -> Lista para entregar
@@ -155,12 +156,12 @@ class DonaTrackTest implements SimplePersistenceTest {
     assertEquals(EstadoDonacion.LISTA_PARA_ENTREGAR, donacion.getEstado());
 
     // Transición: Lista para entregar -> En traslado
-    donacion.iniciarTraslado("http://test.mapa");
+    donacion.iniciarTraslado("http://test.mapa", notificacionesDescartadas());
     assertEquals(EstadoDonacion.EN_TRASLADO, donacion.getEstado());
 
     // Transición: En traslado -> Entrega fallida (Único estado que requiere justificación según
     // enunciado)
-    donacion.reportarFalla("Tocamos timbre pero nadie respondió");
+    donacion.reportarFalla("Tocamos timbre pero nadie respondió", notificacionesDescartadas());
     assertEquals(EstadoDonacion.ENTREGA_FALLIDA, donacion.getEstado());
 
     // Verificamos el historial para asegurar la trazabilidad
@@ -185,7 +186,9 @@ class DonaTrackTest implements SimplePersistenceTest {
 
     // Act & Assert
     // Intentar iniciar un traslado desde el depósito sin asignar ni planificar
-    assertThrows(IllegalStateException.class, () -> donacion.iniciarTraslado("http://test.mapa"));
+    assertThrows(
+        IllegalStateException.class,
+        () -> donacion.iniciarTraslado("http://test.mapa", notificacionesDescartadas()));
   }
 
   @Test
@@ -209,7 +212,7 @@ class DonaTrackTest implements SimplePersistenceTest {
 
     // AsignacionRealizada
     Donacion asignada = nuevaDonacion(donanteDummy, List.of(fideos));
-    asignada.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"));
+    asignada.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"), notificacionesDescartadas());
     assertThrows(
         IllegalStateException.class,
         asignada::retornarAlDeposito,
@@ -217,7 +220,7 @@ class DonaTrackTest implements SimplePersistenceTest {
 
     // ListaParaEntregar
     Donacion lista = nuevaDonacion(donanteDummy, List.of(fideos));
-    lista.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"));
+    lista.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"), notificacionesDescartadas());
     lista.planificarRuta();
     assertThrows(
         IllegalStateException.class,
@@ -226,9 +229,9 @@ class DonaTrackTest implements SimplePersistenceTest {
 
     // EnTraslado
     Donacion traslado = nuevaDonacion(donanteDummy, List.of(fideos));
-    traslado.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"));
+    traslado.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"), notificacionesDescartadas());
     traslado.planificarRuta();
-    traslado.iniciarTraslado("http://test.mapa");
+    traslado.iniciarTraslado("http://test.mapa", notificacionesDescartadas());
     assertThrows(
         IllegalStateException.class,
         traslado::retornarAlDeposito,
@@ -236,10 +239,10 @@ class DonaTrackTest implements SimplePersistenceTest {
 
     // Entregada
     Donacion entregada = nuevaDonacion(donanteDummy, List.of(fideos));
-    entregada.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"));
+    entregada.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"), notificacionesDescartadas());
     entregada.planificarRuta();
-    entregada.iniciarTraslado("http://test.mapa");
-    entregada.confirmarEntrega();
+    entregada.iniciarTraslado("http://test.mapa", notificacionesDescartadas());
+    entregada.confirmarEntrega(notificacionesDescartadas());
     assertThrows(
         IllegalStateException.class,
         entregada::retornarAlDeposito,
@@ -271,13 +274,13 @@ class DonaTrackTest implements SimplePersistenceTest {
 
     // Llevar la donacion hasta EntregaFallida con entidad beneficiaria asignada
     donacion.confirmarEntidadBeneficiaria(
-        entidad); // EnDeposito → AsignacionRealizada + set entidad
+        entidad, notificacionesDescartadas()); // EnDeposito → AsignacionRealizada + set entidad
     assertNotNull(donacion.getEntidadBeneficiaria(), "La entidad debería estar asignada");
     assertEquals(entidad, donacion.getEntidadBeneficiaria());
 
     donacion.planificarRuta(); // → ListaParaEntregar
-    donacion.iniciarTraslado("http://test.mapa"); // → EnTraslado
-    donacion.reportarFalla("Dirección incorrecta"); // → EntregaFallida
+    donacion.iniciarTraslado("http://test.mapa", notificacionesDescartadas()); // → EnTraslado
+    donacion.reportarFalla("Dirección incorrecta", notificacionesDescartadas()); // → EntregaFallida
     assertEquals(EstadoDonacion.ENTREGA_FALLIDA, donacion.getEstado());
 
     // Act
@@ -313,10 +316,10 @@ class DonaTrackTest implements SimplePersistenceTest {
     EntidadBeneficiaria entidad = nuevaEntidad("Hogar");
 
     // Llevar la donacion hasta EntregaFallida
-    donacion.confirmarEntidadBeneficiaria(entidad);
+    donacion.confirmarEntidadBeneficiaria(entidad, notificacionesDescartadas());
     donacion.planificarRuta();
-    donacion.iniciarTraslado("http://test.mapa");
-    donacion.reportarFalla("No respondieron");
+    donacion.iniciarTraslado("http://test.mapa", notificacionesDescartadas());
+    donacion.reportarFalla("No respondieron", notificacionesDescartadas());
     assertEquals(EstadoDonacion.ENTREGA_FALLIDA, donacion.getEstado());
 
     // Act & Assert — planificarRuta desde EntregaFallida debe lanzar excepción

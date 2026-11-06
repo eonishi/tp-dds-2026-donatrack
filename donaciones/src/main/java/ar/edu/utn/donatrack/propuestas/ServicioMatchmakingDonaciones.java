@@ -5,7 +5,7 @@ import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
-import ar.edu.utn.donatrack.notificaciones.Notificacion;
+import ar.edu.utn.donatrack.notificaciones.PublicadorDeEventos;
 import ar.edu.utn.donatrack.propuestas.matchmaking.AlgoritmoMatchmaking;
 import ar.edu.utn.donatrack.propuestas.matchmaking.MatchCandidato;
 import java.time.LocalDate;
@@ -71,8 +71,11 @@ public class ServicioMatchmakingDonaciones {
     return propuestaRepository.findAllPending();
   }
 
-  public List<Notificacion> confirmarAsignacionAdministrativa(
-      Donacion donacion, EntidadBeneficiaria entidadBeneficiaria, LocalDate fechaConfirmacion) {
+  public void confirmarAsignacionAdministrativa(
+      Donacion donacion,
+      EntidadBeneficiaria entidadBeneficiaria,
+      LocalDate fechaConfirmacion,
+      PublicadorDeEventos publicador) {
     PropuestaDeAsignacion propuesta =
         propuestaRepository
             .findPendingByDonacion(donacion)
@@ -81,14 +84,13 @@ public class ServicioMatchmakingDonaciones {
                     new IllegalStateException("No hay una propuesta pendiente para la donación."));
     propuesta.confirmar(entidadBeneficiaria);
     // La propuesta vive en memoria y puede guardar una copia de la donación separada del contexto
-    // de persistencia, así que la transición se aplica acá sobre la donación administrada: de ahí
-    // salen las notificaciones que el llamador envía después de guardar.
-    List<Notificacion> notificaciones = donacion.confirmarEntidadBeneficiaria(entidadBeneficiaria);
+    // de persistencia, así que la transición se aplica acá sobre la donación administrada, que
+    // publica el aviso de asignación al ocurrir.
+    donacion.confirmarEntidadBeneficiaria(entidadBeneficiaria, publicador);
     propuestaRepository.remove(donacion);
     // La confirmación cambia el estado y la entidad de la donación: hay que guardarla para que
     // esos cambios lleguen a la base. Este camino no pasa por DonacionController.
     donacionesRepository.save(donacion);
-    return notificaciones;
   }
 
   /**
