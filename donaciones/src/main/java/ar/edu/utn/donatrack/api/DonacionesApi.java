@@ -20,6 +20,9 @@ import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import ar.edu.utn.donatrack.notificaciones.NotificacionesRepository;
 import ar.edu.utn.donatrack.notificaciones.NotificadorDesdeEntorno;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
+import ar.edu.utn.donatrack.security.AuthController;
+import ar.edu.utn.donatrack.security.AuthService;
+import ar.edu.utn.donatrack.security.SecurityRules;
 import ar.edu.utn.donatrack.web.HandlebarsRenderer;
 import ar.edu.utn.donatrack.web.controller.PaginasPublicasController;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
@@ -72,7 +75,9 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
                 new AlgoritmoPrioridadSubAtendidos(donaciones)));
     MatchmakingController matchmakingController =
         new MatchmakingController(matchmakingDomain, donaciones, entidades, notificaciones, clock);
-    PaginasPublicasController paginasPublicas = new PaginasPublicasController();
+    AuthService authService = new AuthService();
+    AuthController authController = new AuthController(authService);
+    PaginasPublicasController paginasPublicas = new PaginasPublicasController(authService);
 
     Javalin app =
         Javalin.create(
@@ -94,9 +99,22 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
                           subcategoriasController.routes();
                           matchmakingController.routes();
                         });
+                    authController.routes();
                     paginasPublicas.routes();
                   });
             });
+
+    app.before(
+        ctx -> {
+          String path = ctx.path();
+          if (path.startsWith("/api/v1")) {
+            SecurityRules.enforceApi(ctx, authService);
+            return;
+          }
+          if ("/dashboard".equals(path) || "/perfil".equals(path)) {
+            SecurityRules.enforceProtectedWeb(ctx, authService);
+          }
+        });
 
     java.util.concurrent.ScheduledExecutorService scheduler =
         java.util.concurrent.Executors.newSingleThreadScheduledExecutor();
