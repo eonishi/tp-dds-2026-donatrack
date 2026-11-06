@@ -1,6 +1,6 @@
 package ar.edu.utn.donatrack.donantes;
 
-import ar.edu.utn.donatrack.notificaciones.Notificador;
+import ar.edu.utn.donatrack.notificaciones.NotificadorPorCanal;
 import ar.edu.utn.donatrack.notificaciones.ResultadoEnvio;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -47,5 +47,5 @@ public abstract class MedioDeContacto {
     return java.util.Objects.hash(contacto);
   }
 
-  public abstract ResultadoEnvio aceptar(Notificador notificador, String mensaje);
+  public abstract ResultadoEnvio aceptar(NotificadorPorCanal notificador, String mensaje);
 }

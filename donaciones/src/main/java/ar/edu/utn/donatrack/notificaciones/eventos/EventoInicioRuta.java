@@ -1,7 +1,6 @@
 package ar.edu.utn.donatrack.notificaciones.eventos;
 
 import ar.edu.utn.donatrack.notificaciones.DestinatariosNotificacion;
-import ar.edu.utn.donatrack.notificaciones.EstadoNotificacion;
 import ar.edu.utn.donatrack.notificaciones.Notificable;
 import ar.edu.utn.donatrack.notificaciones.Notificacion;
 import ar.edu.utn.donatrack.notificaciones.payloads.InfoMapa;
@@ -28,8 +27,7 @@ public class EventoInicioRuta extends EventoNotificable {
             new Notificacion(
                 medio,
                 "La ruta de entrega ha comenzado. Seguí el recorrido en el mapa: " + urlMapa,
-                payload,
-                EstadoNotificacion.PENDIENTE));
+                payload));
       }
     }
     return notificaciones;

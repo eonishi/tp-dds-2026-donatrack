@@ -1,16 +1,16 @@
 package ar.edu.utn.donatrack.testsupport;
 
 import ar.edu.utn.donatrack.api.DonacionesApi;
-import ar.edu.utn.donatrack.notificaciones.NotificacionesRepository;
-import ar.edu.utn.donatrack.notificaciones.NotificadorSimulado;
+import ar.edu.utn.donatrack.notificaciones.NotificadorPorCanal;
+import ar.edu.utn.donatrack.notificaciones.ResultadoEnvio;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.seguimiento.PosicionesCamiones;
 import io.javalin.Javalin;
 import java.time.Clock;
 
 /**
- * Arranca la API de donaciones para las pruebas HTTP con las notificaciones simuladas: el
- * notificador real exige las credenciales de Resend y Twilio, que las pruebas no tienen.
+ * Arranca la API de donaciones para las pruebas HTTP descartando las notificaciones: las pruebas no
+ * deben contactar a Resend ni a Twilio.
  */
 public final class ApiDePrueba {
   private ApiDePrueba() {}
@@ -20,14 +20,18 @@ public final class ApiDePrueba {
   }
 
   public static Javalin crear(Clock clock) {
-    return DonacionesApi.create(clock, notificacionesSimuladas());
+    return DonacionesApi.create(clock, notificacionesDescartadas());
   }
 
   public static Javalin crear(Clock clock, PosicionesCamiones posicionesCamiones) {
-    return DonacionesApi.create(clock, notificacionesSimuladas(), posicionesCamiones);
+    return DonacionesApi.create(clock, notificacionesDescartadas(), posicionesCamiones);
   }
 
-  private static ServicioNotificaciones notificacionesSimuladas() {
-    return new ServicioNotificaciones(new NotificadorSimulado(), new NotificacionesRepository(), 1);
+  private static ServicioNotificaciones notificacionesDescartadas() {
+    return new ServicioNotificaciones(
+        new NotificadorPorCanal(
+            (destinatario, asunto, mensaje) -> ResultadoEnvio.aceptado(),
+            (destinatario, mensaje) -> ResultadoEnvio.aceptado(),
+            (destinatario, mensaje) -> ResultadoEnvio.aceptado()));
   }
 }

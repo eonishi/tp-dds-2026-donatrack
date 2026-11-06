@@ -11,11 +11,11 @@ import java.util.Map;
 public final class NotificadorDesdeEntorno {
   private NotificadorDesdeEntorno() {}
 
-  public static Notificador crear() {
+  public static NotificadorPorCanal crear() {
     return crear(System.getenv());
   }
 
-  static Notificador crear(Map<String, String> entorno) {
+  static NotificadorPorCanal crear(Map<String, String> entorno) {
     validarConfiguracion(entorno);
     HttpClient client = HttpClient.newHttpClient();
     GatewayCorreo correo =

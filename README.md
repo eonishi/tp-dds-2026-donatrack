@@ -158,6 +158,8 @@ En Twilio Trial, cada destinatario telefónico debe estar verificado y el trial 
 WhatsApp, las personas destinatarias primero deben unirse al sandbox de Twilio. Los números se
 guardan en formato E.164, por ejemplo `+541112345678`.
 
-Si falta la configuración de un canal, sus notificaciones quedan registradas como `FALLIDA` y se
-reintentan hasta tres veces. Las pruebas usan dobles de gateway, por lo que no invocan proveedores
-externos.
+Las notificaciones se envían de forma inmediata al ocurrir el evento del dominio, sin encolarlas
+en memoria ni conservar un atributo `estado` (`PENDIENTE`/`ENVIADA`/`FALLIDA`) o contador de
+reintentos en `Notificacion`. Si un proveedor rechaza el envío, el fallo se registra en el log sin
+interrumpir el caso de uso principal. Las pruebas usan dobles de gateway en `src/test`, por lo que
+no invocan proveedores externos ni requieren dobles en `src/main`.

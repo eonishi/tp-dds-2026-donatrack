@@ -13,7 +13,6 @@ import ar.edu.utn.donatrack.bienes.SubcategoriasRepository;
 import ar.edu.utn.donatrack.donaciones.CargaDonacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
-import ar.edu.utn.donatrack.notificaciones.NotificacionesRepository;
 import ar.edu.utn.donatrack.notificaciones.NotificadorDesdeEntorno;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.propuestas.PropuestaRepository;
@@ -61,8 +60,7 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
   }
 
   private static ServicioNotificaciones notificacionesDesdeEntorno() {
-    return new ServicioNotificaciones(
-        NotificadorDesdeEntorno.crear(), new NotificacionesRepository(), 1);
+    return new ServicioNotificaciones(NotificadorDesdeEntorno.crear());
   }
 
   private Javalin build(

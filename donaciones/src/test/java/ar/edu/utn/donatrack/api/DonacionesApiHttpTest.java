@@ -11,10 +11,7 @@ import ar.edu.utn.donatrack.bienes.Categoria;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donantes.Donante;
-import ar.edu.utn.donatrack.notificaciones.Notificacion;
-import ar.edu.utn.donatrack.notificaciones.NotificacionesRepository;
-import ar.edu.utn.donatrack.notificaciones.Notificador;
-import ar.edu.utn.donatrack.notificaciones.NotificadorSimulado;
+import ar.edu.utn.donatrack.notificaciones.NotificadorPorCanal;
 import ar.edu.utn.donatrack.notificaciones.ResultadoEnvio;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
@@ -33,6 +30,8 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,14 +42,27 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
   private Javalin app;
   private String baseUrl;
   private String sessionCookie;
-  private NotificacionesRepository notificacionesRepository;
+  private List<String> mensajesEnviados;
 
   @BeforeEach
   void start() throws Exception {
     Clock clock = Clock.fixed(Instant.parse("2026-09-11T12:00:00Z"), ZoneOffset.UTC);
-    notificacionesRepository = new NotificacionesRepository();
-    ServicioNotificaciones notificaciones =
-        new ServicioNotificaciones(new NotificadorSimulado(), notificacionesRepository, 1);
+    mensajesEnviados = new CopyOnWriteArrayList<>();
+    NotificadorPorCanal notificador =
+        new NotificadorPorCanal(
+            (destinatario, asunto, mensaje) -> {
+              mensajesEnviados.add(mensaje);
+              return ResultadoEnvio.aceptado();
+            },
+            (destinatario, mensaje) -> {
+              mensajesEnviados.add(mensaje);
+              return ResultadoEnvio.aceptado();
+            },
+            (destinatario, mensaje) -> {
+              mensajesEnviados.add(mensaje);
+              return ResultadoEnvio.aceptado();
+            });
+    ServicioNotificaciones notificaciones = new ServicioNotificaciones(notificador);
     app = DonacionesApi.create(clock, notificaciones).start(0);
     baseUrl = "http://localhost:" + app.port();
     sessionCookie = iniciarSesionComoAdmin();
@@ -73,27 +85,32 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
   void altaDeDonanteEnviaUnaBienvenidaUnaSolaVez() throws Exception {
     UUID donanteId = crearDonante();
 
-    long bienvenidas =
-        notificacionesRepository.getNotificaciones().stream()
-            .filter(n -> n.getMensaje().contains("DonaTrack"))
-            .count();
+    long bienvenidas = mensajesEnviados.stream().filter(m -> m.contains("DonaTrack")).count();
 
     assertEquals(1, bienvenidas);
     assertEquals(200, request("GET", "/api/v1/donantes/" + donanteId, null).statusCode());
-    assertEquals(1, notificacionesRepository.getNotificaciones().size());
+    assertEquals(1, mensajesEnviados.size());
   }
 
   @Test
   void falloDeBienvenidaNoRevierteElAlta() throws Exception {
     app.stop();
-    notificacionesRepository = new NotificacionesRepository();
-    Notificador notificador = org.mockito.Mockito.mock(Notificador.class);
-    org.mockito.Mockito.when(
-            notificador.enviarNotificacion(
-                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
-        .thenReturn(ResultadoEnvio.fallido("proveedor caído"));
-    ServicioNotificaciones notificaciones =
-        new ServicioNotificaciones(notificador, notificacionesRepository, 1);
+    AtomicInteger intentos = new AtomicInteger();
+    NotificadorPorCanal notificador =
+        new NotificadorPorCanal(
+            (destinatario, asunto, mensaje) -> {
+              intentos.incrementAndGet();
+              return ResultadoEnvio.fallido("proveedor caído");
+            },
+            (destinatario, mensaje) -> {
+              intentos.incrementAndGet();
+              return ResultadoEnvio.fallido("proveedor caído");
+            },
+            (destinatario, mensaje) -> {
+              intentos.incrementAndGet();
+              return ResultadoEnvio.fallido("proveedor caído");
+            });
+    ServicioNotificaciones notificaciones = new ServicioNotificaciones(notificador);
     Clock clock = Clock.fixed(Instant.parse("2026-09-11T12:00:00Z"), ZoneOffset.UTC);
     app = DonacionesApi.create(clock, notificaciones).start(0);
     baseUrl = "http://localhost:" + app.port();
@@ -104,8 +121,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
         request("POST", "/api/v1/donantes", donanteJson("Sofía", "Pérez", "sofia@example.org"));
 
     assertEquals(201, response.statusCode(), response.body());
-    assertEquals(1, notificacionesRepository.getNotificaciones().size());
-    assertEquals("FALLIDA", notificacionesRepository.getNotificaciones().get(0).getEstado().name());
+    assertEquals(1, intentos.get());
   }
 
   @AfterEach
@@ -346,9 +362,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     assertEquals("ASIGNACION_REALIZADA", json(seleccion).get("estado").asText());
     assertEquals(entidadId, json(seleccion).get("entidadBeneficiariaId").asLong());
     long asignacionesAntesDeRepetir =
-        notificacionesRepository.getNotificaciones().stream()
-            .filter(n -> n.getMensaje().contains("asignad"))
-            .count();
+        mensajesEnviados.stream().filter(m -> m.contains("asignad")).count();
     assertEquals(
         200,
         request(
@@ -358,9 +372,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
             .statusCode());
     assertEquals(
         asignacionesAntesDeRepetir,
-        notificacionesRepository.getNotificaciones().stream()
-            .filter(n -> n.getMensaje().contains("asignad"))
-            .count());
+        mensajesEnviados.stream().filter(m -> m.contains("asignad")).count());
     HttpResponse<String> pendientes = request("GET", "/api/v1/propuestas-asignacion", null);
     assertEquals(200, pendientes.statusCode());
     assertEquals(1, json(pendientes).size());
@@ -633,7 +645,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
                 "{\"estado\":\"LISTA_PARA_ENTREGAR\"}")
             .statusCode());
 
-    int antes = notificacionesRepository.getNotificaciones().size();
+    int antes = mensajesEnviados.size();
     HttpResponse<String> response =
         request(
             "PATCH",
@@ -648,11 +660,10 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
             .setParameter("id", donacionId)
             .getSingleResult();
     assertEquals("AB123CD", donacion.getIdCamion().orElseThrow());
-    var nuevas = notificacionesRepository.getNotificaciones().subList(antes, antes + 2);
+    var nuevas = mensajesEnviados.subList(antes, antes + 2);
     assertEquals(2, nuevas.size());
-    for (Notificacion notificacion : nuevas) {
-      assertEquals(
-          1, apariciones(notificacion.getMensaje(), "https://mapa.donatrack.org/tracking/AB123CD"));
+    for (String mensaje : nuevas) {
+      assertEquals(1, apariciones(mensaje, "https://mapa.donatrack.org/tracking/AB123CD"));
     }
   }
 
@@ -678,7 +689,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
             "{\"estado\":\"EN_TRASLADO\"}");
     assertEquals(400, sinCamion.statusCode(), sinCamion.body());
 
-    int antes = notificacionesRepository.getNotificaciones().size();
+    int antes = mensajesEnviados.size();
     HttpResponse<String> response =
         request(
             "PATCH",
@@ -691,11 +702,10 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
             .setParameter("id", donacionId)
             .getSingleResult();
     assertEquals("AC456DE", donacion.getIdCamion().orElseThrow());
-    var nuevas = notificacionesRepository.getNotificaciones().subList(antes, antes + 2);
+    var nuevas = mensajesEnviados.subList(antes, antes + 2);
     assertEquals(2, nuevas.size());
-    for (Notificacion notificacion : nuevas) {
-      assertEquals(
-          1, apariciones(notificacion.getMensaje(), "https://mapa.donatrack.org/tracking/AC456DE"));
+    for (String mensaje : nuevas) {
+      assertEquals(1, apariciones(mensaje, "https://mapa.donatrack.org/tracking/AC456DE"));
     }
   }
 

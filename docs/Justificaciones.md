@@ -48,6 +48,10 @@ Esta separación maximiza la **cohesión interna** y minimiza el **acoplamiento*
 * GraphQL usa un solo endpoint, así que el filtro HTTP ya no puede decidir permisos por URL: solo valida que haya credenciales, y cada resolver decide quién puede usar su operación (ver `logistica.graphql.Acceso`).
 * Los errores de negocio vuelven con código 200 dentro de `errors`, con `extensions.codigo` (`NO_ENCONTRADO`, `DATOS_INVALIDOS`, `PROHIBIDO`). Las credenciales faltantes o inválidas siguen siendo 401 y 403.
 
+### 1.4 Envío Inmediato de Notificaciones (Sin Estado ni Cola en Memoria)
+**Decisión:** Se eliminó el atributo `estado` (`EstadoNotificacion`: `PENDIENTE`, `ENVIADA`, `FALLIDA`), el contador de reintentos y el repositorio en memoria (`NotificacionesRepository`), así como el doble `NotificadorSimulado` del árbol de producción (`src/main`) y la interfaz intermedia `Notificador`.
+**Justificación:** Las notificaciones se despachan en el acto al ocurrir el evento mediante `ServicioNotificaciones` y `NotificadorPorCanal` hacia los gateways reales (Resend y Twilio). Mantener una lista en memoria y un estado de ciclo de vida en `Notificacion` respondía a un procesamiento diferido o en lote no requerido que ningún caso de uso leía; los dobles de prueba pertenecen exclusivamente a `src/test`.
+
 ## 2. Consideraciones de Diseño Relacional (ORM y JPA)
 
 ### 2.1 Aislamiento de Bases de Datos (Schemas Independientes)

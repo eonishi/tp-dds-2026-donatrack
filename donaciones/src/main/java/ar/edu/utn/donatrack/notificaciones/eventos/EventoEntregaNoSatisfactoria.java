@@ -5,7 +5,6 @@ import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.notificaciones.DestinatariosNotificacion;
-import ar.edu.utn.donatrack.notificaciones.EstadoNotificacion;
 import ar.edu.utn.donatrack.notificaciones.Notificacion;
 import ar.edu.utn.donatrack.notificaciones.payloads.SinPayload;
 import java.util.ArrayList;
@@ -29,15 +28,11 @@ public class EventoEntregaNoSatisfactoria extends EventoNotificable {
     String mensajeDonante =
         "La entrega a " + entidad.getRazonSocial() + " no pudo completarse: " + motivo;
     for (var medio : DestinatariosNotificacion.predeterminado(donante)) {
-      notificaciones.add(
-          new Notificacion(
-              medio, mensajeDonante, SinPayload.INSTANCE, EstadoNotificacion.PENDIENTE));
+      notificaciones.add(new Notificacion(medio, mensajeDonante, SinPayload.INSTANCE));
     }
     String mensajeEntidad = "La entrega no pudo completarse: " + motivo;
     for (var medio : DestinatariosNotificacion.predeterminado(entidad)) {
-      notificaciones.add(
-          new Notificacion(
-              medio, mensajeEntidad, SinPayload.INSTANCE, EstadoNotificacion.PENDIENTE));
+      notificaciones.add(new Notificacion(medio, mensajeEntidad, SinPayload.INSTANCE));
     }
 
     String adminConfig =
@@ -50,9 +45,7 @@ public class EventoEntregaNoSatisfactoria extends EventoNotificable {
               + motivo;
       for (String email : adminConfig.split(",")) {
         MedioDeContacto medioAdmin = new CorreoElectronico(email.trim());
-        notificaciones.add(
-            new Notificacion(
-                medioAdmin, mensajeAdmin, SinPayload.INSTANCE, EstadoNotificacion.PENDIENTE));
+        notificaciones.add(new Notificacion(medioAdmin, mensajeAdmin, SinPayload.INSTANCE));
       }
     }
     return notificaciones;
