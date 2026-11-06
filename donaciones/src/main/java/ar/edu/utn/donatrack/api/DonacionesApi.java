@@ -13,6 +13,10 @@ import ar.edu.utn.donatrack.bienes.SubcategoriasRepository;
 import ar.edu.utn.donatrack.donaciones.CargaDonacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
+import ar.edu.utn.donatrack.fotos.AlmacenFotos;
+import ar.edu.utn.donatrack.fotos.AlmacenFotosDesdeEntorno;
+import ar.edu.utn.donatrack.fotos.AlmacenFotosLocal;
+import ar.edu.utn.donatrack.fotos.FotosRecepcion;
 import ar.edu.utn.donatrack.notificaciones.NotificacionesRepository;
 import ar.edu.utn.donatrack.notificaciones.NotificadorDesdeEntorno;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
@@ -27,10 +31,14 @@ import ar.edu.utn.donatrack.security.SecurityRules;
 import ar.edu.utn.donatrack.seguimiento.PosicionesCamiones;
 import ar.edu.utn.donatrack.seguimiento.PosicionesCamionesGraphql;
 import ar.edu.utn.donatrack.web.HandlebarsRenderer;
+import ar.edu.utn.donatrack.web.controller.FotosLocalesController;
+import ar.edu.utn.donatrack.web.controller.PaginasDeError;
 import ar.edu.utn.donatrack.web.controller.PaginasPublicasController;
+import ar.edu.utn.donatrack.web.controller.RecepcionesController;
 import ar.edu.utn.donatrack.web.controller.RegistroController;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.Javalin;
+import io.javalin.config.SizeUnit;
 import io.javalin.http.staticfiles.Location;
 import java.time.Clock;
 import java.util.List;
@@ -103,6 +111,10 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
         new PaginasPublicasController(authService, donaciones);
     RegistroController registroController =
         new RegistroController(authService, donantes, entidades);
+    AlmacenFotos almacenFotos = AlmacenFotosDesdeEntorno.crear();
+    RecepcionesController recepciones =
+        new RecepcionesController(
+            authService, donaciones, new FotosRecepcion(almacenFotos), notificaciones);
 
     Javalin app =
         Javalin.create(
@@ -112,6 +124,10 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
               // que expone la API; los estáticos (CSS, imágenes) salen de resources/public.
               config.fileRenderer(new HandlebarsRenderer());
               config.staticFiles.add("/public", Location.CLASSPATH);
+              // Fotos de recepción: hasta 5 de 5 MB cada una en un mismo formulario.
+              config.jetty.multipartConfig.maxFileSize(5, SizeUnit.MB);
+              config.jetty.multipartConfig.maxTotalRequestSize(26, SizeUnit.MB);
+              config.jetty.multipartConfig.maxInMemoryFileSize(1, SizeUnit.MB);
               config.router.apiBuilder(
                   () -> {
                     io.javalin.apibuilder.ApiBuilder.path(
@@ -128,6 +144,10 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
                     authController.routes();
                     paginasPublicas.routes();
                     registroController.routes();
+                    recepciones.routes();
+                    if (almacenFotos instanceof AlmacenFotosLocal local) {
+                      new FotosLocalesController(local).routes();
+                    }
                   });
             });
 
@@ -139,6 +159,9 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
             return;
           }
           if ("/dashboard".equals(path)
+              || path.startsWith("/entidad/")
+              || path.startsWith("/donante/")
+              || path.startsWith("/admin/")
               || "/perfil".equals(path)
               || "/donaciones".equals(path)
               || "/necesidades".equals(path)
@@ -162,6 +185,7 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
         });
 
     ApiExceptionHandler.register(app, clock);
+    PaginasDeError.register(app, authService);
     // El contexto de persistencia es por hilo y la biblioteca no lo limpia: sin este reseteo, un
     // hilo reutilizado por Javalin serviría entidades cacheadas de una solicitud anterior y
     // devolvería lecturas obsoletas o rechazaría transiciones válidas. El reseteo es del contexto,

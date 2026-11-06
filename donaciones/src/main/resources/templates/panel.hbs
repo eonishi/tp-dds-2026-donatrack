@@ -21,7 +21,7 @@
         <form id="form-donacion" class="tarjeta p-4 mb-4 d-none">
             <h3 class="h5">Cargar donación</h3>
             <div class="row g-3">
-                <div class="col-md-5"><label class="form-label">ID del donante</label><input class="form-control" name="donanteId" required placeholder="UUID del donante"></div>
+                <div class="col-md-5"><label class="form-label" for="select-donante">Donante</label><select class="form-select" id="select-donante" name="donanteId" required><option value="">Cargando donantes…</option></select></div>
                 <div class="col-md-7"><label class="form-label">Descripción del bien</label><input class="form-control" name="descripcion" required></div>
                 <div class="col-md-3"><label class="form-label">Cantidad</label><input class="form-control" type="number" step="0.01" min="0.01" name="cantidad" required></div>
                 <div class="col-md-3"><label class="form-label">Unidad</label><select class="form-select" name="unidad"><option>UNIDADES</option><option>KILOGRAMOS</option><option>LITROS</option></select></div>
@@ -34,10 +34,11 @@
     </div>
 
     <div id="vista-necesidades" class="panel-vista d-none">
-        <div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h4 mb-0">Necesidades de una entidad</h2></div>
+        <div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h4 mb-0">{{#if entidadId}}Necesidades de tu entidad{{else}}Necesidades de una entidad{{/if}}</h2></div>
         <form id="form-necesidad" class="tarjeta p-4 mb-4">
             <div class="row g-3">
-                <div class="col-md-3"><label class="form-label">ID de entidad</label><input class="form-control" name="entidadId" required></div>
+                {{#if entidadId}}<input type="hidden" id="select-entidad" name="entidadId" value="{{entidadId}}">
+                {{else}}<div class="col-md-3"><label class="form-label" for="select-entidad">Entidad</label><select class="form-select" id="select-entidad" name="entidadId" required><option value="">Cargando entidades…</option></select></div>{{/if}}
                 <div class="col-md-3"><label class="form-label">Tipo</label><select class="form-select" name="tipo"><option>EXTRAORDINARIA</option><option>RECURRENTE</option></select></div>
                 <div class="col-md-3"><label class="form-label">Categoría</label><select class="form-select" name="categoria"><option>ALIMENTO</option><option>VESTIMENTA</option><option>MOBILIARIO</option></select></div>
                 <div class="col-md-3"><label class="form-label">Subcategoría</label><input class="form-control" name="subcategoria" required></div>
@@ -47,7 +48,7 @@
             </div>
             <button class="btn btn-primary mt-3" type="submit">Agregar necesidad</button>
         </form>
-        <div id="necesidades-lista" class="row g-3"><p class="text-body-secondary">Ingresá un ID para consultar necesidades.</p></div>
+        <div id="necesidades-lista" class="row g-3"><p class="text-body-secondary">Elegí una entidad para ver sus necesidades.</p></div>
     </div>
 
     <div id="vista-logistica" class="panel-vista d-none">
@@ -60,12 +61,11 @@
 
     <div id="vista-matchmaking" class="panel-vista d-none">
         <div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h4 mb-0">Propuestas de asignación</h2><button class="btn btn-outline-primary rounded-pill" data-action="recargar-matchmaking">Actualizar</button></div>
-        <form id="form-matchmaking" class="tarjeta p-4 mb-4"><label class="form-label">ID de donación</label><div class="input-group"><input class="form-control" name="donacionId" required><button class="btn btn-primary" type="submit">Ejecutar matchmaking</button></div></form>
+        <form id="form-matchmaking" class="tarjeta p-4 mb-4"><label class="form-label" for="select-donacion">Donación en depósito</label><div class="input-group"><select class="form-select" id="select-donacion" name="donacionId" required><option value="">Cargando donaciones…</option></select><button class="btn btn-primary" type="submit">Ejecutar matchmaking</button></div></form>
         <div id="matchmaking-lista" class="row g-3"><p class="text-body-secondary">Cargando propuestas…</p></div>
     </div>
 
     <div id="vista-catalogo" class="panel-vista d-none">
-        <div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h4 mb-0">Subcategorías</h2></div>
         <form id="form-subcategoria" class="tarjeta p-4 mb-4"><div class="row g-2"><div class="col-md-6"><input class="form-control" name="nombre" placeholder="Nombre" required></div><div class="col-md-4"><select class="form-select" name="categoria"><option>ALIMENTO</option><option>VESTIMENTA</option><option>MOBILIARIO</option></select></div><div class="col-md-2"><button class="btn btn-primary w-100" type="submit">Agregar</button></div></div></form>
         <div id="catalogo-lista" class="row g-3"><p class="text-body-secondary">Cargando catálogo…</p></div>
     </div>

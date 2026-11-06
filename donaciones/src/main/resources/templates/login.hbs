@@ -7,7 +7,7 @@
             <div class="tarjeta p-4 p-lg-5">
                 <span class="chip mb-3">DonaTrack</span>
                 <h1 class="mb-3">Ingresá a tu cuenta</h1>
-                <p class="text-body-secondary">Accedé con tu email y contraseña para seguir con tu trabajo.</p>
+                <p class="text-body-secondary">Personas donantes, entidades beneficiarias y equipo de DonaTrack ingresan desde acá.</p>
 
                 {{#if error}}
                     <div class="alert alert-danger" role="alert">{{error}}</div>
@@ -16,11 +16,11 @@
                 <form method="post" action="/login" class="mt-4">
                     <div class="mb-3">
                         <label for="email" class="form-label">Email</label>
-                        <input id="email" name="email" type="email" class="form-control" placeholder="admin@donatrack.local" required>
+                        <input id="email" name="email" type="email" class="form-control" placeholder="tu@correo.com" value="{{email}}" autocomplete="username" autofocus required>
                     </div>
                     <div class="mb-3">
                         <label for="password" class="form-label">Contraseña</label>
-                        <input id="password" name="password" type="password" class="form-control" placeholder="••••••••" required>
+                        <input id="password" name="password" type="password" class="form-control" placeholder="••••••••" autocomplete="current-password" required>
                     </div>
                     <button type="submit" class="btn btn-primary w-100 rounded-pill">Iniciar sesión</button>
                 </form>

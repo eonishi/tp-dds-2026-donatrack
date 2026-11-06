@@ -1,6 +1,7 @@
 package ar.edu.utn.donatrack.notificaciones;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -22,5 +23,10 @@ class NotificadorDesdeEntornoTest {
     assertTrue(error.getMessage().contains("TWILIO_SMS_FROM"));
     assertTrue(error.getMessage().contains("TWILIO_WHATSAPP_FROM"));
     assertFalse(error.getMessage().contains("secreto-no-exponer"));
+  }
+
+  @Test
+  void sinNingunaCredencialSimulaLasNotificaciones() {
+    assertInstanceOf(NotificadorSimulado.class, NotificadorDesdeEntorno.crear(Map.of()));
   }
 }

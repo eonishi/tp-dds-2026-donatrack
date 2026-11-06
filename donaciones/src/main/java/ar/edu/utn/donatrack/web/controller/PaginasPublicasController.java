@@ -2,7 +2,6 @@ package ar.edu.utn.donatrack.web.controller;
 
 import static io.javalin.apibuilder.ApiBuilder.get;
 
-import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
@@ -78,25 +77,9 @@ public final class PaginasPublicasController {
     return new EntregaPublica(
         donacion.getEntidadBeneficiaria().getRazonSocial(),
         fecha.equals(LocalDateTime.MIN) ? "" : fecha.format(FORMATO_FECHA),
-        donacion.getBienes().stream().map(PaginasPublicasController::describir).toList(),
-        // Solo enlaces http(s): la URL la carga la entidad y se muestra en un <img>.
-        donacion.getFotos().stream()
-            .filter(url -> url != null && url.matches("(?i)^https?://.+"))
-            .toList(),
+        Vistas.bienes(donacion),
+        donacion.getFotos().stream().filter(Vistas::esFotoMostrable).toList(),
         fecha);
-  }
-
-  private static String describir(Bien bien) {
-    double cantidad = bien.getCantidad();
-    String numero =
-        cantidad == Math.rint(cantidad)
-            ? String.valueOf((long) cantidad)
-            : String.valueOf(cantidad);
-    return numero
-        + " "
-        + bien.getUnidad().name().toLowerCase().replace('_', ' ')
-        + " de "
-        + bien.getSubcategoria().getNombre();
   }
 
   /**

@@ -15,6 +15,19 @@ Esta separación maximiza la **cohesión interna** y minimiza el **acoplamiento*
 **Decisión:** Integración sincrónica vía HTTP REST (`DonacionesRemotasImpl`).
 **Justificación:** Cuando el chofer inicia la ruta, se hace un llamado REST a Donaciones para cambiar el estado. Se eligió REST sincrónico para tener una respuesta inmediata de si el lote fue actualizado correctamente o hubo un error de negocio. Si fuera asincrónico (ej. Kafka/RabbitMQ), requeriría manejar complejidad extra de eventual consistency y sagas para un flujo que, por ahora, es secuencial e imperativo.
 
+### 1.2.1 Interfaz web: MVC con template engine (cliente liviano, entrega 4)
+**Decisión:** las pantallas se renderizan del lado del servidor, dentro del servicio de donaciones, con Javalin y plantillas Handlebars (patrón MVC).
+
+| Capa | Dónde |
+| --- | --- |
+| Model | El dominio y los repositorios de `donaciones`. |
+| View | Plantillas en `donaciones/src/main/resources/templates/`: `layout.hbs` con la navegación común y una plantilla por pantalla, incluida `error.hbs`. |
+| Controller | `donaciones/src/main/java/ar/edu/utn/donatrack/web/controller/` (páginas públicas, registro y páginas de error) y `security/AuthController` (login y paneles). Están separados de los controladores de la API (`api/controller`), aunque compartan la misma aplicación Javalin. |
+
+**Por qué el cliente es liviano:** el navegador recibe HTML ya armado y estilos estáticos; no hay una aplicación de una sola página ni un paso de compilación del frontend. La única lógica en el navegador es `panel.js`, que llama a las dos APIs (`/api/v1` de donaciones y el GraphQL de logística) para las acciones del panel. Así la interfaz usa el mismo dominio que la API, sin duplicar reglas, y la sesión es la cookie HTTP que pide el enunciado.
+
+**Errores:** las pantallas web muestran páginas propias dentro del layout (404, 403 y 500, en `PaginasDeError`), con un enlace para volver al inicio o al panel y sin exponer el detalle técnico. La API sigue respondiendo sus errores en JSON.
+
 ### 1.3 Protocolo del servicio de logística: GraphQL en lugar de HTTP/REST (entrega 4)
 **Requerimiento:** la entrega 4 pide reemplazar HTTP por gRPC (opción 1) **o** por GraphQL (opción 2) en las comunicaciones con el servicio extraído en la entrega 2, que es logística. Se elige una sola opción.
 
