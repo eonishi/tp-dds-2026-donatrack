@@ -10,15 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
           cache: maven
+
       - run: mvn -B verify
 
-  # Construye la imagen de cada módulo. En los PR solo verifica que el Dockerfile ande;
-  # en main además la publica en GHCR para que la EC2 la baje sin compilar.
   docker:
     runs-on: ubuntu-latest
     needs: build
@@ -32,15 +32,19 @@ jobs:
             main_class: ar.edu.utn.donatrack.api.DonaTrackApplication
           - modulo: logistica
             main_class: ar.edu.utn.donatrack.logistica.MainLogistica
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: docker/setup-buildx-action@v3
+
       - uses: docker/login-action@v3
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: docker/build-push-action@v6
         with:
           context: .
@@ -54,36 +58,105 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.modulo }}
           cache-to: type=gha,mode=max,scope=${{ matrix.modulo }}
 
-  # Solo con un push a main (o sea, al mergear): copia el compose a la EC2 y levanta las imágenes nuevas.
   deploy:
     runs-on: ubuntu-latest
     needs: [build, docker]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Si llegan dos pushes seguidos, el segundo deploy espera al primero en vez de pisarlo
+    # (pisarse deja contenedores renombrados a medias y el siguiente "up" falla).
+    concurrency:
+      group: deploy-prod
+      cancel-in-progress: false
     permissions:
       contents: read
       packages: read
+
     steps:
       - uses: actions/checkout@v4
-      - uses: appleboy/scp-action@v0.1.7
+
+      - name: Validar secrets y formato de clave SSH
+        shell: bash
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          set -euo pipefail
+
+          missing=0
+
+          for variable in EC2_HOST EC2_USER SSH_KEY; do
+            if [ -z "${!variable}" ]; then
+              echo "::error::El secret correspondiente a $variable está vacío o no está disponible para este job"
+              missing=1
+            fi
+          done
+
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+          echo "Los tres secrets tienen contenido."
+
+          if [[ "$SSH_KEY" == *'\n'* ]]; then
+            echo "::warning::La clave contiene caracteres literales \n. Debe tener saltos de línea reales."
+          fi
+
+          if [[ "$SSH_KEY" == *'⏎'* ]]; then
+            echo "::warning::La clave contiene el carácter literal ⏎. Eliminá ese carácter del secret."
+          fi
+
+          if [[ "$SSH_KEY" == *$'\r'* ]]; then
+            echo "::warning::La clave contiene retornos de carro CRLF. Guardala con saltos de línea LF."
+          fi
+
+          KEY_FILE=$(mktemp)
+          trap 'rm -f "$KEY_FILE"' EXIT
+          chmod 600 "$KEY_FILE"
+          printf '%s\n' "$SSH_KEY" > "$KEY_FILE"
+
+          if ! head -n 1 "$KEY_FILE" | grep -Eq '^-----BEGIN (RSA |EC |DSA |OPENSSH |ENCRYPTED )?PRIVATE KEY-----$'; then
+            echo "::error::La primera línea no tiene un encabezado de clave privada reconocido. Revisá espacios, comillas o contenido faltante."
+            exit 1
+          fi
+
+          if ssh-keygen -y -P '' -f "$KEY_FILE" > /dev/null 2>&1; then
+            echo "La clave privada se pudo leer correctamente y no requiere contraseña."
+          else
+            echo "::error::No se pudo leer la clave privada sin contraseña. Puede estar incompleta, tener formato inválido o estar cifrada."
+            echo "Validá el archivo original localmente con: ssh-keygen -y -f tu-clave.pem"
+            echo "Si solicita contraseña, configurá passphrase en las acciones SCP y SSH."
+            exit 1
+          fi
+
+      - name: Copiar compose a EC2
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: docker-compose.prod.yml
           target: ~/donatrack
-      - uses: appleboy/ssh-action@v1.2.0
+
+      - name: Desplegar en EC2
+        uses: appleboy/ssh-action@v1.2.0
         env:
           GHCR_USER: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM: ${{ secrets.RESEND_FROM }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_SMS_FROM: ${{ secrets.TWILIO_SMS_FROM }}
+          TWILIO_WHATSAPP_FROM: ${{ secrets.TWILIO_WHATSAPP_FROM }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: GHCR_USER,GHCR_TOKEN
+          envs: GHCR_USER,GHCR_TOKEN,RESEND_API_KEY,RESEND_FROM,TWILIO_ACCOUNT_SID,TWILIO_AUTH_TOKEN,TWILIO_SMS_FROM,TWILIO_WHATSAPP_FROM
           script: |
             set -e
             cd ~/donatrack
-            # Las imágenes son privadas (el repo lo es): login con el token del job, que vence al terminar.
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --remove-orphans

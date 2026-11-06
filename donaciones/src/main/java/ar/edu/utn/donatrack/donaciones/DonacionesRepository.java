@@ -46,6 +46,21 @@ public class DonacionesRepository implements WithSimplePersistenceUnit {
   }
 
   /**
+   * Donaciones asignadas a una entidad beneficiaria, en cualquier estado. La vista decide cómo
+   * agruparlas (por recibir, recibidas, con problemas).
+   *
+   * @param entidadId identidad de la entidad beneficiaria
+   */
+  public List<Donacion> getDonacionesDeEntidad(Long entidadId) {
+    return List.copyOf(
+        createQuery(
+                "SELECT d FROM Donacion d WHERE d.entidadBeneficiaria.id = :entidad",
+                Donacion.class)
+            .setParameter("entidad", entidadId)
+            .getResultList());
+  }
+
+  /**
    * Selecciona las donaciones cuyo estado actual es {@code estado}.
    *
    * <p>Consulta directa sobre la columna materializada: el historial queda como trazabilidad de
