@@ -3,8 +3,7 @@ package ar.edu.utn.donatrack.notificaciones.eventos;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
-import ar.edu.utn.donatrack.donantes.MedioDeContacto;
-import ar.edu.utn.donatrack.notificaciones.DestinatariosNotificacion;
+import ar.edu.utn.donatrack.notificaciones.Notificable;
 import ar.edu.utn.donatrack.notificaciones.Notificacion;
 import ar.edu.utn.donatrack.notificaciones.payloads.SinPayload;
 import java.util.ArrayList;
@@ -27,13 +26,9 @@ public class EventoEntregaNoSatisfactoria extends EventoNotificable {
     List<Notificacion> notificaciones = new ArrayList<>();
     String mensajeDonante =
         "La entrega a " + entidad.getRazonSocial() + " no pudo completarse: " + motivo;
-    for (var medio : DestinatariosNotificacion.predeterminado(donante)) {
-      notificaciones.add(new Notificacion(medio, mensajeDonante, SinPayload.INSTANCE));
-    }
+    notificaciones.add(new Notificacion(donante, mensajeDonante, SinPayload.INSTANCE));
     String mensajeEntidad = "La entrega no pudo completarse: " + motivo;
-    for (var medio : DestinatariosNotificacion.predeterminado(entidad)) {
-      notificaciones.add(new Notificacion(medio, mensajeEntidad, SinPayload.INSTANCE));
-    }
+    notificaciones.add(new Notificacion(entidad, mensajeEntidad, SinPayload.INSTANCE));
 
     String adminConfig =
         System.getProperty("donatrack.admin.emails", System.getenv("DONATRACK_ADMIN_EMAILS"));
@@ -44,10 +39,16 @@ public class EventoEntregaNoSatisfactoria extends EventoNotificable {
               + " no pudo completarse. Motivo: "
               + motivo;
       for (String email : adminConfig.split(",")) {
-        MedioDeContacto medioAdmin = new CorreoElectronico(email.trim());
-        notificaciones.add(new Notificacion(medioAdmin, mensajeAdmin, SinPayload.INSTANCE));
+        notificaciones.add(
+            new Notificacion(administrador(email.trim()), mensajeAdmin, SinPayload.INSTANCE));
       }
     }
     return notificaciones;
+  }
+
+  // Los administradores todavía no son parte del dominio: solo se conoce su correo de config.
+  private static Notificable administrador(String email) {
+    CorreoElectronico correo = new CorreoElectronico(email);
+    return (mensaje, canales) -> List.of(correo.enviar(mensaje, canales));
   }
 }

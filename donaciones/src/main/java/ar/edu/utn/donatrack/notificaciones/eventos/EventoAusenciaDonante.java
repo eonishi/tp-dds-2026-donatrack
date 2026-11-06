@@ -1,7 +1,6 @@
 package ar.edu.utn.donatrack.notificaciones.eventos;
 
 import ar.edu.utn.donatrack.donantes.Donante;
-import ar.edu.utn.donatrack.notificaciones.DestinatariosNotificacion;
 import ar.edu.utn.donatrack.notificaciones.Notificacion;
 import ar.edu.utn.donatrack.notificaciones.payloads.SinPayload;
 import java.util.List;
@@ -16,14 +15,11 @@ public class EventoAusenciaDonante extends EventoNotificable {
 
   @Override
   public List<Notificacion> generarNotificaciones() {
-    return DestinatariosNotificacion.predeterminado(donante).stream()
-        .map(
-            medio ->
-                new Notificacion(
-                    medio,
-                    "Hace más de 20 días que no recibimos una donación tuya. "
-                        + "¿Te animas a colaborar nuevamente?",
-                    SinPayload.INSTANCE))
-        .toList();
+    return List.of(
+        new Notificacion(
+            donante,
+            "Hace más de 20 días que no recibimos una donación tuya. "
+                + "¿Te animas a colaborar nuevamente?",
+            SinPayload.INSTANCE));
   }
 }

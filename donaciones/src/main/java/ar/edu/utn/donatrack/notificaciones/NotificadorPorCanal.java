@@ -1,11 +1,12 @@
 package ar.edu.utn.donatrack.notificaciones;
 
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
-import ar.edu.utn.donatrack.donantes.MedioDeContacto;
-import ar.edu.utn.donatrack.donantes.Sms;
-import ar.edu.utn.donatrack.donantes.Whatsapp;
 import java.util.Objects;
+import java.util.function.Supplier;
 
+/**
+ * Gateways de envío por canal. Cada medio de contacto elige su canal y pasa su propio contacto;
+ * este notificador no conoce los medios ni los destinatarios.
+ */
 public class NotificadorPorCanal {
   private static final String ASUNTO_POR_DEFECTO = "Novedad de DonaTrack";
 
@@ -19,22 +20,26 @@ public class NotificadorPorCanal {
     this.whatsapp = Objects.requireNonNull(whatsapp);
   }
 
-  public ResultadoEnvio enviarNotificacion(MedioDeContacto destinatario, String mensaje) {
-    if (destinatario == null) {
-      return ResultadoEnvio.fallido("El destinatario es obligatorio.");
+  public Envio enviarPorCorreo(String direccion, String mensaje) {
+    return enviar(Canal.CORREO, () -> correo.enviar(direccion, ASUNTO_POR_DEFECTO, mensaje));
+  }
+
+  public Envio enviarPorSms(String numero, String mensaje) {
+    return enviar(Canal.SMS, () -> sms.enviar(numero, mensaje));
+  }
+
+  public Envio enviarPorWhatsapp(String numero, String mensaje) {
+    return enviar(Canal.WHATSAPP, () -> whatsapp.enviar(numero, mensaje));
+  }
+
+  private Envio enviar(Canal canal, Supplier<ResultadoEnvio> envio) {
+    try {
+      return new Envio(canal, envio.get());
+    } catch (RuntimeException error) {
+      return new Envio(
+          canal,
+          ResultadoEnvio.fallido(
+              error.getMessage() == null ? "Error inesperado." : error.getMessage()));
     }
-    return destinatario.aceptar(this, mensaje);
-  }
-
-  public ResultadoEnvio enviar(CorreoElectronico destinatario, String mensaje) {
-    return correo.enviar(destinatario.getContacto(), ASUNTO_POR_DEFECTO, mensaje);
-  }
-
-  public ResultadoEnvio enviar(Whatsapp destinatario, String mensaje) {
-    return whatsapp.enviar(destinatario.getContacto(), mensaje);
-  }
-
-  public ResultadoEnvio enviar(Sms destinatario, String mensaje) {
-    return sms.enviar(destinatario.getContacto(), mensaje);
   }
 }

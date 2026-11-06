@@ -1,7 +1,7 @@
 package ar.edu.utn.donatrack.donantes;
 
+import ar.edu.utn.donatrack.notificaciones.Envio;
 import ar.edu.utn.donatrack.notificaciones.NotificadorPorCanal;
-import ar.edu.utn.donatrack.notificaciones.ResultadoEnvio;
 import javax.persistence.Entity;
 
 @Entity
@@ -14,7 +14,7 @@ public class Whatsapp extends MedioDeContacto {
   }
 
   @Override
-  public ResultadoEnvio aceptar(NotificadorPorCanal notificador, String mensaje) {
-    return notificador.enviar(this, mensaje);
+  public Envio enviar(String mensaje, NotificadorPorCanal canales) {
+    return canales.enviarPorWhatsapp(getContacto(), mensaje);
   }
 }

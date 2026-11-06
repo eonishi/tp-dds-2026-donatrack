@@ -4,7 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
+import ar.edu.utn.donatrack.donantes.Genero;
+import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.Sms;
+import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.notificaciones.payloads.SinPayload;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -32,7 +35,15 @@ class ServicioNotificacionesTest {
                 (destinatario, mensaje) -> ResultadoEnvio.fallido("No corresponde")));
     Notificacion notificacion =
         new Notificacion(
-            new CorreoElectronico("donante@example.org"),
+            new PersonaHumana(
+                new CorreoElectronico("donante@example.org"),
+                "Ana",
+                "Pérez",
+                30,
+                "30111222",
+                TipoDocumento.DNI,
+                Genero.FEMENINO,
+                "Calle 123"),
             "Tu donación fue asignada.",
             SinPayload.INSTANCE);
 
@@ -57,9 +68,21 @@ class ServicioNotificacionesTest {
                 (destinatario, asunto, mensaje) -> ResultadoEnvio.fallido("No corresponde"),
                 sms,
                 (destinatario, mensaje) -> ResultadoEnvio.fallido("No corresponde")));
+    PersonaHumana donante =
+        new PersonaHumana(
+            new CorreoElectronico("donante@example.org"),
+            "Ana",
+            "Pérez",
+            30,
+            "30111222",
+            TipoDocumento.DNI,
+            Genero.FEMENINO,
+            "Calle 123");
+    Sms predeterminado = new Sms("+541112345678");
+    donante.addMedioDeContacto(predeterminado);
+    donante.setContactoPredeterminado(predeterminado);
     Notificacion notificacion =
-        new Notificacion(
-            new Sms("+541112345678"), "Tu donación fue asignada.", SinPayload.INSTANCE);
+        new Notificacion(donante, "Tu donación fue asignada.", SinPayload.INSTANCE);
 
     assertDoesNotThrow(() -> servicio.enviar(notificacion));
     assertEquals(1, intentos.get());
