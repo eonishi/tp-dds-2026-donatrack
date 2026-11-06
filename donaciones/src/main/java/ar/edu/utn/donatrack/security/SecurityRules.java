@@ -63,7 +63,8 @@ public final class SecurityRules {
     if (path.startsWith("/api/v1/entidades/") && path.contains("/necesidades")) {
       return new Role[] {Role.ADMIN, Role.BENEFICIARIO};
     }
-    if (path.startsWith("/api/v1/propuestas-asignacion") || path.contains("/propuesta-asignacion")) {
+    if (path.startsWith("/api/v1/propuestas-asignacion")
+        || path.contains("/propuesta-asignacion")) {
       return new Role[] {Role.ADMIN, Role.BENEFICIARIO};
     }
     return null;

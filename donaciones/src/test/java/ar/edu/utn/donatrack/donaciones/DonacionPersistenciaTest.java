@@ -144,7 +144,8 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
     List<?> estadosAlcanzados =
         entityManager()
             .createNativeQuery(
-                "SELECT estadoAlcanzado FROM HistorialEstado WHERE donacion_id = :id ORDER BY fecha")
+                "SELECT estadoAlcanzado FROM HistorialEstado WHERE donacion_id = :id ORDER BY"
+                    + " fecha")
             .setParameter("id", donacion.getId().value())
             .getResultList();
 

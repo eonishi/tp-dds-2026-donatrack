@@ -67,9 +67,9 @@ public final class AuthController {
       ctx.redirect("/login");
       return;
     }
-    if ("logistica".equals(seccion)
-        && !usuario.hasAnyRole(Role.ADMIN, Role.REPARTIDOR)) {
-      throw new ForbiddenResponse("Sólo administradores y repartidores pueden acceder a logística.");
+    if ("logistica".equals(seccion) && !usuario.hasAnyRole(Role.ADMIN, Role.REPARTIDOR)) {
+      throw new ForbiddenResponse(
+          "Sólo administradores y repartidores pueden acceder a logística.");
     }
     if (("matchmaking".equals(seccion) || "catalogo".equals(seccion))
         && !usuario.hasRole(Role.ADMIN)) {

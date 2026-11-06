@@ -43,7 +43,8 @@ class AuthSecurityHttpTest {
             "application/x-www-form-urlencoded");
 
     assertEquals(302, loginResponse.statusCode());
-    assertTrue(loginResponse.headers().firstValue("Set-Cookie").orElse("").contains("access_token="));
+    assertTrue(
+        loginResponse.headers().firstValue("Set-Cookie").orElse("").contains("access_token="));
 
     HttpResponse<String> dashboard =
         get("/dashboard", loginResponse.headers().firstValue("Set-Cookie").orElse(""));
@@ -68,12 +69,10 @@ class AuthSecurityHttpTest {
     return get(ruta, "");
   }
 
-  private HttpResponse<String> get(String ruta, String cookie) throws IOException, InterruptedException {
+  private HttpResponse<String> get(String ruta, String cookie)
+      throws IOException, InterruptedException {
     HttpRequest request =
-        HttpRequest.newBuilder(URI.create(baseUrl + ruta))
-            .header("Cookie", cookie)
-            .GET()
-            .build();
+        HttpRequest.newBuilder(URI.create(baseUrl + ruta)).header("Cookie", cookie).GET().build();
     return client.send(request, HttpResponse.BodyHandlers.ofString());
   }
 

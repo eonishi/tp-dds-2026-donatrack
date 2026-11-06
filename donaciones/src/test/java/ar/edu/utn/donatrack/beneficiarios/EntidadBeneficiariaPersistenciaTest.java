@@ -204,8 +204,9 @@ class EntidadBeneficiariaPersistenciaTest implements SimplePersistenceTest {
     var query =
         entityManager()
             .createNativeQuery(
-                "INSERT INTO Necesidad (id, DTYPE, descripcion, cantidadRecibida, cantidadObjetivo, unidad, subcategoria_id) "
-                    + "VALUES (:id, 'Necesidad', :descripcion, 0, 1, 'UNIDADES', "
+                "INSERT INTO Necesidad (id, DTYPE, descripcion, cantidadRecibida, cantidadObjetivo,"
+                    + " unidad, subcategoria_id) VALUES (:id, 'Necesidad', :descripcion, 0, 1,"
+                    + " 'UNIDADES', "
                     + valorFk
                     + ")")
             .setParameter("id", UUID.randomUUID())

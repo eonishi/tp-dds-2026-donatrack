@@ -25,7 +25,8 @@ public class MainLogistica implements WithSimplePersistenceUnit {
   }
 
   private void iniciar() {
-    String webOrigin = System.getenv().getOrDefault("DONATRACK_WEB_ORIGIN", "http://localhost:7070");
+    String webOrigin =
+        System.getenv().getOrDefault("DONATRACK_WEB_ORIGIN", "http://localhost:7070");
     var app = Javalin.create().start(9001);
 
     app.before(
@@ -75,15 +76,16 @@ public class MainLogistica implements WithSimplePersistenceUnit {
 
     // Toda operación de logística requiere un usuario ADMIN o REPARTIDOR. El callback es la
     // excepción: lo invoca el servicio de planificación y se autentica con la API key S2S.
-    app.before(ctx -> {
-      if ("/logistica/planificacion/callback".equals(ctx.path())
-          && LogisticaSecurity.isServiceRequest(ctx)) {
-        return;
-      }
-      if (ctx.path().startsWith("/logistica/")) {
-        LogisticaSecurity.enforce(ctx, Role.REPARTIDOR);
-      }
-    });
+    app.before(
+        ctx -> {
+          if ("/logistica/planificacion/callback".equals(ctx.path())
+              && LogisticaSecurity.isServiceRequest(ctx)) {
+            return;
+          }
+          if (ctx.path().startsWith("/logistica/")) {
+            LogisticaSecurity.enforce(ctx, Role.REPARTIDOR);
+          }
+        });
 
     // --- Endpoints de Camiones ---
     app.get("/logistica/camiones", camionController::listar);

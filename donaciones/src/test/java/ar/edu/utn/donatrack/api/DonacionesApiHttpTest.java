@@ -484,7 +484,8 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
             "/api/v1/beneficiarias",
             "{\"razonSocial\":\""
                 + razonSocial
-                + "\",\"direccion\":\"Calle 123\",\"telefono\":\"1111111111\",\"correos\":[\"entidad@example.org\"]}");
+                + "\",\"direccion\":\"Calle"
+                + " 123\",\"telefono\":\"1111111111\",\"correos\":[\"entidad@example.org\"]}");
     assertEquals(201, response.statusCode(), response.body());
     return Long.parseLong(json(response).get("id").asText());
   }
