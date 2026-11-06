@@ -4,6 +4,7 @@ import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.post;
 
 import io.javalin.http.Context;
+import io.javalin.http.ForbiddenResponse;
 import java.util.Map;
 import java.util.Optional;
 
@@ -20,6 +21,11 @@ public final class AuthController {
     post("/logout", this::logout);
     get("/dashboard", this::dashboard);
     get("/perfil", this::dashboard);
+    get("/donaciones", ctx -> panel(ctx, "donaciones", "Donaciones"));
+    get("/necesidades", ctx -> panel(ctx, "necesidades", "Necesidades"));
+    get("/logistica", ctx -> panel(ctx, "logistica", "Logística"));
+    get("/matchmaking", ctx -> panel(ctx, "matchmaking", "Asignación de donaciones"));
+    get("/catalogo", ctx -> panel(ctx, "catalogo", "Catálogo de subcategorías"));
   }
 
   private void loginPage(Context ctx) {
@@ -53,5 +59,22 @@ public final class AuthController {
       return;
     }
     ctx.render("dashboard", Map.of("usuario", usuario));
+  }
+
+  private void panel(Context ctx, String seccion, String titulo) {
+    Usuario usuario = authService.currentUser(ctx).orElse(null);
+    if (usuario == null) {
+      ctx.redirect("/login");
+      return;
+    }
+    if ("logistica".equals(seccion)
+        && !usuario.hasAnyRole(Role.ADMIN, Role.REPARTIDOR)) {
+      throw new ForbiddenResponse("Sólo administradores y repartidores pueden acceder a logística.");
+    }
+    if (("matchmaking".equals(seccion) || "catalogo".equals(seccion))
+        && !usuario.hasRole(Role.ADMIN)) {
+      throw new ForbiddenResponse("Sólo administradores pueden acceder a esta sección.");
+    }
+    ctx.render("panel", Map.of("usuario", usuario, "seccion", seccion, "titulo", titulo));
   }
 }

@@ -40,6 +40,10 @@ public final class Usuario {
     return hasRole(Role.ADMIN);
   }
 
+  public boolean isRepartidor() {
+    return hasRole(Role.REPARTIDOR);
+  }
+
   public boolean hasRole(Role role) {
     return roles.contains(role);
   }

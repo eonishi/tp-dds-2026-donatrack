@@ -30,6 +30,9 @@
                 <ul class="navbar-nav me-auto ms-lg-4">
                     <li class="nav-item"><a class="nav-link" href="/donaciones">Donaciones</a></li>
                     <li class="nav-item"><a class="nav-link" href="/necesidades">Necesidades</a></li>
+                    {{#if usuario.esAdmin}}<li class="nav-item"><a class="nav-link" href="/logistica">Logística</a></li>{{/if}}
+                    {{#if usuario.repartidor}}<li class="nav-item"><a class="nav-link" href="/logistica">Logística</a></li>{{/if}}
+                    {{#if usuario.esAdmin}}<li class="nav-item"><a class="nav-link" href="/matchmaking">Asignaciones</a></li><li class="nav-item"><a class="nav-link" href="/catalogo">Catálogo</a></li>{{/if}}
                     <li class="nav-item"><a class="nav-link" href="/perfil">Mi perfil</a></li>
                 </ul>
                 <div class="d-flex align-items-center gap-3">
@@ -51,7 +54,7 @@
                 </ul>
                 <div class="d-flex gap-2">
                     <a class="btn btn-link nav-link px-3" href="/login">Ingresar</a>
-                    <a class="btn btn-primary rounded-pill px-4" href="/registro">Registrarme</a>
+                    <a class="btn btn-primary rounded-pill px-4" href="/login">Ingresar</a>
                 </div>
             {{/if}}
         </div>

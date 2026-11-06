@@ -25,7 +25,21 @@ public class MainLogistica implements WithSimplePersistenceUnit {
   }
 
   private void iniciar() {
+    String webOrigin = System.getenv().getOrDefault("DONATRACK_WEB_ORIGIN", "http://localhost:7070");
     var app = Javalin.create().start(9001);
+
+    app.before(
+        ctx -> {
+          if (webOrigin.equals(ctx.header("Origin"))) {
+            ctx.header("Access-Control-Allow-Origin", webOrigin);
+            ctx.header("Access-Control-Allow-Credentials", "true");
+            ctx.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+            ctx.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+          }
+          if ("OPTIONS".equals(ctx.method().toString())) {
+            ctx.status(204);
+          }
+        });
 
     // El contexto de persistencia es por hilo y la biblioteca no lo limpia: sin este reseteo, un
     // hilo reutilizado serviría entidades cacheadas de una solicitud anterior. El reseteo es del

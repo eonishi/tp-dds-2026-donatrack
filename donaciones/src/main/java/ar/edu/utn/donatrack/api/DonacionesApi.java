@@ -111,7 +111,13 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
             SecurityRules.enforceApi(ctx, authService);
             return;
           }
-          if ("/dashboard".equals(path) || "/perfil".equals(path)) {
+          if ("/dashboard".equals(path)
+              || "/perfil".equals(path)
+              || "/donaciones".equals(path)
+              || "/necesidades".equals(path)
+              || "/logistica".equals(path)
+              || "/matchmaking".equals(path)
+              || "/catalogo".equals(path)) {
             SecurityRules.enforceProtectedWeb(ctx, authService);
           }
         });
