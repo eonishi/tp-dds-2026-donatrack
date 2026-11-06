@@ -1,8 +1,9 @@
 <div id="vista-necesidades" class="panel-vista d-none">
-    <div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h4 mb-0">Necesidades de una entidad</h2></div>
+    <div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h4 mb-0">{{#if entidadId}}Necesidades de tu entidad{{else}}Necesidades de una entidad{{/if}}</h2></div>
     <form id="form-necesidad" class="tarjeta p-4 mb-4">
         <div class="row g-3">
-            <div class="col-md-3"><label class="form-label">ID de entidad</label><input class="form-control" name="entidadId" required></div>
+            {{#if entidadId}}<input type="hidden" id="select-entidad" name="entidadId" value="{{entidadId}}">
+            {{else}}<div class="col-md-3"><label class="form-label" for="select-entidad">Entidad</label><select class="form-select" id="select-entidad" name="entidadId" required><option value="">Cargando entidades…</option></select></div>{{/if}}
             <div class="col-md-3"><label class="form-label">Tipo</label><select class="form-select" name="tipo"><option>EXTRAORDINARIA</option><option>RECURRENTE</option></select></div>
             <div class="col-md-3"><label class="form-label">Categoría</label><select class="form-select" name="categoria"><option>ALIMENTO</option><option>VESTIMENTA</option><option>MOBILIARIO</option></select></div>
             <div class="col-md-3"><label class="form-label">Subcategoría</label><input class="form-control" name="subcategoria" required></div>
@@ -12,5 +13,5 @@
         </div>
         <button class="btn btn-primary mt-3" type="submit">Agregar necesidad</button>
     </form>
-    <div id="necesidades-lista" class="row g-3"><p class="text-body-secondary">Ingresá un ID para consultar necesidades.</p></div>
+    <div id="necesidades-lista" class="row g-3"><p class="text-body-secondary">Elegí una entidad para ver sus necesidades.</p></div>
 </div>

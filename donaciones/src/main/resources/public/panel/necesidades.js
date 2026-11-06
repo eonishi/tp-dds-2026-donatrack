@@ -3,7 +3,7 @@ import { card, showAlert } from './ui.js';
 
 const container = document.querySelector('#necesidades-lista');
 
-async function cargarNecesidades(entidadId) {
+export async function cargarNecesidades(entidadId) {
   if (!entidadId) return;
   try {
     const necesidades = await request(apiUrl(`/beneficiarias/${encodeURIComponent(entidadId)}/necesidades`));
