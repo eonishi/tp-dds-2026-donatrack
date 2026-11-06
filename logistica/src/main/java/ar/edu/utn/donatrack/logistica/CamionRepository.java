@@ -53,6 +53,18 @@ public class CamionRepository implements WithSimplePersistenceUnit {
   }
 
   /**
+   * Reemplaza los datos de un camión existente, identificado por su patente.
+   *
+   * <p>Requiere una transacción activa del llamador.
+   *
+   * @param camion el camión con los datos nuevos
+   * @return el camión administrado con los datos actualizados
+   */
+  public Camion actualizar(Camion camion) {
+    return merge(camion);
+  }
+
+  /**
    * Elimina un camión por su patente. Si no existe, no hace nada.
    *
    * <p>Requiere una transacción activa del llamador (el caso de uso); nunca abre ni confirma una

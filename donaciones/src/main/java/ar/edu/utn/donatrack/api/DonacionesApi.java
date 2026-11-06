@@ -25,7 +25,7 @@ import ar.edu.utn.donatrack.security.AuthController;
 import ar.edu.utn.donatrack.security.AuthService;
 import ar.edu.utn.donatrack.security.SecurityRules;
 import ar.edu.utn.donatrack.seguimiento.PosicionesCamiones;
-import ar.edu.utn.donatrack.seguimiento.PosicionesCamionesHttp;
+import ar.edu.utn.donatrack.seguimiento.PosicionesCamionesGraphql;
 import ar.edu.utn.donatrack.web.HandlebarsRenderer;
 import ar.edu.utn.donatrack.web.controller.PaginasPublicasController;
 import ar.edu.utn.donatrack.web.controller.RegistroController;
@@ -43,11 +43,11 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
   }
 
   public static Javalin create(Clock clock) {
-    return create(clock, notificacionesDesdeEntorno(), PosicionesCamionesHttp.desdeEntorno());
+    return create(clock, notificacionesDesdeEntorno(), PosicionesCamionesGraphql.desdeEntorno());
   }
 
   public static Javalin create(Clock clock, ServicioNotificaciones notificaciones) {
-    return create(clock, notificaciones, PosicionesCamionesHttp.desdeEntorno());
+    return create(clock, notificaciones, PosicionesCamionesGraphql.desdeEntorno());
   }
 
   /** Permite reemplazar la consulta a logística, por ejemplo en las pruebas. */

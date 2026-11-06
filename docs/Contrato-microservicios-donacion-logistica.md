@@ -20,6 +20,28 @@ Para mantener el bajo acoplamiento, no se comparten entidades de base de datos. 
 
 ---
 
+### 4. Contrato de Logística (GraphQL, entrega 4)
+Desde la entrega 4, las operaciones **sobre logística** van por GraphQL en `POST /logistica/graphql`. La fuente de verdad del contrato es el esquema `logistica/src/main/resources/graphql/logistica.graphqls`; esta sección solo lo resume (ver la justificación en `docs/Justificaciones.md`, sección 1.3).
+
+*   **Consultas:** `camiones`, `camion(patente)`, `rutas`, `ruta(id)`, `posicion(patente)`, `repartidores`.
+*   **Mutaciones:** `crearCamion`, `actualizarCamion`, `eliminarCamion`, `crearRuta`, `eliminarRuta`, `asignarRepartidor`, `iniciarRuta`, `finalizarRuta`, `reportarPosicion`.
+*   **Pedido:** `{"query": "...", "variables": {...}}`. **Respuesta:** `{"data": ..., "errors": [...]}`.
+*   **Autenticación:** la administración con la cookie `access_token` (emitida por Donaciones); el repartidor con `Authorization: Bearer <token>` (emitido por `POST /logistica/login`); Donaciones con la API Key en `Authorization`, que solo habilita la consulta `posicion`.
+*   **Errores:** sin credenciales o con credenciales inválidas, `401`/`403`. Los errores de negocio vuelven con `200` dentro de `errors`, con `extensions.codigo`: `NO_ENCONTRADO`, `DATOS_INVALIDOS` o `PROHIBIDO`.
+*   **Siguen por HTTP:** `POST /logistica/login`, `POST /logistica/logout` y el callback del planificador (punto 2 de la sección siguiente).
+
+**Ejemplo (Donaciones consulta dónde está un camión):**
+```json
+{
+  "query": "query($patente: String!) { posicion(patente: $patente) { latitud longitud actualizadaEn } }",
+  "variables": { "patente": "AF123ZZ" }
+}
+```
+
+Las llamadas de Logística **hacia** Donaciones (puntos de la sección siguiente) siguen en REST.
+
+---
+
 ### Fronteras de Integración y Endpoints
 
 **1. Consulta de donaciones para armar rutas**

@@ -22,6 +22,9 @@ class LogisticaSecurityHttpTest {
   private static final String SECRET =
       System.getenv().getOrDefault("DONATRACK_JWT_SECRET", "donatrack-dev-secret-change-me");
   private final HttpClient client = HttpClient.newHttpClient();
+  // Las operaciones de logística van por GraphQL: se prueba con la consulta de la flota.
+  private static final String CONSULTA_CAMIONES = "{\"query\":\"{ camiones { patente } }\"}";
+
   private Javalin app;
   private String baseUrl;
 
@@ -39,7 +42,7 @@ class LogisticaSecurityHttpTest {
   @Test
   void preflightCorsOptionsResponde204ConHeadersCorsSinRequerirSesion() throws Exception {
     HttpRequest request =
-        HttpRequest.newBuilder(URI.create(baseUrl + "/logistica/camiones"))
+        HttpRequest.newBuilder(URI.create(baseUrl + "/logistica/graphql"))
             .header("Origin", "http://localhost:7070")
             .method("OPTIONS", HttpRequest.BodyPublishers.noBody())
             .build();
@@ -56,7 +59,10 @@ class LogisticaSecurityHttpTest {
   @Test
   void rutaDeLogisticaSinCredencialesResponde401() throws Exception {
     HttpRequest request =
-        HttpRequest.newBuilder(URI.create(baseUrl + "/logistica/camiones")).GET().build();
+        HttpRequest.newBuilder(URI.create(baseUrl + "/logistica/graphql"))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(CONSULTA_CAMIONES))
+            .build();
     HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
     assertEquals(401, response.statusCode());
   }
@@ -102,9 +108,10 @@ class LogisticaSecurityHttpTest {
 
   private HttpResponse<String> getConCookie(String token) throws Exception {
     HttpRequest request =
-        HttpRequest.newBuilder(URI.create(baseUrl + "/logistica/camiones"))
+        HttpRequest.newBuilder(URI.create(baseUrl + "/logistica/graphql"))
             .header("Cookie", "access_token=" + token)
-            .GET()
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(CONSULTA_CAMIONES))
             .build();
     return client.send(request, HttpResponse.BodyHandlers.ofString());
   }
