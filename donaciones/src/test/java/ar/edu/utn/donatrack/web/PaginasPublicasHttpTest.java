@@ -46,9 +46,45 @@ class PaginasPublicasHttpTest {
 
   @Test
   void lasSeccionesEnlazadasResponden() throws Exception {
-    for (String ruta : new String[] {"/legal", "/entregas", "/login"}) {
+    for (String ruta : new String[] {"/legal", "/entregas", "/login", "/registro"}) {
       assertEquals(200, get(ruta).statusCode(), ruta);
     }
+  }
+
+  @Test
+  void elNavbarSinSesionMuestraUnSoloBotonIngresar() throws Exception {
+    String html = get("/").body();
+
+    String boton = "<a class=\"btn btn-primary rounded-pill px-4\" href=\"/login\">Ingresar</a>";
+    assertTrue(html.contains(boton), "debería mostrar el botón verde de ingresar");
+    assertEquals(
+        1,
+        html.split("href=\"/login\">Ingresar</a>", -1).length - 1,
+        "no debería repetir Ingresar");
+  }
+
+  @Test
+  void elLoginOfreceRegistrarseANuevosUsuarios() throws Exception {
+    HttpResponse<String> response = get("/login");
+
+    assertEquals(200, response.statusCode());
+    assertTrue(response.body().contains("href=\"/registro\""), "debería enlazar al registro");
+  }
+
+  @Test
+  void elRegistroUnificaDonantesYEntidadesConUnSelectorDeRol() throws Exception {
+    HttpResponse<String> response = get("/registro");
+    assertEquals(200, response.statusCode());
+
+    String html = response.body();
+    assertTrue(html.contains("<nav"), "debería incluir el layout");
+    assertTrue(html.contains("action=\"/registro\""), "debería enviar el formulario a /registro");
+    assertTrue(html.contains("name=\"rol\""), "debería enviar el rol elegido");
+    assertTrue(html.contains("id=\"rol-donante\""), "debería ofrecer el rol donante");
+    assertTrue(html.contains("id=\"rol-entidad\""), "debería ofrecer el rol entidad beneficiaria");
+    assertTrue(html.contains("data-rol=\"donante\""), "debería traer los datos del donante");
+    assertTrue(html.contains("data-rol=\"entidad\""), "debería traer los datos de la entidad");
+    assertTrue(html.contains("href=\"/login\""), "debería ofrecer iniciar sesión");
   }
 
   @Test

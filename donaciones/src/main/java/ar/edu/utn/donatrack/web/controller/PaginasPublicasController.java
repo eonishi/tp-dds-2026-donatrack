@@ -22,6 +22,7 @@ public final class PaginasPublicasController {
     get("/", this::landing);
     get("/legal", this::legal);
     get("/entregas", ctx -> proximamente(ctx, "Donaciones entregadas"));
+    get("/registro", this::registro);
   }
 
   private void landing(Context ctx) {
@@ -30,6 +31,10 @@ public final class PaginasPublicasController {
 
   private void legal(Context ctx) {
     ctx.render("legal", modeloPublico(ctx));
+  }
+
+  private void registro(Context ctx) {
+    ctx.render("registro", modeloPublico(ctx));
   }
 
   private void proximamente(Context ctx, String seccion) {
