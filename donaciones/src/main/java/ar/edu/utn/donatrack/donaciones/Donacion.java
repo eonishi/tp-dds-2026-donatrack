@@ -6,7 +6,7 @@ import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
 import ar.edu.utn.donatrack.donantes.Donante;
-import ar.edu.utn.donatrack.notificaciones.Notificacion;
+import ar.edu.utn.donatrack.notificaciones.PublicadorDeEventos;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -297,41 +297,48 @@ public class Donacion {
     this.entidadBeneficiaria = entidadBeneficiaria;
   }
 
-  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> confirmarEntidadBeneficiaria(
-      EntidadBeneficiaria entidadBeneficiaria) {
+  /**
+   * Asigna la entidad beneficiaria y publica el aviso de asignación.
+   *
+   * @param entidadBeneficiaria entidad que recibe la donación (no nula)
+   * @param publicador destino del evento de la transición
+   * @throws IllegalStateException si la donación no está en depósito
+   */
+  public void confirmarEntidadBeneficiaria(
+      EntidadBeneficiaria entidadBeneficiaria, PublicadorDeEventos publicador) {
     Objects.requireNonNull(entidadBeneficiaria, "entidadBeneficiaria no puede ser null");
     this.setEntidadBeneficiaria(entidadBeneficiaria);
-    return this.asignar();
+    this.asignar(publicador);
   }
 
-  public List<Notificacion> asignar() {
-    return this.estado.asignar(this);
+  public void asignar(PublicadorDeEventos publicador) {
+    this.estado.asignar(this, publicador);
   }
 
-  public List<Notificacion> planificarRuta() {
-    return this.estado.planificarRuta(this);
+  public void planificarRuta() {
+    this.estado.planificarRuta(this);
   }
 
-  public List<Notificacion> iniciarTraslado(String urlMapa) {
-    return this.estado.iniciarTraslado(this, urlMapa);
+  public void iniciarTraslado(String urlMapa, PublicadorDeEventos publicador) {
+    this.estado.iniciarTraslado(this, urlMapa, publicador);
   }
 
-  public List<Notificacion> confirmarEntrega() {
-    return this.estado.confirmarEntrega(this);
+  public void confirmarEntrega(PublicadorDeEventos publicador) {
+    this.estado.confirmarEntrega(this, publicador);
   }
 
-  public List<Notificacion> reportarFalla(String justificacion) {
+  public void reportarFalla(String justificacion, PublicadorDeEventos publicador) {
     if (justificacion == null || justificacion.isBlank()) {
       throw new IllegalArgumentException("La justificación es obligatoria.");
     }
-    return this.estado.reportarFalla(this, justificacion);
+    this.estado.reportarFalla(this, justificacion, publicador);
   }
 
-  public List<Notificacion> marcarVencida() {
-    return this.estado.marcarVencida(this);
+  public void marcarVencida() {
+    this.estado.marcarVencida(this);
   }
 
-  public List<Notificacion> retornarAlDeposito() {
-    return this.estado.retornarAlDeposito(this);
+  public void retornarAlDeposito() {
+    this.estado.retornarAlDeposito(this);
   }
 }

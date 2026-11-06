@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class EventoEntregaNoSatisfactoria extends EventoNotificable {
+public class EventoEntregaNoSatisfactoria implements EventoNotificable {
   private final Donante donante;
   private final EntidadBeneficiaria entidad;
   private final String motivo;

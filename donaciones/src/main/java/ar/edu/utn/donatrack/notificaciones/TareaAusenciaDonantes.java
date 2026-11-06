@@ -23,8 +23,7 @@ public class TareaAusenciaDonantes implements Runnable {
     List<Donante> donantesAusentes = donantesRepository.getDonantesInactivos(fechaLimite);
 
     for (Donante donante : donantesAusentes) {
-      EventoAusenciaDonante evento = new EventoAusenciaDonante(donante);
-      notificaciones.enviar(evento.generarNotificaciones());
+      notificaciones.publicar(new EventoAusenciaDonante(donante));
     }
   }
 }

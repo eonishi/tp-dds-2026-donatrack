@@ -14,6 +14,8 @@ import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
+import ar.edu.utn.donatrack.notificaciones.PublicadorDeEventos;
+import ar.edu.utn.donatrack.notificaciones.PublicadorDiferido;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.propuestas.EntidadFueraDeRankingException;
 import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
@@ -84,15 +86,19 @@ public final class MatchmakingController implements WithSimplePersistenceUnit {
   private void seleccionar(Context ctx) {
     SeleccionEntidadRequest request = ctx.bodyAsClass(SeleccionEntidadRequest.class);
     Long entidadBeneficiariaId = DtoValidator.validate(request).entidadBeneficiariaId();
+    PublicadorDiferido publicador = notificaciones.publicadorDiferido();
     DonacionResponse seleccionada =
         withTransaction(
             () ->
                 ApiMapper.donacion(
-                    confirmarSeleccion(HttpSupport.id(ctx, "donacionId"), entidadBeneficiariaId)));
+                    confirmarSeleccion(
+                        HttpSupport.id(ctx, "donacionId"), entidadBeneficiariaId, publicador)));
+    publicador.enviarPendientes();
     ctx.json(seleccionada);
   }
 
-  private Donacion confirmarSeleccion(UUID donacionId, Long entidadId) {
+  private Donacion confirmarSeleccion(
+      UUID donacionId, Long entidadId, PublicadorDeEventos publicador) {
     Donacion donacion = donacion(donacionId);
     EntidadBeneficiaria entidad =
         entidades
@@ -105,8 +111,8 @@ public final class MatchmakingController implements WithSimplePersistenceUnit {
       throw ApiException.conflict("La donación ya tiene una entidad beneficiaria asignada.");
     }
     try {
-      notificaciones.enviar(
-          matchmaking.confirmarAsignacionAdministrativa(donacion, entidad, LocalDate.now(clock)));
+      matchmaking.confirmarAsignacionAdministrativa(
+          donacion, entidad, LocalDate.now(clock), publicador);
     } catch (EntidadFueraDeRankingException error) {
       throw ApiException.conflict(error.getMessage());
     }

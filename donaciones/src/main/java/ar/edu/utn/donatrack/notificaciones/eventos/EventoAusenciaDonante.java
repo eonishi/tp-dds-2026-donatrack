@@ -6,7 +6,7 @@ import ar.edu.utn.donatrack.notificaciones.payloads.SinPayload;
 import java.util.List;
 import java.util.Objects;
 
-public class EventoAusenciaDonante extends EventoNotificable {
+public class EventoAusenciaDonante implements EventoNotificable {
   private final Donante donante;
 
   public EventoAusenciaDonante(Donante donante) {

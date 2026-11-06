@@ -1,5 +1,6 @@
 package ar.edu.utn.donatrack;
 
+import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.notificacionesDescartadas;
 import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaDonacion;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -92,7 +93,7 @@ class MatchmakingInyeccionEntregasTest {
   private static Donacion crearDonacionEntregada(
       Donante donante, EntidadBeneficiaria entidad, SubCategoria subCategoria) {
     Donacion donacion = nuevaDonacion(donante, List.of(bienDe(subCategoria)));
-    donacion.confirmarEntidadBeneficiaria(entidad);
+    donacion.confirmarEntidadBeneficiaria(entidad, notificacionesDescartadas());
     donacion.cambiarEstado(EstadoDonacion.ENTREGADA, null);
     return donacion;
   }

@@ -23,6 +23,7 @@ import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
 import ar.edu.utn.donatrack.donantes.Representante;
 import ar.edu.utn.donatrack.donantes.Sms;
 import ar.edu.utn.donatrack.donantes.Whatsapp;
+import ar.edu.utn.donatrack.notificaciones.PublicadorDiferido;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoBienvenida;
 import ar.edu.utn.donatrack.utilidades.TipoPersona;
@@ -73,13 +74,15 @@ public final class DonanteController implements WithSimplePersistenceUnit {
   private void crear(Context ctx) {
     DonanteRequest request = DtoValidator.validate(ctx.bodyAsClass(DonanteRequest.class));
     validar(request, null);
+    PublicadorDiferido publicador = notificaciones.publicadorDiferido();
     DonanteResponse creado =
         withTransaction(
             () -> {
               Donante donante = donantes.save(construirDonante(request));
-              notificaciones.enviar(new EventoBienvenida(donante).generarNotificaciones());
+              publicador.publicar(new EventoBienvenida(donante));
               return donante(donante);
             });
+    publicador.enviarPendientes();
     ctx.status(201).json(creado);
   }
 

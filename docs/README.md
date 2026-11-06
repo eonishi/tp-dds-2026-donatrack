@@ -67,7 +67,7 @@ Cada diagrama es el **fragmento mínimo del dominio** que cumple ese requerimien
 
 ### R2 — Notificaciones por distintos medios ante eventos
 
-**Decisión:** Template Method: cada evento (`EventoNotificable` + 6 subclases) genera sus `Notificacion` en `generarNotificaciones()`. Los payloads (`ComprobanteEntrega`, `InfoMapa`, `SinPayload`) forman una interfaz con los diferentes tipos de payloads posibles. `Donante` y `EntidadBeneficiaria` implementan `Notificable`.
+**Decisión:** cada evento implementa la interfaz `EventoNotificable` (6 implementaciones) y genera sus `Notificacion` en `generarNotificaciones()`. Las transiciones de `EstadoDonacion` publican su evento al ocurrir en un `PublicadorDeEventos`; quien transiciona entrega el publicador y no arma notificaciones a mano. Los casos de uso transaccionales usan un `PublicadorDiferido`, que retiene los eventos y los envía con `ServicioNotificaciones` recién después del commit: si la transacción se revierte, no sale ningún aviso. Es interfaz y no clase abstracta porque no hay comportamiento compartido: `publicar` solo necesita tratar a todos los eventos por igual. Los payloads (`ComprobanteEntrega`, `InfoMapa`, `SinPayload`) forman una interfaz con los diferentes tipos de payloads posibles. `Donante` y `EntidadBeneficiaria` implementan `Notificable`.
 
 ![R2 — Notificaciones por distintos medios ante eventos](assets/e2-req2-notificaciones-eventos.svg)
 
