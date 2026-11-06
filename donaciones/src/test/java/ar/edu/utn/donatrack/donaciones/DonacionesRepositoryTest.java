@@ -68,6 +68,11 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
       donacion.confirmarEntidadBeneficiaria(entidadBeneficiaria);
       return donacion;
     }
+    if (estado == EstadoDonacion.ENTREGADA) {
+      donacion.confirmarEntidadBeneficiaria(entidadBeneficiaria);
+      donacion.cambiarEstado(EstadoDonacion.ENTREGADA, null);
+      return donacion;
+    }
     throw new IllegalArgumentException("Estado no soportado en helper: " + estado);
   }
 
@@ -100,6 +105,27 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
   }
 
   @Test
+  void getDonacionesEntregadas_ConMezcla_DebeRetornarSoloLasEntregadas() {
+    DonacionesRepository repo = new DonacionesRepository();
+    Donacion enDeposito = crearDonacionConEstado(EstadoDonacion.EN_DEPOSITO);
+    Donacion asignada = crearDonacionConEstado(EstadoDonacion.ASIGNACION_REALIZADA);
+    Donacion entregada1 = crearDonacionConEstado(EstadoDonacion.ENTREGADA);
+    Donacion entregada2 = crearDonacionConEstado(EstadoDonacion.ENTREGADA);
+    repo.addDonacion(enDeposito);
+    repo.addDonacion(asignada);
+    repo.addDonacion(entregada1);
+    repo.addDonacion(entregada2);
+
+    List<Donacion> resultado = repo.getDonacionesEntregadas();
+
+    assertEquals(2, resultado.size());
+    assertTrue(resultado.contains(entregada1));
+    assertTrue(resultado.contains(entregada2));
+    assertFalse(resultado.contains(enDeposito));
+    assertFalse(resultado.contains(asignada));
+  }
+
+  @Test
   void getDonacionesEnAsignacionRealizada_DevuelveListaInmodificable() {
     DonacionesRepository repo = new DonacionesRepository();
     repo.addDonacion(crearDonacionConEstado(EstadoDonacion.ASIGNACION_REALIZADA));
@@ -110,7 +136,7 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
   }
 
   @Test
-  void cantidadEntregadasDesde_CuentaUnaVezLaDonacionAunqueTengaVariasEntregasEnLaVentana() {
+  void unaDonacionConVariasEntregasEnLaVentanaCuentaUnaSolaVez() {
     DonacionesRepository repo = new DonacionesRepository();
     Donacion entregada = crearDonacionConEstado(EstadoDonacion.ASIGNACION_REALIZADA);
     entregada.cambiarEstado(EstadoDonacion.ENTREGADA, null);
@@ -118,16 +144,24 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
     repo.addDonacion(entregada);
     repo.addDonacion(crearDonacionConEstado(EstadoDonacion.ASIGNACION_REALIZADA));
 
-    assertEquals(1, repo.cantidadEntregadasDesde(entidadBeneficiaria, LocalDate.now()));
+    assertEquals(
+        1,
+        repo.getDonacionesEntregadas().stream()
+            .filter(d -> d.fueEntregadaA(entidadBeneficiaria, LocalDate.now()))
+            .count());
   }
 
   @Test
-  void cantidadEntregadasDesde_IgnoraLasEntregasAnterioresALaFecha() {
+  void lasEntregasAnterioresALaVentanaNoCuentan() {
     DonacionesRepository repo = new DonacionesRepository();
     Donacion entregada = crearDonacionConEstado(EstadoDonacion.ASIGNACION_REALIZADA);
     entregada.cambiarEstado(EstadoDonacion.ENTREGADA, null);
     repo.addDonacion(entregada);
 
-    assertEquals(0, repo.cantidadEntregadasDesde(entidadBeneficiaria, LocalDate.now().plusDays(1)));
+    assertEquals(
+        0,
+        repo.getDonacionesEntregadas().stream()
+            .filter(d -> d.fueEntregadaA(entidadBeneficiaria, LocalDate.now().plusDays(1)))
+            .count());
   }
 }

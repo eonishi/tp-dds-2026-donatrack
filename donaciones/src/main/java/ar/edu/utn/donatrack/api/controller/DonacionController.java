@@ -24,14 +24,13 @@ import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.SubcategoriasRepository;
 import ar.edu.utn.donatrack.donaciones.CargaDonacion;
 import ar.edu.utn.donatrack.donaciones.Donacion;
-import ar.edu.utn.donatrack.donaciones.DonacionId;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
-import ar.edu.utn.donatrack.donaciones.PropuestaRepository;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import ar.edu.utn.donatrack.notificaciones.Notificacion;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
+import ar.edu.utn.donatrack.propuestas.PropuestaRepository;
 import ar.edu.utn.donatrack.seguimiento.LogisticaNoDisponibleException;
 import ar.edu.utn.donatrack.seguimiento.PosicionCamion;
 import ar.edu.utn.donatrack.seguimiento.PosicionesCamiones;
@@ -177,10 +176,10 @@ public final class DonacionController implements WithSimplePersistenceUnit {
     }
     DonacionUpdateRequest request =
         DtoValidator.validate(ctx.bodyAsClass(DonacionUpdateRequest.class));
-    propuestas.remove(donacion);
     DonacionResponse actualizada =
         withTransaction(
             () -> {
+              propuestas.remove(donacion);
               donacion.reemplazarBienes(bienes(request.bienes(), new HashMap<>()));
               return donacion(donaciones.save(donacion));
             });
@@ -192,8 +191,11 @@ public final class DonacionController implements WithSimplePersistenceUnit {
     if (donacion.getEstado() != EstadoDonacion.EN_DEPOSITO) {
       throw ApiException.conflict("Sólo se puede eliminar una donación en depósito.");
     }
-    propuestas.remove(donacion);
-    withTransaction(() -> donaciones.deleteById(donacion.getId()));
+    withTransaction(
+        () -> {
+          propuestas.remove(donacion);
+          donaciones.deleteById(donacion.getId());
+        });
     ctx.status(204);
   }
 
@@ -251,9 +253,7 @@ public final class DonacionController implements WithSimplePersistenceUnit {
   }
 
   private Donacion buscar(UUID id) {
-    return donaciones
-        .findById(new DonacionId(id))
-        .orElseThrow(() -> ApiException.notFound("Donación", id));
+    return donaciones.findById(id).orElseThrow(() -> ApiException.notFound("Donación", id));
   }
 
   private List<Bien> bienes(List<BienRequest> items, Map<String, SubCategoria> cache) {
@@ -274,7 +274,7 @@ public final class DonacionController implements WithSimplePersistenceUnit {
   private List<Notificacion> cambiarEstado(Donacion donacion, TransicionEstadoRequest request) {
     return switch (request.estado()) {
       case LISTA_PARA_ENTREGAR -> donacion.planificarRuta();
-      case EN_TRASLADO -> donacion.iniciarTraslado(request.urlMapa());
+      case EN_TRASLADO -> iniciarTraslado(donacion, request.idCamion());
       case ENTREGADA -> donacion.confirmarEntrega();
       case ENTREGA_FALLIDA -> donacion.reportarFalla(request.justificacion());
       case VENCIDA -> {
@@ -303,6 +303,9 @@ public final class DonacionController implements WithSimplePersistenceUnit {
     for (TransicionMasivaRequest req : requests) {
       DtoValidator.validate(req);
       buscar(req.idDonacion());
+      if (req.nuevoEstado() == EstadoDonacion.EN_TRASLADO) {
+        validarIdCamion(req.idCamion());
+      }
     }
 
     List<Notificacion> generadas = new ArrayList<>();
@@ -310,25 +313,30 @@ public final class DonacionController implements WithSimplePersistenceUnit {
         () -> {
           for (TransicionMasivaRequest req : requests) {
             Donacion donacion = buscar(req.idDonacion());
-            String urlGenerada =
-                req.idCamion() != null
-                    ? "https://mapa.donatrack.org/tracking/" + req.idCamion()
-                    : null;
             generadas.addAll(
                 cambiarEstado(
                     donacion,
                     new TransicionEstadoRequest(
-                        req.nuevoEstado(), req.justificacion(), urlGenerada)));
-            // Queda registrado qué camión la lleva: lo usan el seguimiento en el mapa y el
-            // comprobante de entrega.
-            if (req.nuevoEstado() == EstadoDonacion.EN_TRASLADO && req.idCamion() != null) {
-              donacion.registrarCamion(req.idCamion());
-            }
+                        req.nuevoEstado(), req.justificacion(), req.idCamion())));
             donaciones.save(donacion);
           }
         });
 
     notificaciones.enviar(generadas);
     ctx.status(200);
+  }
+
+  private List<ar.edu.utn.donatrack.notificaciones.Notificacion> iniciarTraslado(
+      Donacion donacion, String idCamion) {
+    validarIdCamion(idCamion);
+    donacion.registrarCamion(idCamion);
+    String urlMapa = "https://mapa.donatrack.org/tracking/" + idCamion;
+    return donacion.iniciarTraslado(urlMapa);
+  }
+
+  private void validarIdCamion(String idCamion) {
+    if (idCamion == null || idCamion.isBlank()) {
+      throw new IllegalArgumentException("idCamion es obligatorio para iniciar el traslado.");
+    }
   }
 }

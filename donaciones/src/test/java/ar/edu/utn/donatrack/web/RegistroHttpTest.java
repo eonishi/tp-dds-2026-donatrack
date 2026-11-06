@@ -3,13 +3,13 @@ package ar.edu.utn.donatrack.web;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import ar.edu.utn.donatrack.api.DonacionesApi;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.security.Usuario;
+import ar.edu.utn.donatrack.testsupport.ApiDePrueba;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
@@ -36,7 +36,7 @@ class RegistroHttpTest implements WithSimplePersistenceUnit {
 
   @BeforeEach
   void start() {
-    app = DonacionesApi.create().start(0);
+    app = ApiDePrueba.crear().start(0);
     baseUrl = "http://localhost:" + app.port();
   }
 

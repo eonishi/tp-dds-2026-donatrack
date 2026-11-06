@@ -58,8 +58,8 @@ public class BeneficiariosRepository implements WithSimplePersistenceUnit {
    * @param id identidad de la entidad beneficiaria
    * @return la entidad almacenada, o {@link Optional#empty()} si no existe
    */
-  public Optional<EntidadBeneficiaria> findById(EntidadBeneficiariaId id) {
-    return Optional.ofNullable(find(EntidadBeneficiaria.class, id.value()));
+  public Optional<EntidadBeneficiaria> findById(Long id) {
+    return Optional.ofNullable(find(EntidadBeneficiaria.class, id));
   }
 
   /**
@@ -71,8 +71,8 @@ public class BeneficiariosRepository implements WithSimplePersistenceUnit {
    *
    * @param id identidad de la entidad beneficiaria
    */
-  public void deleteById(EntidadBeneficiariaId id) {
-    EntidadBeneficiaria entidad = find(EntidadBeneficiaria.class, id.value());
+  public void deleteById(Long id) {
+    EntidadBeneficiaria entidad = find(EntidadBeneficiaria.class, id);
     if (entidad != null) {
       remove(entidad);
     }

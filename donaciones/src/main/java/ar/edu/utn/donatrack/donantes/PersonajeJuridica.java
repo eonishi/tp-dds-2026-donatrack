@@ -33,7 +33,10 @@ public class PersonajeJuridica extends Donante {
       String razonSocial,
       TipoOrganizacion tipoOrganizacion,
       String rubro) {
-    this(UUID.randomUUID(), email, numDocumento, documento, razonSocial, tipoOrganizacion, rubro);
+    super(email, numDocumento, documento);
+    this.razonSocial = razonSocial;
+    this.tipoOrganizacion = tipoOrganizacion;
+    this.rubro = rubro;
   }
 
   public PersonajeJuridica(

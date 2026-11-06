@@ -72,6 +72,23 @@ class EventoNotificableTest {
       ComprobanteEntrega comprobante = (ComprobanteEntrega) payload;
       assertEquals(fecha, comprobante.fechaEntrega());
       assertEquals("ABC123", comprobante.idCamion());
+      assertTrue(n.getMensaje().contains("2026-07-10T15:00:00"));
+      assertTrue(n.getMensaje().contains("ABC123"));
+    }
+  }
+
+  @Test
+  void eventoEntregaExitosa_formateaFechaConPrecisionDeterminista() {
+    entidad.agregarCorreo(new CorreoElectronico("entidad@test.com"));
+    LocalDateTime fecha = LocalDateTime.of(2026, 7, 10, 15, 4, 5, 987_654_321);
+
+    List<Notificacion> notificaciones =
+        new EventoEntregaExitosa(donante, entidad, fecha, "ABC123").generarNotificaciones();
+
+    assertEquals(2, notificaciones.size());
+    for (Notificacion notificacion : notificaciones) {
+      assertTrue(notificacion.getMensaje().contains("2026-07-10T15:04:05"));
+      assertFalse(notificacion.getMensaje().contains("987654321"));
     }
   }
 
@@ -162,6 +179,11 @@ class EventoNotificableTest {
       assertEquals(EstadoNotificacion.PENDIENTE, n.getEstado());
       InfoMapa mapa = (InfoMapa) n.getPayload();
       assertEquals("https://maps.example.com/ruta/1", mapa.url());
+      assertEquals(1, apariciones(n.getMensaje(), "https://maps.example.com/ruta/1"));
     }
+  }
+
+  private int apariciones(String texto, String buscado) {
+    return (texto.length() - texto.replace(buscado, "").length()) / buscado.length();
   }
 }

@@ -5,6 +5,7 @@ import ar.edu.utn.donatrack.logistica.RepartidorRepository;
 import ar.edu.utn.donatrack.logistica.Ruta;
 import ar.edu.utn.donatrack.logistica.RutaRepository;
 import ar.edu.utn.donatrack.logistica.security.LogisticaSecurity;
+import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
 import java.time.Clock;
 import java.util.List;
@@ -18,7 +19,7 @@ import java.util.UUID;
  * repartidor, que lo manda como {@code Authorization: Bearer}. Así tampoco pisa la cookie de sesión
  * de la web de donaciones, que en el mismo host se comparte entre puertos.
  */
-public class RepartidorController {
+public class RepartidorController implements WithSimplePersistenceUnit {
 
   private final RepartidorRepository repartidorRepo;
   private final RutaRepository rutaRepo;
@@ -82,7 +83,8 @@ public class RepartidorController {
       return;
     }
 
-    ruta.get().asignarRepartidor(repartidor.get());
+    // La ruta está en la base: la asignación tiene que confirmarse en una transacción.
+    withTransaction(() -> ruta.get().asignarRepartidor(repartidor.get()));
     ctx.status(200).json(ruta.get());
   }
 

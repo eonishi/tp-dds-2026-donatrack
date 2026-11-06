@@ -4,7 +4,6 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 import ar.edu.utn.donatrack.api.error.ApiException;
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
-import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiariaId;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import ar.edu.utn.donatrack.security.AuthService;
 import ar.edu.utn.donatrack.security.Role;
@@ -58,8 +57,7 @@ public final class UsuarioController {
       }
       case BENEFICIARIO -> {
         entidadId = request.entidadId;
-        if (entidadId == null
-            || entidades.findById(new EntidadBeneficiariaId(entidadId)).isEmpty()) {
+        if (entidadId == null || entidades.findById(entidadId).isEmpty()) {
           throw ApiException.badRequest("El usuario beneficiario necesita un entidadId existente.");
         }
       }

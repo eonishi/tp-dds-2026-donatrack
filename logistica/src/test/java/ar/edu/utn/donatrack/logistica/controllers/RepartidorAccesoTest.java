@@ -58,11 +58,17 @@ class RepartidorAccesoTest implements WithSimplePersistenceUnit {
     idAcompaniante = acompaniante.getId();
     idOtro = otro.getId();
 
+    // La ruta y su camión se guardan en la base, igual que en producción.
     rutaRepo = new RutaRepository();
-    ruta = new Ruta(new Camion("AB123CD", 20.0, 2.5, 10000.0), List.of());
+    Camion camion = new Camion("AB123CD", 20.0, 2.5, 10000.0);
+    ruta = new Ruta(camion, List.of());
     ruta.asignarRepartidor(chofer);
     ruta.asignarRepartidor(acompaniante);
-    rutaRepo.agregar(ruta);
+    withTransaction(
+        () -> {
+          persist(camion);
+          rutaRepo.agregar(ruta);
+        });
 
     Clock clock = Clock.fixed(Instant.now(), ZoneOffset.UTC);
     RepartidorController repartidores = new RepartidorController(repartidorRepo, rutaRepo, clock);
@@ -86,12 +92,22 @@ class RepartidorAccesoTest implements WithSimplePersistenceUnit {
   // persistidos para que no choquen con el email único en la próxima prueba.
   @AfterEach
   void limpiarPersistencia() {
-    withTransaction(
-        () ->
-            createQuery("select r from Repartidor r", Repartidor.class)
-                .getResultList()
-                .forEach(this::remove));
     entityManager().clear();
+    withTransaction(
+        () -> {
+          createQuery("select r from Ruta r", Ruta.class).getResultList().forEach(this::remove);
+          createQuery("select c from Camion c", Camion.class).getResultList().forEach(this::remove);
+          createQuery("select r from Repartidor r", Repartidor.class)
+              .getResultList()
+              .forEach(this::remove);
+        });
+    entityManager().clear();
+  }
+
+  // Los controladores leen y guardan la ruta en la base desde otro hilo: hay que volver a leerla.
+  private Ruta rutaGuardada() {
+    entityManager().clear();
+    return rutaRepo.buscarPorId(ruta.getId()).orElseThrow();
   }
 
   @Test
@@ -163,7 +179,7 @@ class RepartidorAccesoTest implements WithSimplePersistenceUnit {
                   req -> req.header("Authorization", bearer(idAcompaniante)));
 
           assertEquals(200, response.code());
-          assertTrue(ruta.isEnCurso());
+          assertTrue(rutaGuardada().isEnCurso());
         });
   }
 
@@ -179,7 +195,7 @@ class RepartidorAccesoTest implements WithSimplePersistenceUnit {
                   req -> req.header("Authorization", bearer(idOtro)));
 
           assertEquals(403, response.code());
-          assertFalse(ruta.isEnCurso());
+          assertFalse(rutaGuardada().isEnCurso());
         });
   }
 
@@ -216,7 +232,7 @@ class RepartidorAccesoTest implements WithSimplePersistenceUnit {
 
           assertEquals(403, camion.code());
           assertEquals(403, asignacion.code());
-          assertFalse(ruta.tieneAsignado(idOtro));
+          assertFalse(rutaGuardada().tieneAsignado(idOtro));
         });
   }
 
@@ -233,7 +249,7 @@ class RepartidorAccesoTest implements WithSimplePersistenceUnit {
                   req -> req.header("Authorization", admin));
 
           assertEquals(200, response.code());
-          assertEquals(3, ruta.getRepartidores().size());
+          assertEquals(3, rutaGuardada().getRepartidores().size());
         });
   }
 

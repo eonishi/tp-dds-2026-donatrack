@@ -4,12 +4,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.logistica.Camion;
 import ar.edu.utn.donatrack.logistica.Destino;
-import ar.edu.utn.donatrack.logistica.EntidadBeneficiariaId;
 import ar.edu.utn.donatrack.logistica.Ruta;
 import ar.edu.utn.donatrack.logistica.RutaRepository;
 import ar.edu.utn.donatrack.logistica.monitoreo.Coordenada;
 import ar.edu.utn.donatrack.logistica.monitoreo.LecturaPosicion;
 import ar.edu.utn.donatrack.logistica.monitoreo.MonitorRutas;
+import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
-class MonitoreoTest {
+class MonitoreoTest implements SimplePersistenceTest {
 
   // ── Helpers ────────────────────────────────────────────────────────
 
@@ -26,9 +26,13 @@ class MonitoreoTest {
     return new Camion(patente, 45.0, 2.5, 5000.0);
   }
 
-  private static Ruta crearRutaConCamion(Camion camion) {
-    return new Ruta(
-        camion, List.of(new Destino(new EntidadBeneficiariaId(1L), "Calle A", List.of())));
+  /** Persiste el camión y su ruta activa para que el monitor la encuentre en la base. */
+  private Ruta almacenarRutaActiva(Camion camion) {
+    Ruta ruta = new Ruta(camion, List.of(new Destino(1L, "Calle A", List.of())));
+    persist(camion);
+    ruta.iniciar();
+    new RutaRepository().agregar(ruta);
+    return ruta;
   }
 
   private static Coordenada coordValida() {
@@ -91,10 +95,8 @@ class MonitoreoTest {
   @Test
   void buscarPorCamion_ConRutaActiva_DebeRetornarOptionalConRuta() {
     Camion camion = crearCamion("ABC123");
-    Ruta ruta = crearRutaConCamion(camion);
-    ruta.iniciar();
+    Ruta ruta = almacenarRutaActiva(camion);
     RutaRepository repo = new RutaRepository();
-    repo.agregar(ruta);
 
     Optional<Ruta> resultado = repo.buscarPorCamion(camion);
 
@@ -105,6 +107,7 @@ class MonitoreoTest {
   @Test
   void buscarPorCamion_SinRutaActiva_DebeRetornarOptionalEmpty() {
     Camion camion = crearCamion("ABC123");
+    persist(camion);
     RutaRepository repo = new RutaRepository();
 
     Optional<Ruta> resultado = repo.buscarPorCamion(camion);
@@ -117,10 +120,8 @@ class MonitoreoTest {
   @Test
   void procesar_LecturaValidaConRutaActiva_DebeActualizarUltimaPosicion() {
     Camion camion = crearCamion("ABC123");
-    Ruta ruta = crearRutaConCamion(camion);
-    ruta.iniciar();
+    almacenarRutaActiva(camion);
     RutaRepository repo = new RutaRepository();
-    repo.agregar(ruta);
 
     Instant now = Instant.parse("2026-07-12T15:30:00Z");
     Clock clock = Clock.fixed(now, ZoneId.of("UTC"));
@@ -140,10 +141,8 @@ class MonitoreoTest {
   @Test
   void procesar_TimestampFuturo_DebeRechazarYNoActualizarUltimaPosicion() {
     Camion camion = crearCamion("ABC123");
-    Ruta ruta = crearRutaConCamion(camion);
-    ruta.iniciar();
+    almacenarRutaActiva(camion);
     RutaRepository repo = new RutaRepository();
-    repo.agregar(ruta);
 
     Instant now = Instant.parse("2026-07-12T15:00:00Z");
     Clock clock = Clock.fixed(now, ZoneId.of("UTC"));
@@ -162,6 +161,7 @@ class MonitoreoTest {
   @Test
   void procesar_CamionSinRutaActiva_DebeRechazarYNoActualizarUltimaPosicion() {
     Camion camion = crearCamion("ABC123");
+    persist(camion);
     RutaRepository repo = new RutaRepository();
 
     Clock clock = Clock.systemUTC();
@@ -182,10 +182,8 @@ class MonitoreoTest {
   @Test
   void ultimaPosicion_ConLecturasPrevias_DebeRetornarOptionalConUltimaLectura() {
     Camion camion = crearCamion("ABC123");
-    Ruta ruta = crearRutaConCamion(camion);
-    ruta.iniciar();
+    almacenarRutaActiva(camion);
     RutaRepository repo = new RutaRepository();
-    repo.agregar(ruta);
 
     Instant now = Instant.parse("2026-07-12T15:30:00Z");
     Clock clock = Clock.fixed(now, ZoneId.of("UTC"));

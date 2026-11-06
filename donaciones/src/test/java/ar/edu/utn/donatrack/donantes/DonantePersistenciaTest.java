@@ -28,9 +28,13 @@ class DonantePersistenciaTest implements SimplePersistenceTest {
             "Av. Siempreviva 742");
     donante.addMedioDeContacto(new Sms("1145558888"));
     donante.addMedioDeContacto(new Whatsapp("1145559999"));
-    UUID id = donante.getId();
+    assertNull(
+        donante.getId(),
+        "Un donante recién construido no tiene id: lo asigna el proveedor al persistirlo");
 
     persist(donante);
+    UUID id = donante.getId();
+    assertNotNull(id, "El proveedor debe asignar el UUID del donante al persistirlo");
     entityManager().flush();
     entityManager().clear();
 
@@ -77,9 +81,13 @@ class DonantePersistenciaTest implements SimplePersistenceTest {
             TipoOrganizacion.ONG,
             "Alimentos");
     organizacion.agregarRepresentante(new Representante("Ana", "Gomez"));
-    UUID id = organizacion.getId();
+    assertNull(
+        organizacion.getId(),
+        "Una organización recién construida no tiene id: lo asigna el proveedor al persistirla");
 
     persist(organizacion);
+    UUID id = organizacion.getId();
+    assertNotNull(id, "El proveedor debe asignar el UUID de la organización al persistirla");
     entityManager().flush();
     entityManager().clear();
 

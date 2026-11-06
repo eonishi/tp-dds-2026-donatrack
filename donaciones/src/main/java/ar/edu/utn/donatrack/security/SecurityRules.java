@@ -108,9 +108,6 @@ public final class SecurityRules {
       // Alta, edición y baja las hace la persona administradora en el depósito.
       return new Role[] {Role.ADMIN};
     }
-    if (path.startsWith("/api/v1/entidades/") && path.contains("/necesidades")) {
-      return new Role[] {Role.ADMIN, Role.BENEFICIARIO};
-    }
     if (path.startsWith("/api/v1/propuestas-asignacion")
         || path.contains("/propuesta-asignacion")) {
       return new Role[] {Role.ADMIN, Role.BENEFICIARIO};

@@ -9,19 +9,18 @@ import ar.edu.utn.donatrack.api.dto.DonanteDtos.RepresentanteRequest;
 import ar.edu.utn.donatrack.api.dto.EntidadDtos.EntidadResponse;
 import ar.edu.utn.donatrack.api.dto.MatchmakingDtos.CandidatoResponse;
 import ar.edu.utn.donatrack.api.dto.MatchmakingDtos.PropuestaResponse;
-import ar.edu.utn.donatrack.api.dto.MatchmakingDtos.RankingResponse;
 import ar.edu.utn.donatrack.api.dto.NecesidadDtos.NecesidadResponse;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.beneficiarios.Necesidad;
 import ar.edu.utn.donatrack.beneficiarios.NecesidadRecurrente;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.HistorialEstado;
-import ar.edu.utn.donatrack.donaciones.PropuestaDeAsignacion;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
 import ar.edu.utn.donatrack.donantes.Whatsapp;
+import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
 import ar.edu.utn.donatrack.utilidades.TipoPersona;
 import java.util.List;
 
@@ -67,19 +66,32 @@ public final class ApiMapper {
 
   public static EntidadResponse entidad(EntidadBeneficiaria entidad) {
     return new EntidadResponse(
-        entidad.getId().value(),
+        entidad.getId(),
         entidad.getRazonSocial(),
         entidad.getDireccion(),
         entidad.getTelefono(),
         entidad.getCorreos().stream().map(CorreoElectronico::getContacto).toList(),
-        entidad.necesidades().stream().map(Necesidad::getId).toList());
+        necesidades(entidad).stream().map(NecesidadResponse::id).toList());
+  }
+
+  /**
+   * Traduce las necesidades de una entidad al contrato HTTP.
+   *
+   * <p>Es el único punto que recorre la colección completa de necesidades de la entidad: el resto
+   * del sistema consulta la entidad por los mensajes del dominio.
+   *
+   * @param entidad entidad cuyas necesidades se traducen
+   * @return las necesidades de la entidad, extraordinarias y recurrentes
+   */
+  public static List<NecesidadResponse> necesidades(EntidadBeneficiaria entidad) {
+    return entidad.necesidades().stream().map(necesidad -> necesidad(necesidad, entidad)).toList();
   }
 
   public static NecesidadResponse necesidad(Necesidad necesidad, EntidadBeneficiaria entidad) {
     NecesidadRecurrente recurrente = necesidad instanceof NecesidadRecurrente valor ? valor : null;
     return new NecesidadResponse(
         necesidad.getId(),
-        entidad.getId().value(),
+        entidad.getId(),
         recurrente == null ? "EXTRAORDINARIA" : "RECURRENTE",
         recurrente == null ? null : recurrente.getPeriodo(),
         necesidad.getDescripcion(),
@@ -107,44 +119,41 @@ public final class ApiMapper {
                         bien.getSubcategoria().getCategoria()))
             .toList();
     return new DonacionResponse(
-        donacion.getId().value(),
+        donacion.getId(),
         donacion.getDonante().getId(),
         donacion.getEntidadBeneficiaria() == null
             ? null
-            : donacion.getEntidadBeneficiaria().getId().value(),
+            : donacion.getEntidadBeneficiaria().getId(),
         donacion.getEstado(),
         bienes,
         donacion.getFotos());
   }
 
-  /**
-   * Traduce una entrada del historial de una donación al contrato HTTP.
-   *
-   * @param historial entrada del historial que se traduce
-   * @return la entrada con la fecha, el estado alcanzado y la justificación
-   */
   public static HistorialEstadoResponse historial(HistorialEstado historial) {
     return new HistorialEstadoResponse(
         historial.getFecha(), historial.getEstadoAlcanzado(), historial.getJustificacion());
   }
 
+  /**
+   * Traduce una propuesta de asignación al contrato HTTP.
+   *
+   * <p>La propuesta expone una sola lista plana de candidatos: la intersección de los algoritmos
+   * cuando existe, su unión cuando no.
+   *
+   * @param propuesta propuesta que se traduce
+   * @return la propuesta con su lista de candidatos
+   */
   public static PropuestaResponse propuesta(PropuestaDeAsignacion propuesta) {
-    List<RankingResponse> rankings =
-        propuesta.getRankings().stream()
+    List<CandidatoResponse> candidatos =
+        propuesta.getCandidatos().stream()
             .map(
-                ranking ->
-                    new RankingResponse(
-                        ranking.getAlgoritmo(),
-                        ranking.getCandidatos().stream()
-                            .map(
-                                candidato ->
-                                    new CandidatoResponse(
-                                        candidato.getEntidadBeneficiaria().getId().value(),
-                                        candidato.getEntidadBeneficiaria().getRazonSocial(),
-                                        candidato.getPuntaje()))
-                            .toList()))
+                candidato ->
+                    new CandidatoResponse(
+                        candidato.getEntidadBeneficiaria().getId(),
+                        candidato.getEntidadBeneficiaria().getRazonSocial(),
+                        candidato.getPuntaje()))
             .toList();
     return new PropuestaResponse(
-        propuesta.getDonacion().getId().value(), propuesta.isPendiente(), rankings);
+        propuesta.getDonacion().getId(), propuesta.isPendiente(), candidatos);
   }
 }

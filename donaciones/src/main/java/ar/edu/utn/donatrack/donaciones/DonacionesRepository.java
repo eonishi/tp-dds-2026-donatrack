@@ -1,10 +1,9 @@
 package ar.edu.utn.donatrack.donaciones;
 
-import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Repositorio de donaciones respaldado por JPA: las lecturas consultan la base y las escrituras
@@ -36,6 +35,14 @@ public class DonacionesRepository implements WithSimplePersistenceUnit {
    */
   public List<Donacion> getDonacionesEnAsignacionRealizada() {
     return donacionesConEstado(EstadoDonacion.ASIGNACION_REALIZADA);
+  }
+
+  /**
+   * @return una instantánea inmutable de las donaciones almacenadas cuyo estado actual es
+   *     ENTREGADA.
+   */
+  public List<Donacion> getDonacionesEntregadas() {
+    return donacionesConEstado(EstadoDonacion.ENTREGADA);
   }
 
   /**
@@ -98,8 +105,8 @@ public class DonacionesRepository implements WithSimplePersistenceUnit {
    * @param id identidad de la donación
    * @return la donación almacenada, o {@link Optional#empty()} si no existe
    */
-  public Optional<Donacion> findById(DonacionId id) {
-    return Optional.ofNullable(find(Donacion.class, id.value()));
+  public Optional<Donacion> findById(UUID id) {
+    return Optional.ofNullable(find(Donacion.class, id));
   }
 
   /**
@@ -111,34 +118,10 @@ public class DonacionesRepository implements WithSimplePersistenceUnit {
    *
    * @param id identidad de la donación
    */
-  public void deleteById(DonacionId id) {
-    Donacion donacion = find(Donacion.class, id.value());
+  public void deleteById(UUID id) {
+    Donacion donacion = find(Donacion.class, id);
     if (donacion != null) {
       remove(donacion);
     }
-  }
-
-  /**
-   * Cuenta las donaciones entregadas a la entidad desde la fecha indicada (inclusive).
-   *
-   * @param entidad entidad beneficiaria receptora
-   * @param fechaDesde fecha mínima de entrega
-   * @return cantidad de donaciones con un evento {@link EstadoDonacion#ENTREGADA} en el período
-   */
-  public long cantidadEntregadasDesde(EntidadBeneficiaria entidad, LocalDate fechaDesde) {
-    // DISTINCT: la donación se cuenta una vez aunque la ventana contenga varias transiciones.
-    String jpql =
-        "SELECT COUNT(DISTINCT d) FROM Donacion d "
-            + "JOIN d.historialEstado h "
-            + "WHERE d.entidadBeneficiaria = :entidad "
-            + "AND h.estadoAlcanzado = :estado "
-            + "AND h.fecha >= :fechaDesde";
-
-    return entityManager()
-        .createQuery(jpql, Long.class)
-        .setParameter("entidad", entidad)
-        .setParameter("estado", EstadoDonacion.ENTREGADA)
-        .setParameter("fechaDesde", fechaDesde.atStartOfDay())
-        .getSingleResult();
   }
 }

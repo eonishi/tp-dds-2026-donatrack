@@ -11,6 +11,7 @@ import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.security.Usuario;
 import ar.edu.utn.donatrack.seguimiento.PosicionCamion;
+import ar.edu.utn.donatrack.testsupport.ApiDePrueba;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
@@ -47,7 +48,7 @@ class SeguimientoDonacionesHttpTest implements WithSimplePersistenceUnit {
   void start() throws Exception {
     Clock clock = Clock.fixed(Instant.parse("2026-09-11T12:00:00Z"), ZoneOffset.UTC);
     app =
-        DonacionesApi.create(
+        ApiDePrueba.crear(
                 clock,
                 patente ->
                     PATENTE.equals(patente)
@@ -329,7 +330,7 @@ class SeguimientoDonacionesHttpTest implements WithSimplePersistenceUnit {
     HttpResponse<String> response =
         request(
             "POST",
-            "/api/v1/entidades/" + entidad + "/necesidades",
+            "/api/v1/beneficiarias/" + entidad + "/necesidades",
             "{\"tipo\":\"EXTRAORDINARIA\",\"descripcion\":\"Alimentos\",\"cantidadObjetivo\":10,\"unidad\":\"KILOGRAMOS\",\"subcategoria\":\""
                 + subcategoria
                 + "\",\"categoria\":\"ALIMENTO\"}",

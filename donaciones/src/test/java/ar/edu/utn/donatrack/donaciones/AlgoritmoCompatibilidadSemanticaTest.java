@@ -16,6 +16,8 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
+import ar.edu.utn.donatrack.propuestas.matchmaking.AlgoritmoCompatibilidadSemantica;
+import ar.edu.utn.donatrack.propuestas.matchmaking.MatchCandidato;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -35,7 +37,7 @@ class AlgoritmoCompatibilidadSemanticaTest {
   }
 
   @Test
-  void puntajeMaximo_ConTodosLosCriterios_NoSupera75() {
+  void puntaje_ConTodosLosCriterios_CoincideConElPuntajeDeLaEntidad() {
     SubCategoria fideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     EntidadBeneficiaria entidad = nuevaEntidad("Comedor");
     entidad.agregarNecesidadExtraordinaria(
@@ -48,14 +50,56 @@ class AlgoritmoCompatibilidadSemanticaTest {
 
     var algoritmo = new AlgoritmoCompatibilidadSemantica();
 
-    // En lugar de llamar puntajeNecesidad directamente (privado),
-    // rankeamos y verificamos que el puntaje max sea ≤ 75
-    AlgoritmoMatchmaking mock = algoritmo;
-    RankingMatchmaking ranking = mock.rankear(donacion, List.of(entidad), LocalDate.now());
+    List<MatchCandidato> candidatos =
+        algoritmo.rankear(donacion, List.of(entidad), LocalDate.of(2026, 7, 9), List.of());
 
-    if (!ranking.getCandidatos().isEmpty()) {
-      assertTrue(ranking.getCandidatos().get(0).getPuntaje() <= 75);
-    }
+    assertEquals(
+        75,
+        entidad.calcularPuntajeCompatibilidad(donacion),
+        "La entidad responde la compatibilidad con la donación");
+    assertEquals(1, candidatos.size());
+    assertEquals(
+        entidad.calcularPuntajeCompatibilidad(donacion),
+        candidatos.get(0).getPuntaje(),
+        "El algoritmo publica el puntaje que calcula la entidad");
+  }
+
+  @Test
+  void rankear_ConNecesidadesDeDistintaUnidadYObjetivo_UsaElPuntajeMaximo() {
+    SubCategoria fideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
+    EntidadBeneficiaria objetivoLejano = nuevaEntidad("Objetivo lejano");
+    objetivoLejano.agregarNecesidadExtraordinaria(
+        new Necesidad(fideos, 100.0, UnidadMedida.KILOGRAMOS, "Muchos fideos"));
+    EntidadBeneficiaria objetivoCercano = nuevaEntidad("Objetivo cercano");
+    objetivoCercano.agregarNecesidadExtraordinaria(
+        new Necesidad(fideos, 5.0, UnidadMedida.KILOGRAMOS, "Pocos fideos"));
+    Donacion donacion =
+        nuevaDonacion(
+            crearDonanteDummy(),
+            List.of(
+                new Bien(
+                    "Fideos",
+                    "",
+                    15.0,
+                    UnidadMedida.KILOGRAMOS,
+                    null,
+                    EstadoUso.NO_APLICA,
+                    fideos)));
+
+    var candidatos =
+        new AlgoritmoCompatibilidadSemantica()
+            .rankear(
+                donacion,
+                List.of(objetivoLejano, objetivoCercano),
+                LocalDate.of(2026, 7, 9),
+                List.of());
+
+    assertEquals(2, candidatos.size());
+    assertEquals(
+        "Objetivo cercano",
+        candidatos.get(0).getEntidadBeneficiaria().getRazonSocial(),
+        "Quien alcanza su objetivo con la donación puntúa más alto");
+    assertEquals(65, candidatos.get(1).getPuntaje(), "Subcategoría y unidad suman 65");
   }
 
   @Test
@@ -86,22 +130,18 @@ class AlgoritmoCompatibilidadSemanticaTest {
                 })
             .toList();
 
-    var ranking =
+    var candidatos =
         new AlgoritmoCompatibilidadSemantica()
-            .rankear(donacion, entidades, LocalDate.of(2026, 7, 9));
+            .rankear(donacion, entidades, LocalDate.of(2026, 7, 9), List.of());
 
     assertTrue(
-        ranking.getCandidatos().size() <= 10,
-        "Compatibilidad semantica debe retornar máximo 10 candidatos");
+        candidatos.size() <= 10, "Compatibilidad semantica debe retornar máximo 10 candidatos");
     assertEquals(
-        10,
-        ranking.getCandidatos().size(),
-        "Con 15 entidades compatibles debe retornar exactamente 10");
+        10, candidatos.size(), "Con 15 entidades compatibles debe retornar exactamente 10");
     // Verify sort order: highest puntaje first
-    for (int i = 1; i < ranking.getCandidatos().size(); i++) {
+    for (int i = 1; i < candidatos.size(); i++) {
       assertTrue(
-          ranking.getCandidatos().get(i - 1).getPuntaje()
-              >= ranking.getCandidatos().get(i).getPuntaje(),
+          candidatos.get(i - 1).getPuntaje() >= candidatos.get(i).getPuntaje(),
           "Candidatos deben estar ordenados por puntaje descendente");
     }
   }
@@ -118,11 +158,11 @@ class AlgoritmoCompatibilidadSemanticaTest {
         new Bien("Silla", "", 1.0, UnidadMedida.UNIDADES, null, EstadoUso.NUEVO, sillas);
     Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(bienSillas));
 
-    var ranking =
+    var candidatos =
         new AlgoritmoCompatibilidadSemantica()
-            .rankear(donacion, List.of(entidad), LocalDate.of(2026, 7, 9));
+            .rankear(donacion, List.of(entidad), LocalDate.of(2026, 7, 9), List.of());
 
-    assertTrue(ranking.getCandidatos().isEmpty());
+    assertTrue(candidatos.isEmpty());
   }
 
   @Test
@@ -138,12 +178,11 @@ class AlgoritmoCompatibilidadSemanticaTest {
 
     var algoritmo = new AlgoritmoCompatibilidadSemantica();
 
-    // Accedemos via helper: test directo del puntaje interno
-    // creamos solo una entidad con una necesidad y verificamos ranking
-    RankingMatchmaking ranking =
-        algoritmo.rankear(donacion, List.of(entidad), LocalDate.of(2026, 7, 9));
+    List<MatchCandidato> candidatos =
+        algoritmo.rankear(donacion, List.of(entidad), LocalDate.of(2026, 7, 9), List.of());
 
-    assertEquals(1, ranking.getCandidatos().size());
-    assertEquals(75, ranking.getCandidatos().get(0).getPuntaje());
+    assertEquals(75, entidad.calcularPuntajeCompatibilidad(donacion));
+    assertEquals(1, candidatos.size());
+    assertEquals(75, candidatos.get(0).getPuntaje());
   }
 }

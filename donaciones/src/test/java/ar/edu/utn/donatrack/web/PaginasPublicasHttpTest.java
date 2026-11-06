@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import ar.edu.utn.donatrack.api.DonacionesApi;
+import ar.edu.utn.donatrack.testsupport.ApiDePrueba;
 import io.javalin.Javalin;
 import java.io.IOException;
 import java.net.URI;
@@ -22,7 +22,7 @@ class PaginasPublicasHttpTest {
 
   @BeforeEach
   void start() {
-    app = DonacionesApi.create().start(0);
+    app = ApiDePrueba.crear().start(0);
     baseUrl = "http://localhost:" + app.port();
   }
 

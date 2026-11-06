@@ -1,7 +1,5 @@
 package ar.edu.utn.donatrack.logistica.planificacion;
 
-import ar.edu.utn.donatrack.logistica.DonacionId;
-import ar.edu.utn.donatrack.logistica.EntidadBeneficiariaId;
 import ar.edu.utn.donatrack.logistica.monitoreo.Coordenada;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -62,8 +60,8 @@ public class DonacionesRemotasImpl implements DonacionesRemotas {
           .map(
               dto ->
                   new DonacionPlanificable(
-                      new DonacionId(dto.idDonacion()),
-                      new EntidadBeneficiariaId(dto.idEntidadBeneficiaria()),
+                      dto.idDonacion(),
+                      dto.idEntidadBeneficiaria(),
                       dto.direccionDestino(),
                       new Coordenada(dto.coordenadas().lat(), dto.coordenadas().lng()),
                       dto.volumenM3() != null ? dto.volumenM3() : 0.0,
@@ -78,16 +76,16 @@ public class DonacionesRemotasImpl implements DonacionesRemotas {
   }
 
   @Override
-  public void notificarListaParaEntregar(List<DonacionId> donaciones) {
+  public void notificarListaParaEntregar(List<UUID> donaciones) {
     actualizarMasivo(donaciones, "LISTA_PARA_ENTREGAR", null);
   }
 
   @Override
-  public void notificarInicioTraslado(List<DonacionId> donaciones, String idCamion) {
+  public void notificarInicioTraslado(List<UUID> donaciones, String idCamion) {
     actualizarMasivo(donaciones, "EN_TRASLADO", idCamion);
   }
 
-  private void actualizarMasivo(List<DonacionId> donaciones, String nuevoEstado, String idCamion) {
+  private void actualizarMasivo(List<UUID> donaciones, String nuevoEstado, String idCamion) {
     if (donaciones.isEmpty()) {
       return;
     }
@@ -99,17 +97,14 @@ public class DonacionesRemotasImpl implements DonacionesRemotas {
                   if (idCamion != null) {
                     return Map.of(
                         "idDonacion",
-                        (Object) d.value().toString(),
+                        (Object) d.toString(),
                         "nuevoEstado",
                         (Object) nuevoEstado,
                         "idCamion",
                         (Object) idCamion);
                   }
                   return Map.of(
-                      "idDonacion",
-                      (Object) d.value().toString(),
-                      "nuevoEstado",
-                      (Object) nuevoEstado);
+                      "idDonacion", (Object) d.toString(), "nuevoEstado", (Object) nuevoEstado);
                 })
             .toList();
 

@@ -111,6 +111,17 @@ class DonaTrackTest implements SimplePersistenceTest {
         repo.getDonaciones().stream()
             .anyMatch(d -> d.getBienes().size() == 2 && d.getSubcategoria().equals(subcatFideos));
     assertTrue(encontroGrupoFideos, "No agrupó los bienes idénticos en la misma donación.");
+
+    // Cada donación segmentada queda registrada con su propia clave: el proveedor asigna un UUID
+    // distinto a cada una al persistirla, así que dos donaciones de la misma carga no comparten
+    // clave ni se pisan entre sí.
+    assertEquals(
+        4,
+        repo.getDonaciones().stream().map(Donacion::getId).distinct().count(),
+        "Cada donación segmentada debe conservar su propio id en el repositorio");
+    assertTrue(
+        repo.getDonaciones().stream().allMatch(d -> d.getId() != null),
+        "El proveedor debe asignar el id de cada donación segmentada");
   }
 
   // ==========================================

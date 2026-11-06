@@ -3,17 +3,17 @@ package ar.edu.utn.donatrack.logistica.controllers;
 import ar.edu.utn.donatrack.logistica.Camion;
 import ar.edu.utn.donatrack.logistica.CamionRepository;
 import ar.edu.utn.donatrack.logistica.Destino;
-import ar.edu.utn.donatrack.logistica.DonacionId;
 import ar.edu.utn.donatrack.logistica.Ruta;
 import ar.edu.utn.donatrack.logistica.RutaRepository;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
 import ar.edu.utn.donatrack.logistica.security.LogisticaSecurity;
+import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public class RutaController {
+public class RutaController implements WithSimplePersistenceUnit {
 
   private final RutaRepository rutaRepo;
   private final CamionRepository camionRepo;
@@ -61,11 +61,17 @@ public class RutaController {
     }
 
     try {
-      // 2. Instanciamos la ruta
-      Ruta nuevaRuta = new Ruta(camionOpt.get(), dto.destinos);
+      // 2. Instanciamos la ruta y la guardamos dentro de la transacción que abre este
+      // controlador como dueño de la unidad de trabajo
+      Ruta nuevaRuta =
+          withTransaction(
+              () -> {
+                Ruta ruta = new Ruta(camionOpt.get(), dto.destinos);
+                rutaRepo.agregar(ruta);
+                return ruta;
+              });
 
-      // 3. Guardamos y respondemos
-      rutaRepo.agregar(nuevaRuta);
+      // 3. Respondemos 201 Created
       ctx.status(201).json(nuevaRuta);
     } catch (Exception e) {
       ctx.status(400).result(e.getMessage());
@@ -122,7 +128,7 @@ public class RutaController {
           .buscarPorId(id)
           .ifPresentOrElse(
               ruta -> {
-                rutaRepo.eliminar(id);
+                withTransaction(() -> rutaRepo.eliminar(id));
                 ctx.status(204);
               },
               () -> ctx.status(404).result("Ruta no encontrada"));
@@ -152,16 +158,20 @@ public class RutaController {
                 if (dto.estado != null) {
                   try {
                     if ("EN_CURSO".equalsIgnoreCase(dto.estado)) {
-                      ruta.iniciar();
-                      List<DonacionId> donaciones =
-                          ruta.getDestinos().stream()
-                              .flatMap(d -> d.donaciones().stream())
-                              .toList();
-                      String urlMapa =
-                          "https://mapa.donatrack.org/tracking/" + ruta.getCamion().getPatente();
-                      donacionesRemotas.notificarInicioTraslado(donaciones, urlMapa);
+                      // El cambio de estado y la lectura de los destinos van dentro de la
+                      // transacción del controlador; la notificación sale después de guardarlo.
+                      List<UUID> donaciones =
+                          withTransaction(
+                              () -> {
+                                ruta.iniciar();
+                                return ruta.getDestinos().stream()
+                                    .flatMap(d -> d.donaciones().stream())
+                                    .toList();
+                              });
+                      donacionesRemotas.notificarInicioTraslado(
+                          donaciones, ruta.getCamion().getPatente());
                     } else if ("FINALIZADA".equalsIgnoreCase(dto.estado)) {
-                      ruta.finalizar();
+                      withTransaction(ruta::finalizar);
                     } else {
                       ctx.status(400)
                           .result("Estado inválido. Valores permitidos: EN_CURSO, FINALIZADA");

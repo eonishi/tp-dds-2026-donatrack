@@ -12,6 +12,8 @@ import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -23,7 +25,7 @@ import javax.persistence.Table;
  * Agregado raíz que representa una ruta de entrega.
  *
  * <p>Agrupa un {@link Camion} y una lista de {@link Destino} con un ciclo de vida de {@code
- * enCurso}. Su identidad es sintética mediante {@link UUID}.
+ * enCurso}. Su identidad es un {@link UUID} que asigna el proveedor de persistencia al guardarla.
  *
  * <p>La lista de destinos no admite entidades beneficiarias repetidas: la validación se apoya en la
  * identidad declarada por {@link Destino#entidadId()}.
@@ -32,7 +34,9 @@ import javax.persistence.Table;
 @Table(schema = "logistica", name = "rutas")
 public class Ruta {
 
-  @Id private UUID id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.AUTO)
+  private UUID id;
 
   @ManyToOne
   @JoinColumn(name = "camion_id")
@@ -60,8 +64,8 @@ public class Ruta {
   /**
    * Crea una nueva ruta con el camión y los destinos especificados.
    *
-   * <p>Genera un {@link UUID} aleatorio como identidad. La ruta se crea con {@code enCurso =
-   * false}. La lista de destinos se copia defensivamente.
+   * <p>La ruta se crea sin identificador: lo asigna el proveedor de persistencia al guardarla. La
+   * ruta se crea con {@code enCurso = false}. La lista de destinos se copia defensivamente.
    *
    * @param camion el camión asignado a la ruta (no nulo)
    * @param destinos la lista de destinos a visitar (no nula)
@@ -70,7 +74,6 @@ public class Ruta {
    *     duplicadas
    */
   public Ruta(Camion camion, List<Destino> destinos) {
-    this.id = UUID.randomUUID();
     this.camion = Objects.requireNonNull(camion, "camion no debe ser nulo");
     Objects.requireNonNull(destinos, "destinos no debe ser nula");
 
@@ -82,6 +85,21 @@ public class Ruta {
 
     this.destinos = new ArrayList<>(destinos);
     this.enCurso = false;
+  }
+
+  /**
+   * Crea una ruta con un identificador explícito.
+   *
+   * <p>Pensado para tests y para reconstruir rutas con una identidad ya conocida; el alta normal
+   * usa {@link #Ruta(Camion, List)} y deja que el proveedor asigne el {@link UUID}.
+   *
+   * @param id identificador de la ruta (no nulo)
+   * @param camion el camión asignado a la ruta (no nulo)
+   * @param destinos la lista de destinos a visitar (no nula)
+   */
+  public Ruta(UUID id, Camion camion, List<Destino> destinos) {
+    this(camion, destinos);
+    this.id = Objects.requireNonNull(id, "id no debe ser nulo");
   }
 
   /**

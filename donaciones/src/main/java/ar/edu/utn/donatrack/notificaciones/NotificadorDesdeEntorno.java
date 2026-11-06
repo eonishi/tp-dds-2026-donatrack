@@ -4,6 +4,8 @@ import ar.edu.utn.donatrack.notificaciones.infraestructura.GatewayCorreoResend;
 import ar.edu.utn.donatrack.notificaciones.infraestructura.GatewayTwilio;
 import ar.edu.utn.donatrack.notificaciones.infraestructura.GatewayWhatsappTwilio;
 import java.net.http.HttpClient;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public final class NotificadorDesdeEntorno {
@@ -14,41 +16,42 @@ public final class NotificadorDesdeEntorno {
   }
 
   static Notificador crear(Map<String, String> entorno) {
+    validarConfiguracion(entorno);
     HttpClient client = HttpClient.newHttpClient();
     GatewayCorreo correo =
-        configurado(entorno, "RESEND_API_KEY", "RESEND_FROM")
-            ? new GatewayCorreoResend(
-                client, entorno.get("RESEND_API_KEY"), entorno.get("RESEND_FROM"))
-            : (destinatario, asunto, mensaje) -> sinConfig("Resend");
+        new GatewayCorreoResend(client, entorno.get("RESEND_API_KEY"), entorno.get("RESEND_FROM"));
     GatewaySms sms =
-        configurado(entorno, "TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_SMS_FROM")
-            ? new GatewayTwilio(
-                client,
-                entorno.get("TWILIO_ACCOUNT_SID"),
-                entorno.get("TWILIO_AUTH_TOKEN"),
-                entorno.get("TWILIO_SMS_FROM"))
-            : (destinatario, mensaje) -> sinConfig("Twilio SMS");
+        new GatewayTwilio(
+            client,
+            entorno.get("TWILIO_ACCOUNT_SID"),
+            entorno.get("TWILIO_AUTH_TOKEN"),
+            entorno.get("TWILIO_SMS_FROM"));
     GatewayWhatsapp whatsapp =
-        configurado(entorno, "TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_WHATSAPP_FROM")
-            ? new GatewayWhatsappTwilio(
-                client,
-                entorno.get("TWILIO_ACCOUNT_SID"),
-                entorno.get("TWILIO_AUTH_TOKEN"),
-                entorno.get("TWILIO_WHATSAPP_FROM"))
-            : (destinatario, mensaje) -> sinConfig("Twilio WhatsApp");
+        new GatewayWhatsappTwilio(
+            client,
+            entorno.get("TWILIO_ACCOUNT_SID"),
+            entorno.get("TWILIO_AUTH_TOKEN"),
+            entorno.get("TWILIO_WHATSAPP_FROM"));
     return new NotificadorPorCanal(correo, sms, whatsapp);
   }
 
-  private static boolean configurado(Map<String, String> entorno, String... variables) {
-    for (String variable : variables) {
+  private static void validarConfiguracion(Map<String, String> entorno) {
+    List<String> faltantes = new ArrayList<>();
+    for (String variable :
+        List.of(
+            "RESEND_API_KEY",
+            "RESEND_FROM",
+            "TWILIO_ACCOUNT_SID",
+            "TWILIO_AUTH_TOKEN",
+            "TWILIO_SMS_FROM",
+            "TWILIO_WHATSAPP_FROM")) {
       if (entorno.get(variable) == null || entorno.get(variable).isBlank()) {
-        return false;
+        faltantes.add(variable);
       }
     }
-    return true;
-  }
-
-  private static ResultadoEnvio sinConfig(String proveedor) {
-    return ResultadoEnvio.fallido(proveedor + " no está configurado.");
+    if (!faltantes.isEmpty()) {
+      throw new IllegalStateException(
+          "Faltan variables de entorno requeridas: " + String.join(", ", faltantes));
+    }
   }
 }

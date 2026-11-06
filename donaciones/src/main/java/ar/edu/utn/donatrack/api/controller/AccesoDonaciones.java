@@ -47,7 +47,7 @@ final class AccesoDonaciones {
         && donacion.getEntidadBeneficiaria() != null
         && usuario
             .getEntidadId()
-            .map(donacion.getEntidadBeneficiaria().getId().value()::equals)
+            .map(donacion.getEntidadBeneficiaria().getId()::equals)
             .orElse(false);
   }
 }

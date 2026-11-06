@@ -8,16 +8,14 @@ import static org.mockito.Mockito.when;
 
 import ar.edu.utn.donatrack.logistica.Camion;
 import ar.edu.utn.donatrack.logistica.CamionRepository;
-import ar.edu.utn.donatrack.logistica.DonacionId;
-import ar.edu.utn.donatrack.logistica.EntidadBeneficiariaId;
+import ar.edu.utn.donatrack.logistica.Ruta;
 import ar.edu.utn.donatrack.logistica.RutaRepository;
 import ar.edu.utn.donatrack.logistica.monitoreo.Coordenada;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionPlanificable;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
-import ar.edu.utn.donatrack.logistica.planificacion.LoteId;
 import ar.edu.utn.donatrack.logistica.planificacion.PlanificadorRutas;
 import ar.edu.utn.donatrack.logistica.planificacion.ServicioPlanificacionRutas;
-import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
+import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import io.javalin.Javalin;
 import io.javalin.testtools.JavalinTest;
 import java.util.List;
@@ -27,7 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class PlanificacionControllerTest implements WithSimplePersistenceUnit {
+public class PlanificacionControllerTest implements SimplePersistenceTest {
 
   private static final String PATENTE = "AB123CD";
   private static final long ENTIDAD_ID = 45L;
@@ -39,16 +37,16 @@ public class PlanificacionControllerTest implements WithSimplePersistenceUnit {
   private PlanificacionController controlador;
   private Javalin app;
 
-  private LoteId loteId;
-  private DonacionId donacionId;
+  private UUID loteId;
+  private UUID donacionId;
 
   @BeforeEach
   public void setUp() {
     rutaRepo = new RutaRepository();
     camionRepo = new CamionRepository();
     donacionesRemotas = Mockito.mock(DonacionesRemotas.class);
-    loteId = LoteId.generar();
-    donacionId = new DonacionId(UUID.randomUUID());
+    loteId = UUID.randomUUID();
+    donacionId = UUID.randomUUID();
 
     PlanificadorRutas planificadorRutas = lote -> loteId;
     ServicioPlanificacionRutas servicio =
@@ -70,11 +68,17 @@ public class PlanificacionControllerTest implements WithSimplePersistenceUnit {
 
   @AfterEach
   void limpiarPersistencia() {
+    // Las solicitudes HTTP confirman sus propias transacciones, a diferencia de las pruebas
+    // transaccionales que revierten: se borran las rutas y los camiones confirmados por el
+    // controlador para que no contaminen los conteos de las demás pruebas. Las rutas van primero
+    // porque referencian al camión. Después se limpia el contexto para que el próximo test no
+    // reutilice una instancia administrada con el mismo id.
     withTransaction(
-        () ->
-            createQuery("select c from Camion c", Camion.class)
-                .getResultList()
-                .forEach(this::remove));
+        () -> {
+          createQuery("select r from Ruta r", Ruta.class).getResultList().forEach(this::remove);
+          entityManager().flush();
+          createQuery("select c from Camion c", Camion.class).getResultList().forEach(this::remove);
+        });
     entityManager().clear();
   }
 
@@ -112,7 +116,7 @@ public class PlanificacionControllerTest implements WithSimplePersistenceUnit {
                 }
               }
               """
-                  .formatted(UUID.randomUUID(), PATENTE, ENTIDAD_ID, DIRECCION, donacionId.value());
+                  .formatted(UUID.randomUUID(), PATENTE, ENTIDAD_ID, DIRECCION, donacionId);
 
           var response = client.post("/logistica/planificacion/callback", json);
 
@@ -141,7 +145,7 @@ public class PlanificacionControllerTest implements WithSimplePersistenceUnit {
     JavalinTest.test(
         app,
         (server, client) -> {
-          DonacionId ajena = new DonacionId(UUID.randomUUID());
+          UUID ajena = UUID.randomUUID();
           var response = client.post("/logistica/planificacion/callback", json(PATENTE, ajena));
 
           assertEquals(400, response.code());
@@ -162,7 +166,7 @@ public class PlanificacionControllerTest implements WithSimplePersistenceUnit {
         });
   }
 
-  private String json(String patente, DonacionId idDonacion) {
+  private String json(String patente, UUID idDonacion) {
     return """
         {
           "loteId": "%s",
@@ -177,16 +181,11 @@ public class PlanificacionControllerTest implements WithSimplePersistenceUnit {
           }
         }
         """
-        .formatted(loteId.value(), patente, ENTIDAD_ID, DIRECCION, idDonacion.value());
+        .formatted(loteId, patente, ENTIDAD_ID, DIRECCION, idDonacion);
   }
 
   private DonacionPlanificable crearPlanificable() {
     return new DonacionPlanificable(
-        donacionId,
-        new EntidadBeneficiariaId(ENTIDAD_ID),
-        DIRECCION,
-        new Coordenada(-34.6, -58.4),
-        1.0,
-        1.0);
+        donacionId, ENTIDAD_ID, DIRECCION, new Coordenada(-34.6, -58.4), 1.0, 1.0);
   }
 }

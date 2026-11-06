@@ -125,7 +125,7 @@ public final class RegistroController implements WithSimplePersistenceUnit {
         () -> {
           EntidadBeneficiaria guardada = entidades.save(entidad);
           return authService.agregarUsuario(
-              correo, contrasena, Set.of(Role.BENEFICIARIO), null, guardada.getId().value());
+              correo, contrasena, Set.of(Role.BENEFICIARIO), null, guardada.getId());
         });
   }
 
