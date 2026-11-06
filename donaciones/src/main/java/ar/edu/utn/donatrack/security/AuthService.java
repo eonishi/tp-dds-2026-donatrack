@@ -1,7 +1,10 @@
 package ar.edu.utn.donatrack.security;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import io.javalin.http.Context;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -9,21 +12,20 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 
 public class AuthService {
   private static final String COOKIE_NAME = "access_token";
   private static final Duration TOKEN_TTL = Duration.ofMinutes(30);
-  private static final ObjectMapper MAPPER = new ObjectMapper();
-  private static final String JWT_SECRET =
-      System.getenv().getOrDefault("DONATRACK_JWT_SECRET", "donatrack-dev-secret-change-me");
+  private static final Algorithm ALGORITHM =
+      Algorithm.HMAC256(
+          System.getenv().getOrDefault("DONATRACK_JWT_SECRET", "donatrack-dev-secret-change-me"));
+  private static final JWTVerifier VERIFIER =
+      JWT.require(ALGORITHM).withClaimPresence("exp").build();
 
   private final Map<String, Usuario> usuariosPorEmail = new ConcurrentHashMap<>();
   private final Map<String, SessionInfo> sesiones = new ConcurrentHashMap<>();
@@ -67,8 +69,7 @@ public class AuthService {
   public void logout(Context ctx) {
     String token = ctx.cookie(COOKIE_NAME);
     if (token != null && !token.isBlank()) {
-      Optional<String> sessionId = sessionId(token);
-      sessionId.ifPresent(sesiones::remove);
+      verificar(token).map(jwt -> jwt.getClaim("sid").asString()).ifPresent(sesiones::remove);
     }
     ctx.header("Set-Cookie", clearCookieHeader());
   }
@@ -132,103 +133,42 @@ public class AuthService {
   }
 
   private String crearToken(Usuario usuario, String sessionId) {
-    try {
-      String header = base64UrlEncode("{\"alg\":\"HS256\",\"typ\":\"JWT\"}");
-      Map<String, Object> claims = new LinkedHashMap<>();
-      claims.put("sub", usuario.getId());
-      claims.put("email", usuario.getEmail());
-      claims.put("sid", sessionId);
-      claims.put("roles", usuario.getRoles().stream().map(Enum::name).toList());
-      claims.put("exp", Instant.now().plus(TOKEN_TTL).getEpochSecond());
-      String payload = base64UrlEncode(MAPPER.writeValueAsString(claims));
-      String signingInput = header + "." + payload;
-      String signature = base64UrlEncode(hmacSha256(signingInput));
-      return signingInput + "." + signature;
-    } catch (JsonProcessingException e) {
-      throw new IllegalStateException("No se pudo serializar el token JWT.", e);
-    }
+    return JWT.create()
+        .withSubject(usuario.getId())
+        .withClaim("email", usuario.getEmail())
+        .withClaim("sid", sessionId)
+        .withClaim("roles", usuario.getRoles().stream().map(Enum::name).toList())
+        .withExpiresAt(Instant.now().plus(TOKEN_TTL))
+        .sign(ALGORITHM);
   }
 
   private Optional<Usuario> validarToken(String token) {
-    String[] partes = token.split("\\.");
-    if (partes.length != 3) {
+    Optional<DecodedJWT> jwt = verificar(token);
+    if (jwt.isEmpty()) {
       return Optional.empty();
     }
-    String signingInput = partes[0] + "." + partes[1];
-    byte[] expected = hmacSha256(signingInput);
-    byte[] actual;
-    try {
-      actual = Base64.getUrlDecoder().decode(partes[2]);
-    } catch (IllegalArgumentException e) {
-      return Optional.empty();
-    }
-    if (!MessageDigest.isEqual(expected, actual)) {
-      return Optional.empty();
-    }
-    try {
-      String payloadJson =
-          new String(Base64.getUrlDecoder().decode(partes[1]), StandardCharsets.UTF_8);
-      Map<String, Object> claims = MAPPER.readValue(payloadJson, Map.class);
-      long exp = ((Number) claims.get("exp")).longValue();
-      if (Instant.now().getEpochSecond() > exp) {
-        return Optional.empty();
+    String sessionId = jwt.get().getClaim("sid").asString();
+    SessionInfo session = sessionId == null ? null : sesiones.get(sessionId);
+    if (session == null || session.expiresAt().isBefore(Instant.now())) {
+      if (sessionId != null) {
+        sesiones.remove(sessionId);
       }
-      String sessionId = (String) claims.get("sid");
-      SessionInfo session = sesiones.get(sessionId);
-      if (session == null || session.expiresAt().isBefore(Instant.now())) {
-        if (sessionId != null) {
-          sesiones.remove(sessionId);
-        }
-        return Optional.empty();
-      }
-      String email = (String) claims.get("email");
-      Usuario usuario = usuariosPorEmail.get(normalizarEmail(email));
-      if (usuario == null) {
-        return Optional.empty();
-      }
-      return Optional.of(usuario);
-    } catch (Exception e) {
       return Optional.empty();
     }
+    String email = jwt.get().getClaim("email").asString();
+    return Optional.ofNullable(email).map(e -> usuariosPorEmail.get(normalizarEmail(e)));
   }
 
-  private Optional<String> sessionId(String token) {
-    String[] partes = token.split("\\.");
-    if (partes.length != 3) {
-      return Optional.empty();
-    }
+  private static Optional<DecodedJWT> verificar(String token) {
     try {
-      String payloadJson =
-          new String(Base64.getUrlDecoder().decode(partes[1]), StandardCharsets.UTF_8);
-      Map<String, Object> claims = MAPPER.readValue(payloadJson, Map.class);
-      return Optional.ofNullable((String) claims.get("sid"));
-    } catch (Exception e) {
+      return Optional.of(VERIFIER.verify(token));
+    } catch (JWTVerificationException e) {
       return Optional.empty();
     }
   }
 
   private static String normalizarEmail(String email) {
     return email == null ? null : email.trim().toLowerCase();
-  }
-
-  private static String base64UrlEncode(String raw) {
-    return Base64.getUrlEncoder()
-        .withoutPadding()
-        .encodeToString(raw.getBytes(StandardCharsets.UTF_8));
-  }
-
-  private static String base64UrlEncode(byte[] raw) {
-    return Base64.getUrlEncoder().withoutPadding().encodeToString(raw);
-  }
-
-  private static byte[] hmacSha256(String raw) {
-    try {
-      Mac mac = Mac.getInstance("HmacSHA256");
-      mac.init(new SecretKeySpec(JWT_SECRET.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-      return mac.doFinal(raw.getBytes(StandardCharsets.UTF_8));
-    } catch (Exception e) {
-      throw new IllegalStateException("No se pudo firmar el JWT.", e);
-    }
   }
 
   private static String cookieHeader(String token) {
