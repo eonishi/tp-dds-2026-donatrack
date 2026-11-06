@@ -21,6 +21,7 @@ public class EventoBienvenida extends EventoNotificable {
         .map(
             medio ->
                 new Notificacion(
+                    donante,
                     medio,
                     "¡Bienvenido a DonaTrack! Gracias por registrarte como donante.",
                     SinPayload.INSTANCE,

@@ -1,5 +1,8 @@
 {{#partial "titulo"}}Donaciones entregadas · DonaTrack{{/partial}}
 
+{{#partial "head"}}<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">{{/partial}}
+{{#partial "scripts"}}<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script><script src="/mapas.js"></script>{{/partial}}
+
 {{#partial "contenido"}}
 {{!-- Pública: cualquier visitante la ve, con o sin sesión. No muestra datos de las personas donantes. --}}
 <section class="position-relative overflow-hidden py-4">
@@ -14,7 +17,13 @@
             </p>
         </div>
 
+        <div class="mb-5">
+            <div class="mapa" data-mapa="entregas" data-fuente="/entregas/mapa" role="region" aria-label="Mapa de entidades que recibieron donaciones"></div>
+            <p class="small text-body-secondary mt-2 mb-0" data-aviso-mapa>Tocá un marcador para ver qué recibió cada entidad.</p>
+        </div>
+
         {{#if entregas}}
+        <h2 class="h4 mb-3">Todas las entregas</h2>
         <div class="row g-4">
             {{#each entregas}}
             <div class="col-md-6 col-xl-4">

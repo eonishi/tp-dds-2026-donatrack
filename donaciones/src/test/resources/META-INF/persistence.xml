@@ -25,6 +25,7 @@
         <class>ar.edu.utn.donatrack.security.Usuario</class>
         <class>ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion</class>
         <class>ar.edu.utn.donatrack.propuestas.matchmaking.MatchCandidato</class>
+        <class>ar.edu.utn.donatrack.notificaciones.AvisoBandeja</class>
 
         <properties>
             <property name="javax.persistence.jdbc.url" value="jdbc:hsqldb:mem:donatrack-test"/>

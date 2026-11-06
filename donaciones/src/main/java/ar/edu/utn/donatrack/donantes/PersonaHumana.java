@@ -9,7 +9,6 @@ import javax.persistence.Enumerated;
 public class PersonaHumana extends Donante {
   private String nombre;
   private String apellido;
-  private Integer edad;
 
   @Enumerated(EnumType.STRING)
   private Genero genero;
@@ -22,7 +21,6 @@ public class PersonaHumana extends Donante {
       CorreoElectronico medioDeContacto,
       String nombre,
       String apellido,
-      Integer edad,
       String numDocumento,
       TipoDocumento documento,
       Genero genero,
@@ -30,7 +28,6 @@ public class PersonaHumana extends Donante {
     super(medioDeContacto, numDocumento, documento);
     this.nombre = nombre;
     this.apellido = apellido;
-    this.edad = edad;
     this.genero = genero;
     this.direccion = direccion;
   }
@@ -40,7 +37,6 @@ public class PersonaHumana extends Donante {
       CorreoElectronico medioDeContacto,
       String nombre,
       String apellido,
-      Integer edad,
       String numDocumento,
       TipoDocumento documento,
       Genero genero,
@@ -48,7 +44,6 @@ public class PersonaHumana extends Donante {
     super(id, medioDeContacto, numDocumento, documento);
     this.nombre = nombre;
     this.apellido = apellido;
-    this.edad = edad;
     this.genero = genero;
     this.direccion = direccion;
   }
@@ -61,10 +56,6 @@ public class PersonaHumana extends Donante {
     return apellido;
   }
 
-  public Integer getEdad() {
-    return edad;
-  }
-
   public Genero getGenero() {
     return genero;
   }
@@ -73,19 +64,14 @@ public class PersonaHumana extends Donante {
     return direccion;
   }
 
-  public void setEdad(int edad) {
-    this.edad = edad;
-  }
-
   public void setDireccion(String direccion) {
     this.direccion = direccion;
   }
 
   public void actualizarDatosPersonales(
-      String nombre, String apellido, Integer edad, Genero genero, String direccion) {
+      String nombre, String apellido, Genero genero, String direccion) {
     this.nombre = nombre;
     this.apellido = apellido;
-    this.edad = edad;
     this.genero = genero;
     this.direccion = direccion;
   }

@@ -1,0 +1,26 @@
+{{#partial "titulo"}}Activar cuenta · DonaTrack{{/partial}}
+
+{{#partial "contenido"}}
+<section class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-5">
+            <div class="tarjeta p-4 p-lg-5">
+                <span class="chip mb-3">Ya donaste con nosotros</span>
+                <h1 class="mb-3">Activá tu cuenta</h1>
+                <p class="text-body-secondary">Si ya estabas registrada o registrado como donante, tu cuenta te espera. Confirmá tu correo y tu documento, y elegí una contraseña.</p>
+                {{#if error}}<div class="alert alert-danger" role="alert">{{error}}</div>{{/if}}
+                <form method="post" action="/activar" class="mt-4">
+                    <div class="mb-3"><label for="email" class="form-label">Correo</label><input id="email" name="email" type="email" class="form-control" value="{{email}}" autocomplete="username" required></div>
+                    <div class="mb-3"><label for="documento" class="form-label">Número de documento</label><input id="documento" name="documento" class="form-control" inputmode="numeric" autocomplete="off" required></div>
+                    <div class="mb-3"><label for="password" class="form-label">Contraseña nueva</label><input id="password" name="password" type="password" class="form-control" minlength="8" autocomplete="new-password" required></div>
+                    <div class="mb-3"><label for="confirmacion" class="form-label">Repetí la contraseña</label><input id="confirmacion" name="confirmacion" type="password" class="form-control" minlength="8" autocomplete="new-password" required></div>
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill">Activar y entrar</button>
+                </form>
+                <p class="mt-3 mb-0 text-center small">¿Ya la activaste? <a href="/login">Ingresá</a></p>
+            </div>
+        </div>
+    </div>
+</section>
+{{/partial}}
+
+{{> layout}}

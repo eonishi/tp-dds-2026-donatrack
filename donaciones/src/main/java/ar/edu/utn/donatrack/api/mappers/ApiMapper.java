@@ -55,7 +55,6 @@ public final class ApiMapper {
         contactos,
         humana == null ? null : humana.getNombre(),
         humana == null ? null : humana.getApellido(),
-        humana == null ? null : humana.getEdad(),
         humana == null ? null : humana.getGenero(),
         humana == null ? null : humana.getDireccion(),
         juridica == null ? null : juridica.getRazonSocial(),

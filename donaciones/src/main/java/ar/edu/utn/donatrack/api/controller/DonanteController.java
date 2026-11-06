@@ -124,7 +124,6 @@ public final class DonanteController implements WithSimplePersistenceUnit {
               email,
               request.nombre(),
               request.apellido(),
-              request.edad(),
               request.numeroDocumento(),
               request.tipoDocumento(),
               request.genero(),
@@ -154,11 +153,7 @@ public final class DonanteController implements WithSimplePersistenceUnit {
     actualizarMediosDeContacto(donante, request);
     if (donante instanceof PersonaHumana persona) {
       persona.actualizarDatosPersonales(
-          request.nombre(),
-          request.apellido(),
-          request.edad(),
-          request.genero(),
-          request.direccion());
+          request.nombre(), request.apellido(), request.genero(), request.direccion());
     } else {
       ((PersonajeJuridica) donante)
           .actualizarDatosJuridicos(
@@ -191,12 +186,11 @@ public final class DonanteController implements WithSimplePersistenceUnit {
             || request.nombre().isBlank()
             || request.apellido() == null
             || request.apellido().isBlank()
-            || request.edad() == null
             || request.genero() == null
             || request.direccion() == null
             || request.direccion().isBlank())) {
       throw new IllegalArgumentException(
-          "Una persona humana requiere nombre, apellido, edad, género y dirección.");
+          "Una persona humana requiere nombre, apellido, género y dirección.");
     }
     if (request.tipoPersona() == TipoPersona.JURIDICA
         && (request.razonSocial() == null

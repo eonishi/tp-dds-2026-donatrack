@@ -31,13 +31,13 @@ public class EventoEntregaNoSatisfactoria extends EventoNotificable {
     for (var medio : DestinatariosNotificacion.predeterminado(donante)) {
       notificaciones.add(
           new Notificacion(
-              medio, mensajeDonante, SinPayload.INSTANCE, EstadoNotificacion.PENDIENTE));
+              donante, medio, mensajeDonante, SinPayload.INSTANCE, EstadoNotificacion.PENDIENTE));
     }
     String mensajeEntidad = "La entrega no pudo completarse: " + motivo;
     for (var medio : DestinatariosNotificacion.predeterminado(entidad)) {
       notificaciones.add(
           new Notificacion(
-              medio, mensajeEntidad, SinPayload.INSTANCE, EstadoNotificacion.PENDIENTE));
+              entidad, medio, mensajeEntidad, SinPayload.INSTANCE, EstadoNotificacion.PENDIENTE));
     }
 
     String adminConfig =

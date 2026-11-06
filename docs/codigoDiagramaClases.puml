@@ -46,7 +46,6 @@ package "Donantes y Contacto" {
     class PersonaHumana {
         - nombre: String
         - apellido: String
-        - edad: Integer
         - genero: String
         - direccion: String
     }

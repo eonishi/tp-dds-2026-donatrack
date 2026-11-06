@@ -40,7 +40,6 @@ class ResolucionSubcategoriasTest implements SimplePersistenceTest {
             new CorreoElectronico("resolucion@test.com"),
             "Ana",
             "Catálogo",
-            30,
             "20000002",
             TipoDocumento.DNI,
             Genero.FEMENINO,

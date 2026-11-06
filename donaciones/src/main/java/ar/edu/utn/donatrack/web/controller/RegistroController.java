@@ -91,7 +91,6 @@ public final class RegistroController implements WithSimplePersistenceUnit {
             new CorreoElectronico(correo),
             obligatorio(ctx, "donanteNombre", "el nombre"),
             obligatorio(ctx, "donanteApellido", "el apellido"),
-            edad(ctx.formParam("donanteEdad")),
             numeroDocumento,
             tipoDocumento,
             enumerado(Genero.class, ctx.formParam("donanteGenero"), "el género"),
@@ -163,18 +162,6 @@ public final class RegistroController implements WithSimplePersistenceUnit {
       throw new DatoInvalido("Falta completar " + nombre + ".");
     }
     return valor;
-  }
-
-  private static int edad(String valor) {
-    try {
-      int edad = Integer.parseInt(valor == null ? "" : valor.trim());
-      if (edad < 0) {
-        throw new NumberFormatException();
-      }
-      return edad;
-    } catch (NumberFormatException e) {
-      throw new DatoInvalido("La edad tiene que ser un número válido.");
-    }
   }
 
   private static <E extends Enum<E>> E enumerado(Class<E> tipo, String valor, String nombre) {

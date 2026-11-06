@@ -63,12 +63,14 @@ public class EventoEntregaExitosa extends EventoNotificable {
             + detalleEntrega;
     for (var medio : DestinatariosNotificacion.predeterminado(donante)) {
       notificaciones.add(
-          new Notificacion(medio, mensajeDonante, comprobante, EstadoNotificacion.PENDIENTE));
+          new Notificacion(
+              donante, medio, mensajeDonante, comprobante, EstadoNotificacion.PENDIENTE));
     }
     String mensajeEntidad = "Has recibido una donación exitosamente." + detalleEntrega;
     for (var medio : DestinatariosNotificacion.predeterminado(entidad)) {
       notificaciones.add(
-          new Notificacion(medio, mensajeEntidad, comprobante, EstadoNotificacion.PENDIENTE));
+          new Notificacion(
+              entidad, medio, mensajeEntidad, comprobante, EstadoNotificacion.PENDIENTE));
     }
     return notificaciones;
   }

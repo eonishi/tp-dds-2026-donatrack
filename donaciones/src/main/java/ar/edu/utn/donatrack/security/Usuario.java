@@ -119,6 +119,18 @@ public class Usuario {
     return false;
   }
 
+  /**
+   * Cuenta creada por la importación de donantes: todavía no tiene contraseña y la persona la elige
+   * al activarla. Ninguna contraseña coincide con el marcador.
+   */
+  public boolean isPendienteDeActivacion() {
+    return passwordHash.startsWith(AuthService.MARCADOR_PENDIENTE);
+  }
+
+  void definirContrasena(String nuevoHash) {
+    this.passwordHash = Objects.requireNonNull(nuevoHash);
+  }
+
   public boolean matchesPassword(String password) {
     return AuthService.coincide(password, passwordHash);
   }

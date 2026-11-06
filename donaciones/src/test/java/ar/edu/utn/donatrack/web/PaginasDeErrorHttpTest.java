@@ -149,7 +149,12 @@ class PaginasDeErrorHttpTest {
       "/necesidades",
       "/logistica",
       "/matchmaking",
-      "/catalogo"
+      "/catalogo",
+      "/admin/vencidas",
+      "/admin/asignaciones",
+      "/admin/camiones",
+      "/admin/importar",
+      "/activar"
     };
 
     for (String seccion : secciones) {

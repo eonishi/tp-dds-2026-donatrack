@@ -26,6 +26,7 @@ public class EventoInicioRuta extends EventoNotificable {
       for (var medio : DestinatariosNotificacion.predeterminado(notificable)) {
         notificaciones.add(
             new Notificacion(
+                notificable,
                 medio,
                 "La ruta de entrega ha comenzado. Seguí el recorrido en el mapa: " + urlMapa,
                 payload,

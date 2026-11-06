@@ -29,6 +29,12 @@ public class EntidadBeneficiaria implements Notificable {
   private String direccion;
   private String telefono;
 
+  // Ubicación para los mapas, geocodificada a partir de la dirección (ver UbicadorEntidades). Si la
+  // dirección no se pudo ubicar, quedan nulas y ubicacionIntentada evita reintentar en cada pasada.
+  private Double latitud;
+  private Double longitud;
+  private boolean ubicacionIntentada;
+
   // Cada colección tiene su propia clave foránea: compartir entidad_id hacía que la colección
   // recurrente leyera filas Necesidad y Hibernate levantara WrongClassException, porque
   // NecesidadRecurrente hereda de Necesidad en una sola tabla. Con dos columnas, la pertenencia a
@@ -91,6 +97,39 @@ public class EntidadBeneficiaria implements Notificable {
     return telefono;
   }
 
+  public Optional<Double> getLatitud() {
+    return Optional.ofNullable(latitud);
+  }
+
+  public Optional<Double> getLongitud() {
+    return Optional.ofNullable(longitud);
+  }
+
+  public boolean estaUbicada() {
+    return latitud != null && longitud != null;
+  }
+
+  /** Si todavía hay que geocodificar su dirección. */
+  public boolean faltaUbicar() {
+    return !ubicacionIntentada && direccion != null && !direccion.isBlank();
+  }
+
+  public void ubicar(double latitud, double longitud) {
+    if (latitud < -90 || latitud > 90 || longitud < -180 || longitud > 180) {
+      throw new IllegalArgumentException("Coordenadas fuera de rango.");
+    }
+    this.latitud = latitud;
+    this.longitud = longitud;
+    this.ubicacionIntentada = true;
+  }
+
+  /** La dirección no se pudo ubicar: no se reintenta hasta que cambie. */
+  public void marcarSinUbicacion() {
+    this.latitud = null;
+    this.longitud = null;
+    this.ubicacionIntentada = true;
+  }
+
   public List<Necesidad> getNecesidadesExtraordinarias() {
     return Collections.unmodifiableList(necesidadesExtraordinarias);
   }
@@ -138,6 +177,12 @@ public class EntidadBeneficiaria implements Notificable {
   public void actualizarDatos(
       String razonSocial, String direccion, String telefono, List<CorreoElectronico> correos) {
     this.razonSocial = razonSocial;
+    if (!Objects.equals(this.direccion, direccion)) {
+      // Otra dirección, otra ubicación: se vuelve a geocodificar.
+      this.latitud = null;
+      this.longitud = null;
+      this.ubicacionIntentada = false;
+    }
     this.direccion = direccion;
     this.telefono = telefono;
     this.correos.clear();

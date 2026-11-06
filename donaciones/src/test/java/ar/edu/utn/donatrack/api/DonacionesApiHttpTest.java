@@ -720,7 +720,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
         + nombre
         + "\",\"apellido\":\""
         + apellido
-        + "\",\"edad\":30,\"genero\":\"FEMENINO\",\"direccion\":\"Calle 123\"}";
+        + "\",\"genero\":\"FEMENINO\",\"direccion\":\"Calle 123\"}";
   }
 
   private String necesidadJson(String subcategoria, int cantidad) {

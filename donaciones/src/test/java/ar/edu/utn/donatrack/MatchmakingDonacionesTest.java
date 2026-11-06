@@ -42,7 +42,6 @@ public class MatchmakingDonacionesTest implements SimplePersistenceTest {
         new CorreoElectronico("test@test.com"),
         "Juan",
         "Perez",
-        30,
         "12345678",
         TipoDocumento.DNI,
         Genero.MASCULINO,

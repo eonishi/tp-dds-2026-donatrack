@@ -10,9 +10,19 @@ public class ServicioNotificaciones {
   private final Notificador notificador;
   private final NotificacionesRepository repository;
   private final int maxIntentos;
+  private final BandejaNotificaciones bandeja;
 
   public ServicioNotificaciones(
       Notificador notificador, NotificacionesRepository repository, int maxIntentos) {
+    this(notificador, repository, maxIntentos, BandejaNotificaciones.NINGUNA);
+  }
+
+  public ServicioNotificaciones(
+      Notificador notificador,
+      NotificacionesRepository repository,
+      int maxIntentos,
+      BandejaNotificaciones bandeja) {
+    this.bandeja = Objects.requireNonNull(bandeja);
     this.notificador = Objects.requireNonNull(notificador);
     this.repository = Objects.requireNonNull(repository);
     if (maxIntentos < 1) {
@@ -22,11 +32,27 @@ public class ServicioNotificaciones {
   }
 
   public List<Notificacion> enviar(List<Notificacion> notificaciones) {
-    notificaciones.forEach(this::enviar);
+    notificaciones.forEach(this::entregar);
+    registrarEnBandeja(notificaciones);
     return List.copyOf(notificaciones);
   }
 
   public Notificacion enviar(Notificacion notificacion) {
+    entregar(notificacion);
+    registrarEnBandeja(List.of(notificacion));
+    return notificacion;
+  }
+
+  // La bandeja web no debe impedir el envío: si falla, queda en el log.
+  private void registrarEnBandeja(List<Notificacion> notificaciones) {
+    try {
+      bandeja.registrar(notificaciones);
+    } catch (RuntimeException error) {
+      LOGGER.warn("No se pudieron guardar los avisos en la bandeja web", error);
+    }
+  }
+
+  private Notificacion entregar(Notificacion notificacion) {
     repository.save(notificacion);
     for (int intento = 0; intento < maxIntentos; intento++) {
       notificacion.registrarIntento();

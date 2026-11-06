@@ -8,6 +8,7 @@ import ar.edu.utn.donatrack.logistica.graphql.ResolversLogistica;
 import ar.edu.utn.donatrack.logistica.monitoreo.MonitorRutas;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotasImpl;
+import ar.edu.utn.donatrack.logistica.planificacion.PlanificacionScheduler;
 import ar.edu.utn.donatrack.logistica.planificacion.PlanificadorRutas;
 import ar.edu.utn.donatrack.logistica.planificacion.ServicioPlanificacionRutas;
 import ar.edu.utn.donatrack.logistica.security.LogisticaSecurity;
@@ -24,8 +25,12 @@ public class MainLogistica implements WithSimplePersistenceUnit {
     new MainLogistica().iniciar();
   }
 
+  private ServicioPlanificacionRutas servicioPlanificacion;
+
   private void iniciar() {
     crearApp().start(9001);
+    // Solo en el proceso real: las pruebas arman la app con crearApp() sin programar tareas.
+    PlanificacionScheduler.desdeEntorno(servicioPlanificacion).iniciar();
     System.out.println("Microservicio de Logística corriendo en http://localhost:9001");
   }
 
@@ -69,7 +74,7 @@ public class MainLogistica implements WithSimplePersistenceUnit {
     DonacionesRemotas donacionesRemotas =
         new DonacionesRemotasImpl(apiUrl, apiKey, httpClient, objectMapper);
 
-    RepartidorController repartidorController =
+    final RepartidorController repartidorController =
         new RepartidorController(repartidorRepo, Clock.systemUTC());
     // Camiones, rutas, repartidores y posiciones se exponen por GraphQL (entrega 4).
     GraphqlController graphqlController =
@@ -81,7 +86,7 @@ public class MainLogistica implements WithSimplePersistenceUnit {
     // Este UUID es el id del lote que devuelve el planificador externo (stub), no la clave de una
     // entidad: el @GeneratedValue de las entidades no aplica acá.
     PlanificadorRutas planificadorRutas = lote -> UUID.randomUUID();
-    ServicioPlanificacionRutas servicioPlanificacion =
+    servicioPlanificacion =
         new ServicioPlanificacionRutas(donacionesRemotas, camionRepo, planificadorRutas, rutaRepo);
     PlanificacionController planificacionController =
         new PlanificacionController(servicioPlanificacion, camionRepo);

@@ -2,6 +2,7 @@ package ar.edu.utn.donatrack.web.controller;
 
 import static io.javalin.apibuilder.ApiBuilder.get;
 
+import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
@@ -10,8 +11,10 @@ import ar.edu.utn.donatrack.security.AuthService;
 import io.javalin.http.Context;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -34,6 +37,7 @@ public final class PaginasPublicasController {
     get("/", this::landing);
     get("/legal", this::legal);
     get("/entregas", this::entregas);
+    get("/entregas/mapa", this::mapaEntregas);
     get("/registro", this::registro);
   }
 
@@ -66,6 +70,44 @@ public final class PaginasPublicasController {
     modelo.put("entregas", entregas);
     ctx.render("entregas", modelo);
   }
+
+  /**
+   * Las entregas agrupadas por entidad, para los marcadores del mapa público. Las entidades que
+   * todavía no se pudieron ubicar no aparecen en el mapa, pero sí en la lista de la página.
+   */
+  private void mapaEntregas(Context ctx) {
+    Map<Long, List<Donacion>> porEntidad = new LinkedHashMap<>();
+    donaciones.getDonacionesEntregadas().stream()
+        .filter(d -> d.getEntidadBeneficiaria() != null)
+        .filter(d -> d.getEntidadBeneficiaria().estaUbicada())
+        .forEach(
+            d ->
+                porEntidad
+                    .computeIfAbsent(d.getEntidadBeneficiaria().getId(), id -> new ArrayList<>())
+                    .add(d));
+    ctx.json(
+        porEntidad.values().stream()
+            .map(
+                lista -> {
+                  EntidadBeneficiaria entidad = lista.get(0).getEntidadBeneficiaria();
+                  return new MarcadorEntregas(
+                      entidad.getRazonSocial(),
+                      entidad.getLatitud().orElseThrow(),
+                      entidad.getLongitud().orElseThrow(),
+                      lista.stream()
+                          .map(PaginasPublicasController::entregaPublica)
+                          .sorted(Comparator.comparing(EntregaPublica::orden).reversed())
+                          .map(e -> new DetalleEntrega(e.getFecha(), e.getBienes(), e.getFotos()))
+                          .toList());
+                })
+            .toList());
+  }
+
+  /** Un marcador del mapa público: una entidad y lo que recibió. Nada de quien donó. */
+  record MarcadorEntregas(
+      String entidad, double latitud, double longitud, List<DetalleEntrega> entregas) {}
+
+  record DetalleEntrega(String fecha, List<String> bienes, List<String> fotos) {}
 
   private static EntregaPublica entregaPublica(Donacion donacion) {
     LocalDateTime fecha =

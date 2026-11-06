@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import org.mindrot.jbcrypt.BCrypt;
 
 /**
@@ -71,6 +72,56 @@ public class AuthService implements WithSimplePersistenceUnit {
     Usuario usuario = new Usuario(email, hashPassword(password), roles, donanteId, entidadId);
     usuarios.agregar(usuario);
     return usuario;
+  }
+
+  static final String MARCADOR_PENDIENTE = "!pendiente-de-activacion";
+
+  /**
+   * Crea, dentro de la transacción del llamador, la cuenta de una persona donante importada. Queda
+   * pendiente de activación: sin contraseña, hasta que la persona la elija en {@code /activar}.
+   *
+   * @return {@code false} si el correo ya tenía usuario (no se toca)
+   */
+  public boolean agregarPendiente(String email, UUID donanteId) {
+    if (usuarios.existeEmail(email)) {
+      return false;
+    }
+    usuarios.agregar(new Usuario(email, MARCADOR_PENDIENTE, Set.of(Role.DONANTE), donanteId, null));
+    return true;
+  }
+
+  /**
+   * Activa una cuenta importada: la persona prueba quién es con el número de documento que figura
+   * en su registro de donante y elige su contraseña.
+   *
+   * @param documentoDe devuelve el número de documento del donante vinculado a la cuenta
+   * @return el usuario activado, o vacío si el correo no tiene una cuenta pendiente o el documento
+   *     no coincide (no se distingue cuál de los dos, para no revelar qué correos existen)
+   */
+  public Optional<Usuario> activar(
+      String email,
+      String documento,
+      String password,
+      Function<UUID, Optional<String>> documentoDe) {
+    if (email == null || documento == null || password == null) {
+      return Optional.empty();
+    }
+    return withTransaction(
+        () ->
+            usuarios
+                .buscarPorEmail(email)
+                .filter(Usuario::isPendienteDeActivacion)
+                .filter(
+                    u ->
+                        u.getDonanteId()
+                            .flatMap(documentoDe)
+                            .map(doc -> doc.trim().equalsIgnoreCase(documento.trim()))
+                            .orElse(false))
+                .map(
+                    u -> {
+                      u.definirContrasena(hashPassword(password));
+                      return u;
+                    }));
   }
 
   public boolean existeUsuario(String email) {

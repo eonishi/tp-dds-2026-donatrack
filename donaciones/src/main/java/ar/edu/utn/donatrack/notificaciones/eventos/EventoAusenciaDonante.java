@@ -21,6 +21,7 @@ public class EventoAusenciaDonante extends EventoNotificable {
         .map(
             medio ->
                 new Notificacion(
+                    donante,
                     medio,
                     "Hace más de 20 días que no recibimos una donación tuya. "
                         + "¿Te animas a colaborar nuevamente?",

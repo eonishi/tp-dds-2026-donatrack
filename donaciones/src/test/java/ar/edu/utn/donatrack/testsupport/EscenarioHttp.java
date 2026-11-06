@@ -9,6 +9,7 @@ import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donantes.Donante;
+import ar.edu.utn.donatrack.notificaciones.AvisoBandeja;
 import ar.edu.utn.donatrack.security.Usuario;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,6 +53,9 @@ public final class EscenarioHttp implements WithSimplePersistenceUnit {
   public void limpiar() {
     withTransaction(
         () -> {
+          createQuery("select a from AvisoBandeja a", AvisoBandeja.class)
+              .getResultList()
+              .forEach(this::remove);
           createQuery("select b from Bien b", Bien.class).getResultList().forEach(this::remove);
           createQuery("select n from Necesidad n", Necesidad.class)
               .getResultList()
@@ -86,7 +90,7 @@ public final class EscenarioHttp implements WithSimplePersistenceUnit {
             + email
             + "\"}],\"contactoPredeterminado\":0,\"nombre\":\""
             + nombre
-            + "\",\"apellido\":\"Pérez\",\"edad\":30,\"genero\":\"FEMENINO\",\"direccion\":\"Calle 123\"}";
+            + "\",\"apellido\":\"Pérez\",\"genero\":\"FEMENINO\",\"direccion\":\"Calle 123\"}";
     HttpResponse<String> response = json("POST", "/api/v1/donantes", body, admin);
     assertEquals(201, response.statusCode(), response.body());
     return UUID.fromString(leer(response).get("id").asText());
@@ -118,13 +122,20 @@ public final class EscenarioHttp implements WithSimplePersistenceUnit {
   }
 
   public UUID crearDonacion(UUID donante, String subcategoria) throws Exception {
+    return crearDonacion(donante, subcategoria, null);
+  }
+
+  /** Una donación de 10 kg; con {@code vence} (AAAA-MM-DD) es perecedera. */
+  public UUID crearDonacion(UUID donante, String subcategoria, String vence) throws Exception {
     HttpResponse<String> response =
         json(
             "POST",
             "/api/v1/donaciones",
             "{\"donanteId\":\""
                 + donante
-                + "\",\"bienes\":[{\"descripcion\":\"Producto\",\"cantidad\":10,\"unidad\":\"KILOGRAMOS\",\"estadoDeUso\":\"NO_APLICA\",\"subcategoria\":\""
+                + "\",\"bienes\":[{\"descripcion\":\"Producto\",\"cantidad\":10,\"unidad\":\"KILOGRAMOS\",\"estadoDeUso\":\"NO_APLICA\","
+                + (vence == null ? "" : "\"fechaVencimiento\":\"" + vence + "\",")
+                + "\"subcategoria\":\""
                 + subcategoria
                 + "\",\"categoria\":\"ALIMENTO\"}]}",
             admin);

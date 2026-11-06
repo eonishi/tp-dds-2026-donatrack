@@ -36,7 +36,6 @@ class DonantesRepositoryTest implements SimplePersistenceTest {
             new CorreoElectronico("ana@test.com"),
             "Ana",
             "Gomez",
-            34,
             "30111222",
             TipoDocumento.DNI,
             Genero.FEMENINO,
@@ -60,7 +59,6 @@ class DonantesRepositoryTest implements SimplePersistenceTest {
     PersonaHumana persona = (PersonaHumana) porIdentidad;
     assertEquals("Ana", persona.getNombre());
     assertEquals("Gomez", persona.getApellido());
-    assertEquals(34, persona.getEdad());
     assertEquals(Genero.FEMENINO, persona.getGenero());
     assertEquals("Av. Siempreviva 742", persona.getDireccion());
     assertEquals("30111222", persona.getNumDocumento());
@@ -189,7 +187,6 @@ class DonantesRepositoryTest implements SimplePersistenceTest {
             new CorreoElectronico("ana@test.com"),
             "Ana",
             "Gomez",
-            34,
             "30111222",
             TipoDocumento.DNI,
             Genero.FEMENINO,
@@ -293,7 +290,6 @@ class DonantesRepositoryTest implements SimplePersistenceTest {
         new CorreoElectronico("donante" + documento + "@test.com"),
         "Ana",
         "Gomez",
-        34,
         documento,
         TipoDocumento.DNI,
         Genero.FEMENINO,

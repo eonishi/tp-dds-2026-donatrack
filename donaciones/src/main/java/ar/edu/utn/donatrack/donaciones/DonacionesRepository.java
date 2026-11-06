@@ -45,6 +45,19 @@ public class DonacionesRepository implements WithSimplePersistenceUnit {
     return donacionesConEstado(EstadoDonacion.ENTREGADA);
   }
 
+  /** Donaciones de una persona donante, en cualquier estado. */
+  public List<Donacion> getDonacionesDeDonante(UUID donanteId) {
+    return List.copyOf(
+        createQuery("SELECT d FROM Donacion d WHERE d.donante.id = :donante", Donacion.class)
+            .setParameter("donante", donanteId)
+            .getResultList());
+  }
+
+  /** Donaciones cuyo estado actual es {@code estado}. */
+  public List<Donacion> getDonacionesEnEstado(EstadoDonacion estado) {
+    return donacionesConEstado(estado);
+  }
+
   /**
    * Donaciones asignadas a una entidad beneficiaria, en cualquier estado. La vista decide cómo
    * agruparlas (por recibir, recibidas, con problemas).

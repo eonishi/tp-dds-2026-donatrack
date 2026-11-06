@@ -141,7 +141,6 @@ class RegistroHttpTest implements WithSimplePersistenceUnit {
     campos.put("donanteTipoDocumento", "DNI");
     campos.put("donanteNumeroDocumento", documento);
     campos.put("donanteGenero", "FEMENINO");
-    campos.put("donanteEdad", "30");
     campos.put("donanteDireccion", "Calle 123");
     campos.put("donanteMedioContacto", "CORREO");
     return campos;
