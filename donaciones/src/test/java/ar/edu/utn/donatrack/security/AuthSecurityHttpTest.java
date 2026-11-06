@@ -127,6 +127,14 @@ class AuthSecurityHttpTest {
     assertTrue(panel.body().contains("LITROS"));
   }
 
+  @Test
+  void unaCookieConFirmaCorruptaSeTrataComoAnonima() throws Exception {
+    String cookie = "access_token=a.b.!!!";
+
+    assertEquals(200, get("/", cookie).statusCode());
+    assertEquals(302, get("/dashboard", cookie).statusCode());
+  }
+
   private HttpResponse<String> get(String ruta) throws IOException, InterruptedException {
     return get(ruta, "");
   }

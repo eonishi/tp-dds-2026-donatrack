@@ -156,7 +156,12 @@ public class AuthService {
     }
     String signingInput = partes[0] + "." + partes[1];
     byte[] expected = hmacSha256(signingInput);
-    byte[] actual = Base64.getUrlDecoder().decode(partes[2]);
+    byte[] actual;
+    try {
+      actual = Base64.getUrlDecoder().decode(partes[2]);
+    } catch (IllegalArgumentException e) {
+      return Optional.empty();
+    }
     if (!MessageDigest.isEqual(expected, actual)) {
       return Optional.empty();
     }
