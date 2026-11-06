@@ -7,6 +7,7 @@ import ar.edu.utn.donatrack.notificaciones.EstadoNotificacion;
 import ar.edu.utn.donatrack.notificaciones.Notificacion;
 import ar.edu.utn.donatrack.notificaciones.payloads.ComprobanteEntrega;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -16,6 +17,9 @@ import java.util.Objects;
  * ComprobanteEntrega} que incluye la fecha de entrega y la patente del camión.
  */
 public class EventoEntregaExitosa extends EventoNotificable {
+  private static final DateTimeFormatter FORMATO_FECHA_ENTREGA =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+
   private final Donante donante;
   private final EntidadBeneficiaria entidad;
   private final LocalDateTime fechaEntrega;
@@ -46,13 +50,22 @@ public class EventoEntregaExitosa extends EventoNotificable {
   public List<Notificacion> generarNotificaciones() {
     ComprobanteEntrega comprobante = new ComprobanteEntrega(fechaEntrega, idCamion);
     List<Notificacion> notificaciones = new ArrayList<>();
+    String detalleEntrega =
+        " Fecha y hora: "
+            + fechaEntrega.format(FORMATO_FECHA_ENTREGA)
+            + ". Camión: "
+            + idCamion
+            + ".";
     String mensajeDonante =
-        "Tu donación fue entregada exitosamente a " + entidad.getRazonSocial() + ".";
+        "Tu donación fue entregada exitosamente a "
+            + entidad.getRazonSocial()
+            + "."
+            + detalleEntrega;
     for (var medio : DestinatariosNotificacion.predeterminado(donante)) {
       notificaciones.add(
           new Notificacion(medio, mensajeDonante, comprobante, EstadoNotificacion.PENDIENTE));
     }
-    String mensajeEntidad = "Has recibido una donación exitosamente.";
+    String mensajeEntidad = "Has recibido una donación exitosamente." + detalleEntrega;
     for (var medio : DestinatariosNotificacion.predeterminado(entidad)) {
       notificaciones.add(
           new Notificacion(medio, mensajeEntidad, comprobante, EstadoNotificacion.PENDIENTE));

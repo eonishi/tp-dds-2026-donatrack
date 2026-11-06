@@ -33,9 +33,9 @@ Por cada una de las donaciones cuyo estado sea **“En Depósito”**, el sistem
 
 Se cuenta con dos algoritmos (con la posibilidad de incorporar nuevos a medida que evolucione el sistema) que aplican un criterio distinto para evaluar a las entidades beneficiarias y genera un ranking en función de qué tanto corresponde que reciban la donación, de acuerdo con la lógica seleccionada. Estos algoritmos proponen **hasta diez** entidades beneficiarias que podrían recibir la donación. Hasta la actualidad estos son:
 
-* **Algoritmo de Compatibilidad Semántica**: analiza la correspondencia entre las características del bien o bienes donado(s) y las necesidades declaradas por cada entidad beneficiaria. Favorece a aquellas organizaciones cuya demanda coincida de forma más precisa con la donación recibida.
+* **AlgoritmoMatchmaking de Compatibilidad Semántica**: analiza la correspondencia entre las características del bien o bienes donado(s) y las necesidades declaradas por cada entidad beneficiaria. Favorece a aquellas organizaciones cuya demanda coincida de forma más precisa con la donación recibida.
 
-* **Algoritmo de Prioridad a sub-atendidos**: asigna prioridad a organizaciones que hayan recibido menos donaciones en el último trimestre. 
+* **AlgoritmoMatchmaking de Prioridad a sub-atendidos**: asigna prioridad a organizaciones que hayan recibido menos donaciones en el último trimestre. 
 
 A partir de los resultados, este componente puede filtrar automáticamente las entidades beneficiarias que hayan aparecido en la ejecución de ambos algoritmos para que una persona administradora confirme el destino final. Si no hubo coincidencias, entonces mostrará ambas ejecuciones. 
 

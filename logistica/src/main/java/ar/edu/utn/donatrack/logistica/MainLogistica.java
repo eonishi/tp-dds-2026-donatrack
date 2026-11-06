@@ -3,18 +3,20 @@ package ar.edu.utn.donatrack.logistica;
 import ar.edu.utn.donatrack.logistica.controllers.CamionController;
 import ar.edu.utn.donatrack.logistica.controllers.PlanificacionController;
 import ar.edu.utn.donatrack.logistica.controllers.PosicionController;
+import ar.edu.utn.donatrack.logistica.controllers.RepartidorController;
 import ar.edu.utn.donatrack.logistica.controllers.RutaController;
 import ar.edu.utn.donatrack.logistica.monitoreo.MonitorRutas;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotasImpl;
-import ar.edu.utn.donatrack.logistica.planificacion.LoteId;
 import ar.edu.utn.donatrack.logistica.planificacion.PlanificadorRutas;
 import ar.edu.utn.donatrack.logistica.planificacion.ServicioPlanificacionRutas;
+import ar.edu.utn.donatrack.logistica.security.LogisticaSecurity;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.Javalin;
 import java.net.http.HttpClient;
 import java.time.Clock;
+import java.util.UUID;
 
 public class MainLogistica implements WithSimplePersistenceUnit {
   public static void main(String[] args) {
@@ -23,7 +25,28 @@ public class MainLogistica implements WithSimplePersistenceUnit {
   }
 
   private void iniciar() {
-    var app = Javalin.create().start(9001);
+    crearApp().start(9001);
+    System.out.println("Microservicio de Logística corriendo en http://localhost:9001");
+  }
+
+  public Javalin crearApp() {
+    String webOrigin =
+        System.getenv().getOrDefault("DONATRACK_WEB_ORIGIN", "http://localhost:7070");
+    var app = Javalin.create();
+
+    app.before(
+        ctx -> {
+          if (webOrigin.equals(ctx.header("Origin"))) {
+            ctx.header("Access-Control-Allow-Origin", webOrigin);
+            ctx.header("Access-Control-Allow-Credentials", "true");
+            ctx.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+            ctx.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+          }
+          if ("OPTIONS".equals(ctx.method().toString())) {
+            ctx.status(204);
+          }
+        });
+    app.options("/logistica/*", ctx -> ctx.status(204));
 
     // El contexto de persistencia es por hilo y la biblioteca no lo limpia: sin este reseteo, un
     // hilo reutilizado serviría entidades cacheadas de una solicitud anterior. El reseteo es del
@@ -33,6 +56,8 @@ public class MainLogistica implements WithSimplePersistenceUnit {
     // 1. Instanciamos dependencias
     CamionRepository camionRepo = new CamionRepository();
     RutaRepository rutaRepo = new RutaRepository();
+    RepartidorRepository repartidorRepo = new RepartidorRepository();
+    cargarRepartidoresDePrueba(repartidorRepo);
     MonitorRutas monitorRutas = new MonitorRutas(Clock.systemUTC(), rutaRepo);
 
     // 2. Instanciamos Controladores
@@ -41,21 +66,36 @@ public class MainLogistica implements WithSimplePersistenceUnit {
     ObjectMapper objectMapper = new ObjectMapper();
     HttpClient httpClient = HttpClient.newHttpClient();
     String apiUrl = System.getenv().getOrDefault("DONACIONES_API_URL", "http://localhost:7070");
-    String apiKey = System.getenv().getOrDefault("DONACIONES_API_KEY", "S2S_SECRET_KEY");
+    // La misma clave interna que valida donaciones (ver .env.example).
+    String apiKey = System.getenv().getOrDefault("DONATRACK_API_KEY", "S2S_SECRET_KEY");
     DonacionesRemotas donacionesRemotas =
         new DonacionesRemotasImpl(apiUrl, apiKey, httpClient, objectMapper);
 
     RutaController rutaController = new RutaController(rutaRepo, camionRepo, donacionesRemotas);
+    RepartidorController repartidorController =
+        new RepartidorController(repartidorRepo, rutaRepo, Clock.systemUTC());
     PosicionController posicionController =
         new PosicionController(monitorRutas, camionRepo, rutaRepo);
 
-    PlanificadorRutas planificadorRutas = lote -> LoteId.generar();
+    // Este UUID es el id del lote que devuelve el planificador externo (stub), no la clave de una
+    // entidad: el @GeneratedValue de las entidades no aplica acá.
+    PlanificadorRutas planificadorRutas = lote -> UUID.randomUUID();
     ServicioPlanificacionRutas servicioPlanificacion =
         new ServicioPlanificacionRutas(donacionesRemotas, camionRepo, planificadorRutas, rutaRepo);
     PlanificacionController planificacionController =
         new PlanificacionController(servicioPlanificacion, camionRepo);
 
     // 3. Registramos los Endpoints
+
+    // Las reglas de acceso por rol están en LogisticaSecurity: la gestión es solo de ADMIN, y el
+    // repartidor opera únicamente sus rutas. El login y el callback del planificador quedan afuera.
+    app.before(LogisticaSecurity::autorizar);
+
+    // --- Endpoints de Repartidores ---
+    app.post("/logistica/login", repartidorController::login);
+    app.post("/logistica/logout", repartidorController::logout);
+    app.get("/logistica/repartidores", repartidorController::listar);
+    app.post("/logistica/rutas/{id}/repartidores", repartidorController::asignarRuta);
 
     // --- Endpoints de Camiones ---
     app.get("/logistica/camiones", camionController::listar);
@@ -78,6 +118,21 @@ public class MainLogistica implements WithSimplePersistenceUnit {
     // --- Endpoints de Planificación ---
     app.post("/logistica/planificacion/callback", planificacionController::procesarResultado);
 
-    System.out.println("Microservicio de Logística corriendo en http://localhost:9001");
+    return app;
+  }
+
+  // Mientras no haya alta de repartidores, se cargan usuarios de prueba al iniciar, igual que hace
+  // donaciones con sus usuarios. Si ya están en la base no se tocan.
+  private void cargarRepartidoresDePrueba(RepartidorRepository repartidorRepo) {
+    withTransaction(
+        () -> {
+          for (String email :
+              new String[] {"repartidor1@donatrack.local", "repartidor2@donatrack.local"}) {
+            if (repartidorRepo.buscarPorEmail(email).isEmpty()) {
+              repartidorRepo.agregar(
+                  new Repartidor(email.substring(0, email.indexOf('@')), email, "repartidor123"));
+            }
+          }
+        });
   }
 }

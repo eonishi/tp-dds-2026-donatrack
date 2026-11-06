@@ -3,7 +3,6 @@ package ar.edu.utn.donatrack.logistica.planificacion;
 import ar.edu.utn.donatrack.logistica.Camion;
 import ar.edu.utn.donatrack.logistica.CamionRepository;
 import ar.edu.utn.donatrack.logistica.Destino;
-import ar.edu.utn.donatrack.logistica.DonacionId;
 import ar.edu.utn.donatrack.logistica.Ruta;
 import ar.edu.utn.donatrack.logistica.RutaRepository;
 import java.util.ArrayList;
@@ -11,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Orquesta la planificación de rutas.
@@ -30,7 +30,7 @@ public class ServicioPlanificacionRutas {
   private final CamionRepository camionRepository;
   private final PlanificadorRutas planificadorRutas;
   private final RutaRepository rutaRepository;
-  private final Map<LoteId, List<DonacionPlanificable>> lotesPendientes = new HashMap<>();
+  private final Map<UUID, List<DonacionPlanificable>> lotesPendientes = new HashMap<>();
 
   /**
    * Crea el servicio de planificación.
@@ -60,7 +60,7 @@ public class ServicioPlanificacionRutas {
    * @return los identificadores de los lotes enviados, o lista vacía si no hay donaciones o
    *     camiones
    */
-  public List<LoteId> planificar() {
+  public List<UUID> planificar() {
     List<DonacionPlanificable> disponibles = donacionesRemotas.listarEnAsignacionRealizada();
     List<Camion> camiones = camionRepository.listarTodos();
 
@@ -68,7 +68,7 @@ public class ServicioPlanificacionRutas {
       return List.of();
     }
 
-    List<LoteId> loteIds = new ArrayList<>();
+    List<UUID> loteIds = new ArrayList<>();
     List<List<DonacionPlanificable>> batches =
         partirEnLotes(disponibles, LoteDonaciones.MAXIMO_DONACIONES);
     List<List<Camion>> camionesPorLote = partirCamionesEnLotes(camiones, batches.size());
@@ -82,7 +82,7 @@ public class ServicioPlanificacionRutas {
       }
 
       LoteDonaciones lote = new LoteDonaciones(batch, camionesAsignados);
-      LoteId loteId = planificadorRutas.enviarLote(lote);
+      UUID loteId = planificadorRutas.enviarLote(lote);
       lotesPendientes.put(loteId, List.copyOf(batch));
       loteIds.add(loteId);
     }
@@ -120,13 +120,13 @@ public class ServicioPlanificacionRutas {
   public void procesarResultado(ResultadoPlanificacion resultado) {
     List<DonacionPlanificable> donacionesDelLote = lotesPendientes.get(resultado.loteId());
     if (donacionesDelLote == null) {
-      throw new IllegalStateException("LoteId no encontrado: " + resultado.loteId());
+      throw new IllegalStateException("Lote no encontrado: " + resultado.loteId());
     }
 
-    Map<DonacionId, DonacionPlanificable> porId = indexarPorId(donacionesDelLote);
+    Map<UUID, DonacionPlanificable> porId = indexarPorId(donacionesDelLote);
 
     List<Ruta> rutas = new ArrayList<>();
-    List<List<DonacionId>> donacionesPorRuta = new ArrayList<>();
+    List<List<UUID>> donacionesPorRuta = new ArrayList<>();
     for (var entry : resultado.rutas().entrySet()) {
       List<Destino> destinos = entry.getValue();
 
@@ -156,19 +156,17 @@ public class ServicioPlanificacionRutas {
     return lotes;
   }
 
-  private Map<DonacionId, DonacionPlanificable> indexarPorId(
-      List<DonacionPlanificable> donaciones) {
-    Map<DonacionId, DonacionPlanificable> porId = new HashMap<>();
+  private Map<UUID, DonacionPlanificable> indexarPorId(List<DonacionPlanificable> donaciones) {
+    Map<UUID, DonacionPlanificable> porId = new HashMap<>();
     for (DonacionPlanificable donacion : donaciones) {
       porId.put(donacion.idDonacion(), donacion);
     }
     return porId;
   }
 
-  private void validarDestinos(
-      List<Destino> destinos, Map<DonacionId, DonacionPlanificable> porId) {
+  private void validarDestinos(List<Destino> destinos, Map<UUID, DonacionPlanificable> porId) {
     for (Destino destino : destinos) {
-      for (DonacionId id : destino.donaciones()) {
+      for (UUID id : destino.donaciones()) {
         DonacionPlanificable donacion = porId.get(id);
         if (donacion == null) {
           throw new IllegalArgumentException("la donación planificada no pertenece al lote: " + id);
@@ -186,8 +184,8 @@ public class ServicioPlanificacionRutas {
     }
   }
 
-  private List<DonacionId> donacionesDe(List<Destino> destinos) {
-    List<DonacionId> ids = new ArrayList<>();
+  private List<UUID> donacionesDe(List<Destino> destinos) {
+    List<UUID> ids = new ArrayList<>();
     for (Destino destino : destinos) {
       ids.addAll(destino.donaciones());
     }

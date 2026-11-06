@@ -6,15 +6,12 @@ import static org.mockito.Mockito.*;
 import ar.edu.utn.donatrack.logistica.Camion;
 import ar.edu.utn.donatrack.logistica.CamionRepository;
 import ar.edu.utn.donatrack.logistica.Destino;
-import ar.edu.utn.donatrack.logistica.DonacionId;
-import ar.edu.utn.donatrack.logistica.EntidadBeneficiariaId;
 import ar.edu.utn.donatrack.logistica.Ruta;
 import ar.edu.utn.donatrack.logistica.RutaRepository;
 import ar.edu.utn.donatrack.logistica.monitoreo.Coordenada;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionPlanificable;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
 import ar.edu.utn.donatrack.logistica.planificacion.LoteDonaciones;
-import ar.edu.utn.donatrack.logistica.planificacion.LoteId;
 import ar.edu.utn.donatrack.logistica.planificacion.PlanificadorRutas;
 import ar.edu.utn.donatrack.logistica.planificacion.ResultadoPlanificacion;
 import ar.edu.utn.donatrack.logistica.planificacion.ServicioPlanificacionRutas;
@@ -53,18 +50,13 @@ class ServicioPlanificacionRutasTest {
     return new Camion(patente, 45.0, 2.5, 5000.0);
   }
 
-  private static DonacionPlanificable crearPlanificable(long entidadId, DonacionId donacionId) {
+  private static DonacionPlanificable crearPlanificable(long entidadId, UUID donacionId) {
     return new DonacionPlanificable(
-        donacionId,
-        new EntidadBeneficiariaId(entidadId),
-        "Dir " + entidadId,
-        new Coordenada(-34.6, -58.4),
-        1.0,
-        1.0);
+        donacionId, entidadId, "Dir " + entidadId, new Coordenada(-34.6, -58.4), 1.0, 1.0);
   }
 
-  private static DonacionId nuevoDonacionId() {
-    return new DonacionId(UUID.randomUUID());
+  private static UUID nuevoDonacionUuid() {
+    return UUID.randomUUID();
   }
 
   // ── planificar() ───────────────────────────────────────────────────
@@ -74,14 +66,14 @@ class ServicioPlanificacionRutasTest {
     Camion camion = crearCamionDummy("ABC123");
     List<DonacionPlanificable> donaciones = new ArrayList<>();
     for (int i = 0; i < 50; i++) {
-      donaciones.add(crearPlanificable(1L, nuevoDonacionId()));
+      donaciones.add(crearPlanificable(1L, nuevoDonacionUuid()));
     }
     when(donacionesRemotas.listarEnAsignacionRealizada()).thenReturn(donaciones);
     when(camionRepository.listarTodos()).thenReturn(List.of(camion));
-    LoteId loteIdEsperado = LoteId.generar();
+    UUID loteIdEsperado = UUID.randomUUID();
     when(planificadorRutas.enviarLote(any())).thenReturn(loteIdEsperado);
 
-    List<LoteId> resultado = servicio.planificar();
+    List<UUID> resultado = servicio.planificar();
 
     assertEquals(1, resultado.size());
     assertEquals(loteIdEsperado, resultado.get(0));
@@ -100,13 +92,13 @@ class ServicioPlanificacionRutasTest {
     Camion camion3 = crearCamionDummy("GHI789");
     List<DonacionPlanificable> donaciones = new ArrayList<>();
     for (int i = 0; i < 250; i++) {
-      donaciones.add(crearPlanificable(1L, nuevoDonacionId()));
+      donaciones.add(crearPlanificable(1L, nuevoDonacionUuid()));
     }
     when(donacionesRemotas.listarEnAsignacionRealizada()).thenReturn(donaciones);
     when(camionRepository.listarTodos()).thenReturn(List.of(camion, camion2, camion3));
-    when(planificadorRutas.enviarLote(any())).thenAnswer(invocacion -> LoteId.generar());
+    when(planificadorRutas.enviarLote(any())).thenAnswer(invocacion -> UUID.randomUUID());
 
-    List<LoteId> resultado = servicio.planificar();
+    List<UUID> resultado = servicio.planificar();
 
     assertEquals(3, resultado.size());
     verify(planificadorRutas, times(3)).enviarLote(any());
@@ -117,7 +109,7 @@ class ServicioPlanificacionRutasTest {
     when(donacionesRemotas.listarEnAsignacionRealizada()).thenReturn(List.of());
     when(camionRepository.listarTodos()).thenReturn(List.of(crearCamionDummy("ABC123")));
 
-    List<LoteId> resultado = servicio.planificar();
+    List<UUID> resultado = servicio.planificar();
 
     assertTrue(resultado.isEmpty());
     verify(planificadorRutas, never()).enviarLote(any());
@@ -126,10 +118,10 @@ class ServicioPlanificacionRutasTest {
   @Test
   void planificar_SinCamiones_NoEnviaNingunLote() {
     when(donacionesRemotas.listarEnAsignacionRealizada())
-        .thenReturn(List.of(crearPlanificable(1L, nuevoDonacionId())));
+        .thenReturn(List.of(crearPlanificable(1L, nuevoDonacionUuid())));
     when(camionRepository.listarTodos()).thenReturn(List.of());
 
-    List<LoteId> resultado = servicio.planificar();
+    List<UUID> resultado = servicio.planificar();
 
     assertTrue(resultado.isEmpty());
     verify(planificadorRutas, never()).enviarLote(any());
@@ -142,11 +134,11 @@ class ServicioPlanificacionRutasTest {
     Camion camion3 = crearCamionDummy("GHI789");
     List<DonacionPlanificable> donaciones = new ArrayList<>();
     for (int i = 0; i < 250; i++) {
-      donaciones.add(crearPlanificable(1L, nuevoDonacionId()));
+      donaciones.add(crearPlanificable(1L, nuevoDonacionUuid()));
     }
     when(donacionesRemotas.listarEnAsignacionRealizada()).thenReturn(donaciones);
     when(camionRepository.listarTodos()).thenReturn(List.of(camion, camion2, camion3));
-    when(planificadorRutas.enviarLote(any())).thenAnswer(invocacion -> LoteId.generar());
+    when(planificadorRutas.enviarLote(any())).thenAnswer(invocacion -> UUID.randomUUID());
 
     servicio.planificar();
 
@@ -163,15 +155,15 @@ class ServicioPlanificacionRutasTest {
   @Test
   void procesarResultado_UnCamionTresEntidades_CreaRutaConDestinosOrdenados() {
     Camion camion = crearCamionDummy("ABC123");
-    EntidadBeneficiariaId entA = new EntidadBeneficiariaId(1L);
-    EntidadBeneficiariaId entB = new EntidadBeneficiariaId(2L);
-    EntidadBeneficiariaId entC = new EntidadBeneficiariaId(3L);
-    DonacionId dA1 = nuevoDonacionId();
-    DonacionId dA2 = nuevoDonacionId();
-    DonacionId dB1 = nuevoDonacionId();
-    DonacionId dB2 = nuevoDonacionId();
-    DonacionId dC1 = nuevoDonacionId();
-    DonacionId dC2 = nuevoDonacionId();
+    Long entA = 1L;
+    Long entB = 2L;
+    Long entC = 3L;
+    UUID dA1 = nuevoDonacionUuid();
+    UUID dA2 = nuevoDonacionUuid();
+    UUID dB1 = nuevoDonacionUuid();
+    UUID dB2 = nuevoDonacionUuid();
+    UUID dC1 = nuevoDonacionUuid();
+    UUID dC2 = nuevoDonacionUuid();
 
     List<DonacionPlanificable> todas =
         List.of(
@@ -183,7 +175,7 @@ class ServicioPlanificacionRutasTest {
             crearPlanificable(3L, dC2));
     when(donacionesRemotas.listarEnAsignacionRealizada()).thenReturn(todas);
     when(camionRepository.listarTodos()).thenReturn(List.of(camion));
-    LoteId loteId = LoteId.generar();
+    UUID loteId = UUID.randomUUID();
     when(planificadorRutas.enviarLote(any())).thenReturn(loteId);
 
     servicio.planificar();
@@ -215,7 +207,7 @@ class ServicioPlanificacionRutasTest {
     assertEquals(2, ruta.getDestinos().get(2).donaciones().size());
 
     @SuppressWarnings("unchecked")
-    ArgumentCaptor<List<DonacionId>> notificadas = ArgumentCaptor.forClass(List.class);
+    ArgumentCaptor<List<UUID>> notificadas = ArgumentCaptor.forClass(List.class);
     verify(donacionesRemotas, times(1)).notificarListaParaEntregar(notificadas.capture());
     assertEquals(List.of(dB1, dB2, dA1, dA2, dC1, dC2), notificadas.getValue());
   }
@@ -224,16 +216,16 @@ class ServicioPlanificacionRutasTest {
   void procesarResultado_MultiplesCamiones_CreaMultiplesRutas() {
     Camion camion1 = crearCamionDummy("ABC123");
     Camion camion2 = crearCamionDummy("XYZ789");
-    EntidadBeneficiariaId entA = new EntidadBeneficiariaId(1L);
-    EntidadBeneficiariaId entB = new EntidadBeneficiariaId(2L);
-    DonacionId d1 = nuevoDonacionId();
-    DonacionId d2 = nuevoDonacionId();
+    Long entA = 1L;
+    Long entB = 2L;
+    UUID d1 = nuevoDonacionUuid();
+    UUID d2 = nuevoDonacionUuid();
 
     List<DonacionPlanificable> todas =
         List.of(crearPlanificable(1L, d1), crearPlanificable(2L, d2));
     when(donacionesRemotas.listarEnAsignacionRealizada()).thenReturn(todas);
     when(camionRepository.listarTodos()).thenReturn(List.of(camion1, camion2));
-    LoteId loteId = LoteId.generar();
+    UUID loteId = UUID.randomUUID();
     when(planificadorRutas.enviarLote(any())).thenReturn(loteId);
 
     servicio.planificar();
@@ -255,15 +247,15 @@ class ServicioPlanificacionRutasTest {
   @Test
   void procesarResultado_DonacionNoIncluidaEnElResultado_NoSeNotifica() {
     Camion camion = crearCamionDummy("ABC123");
-    EntidadBeneficiariaId entA = new EntidadBeneficiariaId(1L);
-    DonacionId planificada = nuevoDonacionId();
-    DonacionId noPlanificada = nuevoDonacionId();
+    Long entA = 1L;
+    UUID planificada = nuevoDonacionUuid();
+    UUID noPlanificada = nuevoDonacionUuid();
 
     List<DonacionPlanificable> todas =
         List.of(crearPlanificable(1L, planificada), crearPlanificable(2L, noPlanificada));
     when(donacionesRemotas.listarEnAsignacionRealizada()).thenReturn(todas);
     when(camionRepository.listarTodos()).thenReturn(List.of(camion));
-    LoteId loteId = LoteId.generar();
+    UUID loteId = UUID.randomUUID();
     when(planificadorRutas.enviarLote(any())).thenReturn(loteId);
 
     servicio.planificar();
@@ -278,7 +270,7 @@ class ServicioPlanificacionRutasTest {
     servicio.procesarResultado(resultado);
 
     @SuppressWarnings("unchecked")
-    ArgumentCaptor<List<DonacionId>> notificadas = ArgumentCaptor.forClass(List.class);
+    ArgumentCaptor<List<UUID>> notificadas = ArgumentCaptor.forClass(List.class);
     verify(donacionesRemotas, times(1)).notificarListaParaEntregar(notificadas.capture());
     assertEquals(List.of(planificada), notificadas.getValue());
   }
@@ -287,9 +279,9 @@ class ServicioPlanificacionRutasTest {
   void procesarResultado_ResultadoVacio_NoCreaRutas() {
     Camion camion = crearCamionDummy("ABC123");
     when(donacionesRemotas.listarEnAsignacionRealizada())
-        .thenReturn(List.of(crearPlanificable(1L, nuevoDonacionId())));
+        .thenReturn(List.of(crearPlanificable(1L, nuevoDonacionUuid())));
     when(camionRepository.listarTodos()).thenReturn(List.of(camion));
-    LoteId loteId = LoteId.generar();
+    UUID loteId = UUID.randomUUID();
     when(planificadorRutas.enviarLote(any())).thenReturn(loteId);
 
     servicio.planificar();
@@ -302,9 +294,9 @@ class ServicioPlanificacionRutasTest {
   }
 
   @Test
-  void procesarResultado_LoteIdDesconocido_DebeLanzarIllegalStateException() {
+  void procesarResultado_LoteDesconocido_DebeLanzarIllegalStateException() {
     ResultadoPlanificacion resultado =
-        new ResultadoPlanificacion(LoteId.generar(), Map.of(), java.util.Collections.emptyList());
+        new ResultadoPlanificacion(UUID.randomUUID(), Map.of(), java.util.Collections.emptyList());
 
     assertThrows(IllegalStateException.class, () -> servicio.procesarResultado(resultado));
   }
@@ -312,13 +304,13 @@ class ServicioPlanificacionRutasTest {
   @Test
   void procesarResultado_DonacionDeOtraEntidad_DebeLanzarIllegalArgumentException() {
     Camion camion = crearCamionDummy("ABC123");
-    DonacionId donacionId = nuevoDonacionId();
-    EntidadBeneficiariaId entidadDelDestino = new EntidadBeneficiariaId(2L);
+    UUID donacionId = nuevoDonacionUuid();
+    Long entidadDelDestino = 2L;
 
     when(donacionesRemotas.listarEnAsignacionRealizada())
         .thenReturn(List.of(crearPlanificable(1L, donacionId)));
     when(camionRepository.listarTodos()).thenReturn(List.of(camion));
-    LoteId loteId = LoteId.generar();
+    UUID loteId = UUID.randomUUID();
     when(planificadorRutas.enviarLote(any())).thenReturn(loteId);
 
     servicio.planificar();
@@ -336,14 +328,14 @@ class ServicioPlanificacionRutasTest {
   @Test
   void procesarResultado_DonacionFueraDelLote_DebeLanzarIllegalArgumentException() {
     Camion camion = crearCamionDummy("ABC123");
-    EntidadBeneficiariaId entidad = new EntidadBeneficiariaId(1L);
-    DonacionId enElLote = nuevoDonacionId();
-    DonacionId ajena = nuevoDonacionId();
+    Long entidad = 1L;
+    UUID enElLote = nuevoDonacionUuid();
+    UUID ajena = nuevoDonacionUuid();
 
     when(donacionesRemotas.listarEnAsignacionRealizada())
         .thenReturn(List.of(crearPlanificable(1L, enElLote)));
     when(camionRepository.listarTodos()).thenReturn(List.of(camion));
-    LoteId loteId = LoteId.generar();
+    UUID loteId = UUID.randomUUID();
     when(planificadorRutas.enviarLote(any())).thenReturn(loteId);
 
     servicio.planificar();
@@ -362,15 +354,15 @@ class ServicioPlanificacionRutasTest {
   void procesarResultado_ConEntradaInvalidaEnElSegundoCamion_NoAplicaNingunaRuta() {
     Camion camionValido = crearCamionDummy("ABC123");
     Camion camionConError = crearCamionDummy("XYZ789");
-    EntidadBeneficiariaId entA = new EntidadBeneficiariaId(1L);
-    EntidadBeneficiariaId entB = new EntidadBeneficiariaId(2L);
-    DonacionId deA = nuevoDonacionId();
-    DonacionId deB = nuevoDonacionId();
+    Long entA = 1L;
+    Long entB = 2L;
+    UUID deA = nuevoDonacionUuid();
+    UUID deB = nuevoDonacionUuid();
 
     when(donacionesRemotas.listarEnAsignacionRealizada())
         .thenReturn(List.of(crearPlanificable(1L, deA), crearPlanificable(2L, deB)));
     when(camionRepository.listarTodos()).thenReturn(List.of(camionValido, camionConError));
-    LoteId loteId = LoteId.generar();
+    UUID loteId = UUID.randomUUID();
     when(planificadorRutas.enviarLote(any())).thenReturn(loteId);
 
     servicio.planificar();
@@ -395,15 +387,15 @@ class ServicioPlanificacionRutasTest {
   void procesarResultado_ConEntradaInvalida_ElLoteSiguePendiente() {
     Camion camionValido = crearCamionDummy("ABC123");
     Camion camionConError = crearCamionDummy("XYZ789");
-    EntidadBeneficiariaId entA = new EntidadBeneficiariaId(1L);
-    EntidadBeneficiariaId entB = new EntidadBeneficiariaId(2L);
-    DonacionId deA = nuevoDonacionId();
-    DonacionId deB = nuevoDonacionId();
+    Long entA = 1L;
+    Long entB = 2L;
+    UUID deA = nuevoDonacionUuid();
+    UUID deB = nuevoDonacionUuid();
 
     when(donacionesRemotas.listarEnAsignacionRealizada())
         .thenReturn(List.of(crearPlanificable(1L, deA), crearPlanificable(2L, deB)));
     when(camionRepository.listarTodos()).thenReturn(List.of(camionValido, camionConError));
-    LoteId loteId = LoteId.generar();
+    UUID loteId = UUID.randomUUID();
     when(planificadorRutas.enviarLote(any())).thenReturn(loteId);
 
     servicio.planificar();
@@ -418,7 +410,7 @@ class ServicioPlanificacionRutasTest {
             servicio.procesarResultado(
                 new ResultadoPlanificacion(loteId, invalido, java.util.Collections.emptyList())));
 
-    // El lote no se consumió: el mismo LoteId se puede reprocesar con un resultado válido.
+    // El lote no se consumió: el mismo id de lote se puede reprocesar con un resultado válido.
     ResultadoPlanificacion valido =
         new ResultadoPlanificacion(
             loteId,

@@ -2,10 +2,10 @@ package ar.edu.utn.donatrack.logistica.planificacion;
 
 import ar.edu.utn.donatrack.logistica.Camion;
 import ar.edu.utn.donatrack.logistica.Destino;
-import ar.edu.utn.donatrack.logistica.DonacionId;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Resultado que devuelve el planificador externo para un lote: por camión, los destinos a visitar.
@@ -19,7 +19,7 @@ import java.util.Objects;
  *     ningún camión
  */
 public record ResultadoPlanificacion(
-    LoteId loteId, Map<Camion, List<Destino>> rutas, List<DonacionId> donacionesNoAsignadas) {
+    UUID loteId, Map<Camion, List<Destino>> rutas, List<UUID> donacionesNoAsignadas) {
   public ResultadoPlanificacion {
     Objects.requireNonNull(loteId, "loteId no debe ser null");
     Objects.requireNonNull(rutas, "rutas no debe ser null");

@@ -9,11 +9,12 @@ import java.util.List;
 public class TareaAusenciaDonantes implements Runnable {
 
   private final DonantesRepository donantesRepository;
-  private final Notificador notificador;
+  private final ServicioNotificaciones notificaciones;
 
-  public TareaAusenciaDonantes(DonantesRepository donantesRepository, Notificador notificador) {
+  public TareaAusenciaDonantes(
+      DonantesRepository donantesRepository, ServicioNotificaciones notificaciones) {
     this.donantesRepository = donantesRepository;
-    this.notificador = notificador;
+    this.notificaciones = notificaciones;
   }
 
   @Override
@@ -23,10 +24,7 @@ public class TareaAusenciaDonantes implements Runnable {
 
     for (Donante donante : donantesAusentes) {
       EventoAusenciaDonante evento = new EventoAusenciaDonante(donante);
-      for (Notificacion n : evento.generarNotificaciones()) {
-        n.getDestinatario().aceptar(notificador, n.getMensaje());
-        n.marcarEnviada();
-      }
+      notificaciones.enviar(evento.generarNotificaciones());
     }
   }
 }

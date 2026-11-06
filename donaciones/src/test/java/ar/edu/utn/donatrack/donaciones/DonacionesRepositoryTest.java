@@ -16,6 +16,7 @@ import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
+import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,9 +32,9 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
     donante = crearDonanteDummy();
     subCategoria = new SubCategoria("X", Categoria.ALIMENTO);
     entidadBeneficiaria = nuevaEntidad("Ent");
-    // Donacion cascadea a su Bien y a su HistorialEstado, pero no al donante, a la subcategoría de
-    // cada bien ni a la entidad beneficiaria: esos ya deben estar almacenados al persistir una
-    // donación.
+    // Donacion cascadea a su Bien y guarda su HistorialEstado, pero no cascadea al donante, a la
+    // subcategoría de cada bien ni a la entidad beneficiaria: esos ya deben estar almacenados al
+    // persistir una donación.
     persist(donante);
     persist(subCategoria);
     persist(entidadBeneficiaria);
@@ -65,6 +66,11 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
     }
     if (estado == EstadoDonacion.ASIGNACION_REALIZADA) {
       donacion.confirmarEntidadBeneficiaria(entidadBeneficiaria);
+      return donacion;
+    }
+    if (estado == EstadoDonacion.ENTREGADA) {
+      donacion.confirmarEntidadBeneficiaria(entidadBeneficiaria);
+      donacion.cambiarEstado(EstadoDonacion.ENTREGADA, null);
       return donacion;
     }
     throw new IllegalArgumentException("Estado no soportado en helper: " + estado);
@@ -99,6 +105,27 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
   }
 
   @Test
+  void getDonacionesEntregadas_ConMezcla_DebeRetornarSoloLasEntregadas() {
+    DonacionesRepository repo = new DonacionesRepository();
+    Donacion enDeposito = crearDonacionConEstado(EstadoDonacion.EN_DEPOSITO);
+    Donacion asignada = crearDonacionConEstado(EstadoDonacion.ASIGNACION_REALIZADA);
+    Donacion entregada1 = crearDonacionConEstado(EstadoDonacion.ENTREGADA);
+    Donacion entregada2 = crearDonacionConEstado(EstadoDonacion.ENTREGADA);
+    repo.addDonacion(enDeposito);
+    repo.addDonacion(asignada);
+    repo.addDonacion(entregada1);
+    repo.addDonacion(entregada2);
+
+    List<Donacion> resultado = repo.getDonacionesEntregadas();
+
+    assertEquals(2, resultado.size());
+    assertTrue(resultado.contains(entregada1));
+    assertTrue(resultado.contains(entregada2));
+    assertFalse(resultado.contains(enDeposito));
+    assertFalse(resultado.contains(asignada));
+  }
+
+  @Test
   void getDonacionesEnAsignacionRealizada_DevuelveListaInmodificable() {
     DonacionesRepository repo = new DonacionesRepository();
     repo.addDonacion(crearDonacionConEstado(EstadoDonacion.ASIGNACION_REALIZADA));
@@ -106,5 +133,35 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
     List<Donacion> resultado = repo.getDonacionesEnAsignacionRealizada();
 
     assertThrows(UnsupportedOperationException.class, () -> resultado.add(null));
+  }
+
+  @Test
+  void unaDonacionConVariasEntregasEnLaVentanaCuentaUnaSolaVez() {
+    DonacionesRepository repo = new DonacionesRepository();
+    Donacion entregada = crearDonacionConEstado(EstadoDonacion.ASIGNACION_REALIZADA);
+    entregada.cambiarEstado(EstadoDonacion.ENTREGADA, null);
+    entregada.cambiarEstado(EstadoDonacion.ENTREGADA, null);
+    repo.addDonacion(entregada);
+    repo.addDonacion(crearDonacionConEstado(EstadoDonacion.ASIGNACION_REALIZADA));
+
+    assertEquals(
+        1,
+        repo.getDonacionesEntregadas().stream()
+            .filter(d -> d.fueEntregadaA(entidadBeneficiaria, LocalDate.now()))
+            .count());
+  }
+
+  @Test
+  void lasEntregasAnterioresALaVentanaNoCuentan() {
+    DonacionesRepository repo = new DonacionesRepository();
+    Donacion entregada = crearDonacionConEstado(EstadoDonacion.ASIGNACION_REALIZADA);
+    entregada.cambiarEstado(EstadoDonacion.ENTREGADA, null);
+    repo.addDonacion(entregada);
+
+    assertEquals(
+        0,
+        repo.getDonacionesEntregadas().stream()
+            .filter(d -> d.fueEntregadaA(entidadBeneficiaria, LocalDate.now().plusDays(1)))
+            .count());
   }
 }

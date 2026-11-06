@@ -2,6 +2,8 @@ package ar.edu.utn.donatrack.beneficiarios;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ar.edu.utn.donatrack.bienes.Categoria;
@@ -36,11 +38,15 @@ class BeneficiariosRepositoryTest implements SimplePersistenceTest {
     // porque el repositorio de beneficiarios ya no escribe el catálogo y la clave foránea de la
     // necesidad debe existir al persistir la entidad.
     persist(alimentos);
-    repositorio.save(entidad);
+    assertNull(
+        entidad.getId(),
+        "Una entidad recién construida no tiene id: lo asigna el proveedor al guardarla");
+    EntidadBeneficiaria guardada = repositorio.save(entidad);
+    assertNotNull(guardada.getId(), "El proveedor debe asignar el id al fusionar la entidad");
     entityManager().flush();
     entityManager().clear();
 
-    EntidadBeneficiaria recargada = repositorio.findById(entidad.getId()).orElseThrow();
+    EntidadBeneficiaria recargada = repositorio.findById(guardada.getId()).orElseThrow();
 
     assertEquals("Hogar Test", recargada.getRazonSocial());
     assertEquals(1, recargada.getNecesidadesExtraordinarias().size());
@@ -60,11 +66,11 @@ class BeneficiariosRepositoryTest implements SimplePersistenceTest {
     EntidadBeneficiaria entidad = crearEntidad("Hogar Test");
     entidad.agregarCorreo(new CorreoElectronico("viejo@hogar.org"));
     BeneficiariosRepository repositorio = new BeneficiariosRepository();
-    repositorio.save(entidad);
+    EntidadBeneficiaria guardada = repositorio.save(entidad);
     entityManager().flush();
     entityManager().clear();
 
-    EntidadBeneficiaria recargada = repositorio.findById(entidad.getId()).orElseThrow();
+    EntidadBeneficiaria recargada = repositorio.findById(guardada.getId()).orElseThrow();
     recargada.actualizarDatos(
         "Hogar Renombrado",
         "Calle Nueva 456",
@@ -74,7 +80,7 @@ class BeneficiariosRepositoryTest implements SimplePersistenceTest {
     entityManager().flush();
     entityManager().clear();
 
-    EntidadBeneficiaria actualizada = repositorio.findById(entidad.getId()).orElseThrow();
+    EntidadBeneficiaria actualizada = repositorio.findById(guardada.getId()).orElseThrow();
     assertEquals("Hogar Renombrado", actualizada.getRazonSocial());
     assertEquals("Calle Nueva 456", actualizada.getDireccion());
     assertEquals(1, actualizada.getCorreos().size(), "El contacto reemplazado no debe duplicarse");
@@ -90,16 +96,16 @@ class BeneficiariosRepositoryTest implements SimplePersistenceTest {
     // La subcategoría se siembra antes porque el repositorio ya no escribe el catálogo.
     persist(alimentos);
     BeneficiariosRepository repositorio = new BeneficiariosRepository();
-    repositorio.save(entidad);
+    EntidadBeneficiaria guardada = repositorio.save(entidad);
     entityManager().flush();
     entityManager().clear();
 
-    repositorio.deleteById(entidad.getId());
+    repositorio.deleteById(guardada.getId());
     entityManager().flush();
     entityManager().clear();
 
     assertTrue(
-        repositorio.findById(entidad.getId()).isEmpty(),
+        repositorio.findById(guardada.getId()).isEmpty(),
         "La entidad eliminada no debe poder recargarse");
   }
 

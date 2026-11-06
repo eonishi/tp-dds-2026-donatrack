@@ -4,22 +4,21 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.logistica.Camion;
 import ar.edu.utn.donatrack.logistica.Destino;
-import ar.edu.utn.donatrack.logistica.EntidadBeneficiariaId;
-import ar.edu.utn.donatrack.logistica.planificacion.LoteId;
 import ar.edu.utn.donatrack.logistica.planificacion.ResultadoPlanificacion;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class ResultadoPlanificacionTest {
 
   private static Destino crearDestino() {
-    return new Destino(new EntidadBeneficiariaId(1L), "Dir 1", List.of());
+    return new Destino(1L, "Dir 1", List.of());
   }
 
   @Test
   void crearResultado_ConDatosValidos_DebeTenerAtributosCorrectos() {
-    LoteId loteId = LoteId.generar();
+    UUID loteId = UUID.randomUUID();
     Camion camion = new Camion("ABC123", 45.0, 2.5, 5000.0);
     Map<Camion, List<Destino>> rutas = Map.of(camion, List.of(crearDestino()));
 
@@ -31,7 +30,7 @@ class ResultadoPlanificacionTest {
   }
 
   @Test
-  void crearResultado_ConLoteIdNull_DebeLanzarNullPointerException() {
+  void crearResultado_ConLoteNull_DebeLanzarNullPointerException() {
     Camion camion = new Camion("ABC123", 45.0, 2.5, 5000.0);
     Map<Camion, List<Destino>> rutas = Map.of(camion, List.of(crearDestino()));
 
@@ -42,7 +41,7 @@ class ResultadoPlanificacionTest {
 
   @Test
   void crearResultado_ConRutasNull_DebeLanzarNullPointerException() {
-    LoteId loteId = LoteId.generar();
+    UUID loteId = UUID.randomUUID();
 
     assertThrows(
         NullPointerException.class,
@@ -51,7 +50,7 @@ class ResultadoPlanificacionTest {
 
   @Test
   void crearResultado_ConRutasVacias_DebeSerValido() {
-    LoteId loteId = LoteId.generar();
+    UUID loteId = UUID.randomUUID();
     Map<Camion, List<Destino>> rutas = Map.of();
 
     ResultadoPlanificacion resultado =

@@ -3,25 +3,29 @@
 %% "El sistema debe garantizar la ejecución asincrónica de los algoritmos de
 %%  asignación de donaciones presentes en el depósito."
 %% Strategy (AlgoritmoMatchmaking) + ejecución diaria en horario de baja carga
-%% (MatchmakingScheduler) + propuestas pendientes de confirmación.
+%% (MatchmakingRunner, invocado por un planificador externo) + propuestas pendientes
+%% de confirmación.
 %% Fragmento mínimo del dominio involucrado (incluye infraestructura).
 %% ============================================================================
 classDiagram
     direction TB
 
-    class MatchmakingScheduler {
+    class MatchmakingRunner {
         <<infraestructura>>
-        +iniciar()
-        +detener()
+        +ejecutar()
     }
     class ServicioMatchmakingDonaciones {
         <<infraestructura>>
         +ejecutarMatchmakingDiario(fechaReferencia: LocalDate)
         +confirmarAsignacionAdministrativa(donacion: Donacion, entidad: EntidadBeneficiaria, fecha: LocalDate)
+        -generarPropuestaSiNoHayPendiente(donacion: Donacion, beneficiarios: Collection~EntidadBeneficiaria~, entregas: Collection~Donacion~, fechaReferencia: LocalDate)
+        -generarPropuesta(donacion: Donacion, beneficiarios: Collection~EntidadBeneficiaria~, entregas: Collection~Donacion~, fechaReferencia: LocalDate) PropuestaDeAsignacion
+        -generarRankings(donacion: Donacion, beneficiarios: Collection~EntidadBeneficiaria~, entregas: Collection~Donacion~, fechaReferencia: LocalDate)
     }
     class DonacionesRepository {
         <<infraestructura>>
         +getDonacionesEnDeposito() List~Donacion~
+        +getDonacionesEntregadas() List~Donacion~
     }
     class BeneficiariosRepository {
         <<infraestructura>>
@@ -33,15 +37,15 @@ classDiagram
         +findPendingByDonacion(donacion: Donacion) Optional~PropuestaDeAsignacion~
     }
     class AlgoritmoMatchmaking {
-        <<interface>>
+        <<abstract>>
+        -MAXIMO_CANDIDATOS: int = 10
         +getNombre() String
-        +rankear(donacion: Donacion, entidades: Collection~EntidadBeneficiaria~, fechaReferencia: LocalDate) RankingMatchmaking
+        +rankear(donacion: Donacion, entidades: Collection~EntidadBeneficiaria~, fechaReferencia: LocalDate, entregas: Collection~Donacion~) List~MatchCandidato~
+        #ordenarCandidatos(donacion: Donacion, entidades: Collection~EntidadBeneficiaria~, fechaReferencia: LocalDate, entregas: Collection~Donacion~) List~MatchCandidato~
     }
     class AlgoritmoCompatibilidadSemantica
-    class AlgoritmoPrioridadSubAtendidos
-    class RankingMatchmaking {
-        -algoritmo: String
-        -candidatos: List~MatchCandidato~
+    class AlgoritmoPrioridadSubAtendidos {
+        -cantidadEntregadasA(entregas: Collection~Donacion~, entidad: EntidadBeneficiaria, fechaDesde: LocalDate) long
     }
     class MatchCandidato {
         -entidadBeneficiaria: EntidadBeneficiaria
@@ -49,22 +53,41 @@ classDiagram
     }
     class PropuestaDeAsignacion {
         -donacion: Donacion
-        -rankings: List~RankingMatchmaking~
+        -candidatos: List~MatchCandidato~
         -pendiente: boolean
         +confirmar(elegida: EntidadBeneficiaria)
     }
-    class Donacion
-    class EntidadBeneficiaria
+    class Donacion {
+        +fueEntregadaA(entidad: EntidadBeneficiaria, fechaDesde: LocalDate) boolean
+        +esCompatibleCon(necesidad: Necesidad) boolean
+        +calcularPuntajeCompatibilidad(necesidad: Necesidad) int
+        +aplicarA(necesidad: Necesidad)
+    }
+    class EntidadBeneficiaria {
+        +tieneNecesidadCompatible(donacion: Donacion) boolean
+        +calcularPuntajeCompatibilidad(donacion: Donacion) int
+        +aplicarDonacionRecibida(donacion: Donacion)
+    }
+    class Necesidad {
+        +esCompatibleCon(bien: Bien) boolean
+        +tieneMismaUnidadQue(bien: Bien) boolean
+        +alcanzaObjetivoCon(cantidad: double) boolean
+        +recibirDonacion(cantidad: double)
+    }
 
-    MatchmakingScheduler ..> ServicioMatchmakingDonaciones : ejecuta diario
+    MatchmakingRunner ..> ServicioMatchmakingDonaciones : ejecuta diario (cron externo)
     ServicioMatchmakingDonaciones o-- "*" AlgoritmoMatchmaking : algoritmos
     ServicioMatchmakingDonaciones ..> DonacionesRepository : en depósito
     ServicioMatchmakingDonaciones ..> BeneficiariosRepository : entidades
     ServicioMatchmakingDonaciones ..> PropuestaRepository : guarda propuestas
-    AlgoritmoMatchmaking <|.. AlgoritmoCompatibilidadSemantica
-    AlgoritmoMatchmaking <|.. AlgoritmoPrioridadSubAtendidos
-    AlgoritmoMatchmaking ..> RankingMatchmaking : rankear()
-    RankingMatchmaking *-- "*" MatchCandidato : candidatos
+    AlgoritmoMatchmaking <|-- AlgoritmoCompatibilidadSemantica
+    AlgoritmoMatchmaking <|-- AlgoritmoPrioridadSubAtendidos
+    AlgoritmoMatchmaking ..> MatchCandidato : rankear() aplica el tope
+    AlgoritmoCompatibilidadSemantica ..> EntidadBeneficiaria : calcularPuntajeCompatibilidad()
+    AlgoritmoPrioridadSubAtendidos ..> Donacion : fueEntregadaA() sobre las entregas
+    ServicioMatchmakingDonaciones ..> AlgoritmoMatchmaking : le pasa las entregas previas al ranking
+    EntidadBeneficiaria ..> Donacion : tieneNecesidadCompatible()
+    Donacion ..> Necesidad : esCompatibleCon()
     MatchCandidato --> EntidadBeneficiaria : candidata
     PropuestaDeAsignacion *-- Donacion : donacion
-    PropuestaDeAsignacion *-- "*" RankingMatchmaking : rankings
+    PropuestaDeAsignacion *-- "*" MatchCandidato : candidatos (intersección, o unión si no hay coincidencias)

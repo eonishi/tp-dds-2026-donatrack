@@ -12,15 +12,12 @@ import ar.edu.utn.donatrack.api.mappers.ApiMapper;
 import ar.edu.utn.donatrack.api.validation.DtoValidator;
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiariaId;
 import ar.edu.utn.donatrack.donaciones.Donacion;
-import ar.edu.utn.donatrack.donaciones.DonacionId;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
-import ar.edu.utn.donatrack.donaciones.EntidadFueraDeRankingException;
-import ar.edu.utn.donatrack.donaciones.PropuestaDeAsignacion;
-import ar.edu.utn.donatrack.donaciones.ServicioMatchmakingDonaciones;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
-import ar.edu.utn.donatrack.notificaciones.eventos.EventoAsignacion;
+import ar.edu.utn.donatrack.propuestas.EntidadFueraDeRankingException;
+import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
+import ar.edu.utn.donatrack.propuestas.ServicioMatchmakingDonaciones;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
 import java.time.Clock;
@@ -63,11 +60,13 @@ public final class MatchmakingController implements WithSimplePersistenceUnit {
   }
 
   private void ejecutar(Context ctx) {
-    ctx.status(201)
-        .json(
-            ApiMapper.propuesta(
+    UUID donacionId = HttpSupport.id(ctx, "donacionId");
+    PropuestaDeAsignacion propuesta =
+        withTransaction(
+            () ->
                 matchmaking.ejecutarMatchmakingParaDonacion(
-                    donacion(HttpSupport.id(ctx, "donacionId")), LocalDate.now(clock))));
+                    donacion(donacionId), LocalDate.now(clock)));
+    ctx.status(201).json(ApiMapper.propuesta(propuesta));
   }
 
   private void ranking(Context ctx) {
@@ -89,18 +88,16 @@ public final class MatchmakingController implements WithSimplePersistenceUnit {
         withTransaction(
             () ->
                 ApiMapper.donacion(
-                    confirmarSeleccion(
-                        HttpSupport.id(ctx, "donacionId"),
-                        new EntidadBeneficiariaId(entidadBeneficiariaId))));
+                    confirmarSeleccion(HttpSupport.id(ctx, "donacionId"), entidadBeneficiariaId)));
     ctx.json(seleccionada);
   }
 
-  private Donacion confirmarSeleccion(UUID donacionId, EntidadBeneficiariaId entidadId) {
+  private Donacion confirmarSeleccion(UUID donacionId, Long entidadId) {
     Donacion donacion = donacion(donacionId);
     EntidadBeneficiaria entidad =
         entidades
             .findById(entidadId)
-            .orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", entidadId.value()));
+            .orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", entidadId));
     if (donacion.getEntidadBeneficiaria() != null) {
       if (donacion.getEntidadBeneficiaria().getId().equals(entidadId)) {
         return donacion;
@@ -108,18 +105,15 @@ public final class MatchmakingController implements WithSimplePersistenceUnit {
       throw ApiException.conflict("La donación ya tiene una entidad beneficiaria asignada.");
     }
     try {
-      matchmaking.confirmarAsignacionAdministrativa(donacion, entidad, LocalDate.now(clock));
+      notificaciones.enviar(
+          matchmaking.confirmarAsignacionAdministrativa(donacion, entidad, LocalDate.now(clock)));
     } catch (EntidadFueraDeRankingException error) {
       throw ApiException.conflict(error.getMessage());
     }
-    notificaciones.enviar(
-        new EventoAsignacion(donacion.getDonante(), entidad).generarNotificaciones());
     return donacion;
   }
 
   private Donacion donacion(UUID id) {
-    return donaciones
-        .findById(new DonacionId(id))
-        .orElseThrow(() -> ApiException.notFound("Donación", id));
+    return donaciones.findById(id).orElseThrow(() -> ApiException.notFound("Donación", id));
   }
 }

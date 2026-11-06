@@ -9,6 +9,7 @@ services:
     environment:
       PORT: "7070"
       DB_SCHEMA: donaciones
+      LOGISTICA_API_URL: http://logistica:9001
     ports:
       - "7070:7070"
     depends_on:

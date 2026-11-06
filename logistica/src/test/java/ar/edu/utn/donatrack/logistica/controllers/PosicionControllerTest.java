@@ -54,8 +54,9 @@ public class PosicionControllerTest {
     when(camionRepoMock.buscarPorPatente("AF123ZZ")).thenReturn(Optional.of(camionFalso));
     when(monitorMock.ultimaPosicion(camionFalso)).thenReturn(Optional.of(lecturaFalsa));
 
-    // Simulamos que el camión está en una ruta activa para cumplir el JSON de salida
-    Ruta rutaFalsa = new Ruta(camionFalso, java.util.List.of());
+    // Simulamos que el camión está en una ruta activa para cumplir el JSON de salida. La ruta
+    // lleva un id explícito porque representa una ruta ya materializada, con id del proveedor.
+    Ruta rutaFalsa = new Ruta(java.util.UUID.randomUUID(), camionFalso, java.util.List.of());
     when(rutaRepoMock.buscarPorCamion(camionFalso)).thenReturn(Optional.of(rutaFalsa));
 
     // --- EJECUCIÓN Y VERIFICACIÓN ---

@@ -3,8 +3,6 @@ package ar.edu.utn.donatrack.planificacion;
 import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.logistica.Camion;
-import ar.edu.utn.donatrack.logistica.DonacionId;
-import ar.edu.utn.donatrack.logistica.EntidadBeneficiariaId;
 import ar.edu.utn.donatrack.logistica.monitoreo.Coordenada;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionPlanificable;
 import ar.edu.utn.donatrack.logistica.planificacion.LoteDonaciones;
@@ -21,12 +19,7 @@ class LoteDonacionesTest {
 
   private static DonacionPlanificable crearPlanificable() {
     return new DonacionPlanificable(
-        new DonacionId(UUID.randomUUID()),
-        new EntidadBeneficiariaId(1L),
-        "Dir 1",
-        new Coordenada(-34.6, -58.4),
-        1.0,
-        1.0);
+        UUID.randomUUID(), 1L, "Dir 1", new Coordenada(-34.6, -58.4), 1.0, 1.0);
   }
 
   // ── Cycle 1: Creación y validación ─────────────────────────────────

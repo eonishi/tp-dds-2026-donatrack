@@ -23,6 +23,8 @@ import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
 import ar.edu.utn.donatrack.donantes.Representante;
 import ar.edu.utn.donatrack.donantes.Sms;
 import ar.edu.utn.donatrack.donantes.Whatsapp;
+import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
+import ar.edu.utn.donatrack.notificaciones.eventos.EventoBienvenida;
 import ar.edu.utn.donatrack.utilidades.TipoPersona;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
@@ -33,10 +35,15 @@ import java.util.UUID;
 public final class DonanteController implements WithSimplePersistenceUnit {
   private final DonantesRepository donantes;
   private final DonacionesRepository donaciones;
+  private final ServicioNotificaciones notificaciones;
 
-  public DonanteController(DonantesRepository donantes, DonacionesRepository donaciones) {
+  public DonanteController(
+      DonantesRepository donantes,
+      DonacionesRepository donaciones,
+      ServicioNotificaciones notificaciones) {
     this.donantes = donantes;
     this.donaciones = donaciones;
+    this.notificaciones = notificaciones;
   }
 
   public void routes() {
@@ -67,7 +74,12 @@ public final class DonanteController implements WithSimplePersistenceUnit {
     DonanteRequest request = DtoValidator.validate(ctx.bodyAsClass(DonanteRequest.class));
     validar(request, null);
     DonanteResponse creado =
-        withTransaction(() -> donante(donantes.save(construirDonante(request))));
+        withTransaction(
+            () -> {
+              Donante donante = donantes.save(construirDonante(request));
+              notificaciones.enviar(new EventoBienvenida(donante).generarNotificaciones());
+              return donante(donante);
+            });
     ctx.status(201).json(creado);
   }
 

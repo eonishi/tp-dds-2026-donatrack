@@ -4,12 +4,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
+import java.util.UUID;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
-import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -29,11 +27,8 @@ public class Destino {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Embedded
-  @AttributeOverrides({
-    @AttributeOverride(name = "value", column = @Column(name = "entidad_id", nullable = false))
-  })
-  private EntidadBeneficiariaId entidadId;
+  @Column(name = "entidad_id", nullable = false)
+  private Long entidadId;
 
   @Column(nullable = false)
   private String direccion;
@@ -43,18 +38,16 @@ public class Destino {
       schema = "logistica",
       name = "destino_donaciones",
       joinColumns = @JoinColumn(name = "destino_id"))
-  @AttributeOverrides({
-    @AttributeOverride(name = "value", column = @Column(name = "donacion_id", nullable = false))
-  })
-  private List<DonacionId> donaciones = new ArrayList<>();
+  @Column(name = "donacion_id", nullable = false)
+  private List<UUID> donaciones = new ArrayList<>();
 
   protected Destino() {}
 
-  public Destino(EntidadBeneficiariaId entidadId, String direccion, List<DonacionId> donaciones) {
+  public Destino(Long entidadId, String direccion, List<UUID> donaciones) {
     this.entidadId = Objects.requireNonNull(entidadId, "entidadId no debe ser null");
     this.direccion = Objects.requireNonNull(direccion, "direccion no debe ser null");
     Objects.requireNonNull(donaciones, "donaciones no debe ser null");
-    for (DonacionId d : donaciones) {
+    for (UUID d : donaciones) {
       Objects.requireNonNull(d, "donacion no debe ser null");
     }
     this.donaciones = new ArrayList<>(donaciones);
@@ -64,7 +57,7 @@ public class Destino {
     return id;
   }
 
-  public EntidadBeneficiariaId entidadId() {
+  public Long entidadId() {
     return entidadId;
   }
 
@@ -72,7 +65,7 @@ public class Destino {
     return direccion;
   }
 
-  public List<DonacionId> donaciones() {
+  public List<UUID> donaciones() {
     return Collections.unmodifiableList(donaciones);
   }
 

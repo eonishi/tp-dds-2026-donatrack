@@ -2,8 +2,11 @@ package ar.edu.utn.donatrack.notificaciones;
 
 import java.util.List;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ServicioNotificaciones {
+  private static final Logger LOGGER = LoggerFactory.getLogger(ServicioNotificaciones.class);
   private final Notificador notificador;
   private final NotificacionesRepository repository;
   private final int maxIntentos;
@@ -34,6 +37,12 @@ public class ServicioNotificaciones {
       }
       notificacion.marcarFallida(resultado.detalle());
     }
+    LOGGER.warn(
+        "Fallo de notificación canal={} destinatario={} intentos={} ultimoError={}",
+        notificacion.getDestinatario().getClass().getSimpleName(),
+        enmascarar(notificacion.getDestinatario().getContacto()),
+        notificacion.getIntentos(),
+        notificacion.getUltimoError());
     return notificacion;
   }
 
@@ -45,5 +54,16 @@ public class ServicioNotificaciones {
       return ResultadoEnvio.fallido(
           error.getMessage() == null ? "Error inesperado." : error.getMessage());
     }
+  }
+
+  private String enmascarar(String destinatario) {
+    if (destinatario == null || destinatario.length() < 3) {
+      return "***";
+    }
+    int arroba = destinatario.indexOf('@');
+    if (arroba > 0) {
+      return destinatario.substring(0, 1) + "***" + destinatario.substring(arroba);
+    }
+    return "***" + destinatario.substring(destinatario.length() - 2);
   }
 }

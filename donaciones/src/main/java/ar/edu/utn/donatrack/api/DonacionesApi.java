@@ -6,22 +6,29 @@ import ar.edu.utn.donatrack.api.controller.EntidadController;
 import ar.edu.utn.donatrack.api.controller.MatchmakingController;
 import ar.edu.utn.donatrack.api.controller.NecesidadController;
 import ar.edu.utn.donatrack.api.controller.SubcategoriasController;
+import ar.edu.utn.donatrack.api.controller.UsuarioController;
 import ar.edu.utn.donatrack.api.error.ApiExceptionHandler;
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.bienes.SubcategoriasRepository;
-import ar.edu.utn.donatrack.donaciones.AlgoritmoCompatibilidadSemantica;
-import ar.edu.utn.donatrack.donaciones.AlgoritmoPrioridadSubAtendidos;
 import ar.edu.utn.donatrack.donaciones.CargaDonacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
-import ar.edu.utn.donatrack.donaciones.PropuestaRepository;
-import ar.edu.utn.donatrack.donaciones.PropuestaRepositoryImpl;
-import ar.edu.utn.donatrack.donaciones.ServicioMatchmakingDonaciones;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import ar.edu.utn.donatrack.notificaciones.NotificacionesRepository;
 import ar.edu.utn.donatrack.notificaciones.NotificadorDesdeEntorno;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
+import ar.edu.utn.donatrack.propuestas.PropuestaRepository;
+import ar.edu.utn.donatrack.propuestas.PropuestaRepositoryImpl;
+import ar.edu.utn.donatrack.propuestas.ServicioMatchmakingDonaciones;
+import ar.edu.utn.donatrack.propuestas.matchmaking.AlgoritmoCompatibilidadSemantica;
+import ar.edu.utn.donatrack.propuestas.matchmaking.AlgoritmoPrioridadSubAtendidos;
+import ar.edu.utn.donatrack.security.AuthController;
+import ar.edu.utn.donatrack.security.AuthService;
+import ar.edu.utn.donatrack.security.SecurityRules;
+import ar.edu.utn.donatrack.seguimiento.PosicionesCamiones;
+import ar.edu.utn.donatrack.seguimiento.PosicionesCamionesHttp;
 import ar.edu.utn.donatrack.web.HandlebarsRenderer;
 import ar.edu.utn.donatrack.web.controller.PaginasPublicasController;
+import ar.edu.utn.donatrack.web.controller.RegistroController;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.Javalin;
 import io.javalin.http.staticfiles.Location;
@@ -36,20 +43,38 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
   }
 
   public static Javalin create(Clock clock) {
-    return new DonacionesApi().build(clock);
+    return create(clock, notificacionesDesdeEntorno(), PosicionesCamionesHttp.desdeEntorno());
   }
 
-  private Javalin build(Clock clock) {
+  public static Javalin create(Clock clock, ServicioNotificaciones notificaciones) {
+    return create(clock, notificaciones, PosicionesCamionesHttp.desdeEntorno());
+  }
+
+  /** Permite reemplazar la consulta a logística, por ejemplo en las pruebas. */
+  public static Javalin create(Clock clock, PosicionesCamiones posicionesCamiones) {
+    return create(clock, notificacionesDesdeEntorno(), posicionesCamiones);
+  }
+
+  public static Javalin create(
+      Clock clock, ServicioNotificaciones notificaciones, PosicionesCamiones posicionesCamiones) {
+    return new DonacionesApi().build(clock, notificaciones, posicionesCamiones);
+  }
+
+  private static ServicioNotificaciones notificacionesDesdeEntorno() {
+    return new ServicioNotificaciones(
+        NotificadorDesdeEntorno.crear(), new NotificacionesRepository(), 1);
+  }
+
+  private Javalin build(
+      Clock clock, ServicioNotificaciones notificaciones, PosicionesCamiones posicionesCamiones) {
     DonacionesRepository donaciones = new DonacionesRepository();
     DonantesRepository donantes = new DonantesRepository();
     BeneficiariosRepository entidades = new BeneficiariosRepository();
     SubcategoriasRepository subcategorias = new SubcategoriasRepository();
     PropuestaRepository propuestas = new PropuestaRepositoryImpl();
-    ServicioNotificaciones notificaciones =
-        new ServicioNotificaciones(
-            NotificadorDesdeEntorno.crear(), new NotificacionesRepository(), 3);
 
-    DonanteController donanteController = new DonanteController(donantes, donaciones);
+    DonanteController donanteController =
+        new DonanteController(donantes, donaciones, notificaciones);
     EntidadController entidadController = new EntidadController(entidades, donaciones);
     NecesidadController necesidadController = new NecesidadController(entidades, subcategorias);
     DonacionController donacionController =
@@ -59,7 +84,8 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
             propuestas,
             new CargaDonacion(donaciones),
             notificaciones,
-            subcategorias);
+            subcategorias,
+            posicionesCamiones);
     SubcategoriasController subcategoriasController = new SubcategoriasController(subcategorias);
 
     ServicioMatchmakingDonaciones matchmakingDomain =
@@ -67,12 +93,16 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
             donaciones,
             entidades,
             propuestas,
-            List.of(
-                new AlgoritmoCompatibilidadSemantica(),
-                new AlgoritmoPrioridadSubAtendidos(donaciones)));
+            List.of(new AlgoritmoCompatibilidadSemantica(), new AlgoritmoPrioridadSubAtendidos()));
     MatchmakingController matchmakingController =
         new MatchmakingController(matchmakingDomain, donaciones, entidades, notificaciones, clock);
-    PaginasPublicasController paginasPublicas = new PaginasPublicasController();
+    AuthService authService = new AuthService();
+    AuthController authController = new AuthController(authService);
+    UsuarioController usuarioController = new UsuarioController(authService, donantes, entidades);
+    PaginasPublicasController paginasPublicas =
+        new PaginasPublicasController(authService, donaciones);
+    RegistroController registroController =
+        new RegistroController(authService, donantes, entidades);
 
     Javalin app =
         Javalin.create(
@@ -93,16 +123,36 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
                           donacionController.routes();
                           subcategoriasController.routes();
                           matchmakingController.routes();
+                          usuarioController.routes();
                         });
+                    authController.routes();
                     paginasPublicas.routes();
+                    registroController.routes();
                   });
             });
+
+    app.before(
+        ctx -> {
+          String path = ctx.path();
+          if (path.startsWith("/api/v1")) {
+            SecurityRules.enforceApi(ctx, authService);
+            return;
+          }
+          if ("/dashboard".equals(path)
+              || "/perfil".equals(path)
+              || "/donaciones".equals(path)
+              || "/necesidades".equals(path)
+              || "/logistica".equals(path)
+              || "/matchmaking".equals(path)
+              || "/catalogo".equals(path)) {
+            SecurityRules.enforceProtectedWeb(ctx, authService);
+          }
+        });
 
     java.util.concurrent.ScheduledExecutorService scheduler =
         java.util.concurrent.Executors.newSingleThreadScheduledExecutor();
     scheduler.scheduleAtFixedRate(
-        new ar.edu.utn.donatrack.notificaciones.TareaAusenciaDonantes(
-            donantes, NotificadorDesdeEntorno.crear()),
+        new ar.edu.utn.donatrack.notificaciones.TareaAusenciaDonantes(donantes, notificaciones),
         0,
         1,
         java.util.concurrent.TimeUnit.DAYS);

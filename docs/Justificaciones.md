@@ -34,7 +34,9 @@ El sistema cuenta con jerarquías como `Donante` (PersonaHumana, PersonajeJuridi
 ### 2.3 Tipos de Datos y Claves Primarias
 **Decisión:** Se migró el uso de identificadores a `UUID` para entidades distribuidas (como `Donacion` y `Ruta`).
 
-**Justificación:** Los `UUID` previenen la colisión de claves generadas al integrar datos de múltiples bases de datos. Los identificadores autoincrementales (`bigserial` o genéricos `GenerationType.IDENTITY`) se dejaron únicamente para tablas fuertemente internas y locales a un microservicio (como `Camiones` o `HistorialEstado`), donde no se exportan como referencias foráneas en otros servicios.
+**Justificación:** Los `UUID` previenen la colisión de claves generadas al integrar datos de múltiples bases de datos. Los identificadores autoincrementales (`bigserial` o genéricos `GenerationType.IDENTITY`) se dejaron únicamente para tablas fuertemente internas y locales a un microservicio (como `Camiones`), donde no se exportan como referencias foráneas en otros servicios.
+
+`HistorialEstado` no lleva identificador: es un value object sin identidad ni ciclo de vida propios, mapeado con `@ElementCollection`. Su tabla cuelga de la donación con clave compuesta `(donacion_id, orden)`, y `orden` conserva la secuencia de las transiciones.
 
 ### 2.4 Control de Transacciones y Open-Session-In-View
 **Decisión:** La gestión de transacciones HTTP (por request) y la inyección del `EntityManager` se manejan mediante el patrón `RequestPersistenceBoundary`.

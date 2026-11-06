@@ -11,6 +11,8 @@ import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
@@ -21,7 +23,10 @@ import javax.persistence.OneToMany;
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
 public abstract class Donante implements Notificable {
-  @Id private UUID id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.AUTO)
+  private UUID id;
+
   protected String numDocumento;
 
   @Enumerated(EnumType.STRING)
@@ -38,18 +43,18 @@ public abstract class Donante implements Notificable {
   protected Donante() {}
 
   public Donante(MedioDeContacto medioDeContacto, String numDocumento, TipoDocumento documento) {
-    this(UUID.randomUUID(), medioDeContacto, numDocumento, documento);
-  }
-
-  protected Donante(
-      UUID id, MedioDeContacto medioDeContacto, String numDocumento, TipoDocumento documento) {
-    this.id = Objects.requireNonNull(id, "id no puede ser null");
     Objects.requireNonNull(medioDeContacto);
     this.numDocumento = numDocumento;
     this.documento = documento;
     this.mediosDeContacto.add(medioDeContacto);
     this.contactoPredeterminado = medioDeContacto;
     // Aca agregaria el enviar el mail de bienvenida
+  }
+
+  protected Donante(
+      UUID id, MedioDeContacto medioDeContacto, String numDocumento, TipoDocumento documento) {
+    this(medioDeContacto, numDocumento, documento);
+    this.id = Objects.requireNonNull(id, "id no puede ser null");
   }
 
   public UUID getId() {

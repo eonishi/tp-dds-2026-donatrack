@@ -13,7 +13,6 @@ import ar.edu.utn.donatrack.api.mappers.ApiMapper;
 import ar.edu.utn.donatrack.api.validation.DtoValidator;
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiariaId;
 import ar.edu.utn.donatrack.beneficiarios.Necesidad;
 import ar.edu.utn.donatrack.beneficiarios.NecesidadRecurrente;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
@@ -37,7 +36,7 @@ public final class NecesidadController implements WithSimplePersistenceUnit {
 
   public void routes() {
     path(
-        "/entidades/{entidadId}/necesidades",
+        "/beneficiarias/{entidadId}/necesidades",
         () -> {
           get(this::listar);
           post(this::crear);
@@ -52,9 +51,7 @@ public final class NecesidadController implements WithSimplePersistenceUnit {
   }
 
   private void listar(Context ctx) {
-    EntidadBeneficiaria entidad = entidad(ctx);
-    ctx.json(
-        entidad.necesidades().stream().map(necesidad -> response(necesidad, entidad)).toList());
+    ctx.json(ApiMapper.necesidades(entidad(ctx)));
   }
 
   private void obtener(Context ctx) {
@@ -66,15 +63,15 @@ public final class NecesidadController implements WithSimplePersistenceUnit {
     NecesidadRequest request = DtoValidator.validate(ctx.bodyAsClass(NecesidadRequest.class));
     validar(request);
     EntidadBeneficiaria entidad = entidad(ctx);
-    NecesidadResponse creada =
+    Necesidad nuevaNecesidad =
         withTransaction(
             () -> {
               Necesidad necesidad = construirNecesidad(request, new HashMap<>());
               agregar(entidad, necesidad);
               entidades.save(entidad);
-              return ApiMapper.necesidad(necesidad, entidad);
+              return necesidad;
             });
-    ctx.status(201).json(creada);
+    ctx.status(201).json(ApiMapper.necesidad(nuevaNecesidad, entidad));
   }
 
   private void actualizar(Context ctx) {
@@ -122,13 +119,13 @@ public final class NecesidadController implements WithSimplePersistenceUnit {
   }
 
   private EntidadBeneficiaria entidad(Context ctx) {
-    return entidad(new EntidadBeneficiariaId(HttpSupport.longId(ctx, "entidadId")));
+    return entidad(HttpSupport.longId(ctx, "entidadId"));
   }
 
-  private EntidadBeneficiaria entidad(EntidadBeneficiariaId id) {
+  private EntidadBeneficiaria entidad(Long id) {
     return entidades
         .findById(id)
-        .orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", id.value()));
+        .orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", id));
   }
 
   private Necesidad construirNecesidad(NecesidadRequest request, Map<String, SubCategoria> cache) {

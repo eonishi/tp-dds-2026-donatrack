@@ -28,7 +28,7 @@ classDiagram
     class EntidadBeneficiaria
     class Necesidad
     class NecesidadRecurrente
-    class RankingMatchmaking
+    class MatchCandidato
     class PropuestaDeAsignacion
     class Camion
     class Ruta
@@ -41,7 +41,7 @@ classDiagram
     Ruta *-- "*" Destino : destinos
     Destino ..> Donacion : donacionId (API)
     PropuestaDeAsignacion *-- Donacion : donacion
-    PropuestaDeAsignacion *-- "*" RankingMatchmaking : rankings
+    PropuestaDeAsignacion *-- "*" MatchCandidato : candidatos
 
     ApiRest ..> Donante : CRUD donantes
     ApiRest ..> Donacion : CRUD + cambios de estado

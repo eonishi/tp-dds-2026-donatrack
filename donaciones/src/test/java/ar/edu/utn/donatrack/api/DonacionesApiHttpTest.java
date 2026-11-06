@@ -11,6 +11,13 @@ import ar.edu.utn.donatrack.bienes.Categoria;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donantes.Donante;
+import ar.edu.utn.donatrack.notificaciones.Notificacion;
+import ar.edu.utn.donatrack.notificaciones.NotificacionesRepository;
+import ar.edu.utn.donatrack.notificaciones.Notificador;
+import ar.edu.utn.donatrack.notificaciones.NotificadorSimulado;
+import ar.edu.utn.donatrack.notificaciones.ResultadoEnvio;
+import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
+import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -35,12 +42,70 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
   private final HttpClient client = HttpClient.newHttpClient();
   private Javalin app;
   private String baseUrl;
+  private String sessionCookie;
+  private NotificacionesRepository notificacionesRepository;
 
   @BeforeEach
-  void start() {
+  void start() throws Exception {
     Clock clock = Clock.fixed(Instant.parse("2026-09-11T12:00:00Z"), ZoneOffset.UTC);
-    app = DonacionesApi.create(clock).start(0);
+    notificacionesRepository = new NotificacionesRepository();
+    ServicioNotificaciones notificaciones =
+        new ServicioNotificaciones(new NotificadorSimulado(), notificacionesRepository, 1);
+    app = DonacionesApi.create(clock, notificaciones).start(0);
     baseUrl = "http://localhost:" + app.port();
+    sessionCookie = iniciarSesionComoAdmin();
+  }
+
+  private String iniciarSesionComoAdmin() throws IOException, InterruptedException {
+    HttpRequest loginRequest =
+        HttpRequest.newBuilder(URI.create(baseUrl + "/login"))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .POST(
+                HttpRequest.BodyPublishers.ofString(
+                    "email=admin%40donatrack.local&password=admin123"))
+            .build();
+    HttpResponse<String> loginResponse =
+        client.send(loginRequest, HttpResponse.BodyHandlers.ofString());
+    return loginResponse.headers().firstValue("Set-Cookie").orElse("");
+  }
+
+  @Test
+  void altaDeDonanteEnviaUnaBienvenidaUnaSolaVez() throws Exception {
+    UUID donanteId = crearDonante();
+
+    long bienvenidas =
+        notificacionesRepository.getNotificaciones().stream()
+            .filter(n -> n.getMensaje().contains("DonaTrack"))
+            .count();
+
+    assertEquals(1, bienvenidas);
+    assertEquals(200, request("GET", "/api/v1/donantes/" + donanteId, null).statusCode());
+    assertEquals(1, notificacionesRepository.getNotificaciones().size());
+  }
+
+  @Test
+  void falloDeBienvenidaNoRevierteElAlta() throws Exception {
+    app.stop();
+    notificacionesRepository = new NotificacionesRepository();
+    Notificador notificador = org.mockito.Mockito.mock(Notificador.class);
+    org.mockito.Mockito.when(
+            notificador.enviarNotificacion(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+        .thenReturn(ResultadoEnvio.fallido("proveedor caído"));
+    ServicioNotificaciones notificaciones =
+        new ServicioNotificaciones(notificador, notificacionesRepository, 1);
+    Clock clock = Clock.fixed(Instant.parse("2026-09-11T12:00:00Z"), ZoneOffset.UTC);
+    app = DonacionesApi.create(clock, notificaciones).start(0);
+    baseUrl = "http://localhost:" + app.port();
+    // Las sesiones viven en memoria: la app nueva no conoce la cookie de la anterior.
+    sessionCookie = iniciarSesionComoAdmin();
+
+    HttpResponse<String> response =
+        request("POST", "/api/v1/donantes", donanteJson("Sofía", "Pérez", "sofia@example.org"));
+
+    assertEquals(201, response.statusCode(), response.body());
+    assertEquals(1, notificacionesRepository.getNotificaciones().size());
+    assertEquals("FALLIDA", notificacionesRepository.getNotificaciones().get(0).getEstado().name());
   }
 
   @AfterEach
@@ -63,6 +128,9 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     // previa, así que este método es el dueño legítimo de la transacción de limpieza.
     withTransaction(
         () -> {
+          createQuery("select p from PropuestaDeAsignacion p", PropuestaDeAsignacion.class)
+              .getResultList()
+              .forEach(this::remove);
           createQuery("select b from Bien b", Bien.class).getResultList().forEach(this::remove);
           createQuery("select n from Necesidad n", Necesidad.class)
               .getResultList()
@@ -110,11 +178,12 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
 
     UUID necesidadId = crearNecesidad(entidadId, "Fideos");
     assertEquals(
-        200, request("GET", "/api/v1/entidades/" + entidadId + "/necesidades", null).statusCode());
+        200,
+        request("GET", "/api/v1/beneficiarias/" + entidadId + "/necesidades", null).statusCode());
     HttpResponse<String> necesidadActualizada =
         request(
             "PUT",
-            "/api/v1/entidades/" + entidadId + "/necesidades/" + necesidadId,
+            "/api/v1/beneficiarias/" + entidadId + "/necesidades/" + necesidadId,
             necesidadJson("Fideos", 20));
     assertEquals(200, necesidadActualizada.statusCode());
     assertEquals(20, json(necesidadActualizada).get("cantidadObjetivo").asInt());
@@ -133,7 +202,10 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     assertEquals(204, request("DELETE", "/api/v1/donaciones/" + donacionId, null).statusCode());
     assertEquals(
         204,
-        request("DELETE", "/api/v1/entidades/" + entidadId + "/necesidades/" + necesidadId, null)
+        request(
+                "DELETE",
+                "/api/v1/beneficiarias/" + entidadId + "/necesidades/" + necesidadId,
+                null)
             .statusCode());
     assertEquals(204, request("DELETE", "/api/v1/beneficiarias/" + entidadId, null).statusCode());
     assertEquals(204, request("DELETE", "/api/v1/donantes/" + donanteId, null).statusCode());
@@ -155,25 +227,26 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     long otraEntidadId = crearEntidad("Comedor Ajeno");
     UUID necesidadId = crearNecesidad(entidadId, "Harina");
 
-    String rutaAjena = "/api/v1/entidades/" + otraEntidadId + "/necesidades/" + necesidadId;
+    String rutaAjena = "/api/v1/beneficiarias/" + otraEntidadId + "/necesidades/" + necesidadId;
     assertEquals(404, request("GET", rutaAjena, null).statusCode());
     assertEquals(404, request("PUT", rutaAjena, necesidadJson("Harina", 20)).statusCode());
     assertEquals(404, request("DELETE", rutaAjena, null).statusCode());
     assertEquals(
         404,
-        request("GET", "/api/v1/entidades/" + Long.MAX_VALUE + "/necesidades", null).statusCode());
+        request("GET", "/api/v1/beneficiarias/" + Long.MAX_VALUE + "/necesidades", null)
+            .statusCode());
     assertEquals(
         404,
         request(
                 "POST",
-                "/api/v1/entidades/" + Long.MAX_VALUE + "/necesidades",
+                "/api/v1/beneficiarias/" + Long.MAX_VALUE + "/necesidades",
                 necesidadJson("Harina", 10))
             .statusCode());
     assertEquals(404, request("GET", "/api/v1/necesidades/" + necesidadId, null).statusCode());
 
     assertEquals(
         200,
-        request("GET", "/api/v1/entidades/" + entidadId + "/necesidades/" + necesidadId, null)
+        request("GET", "/api/v1/beneficiarias/" + entidadId + "/necesidades/" + necesidadId, null)
             .statusCode());
   }
 
@@ -197,7 +270,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
         request(
                 "PATCH",
                 "/api/v1/donaciones/" + donacionId + "/estado",
-                "{\"estado\":\"EN_TRASLADO\"}")
+                "{\"estado\":\"EN_TRASLADO\",\"idCamion\":\"AA123BB\"}")
             .statusCode());
 
     HttpResponse<String> noRecibida =
@@ -241,23 +314,23 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     long entidadId = crearEntidad("Comedor Match");
     crearNecesidad(entidadId, "Arroz");
     UUID donacionId = crearDonacion(donanteId, "Arroz");
-    UUID otraDonacionId = crearDonacion(donanteId, "Arroz");
+    UUID idOtraDonacion = crearDonacion(donanteId, "Arroz");
 
     HttpResponse<String> ejecucion =
         request("POST", "/api/v1/donaciones/" + donacionId + "/propuesta-asignacion", null);
     assertEquals(201, ejecucion.statusCode());
     assertEquals(donacionId.toString(), json(ejecucion).get("donacionId").asText());
-    assertFalse(json(ejecucion).get("rankings").isEmpty());
+    assertFalse(json(ejecucion).get("candidatos").isEmpty());
     assertEquals(
         201,
-        request("POST", "/api/v1/donaciones/" + otraDonacionId + "/propuesta-asignacion", null)
+        request("POST", "/api/v1/donaciones/" + idOtraDonacion + "/propuesta-asignacion", null)
             .statusCode());
 
     HttpResponse<String> propuestas = request("GET", "/api/v1/propuestas-asignacion", null);
     assertEquals(200, propuestas.statusCode());
     assertEquals(2, json(propuestas).size());
     assertTrue(propuestas.body().contains(donacionId.toString()));
-    assertTrue(propuestas.body().contains(otraDonacionId.toString()));
+    assertTrue(propuestas.body().contains(idOtraDonacion.toString()));
 
     HttpResponse<String> ranking =
         request("GET", "/api/v1/donaciones/" + donacionId + "/propuesta-asignacion", null);
@@ -272,10 +345,32 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     assertEquals(200, seleccion.statusCode());
     assertEquals("ASIGNACION_REALIZADA", json(seleccion).get("estado").asText());
     assertEquals(entidadId, json(seleccion).get("entidadBeneficiariaId").asLong());
+    long asignacionesAntesDeRepetir =
+        notificacionesRepository.getNotificaciones().stream()
+            .filter(n -> n.getMensaje().contains("asignad"))
+            .count();
+    assertEquals(
+        200,
+        request(
+                "PUT",
+                "/api/v1/donaciones/" + donacionId + "/propuesta-asignacion",
+                "{\"entidadBeneficiariaId\":" + entidadId + "}")
+            .statusCode());
+    assertEquals(
+        asignacionesAntesDeRepetir,
+        notificacionesRepository.getNotificaciones().stream()
+            .filter(n -> n.getMensaje().contains("asignad"))
+            .count());
     HttpResponse<String> pendientes = request("GET", "/api/v1/propuestas-asignacion", null);
     assertEquals(200, pendientes.statusCode());
     assertEquals(1, json(pendientes).size());
-    assertEquals(otraDonacionId.toString(), json(pendientes).get(0).get("donacionId").asText());
+    assertEquals(idOtraDonacion.toString(), json(pendientes).get(0).get("donacionId").asText());
+    assertEquals(
+        201,
+        request("POST", "/api/v1/donaciones/" + idOtraDonacion + "/propuesta-asignacion", null)
+            .statusCode());
+    assertEquals(204, request("DELETE", "/api/v1/donaciones/" + idOtraDonacion, null).statusCode());
+    assertEquals(0, json(request("GET", "/api/v1/propuestas-asignacion", null)).size());
     assertEquals(
         404, request("PUT", "/api/v1/donaciones/" + donacionId + "/asignacion", null).statusCode());
     assertEquals(404, request("POST", "/api/v1/propuestas-asignacion", null).statusCode());
@@ -395,7 +490,9 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
 
     HttpResponse<String> primera =
         request(
-            "POST", "/api/v1/entidades/" + entidadId + "/necesidades", necesidadJson(nombre, 10));
+            "POST",
+            "/api/v1/beneficiarias/" + entidadId + "/necesidades",
+            necesidadJson(nombre, 10));
     assertEquals(201, primera.statusCode(), primera.body());
     assertEquals(
         1,
@@ -404,7 +501,9 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
 
     HttpResponse<String> segunda =
         request(
-            "POST", "/api/v1/entidades/" + entidadId + "/necesidades", necesidadJson(nombre, 20));
+            "POST",
+            "/api/v1/beneficiarias/" + entidadId + "/necesidades",
+            necesidadJson(nombre, 20));
     assertEquals(201, segunda.statusCode(), segunda.body());
     assertEquals(
         1,
@@ -475,7 +574,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     HttpResponse<String> response =
         request(
             "POST",
-            "/api/v1/entidades/" + entidadId + "/necesidades",
+            "/api/v1/beneficiarias/" + entidadId + "/necesidades",
             necesidadJson(subcategoria, 10));
     assertEquals(201, response.statusCode(), response.body());
     return UUID.fromString(json(response).get("id").asText());
@@ -515,8 +614,89 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
         request(
                 "PATCH",
                 "/api/v1/donaciones/" + donacionId + "/estado",
-                "{\"estado\":\"EN_TRASLADO\"}")
+                "{\"estado\":\"EN_TRASLADO\",\"idCamion\":\"AA123BB\"}")
             .statusCode());
+  }
+
+  @Test
+  void transicionMasivaIniciaTrasladoConCamionYUrlUnaVez() throws Exception {
+    UUID donanteId = crearDonante();
+    long entidadId = crearEntidad("Hogar Ruta");
+    crearNecesidad(entidadId, "Arroz");
+    UUID donacionId = crearDonacion(donanteId, "Arroz");
+    asignarDesdePropuesta(donacionId, entidadId);
+    assertEquals(
+        200,
+        request(
+                "PATCH",
+                "/api/v1/donaciones/" + donacionId + "/estado",
+                "{\"estado\":\"LISTA_PARA_ENTREGAR\"}")
+            .statusCode());
+
+    int antes = notificacionesRepository.getNotificaciones().size();
+    HttpResponse<String> response =
+        request(
+            "PATCH",
+            "/api/v1/donaciones/estado",
+            "[{\"idDonacion\":\""
+                + donacionId
+                + "\",\"nuevoEstado\":\"EN_TRASLADO\",\"idCamion\":\"AB123CD\"}]");
+
+    assertEquals(200, response.statusCode(), response.body());
+    Donacion donacion =
+        createQuery("select d from Donacion d where d.id = :id", Donacion.class)
+            .setParameter("id", donacionId)
+            .getSingleResult();
+    assertEquals("AB123CD", donacion.getIdCamion().orElseThrow());
+    var nuevas = notificacionesRepository.getNotificaciones().subList(antes, antes + 2);
+    assertEquals(2, nuevas.size());
+    for (Notificacion notificacion : nuevas) {
+      assertEquals(
+          1, apariciones(notificacion.getMensaje(), "https://mapa.donatrack.org/tracking/AB123CD"));
+    }
+  }
+
+  @Test
+  void transicionIndividualExigeCamionYRegistraPatenteConUrlUnaVez() throws Exception {
+    UUID donanteId = crearDonante();
+    long entidadId = crearEntidad("Hogar Ruta Individual");
+    crearNecesidad(entidadId, "Aceite");
+    UUID donacionId = crearDonacion(donanteId, "Aceite");
+    asignarDesdePropuesta(donacionId, entidadId);
+    assertEquals(
+        200,
+        request(
+                "PATCH",
+                "/api/v1/donaciones/" + donacionId + "/estado",
+                "{\"estado\":\"LISTA_PARA_ENTREGAR\"}")
+            .statusCode());
+
+    HttpResponse<String> sinCamion =
+        request(
+            "PATCH",
+            "/api/v1/donaciones/" + donacionId + "/estado",
+            "{\"estado\":\"EN_TRASLADO\"}");
+    assertEquals(400, sinCamion.statusCode(), sinCamion.body());
+
+    int antes = notificacionesRepository.getNotificaciones().size();
+    HttpResponse<String> response =
+        request(
+            "PATCH",
+            "/api/v1/donaciones/" + donacionId + "/estado",
+            "{\"estado\":\"EN_TRASLADO\",\"idCamion\":\"AC456DE\"}");
+
+    assertEquals(200, response.statusCode(), response.body());
+    Donacion donacion =
+        createQuery("select d from Donacion d where d.id = :id", Donacion.class)
+            .setParameter("id", donacionId)
+            .getSingleResult();
+    assertEquals("AC456DE", donacion.getIdCamion().orElseThrow());
+    var nuevas = notificacionesRepository.getNotificaciones().subList(antes, antes + 2);
+    assertEquals(2, nuevas.size());
+    for (Notificacion notificacion : nuevas) {
+      assertEquals(
+          1, apariciones(notificacion.getMensaje(), "https://mapa.donatrack.org/tracking/AC456DE"));
+    }
   }
 
   private void asignarDesdePropuesta(UUID donacionId, long entidadId) throws Exception {
@@ -560,6 +740,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     HttpRequest request =
         HttpRequest.newBuilder(URI.create(baseUrl + path))
             .header("Content-Type", "application/json")
+            .header("Cookie", sessionCookie)
             .method(method, publisher)
             .build();
     return client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -567,5 +748,9 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
 
   private JsonNode json(HttpResponse<String> response) throws IOException {
     return mapper.readTree(response.body());
+  }
+
+  private int apariciones(String texto, String buscado) {
+    return (texto.length() - texto.replace(buscado, "").length()) / buscado.length();
   }
 }

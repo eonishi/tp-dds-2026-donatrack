@@ -19,12 +19,30 @@
     -->
 
     <dependencies>
+        <!-- Hash de contraseñas con BCrypt: cada hash lleva su propia sal aleatoria. -->
+        <dependency>
+            <groupId>org.mindrot</groupId>
+            <artifactId>jbcrypt</artifactId>
+            <version>0.4</version>
+        </dependency>
       <!-- Javalin Bundle (Core + Jackson + Logback + TestTools) -->
     <dependency>
         <groupId>io.javalin</groupId>
         <artifactId>javalin-bundle</artifactId>
         <version>6.3.0</version>
     </dependency>
+        <dependency>
+            <groupId>com.auth0</groupId>
+            <artifactId>java-jwt</artifactId>
+            <version>4.5.0</version>
+            <exclusions>
+                <!-- Usa el Jackson que ya trae javalin-bundle para no mezclar versiones. -->
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
         <dependency>
             <groupId>io.github.flbulgarelli</groupId>
             <artifactId>jpa-extras</artifactId>

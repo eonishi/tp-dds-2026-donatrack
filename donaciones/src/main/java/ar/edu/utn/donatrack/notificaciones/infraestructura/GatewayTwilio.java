@@ -17,18 +17,18 @@ public class GatewayTwilio implements GatewaySms {
   private final HttpClient client;
   private final String accountSid;
   private final String authorization;
+  private final String authToken;
   private final String smsRemitente;
 
   public GatewayTwilio(
       HttpClient client, String accountSid, String authToken, String smsRemitente) {
     this.client = Objects.requireNonNull(client);
     this.accountSid = Objects.requireNonNull(accountSid);
+    this.authToken = Objects.requireNonNull(authToken);
     this.authorization =
         "Basic "
             + Base64.getEncoder()
-                .encodeToString(
-                    (accountSid + ":" + Objects.requireNonNull(authToken))
-                        .getBytes(StandardCharsets.UTF_8));
+                .encodeToString((accountSid + ":" + authToken).getBytes(StandardCharsets.UTF_8));
     this.smsRemitente = Objects.requireNonNull(smsRemitente);
   }
 
@@ -54,7 +54,9 @@ public class GatewayTwilio implements GatewaySms {
       if (response.statusCode() >= 200 && response.statusCode() < 300) {
         return ResultadoEnvio.aceptado();
       }
-      return ResultadoEnvio.fallido("Twilio respondió HTTP " + response.statusCode() + ".");
+      return ResultadoEnvio.fallido(
+          RespuestaProveedor.error(
+              "Twilio", response.statusCode(), response.body(), accountSid, authToken));
     } catch (IOException error) {
       return ResultadoEnvio.fallido("No se pudo conectar con Twilio: " + error.getMessage());
     } catch (InterruptedException error) {

@@ -27,16 +27,12 @@ public class PersonaHumana extends Donante {
       TipoDocumento documento,
       Genero genero,
       String direccion) {
-    this(
-        UUID.randomUUID(),
-        medioDeContacto,
-        nombre,
-        apellido,
-        edad,
-        numDocumento,
-        documento,
-        genero,
-        direccion);
+    super(medioDeContacto, numDocumento, documento);
+    this.nombre = nombre;
+    this.apellido = apellido;
+    this.edad = edad;
+    this.genero = genero;
+    this.direccion = direccion;
   }
 
   public PersonaHumana(

@@ -12,8 +12,8 @@ class DestinoTest {
 
   // ── Helpers ────────────────────────────────────────────────────────
 
-  private static DonacionId crearDonacionId() {
-    return new DonacionId(UUID.randomUUID());
+  private static UUID crearDonacionUuid() {
+    return UUID.randomUUID();
   }
 
   // ── Cycle 1: Creación ──────────────────────────────────────────────
@@ -25,31 +25,25 @@ class DestinoTest {
 
   @Test
   void crearDestino_ConDireccionNull_DebeLanzarNullPointerException() {
-    assertThrows(
-        NullPointerException.class,
-        () -> new Destino(new EntidadBeneficiariaId(1L), null, List.of()));
+    assertThrows(NullPointerException.class, () -> new Destino(1L, null, List.of()));
   }
 
   @Test
   void crearDestino_ConDonacionesNull_DebeLanzarNullPointerException() {
-    assertThrows(
-        NullPointerException.class,
-        () -> new Destino(new EntidadBeneficiariaId(1L), "Calle 123", null));
+    assertThrows(NullPointerException.class, () -> new Destino(1L, "Calle 123", null));
   }
 
   @Test
   void crearDestino_ConDonacionNull_DebeLanzarNullPointerException() {
-    List<DonacionId> donaciones = Collections.singletonList(null);
+    List<UUID> donaciones = Collections.singletonList(null);
 
-    assertThrows(
-        NullPointerException.class,
-        () -> new Destino(new EntidadBeneficiariaId(1L), "Calle 123", donaciones));
+    assertThrows(NullPointerException.class, () -> new Destino(1L, "Calle 123", donaciones));
   }
 
   @Test
   void crearDestino_ConDatosValidos_DebeTenerAtributosCorrectos() {
-    EntidadBeneficiariaId entidadId = new EntidadBeneficiariaId(1L);
-    DonacionId donacionId = crearDonacionId();
+    Long entidadId = 1L;
+    UUID donacionId = crearDonacionUuid();
 
     Destino destino = new Destino(entidadId, "Calle 123", List.of(donacionId));
 
@@ -60,18 +54,18 @@ class DestinoTest {
 
   @Test
   void crearDestino_SinDonaciones_DebeTenerListaVacia() {
-    Destino destino = new Destino(new EntidadBeneficiariaId(1L), "Calle 123", List.of());
+    Destino destino = new Destino(1L, "Calle 123", List.of());
 
     assertTrue(destino.donaciones().isEmpty());
   }
 
   @Test
   void crearDestino_MantieneElOrdenDeLasDonaciones() {
-    DonacionId d1 = crearDonacionId();
-    DonacionId d2 = crearDonacionId();
-    DonacionId d3 = crearDonacionId();
+    UUID d1 = crearDonacionUuid();
+    UUID d2 = crearDonacionUuid();
+    UUID d3 = crearDonacionUuid();
 
-    Destino destino = new Destino(new EntidadBeneficiariaId(1L), "Calle 123", List.of(d1, d2, d3));
+    Destino destino = new Destino(1L, "Calle 123", List.of(d1, d2, d3));
 
     assertEquals(List.of(d1, d2, d3), destino.donaciones());
   }
@@ -80,20 +74,19 @@ class DestinoTest {
 
   @Test
   void getDonaciones_AlModificarLista_DebeLanzarUnsupportedOperationException() {
-    Destino destino =
-        new Destino(new EntidadBeneficiariaId(1L), "Calle 123", List.of(crearDonacionId()));
+    Destino destino = new Destino(1L, "Calle 123", List.of(crearDonacionUuid()));
 
     assertThrows(
-        UnsupportedOperationException.class, () -> destino.donaciones().add(crearDonacionId()));
+        UnsupportedOperationException.class, () -> destino.donaciones().add(crearDonacionUuid()));
   }
 
   @Test
   void getDonaciones_AlModificarLaListaOriginal_NoAfectaAlDestino() {
-    List<DonacionId> original = new ArrayList<>();
-    original.add(crearDonacionId());
-    Destino destino = new Destino(new EntidadBeneficiariaId(1L), "Calle 123", original);
+    List<UUID> original = new ArrayList<>();
+    original.add(crearDonacionUuid());
+    Destino destino = new Destino(1L, "Calle 123", original);
 
-    original.add(crearDonacionId());
+    original.add(crearDonacionUuid());
 
     assertEquals(1, destino.donaciones().size());
   }
@@ -102,8 +95,8 @@ class DestinoTest {
 
   @Test
   void mismosDatos_EqualsDevuelveTrue() {
-    EntidadBeneficiariaId entidadId = new EntidadBeneficiariaId(1L);
-    DonacionId donacionId = crearDonacionId();
+    Long entidadId = 1L;
+    UUID donacionId = crearDonacionUuid();
     Destino a = new Destino(entidadId, "Calle 123", List.of(donacionId));
     Destino b = new Destino(entidadId, "Calle 123", List.of(donacionId));
 
@@ -112,8 +105,8 @@ class DestinoTest {
 
   @Test
   void mismosDatos_HashCodeEsIgual() {
-    EntidadBeneficiariaId entidadId = new EntidadBeneficiariaId(1L);
-    DonacionId donacionId = crearDonacionId();
+    Long entidadId = 1L;
+    UUID donacionId = crearDonacionUuid();
     Destino a = new Destino(entidadId, "Calle 123", List.of(donacionId));
     Destino b = new Destino(entidadId, "Calle 123", List.of(donacionId));
 
@@ -122,15 +115,15 @@ class DestinoTest {
 
   @Test
   void distintaEntidadId_EqualsDevuelveFalse() {
-    Destino a = new Destino(new EntidadBeneficiariaId(1L), "Calle 123", List.of());
-    Destino b = new Destino(new EntidadBeneficiariaId(2L), "Calle 123", List.of());
+    Destino a = new Destino(1L, "Calle 123", List.of());
+    Destino b = new Destino(2L, "Calle 123", List.of());
 
     assertNotEquals(a, b);
   }
 
   @Test
   void mismaEntidadIdDistintaDireccion_EqualsDevuelveFalse() {
-    EntidadBeneficiariaId entidadId = new EntidadBeneficiariaId(1L);
+    Long entidadId = 1L;
     Destino a = new Destino(entidadId, "Calle 123", List.of());
     Destino b = new Destino(entidadId, "Calle 456", List.of());
 
@@ -139,9 +132,10 @@ class DestinoTest {
 
   @Test
   void mismaEntidadIdDistintasDonaciones_EqualsDevuelveFalse() {
-    EntidadBeneficiariaId entidadId = new EntidadBeneficiariaId(1L);
-    Destino a = new Destino(entidadId, "Calle 123", List.of(crearDonacionId()));
-    Destino b = new Destino(entidadId, "Calle 123", List.of(crearDonacionId(), crearDonacionId()));
+    Long entidadId = 1L;
+    Destino a = new Destino(entidadId, "Calle 123", List.of(crearDonacionUuid()));
+    Destino b =
+        new Destino(entidadId, "Calle 123", List.of(crearDonacionUuid(), crearDonacionUuid()));
 
     assertNotEquals(a, b);
   }

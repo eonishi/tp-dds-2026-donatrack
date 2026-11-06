@@ -2,6 +2,7 @@ package ar.edu.utn.donatrack.donaciones;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.Categoria;
@@ -33,7 +34,10 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
     SubCategoria alimentos = new SubCategoria(nombreUnicoAlimentos(), Categoria.ALIMENTO);
     Donante donante = crearDonante();
     Bien bien = crearBien(alimentos, "Fideos secos", 5.0);
-    Donacion donacion = new Donacion(DonacionId.generar(), donante, List.of(bien));
+    Donacion donacion = new Donacion(donante, List.of(bien));
+    assertNull(
+        donacion.getId(),
+        "Una donación recién construida no tiene id: lo asigna el proveedor al persistirla");
     donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, null);
     donacion.cambiarEstado(EstadoDonacion.ENTREGADA, "Entrega confirmada");
     // Las fechas que la donación fijó en memoria son el valor de referencia: la recarga debe
@@ -41,25 +45,25 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
     // flush, el recálculo al leer y el colapso de ambas filas a un mismo instante.
     LocalDateTime fechaPrimera = donacion.getHistorialEstado().get(0).getFecha();
     LocalDateTime fechaSegunda = donacion.getHistorialEstado().get(1).getFecha();
-    UUID id = donacion.getId().value();
 
     persist(alimentos);
     persist(donante);
     persist(donacion);
+    UUID id = donacion.getId();
+    assertNotNull(id, "El proveedor debe asignar el UUID de la donación al persistirla");
     entityManager().flush();
     entityManager().clear();
 
     Donacion recargada = find(Donacion.class, id);
 
     assertNotNull(recargada, "La donación debe poder recargarse por su identidad");
-    assertEquals(new DonacionId(id), recargada.getId(), "La identidad UUID debe conservarse");
+    assertEquals(id, recargada.getId(), "La identidad UUID debe conservarse");
     assertEquals(EstadoDonacion.ENTREGADA, recargada.getEstado(), "El estado debe conservarse");
     assertEquals("30111222", recargada.getDonante().getNumDocumento(), "El donante debe ligarse");
 
     List<HistorialEstado> historial = recargada.getHistorialEstado();
     assertEquals(2, historial.size(), "Las dos transiciones deben persistirse");
-    // No hay columna de orden persistente para el historial: el orden recargado depende de que
-    // la base devuelva las filas en el orden de inserción.
+    // El orden recargado lo garantiza la columna de orden del historial, no la base.
     assertEquals(EstadoDonacion.EN_TRASLADO, historial.get(0).getEstadoAlcanzado());
     assertNotNull(historial.get(0).getFecha(), "La fecha del primer evento debe persistirse");
     assertEquals(
@@ -85,11 +89,45 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
   }
 
   @Test
+  void elHistorialConservaElOrdenAlRecargarYAlAgregarUnaEntradaNueva() {
+    SubCategoria alimentos = new SubCategoria(nombreUnicoAlimentos(), Categoria.ALIMENTO);
+    Donante donante = crearDonante();
+    Donacion donacion = new Donacion(donante, List.of(crearBien(alimentos, "Yerba", 1.0)));
+    donacion.cambiarEstado(EstadoDonacion.ASIGNACION_REALIZADA, "primera");
+    donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, "segunda");
+
+    persist(alimentos);
+    persist(donante);
+    persist(donacion);
+    entityManager().flush();
+    UUID id = donacion.getId();
+    entityManager().clear();
+
+    find(Donacion.class, id).cambiarEstado(EstadoDonacion.ENTREGADA, "tercera");
+    entityManager().flush();
+    entityManager().clear();
+
+    assertEquals(
+        List.of("primera", "segunda", "tercera"),
+        find(Donacion.class, id).getHistorialEstado().stream()
+            .map(HistorialEstado::getJustificacion)
+            .toList(),
+        "Las entradas deben recargarse en el orden en que ocurrieron");
+    assertEquals(
+        List.of(0, 1, 2),
+        entityManager()
+            .createNativeQuery(
+                "SELECT orden FROM HistorialEstado WHERE donacion_id = :id ORDER BY orden")
+            .setParameter("id", id)
+            .getResultList(),
+        "La entrada agregada debe continuar la numeración, sin reescribir las anteriores");
+  }
+
+  @Test
   void lasColumnasDeEstadoGuardanElNombreDeLaConstanteYNoElIndice() {
     SubCategoria alimentos = new SubCategoria(nombreUnicoAlimentos(), Categoria.ALIMENTO);
     Donante donante = crearDonante();
-    Donacion donacion =
-        new Donacion(DonacionId.generar(), donante, List.of(crearBien(alimentos, "Arroz", 2.0)));
+    Donacion donacion = new Donacion(donante, List.of(crearBien(alimentos, "Arroz", 2.0)));
     donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, null);
     donacion.cambiarEstado(EstadoDonacion.ENTREGADA, null);
 
@@ -104,13 +142,13 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
     Object estadoDonacion =
         entityManager()
             .createNativeQuery("SELECT estado FROM Donacion WHERE id = :id")
-            .setParameter("id", donacion.getId().value())
+            .setParameter("id", donacion.getId())
             .getSingleResult();
     List<?> estadosAlcanzados =
         entityManager()
             .createNativeQuery(
                 "SELECT estadoAlcanzado FROM HistorialEstado WHERE donacion_id = :id ORDER BY fecha")
-            .setParameter("id", donacion.getId().value())
+            .setParameter("id", donacion.getId())
             .getResultList();
 
     assertEquals(
@@ -129,7 +167,6 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
     Donante donante = crearDonante();
     Donacion donacion =
         new Donacion(
-            DonacionId.generar(),
             donante,
             List.of(
                 new Bien(
@@ -147,7 +184,7 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
     entityManager().flush();
     entityManager().clear();
 
-    Donacion recargada = find(Donacion.class, donacion.getId().value());
+    Donacion recargada = find(Donacion.class, donacion.getId());
 
     assertNotNull(recargada, "La donación debe poder recargarse por su identidad");
     assertEquals(
@@ -166,7 +203,7 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
     Object unidad =
         entityManager()
             .createNativeQuery("SELECT unidad FROM Bien WHERE donacion_id = :id ORDER BY id")
-            .setParameter("id", donacion.getId().value())
+            .setParameter("id", donacion.getId())
             .getResultList()
             .stream()
             .findFirst()
@@ -174,7 +211,7 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
     Object estadoDeUso =
         entityManager()
             .createNativeQuery("SELECT estadoDeUso FROM Bien WHERE donacion_id = :id ORDER BY id")
-            .setParameter("id", donacion.getId().value())
+            .setParameter("id", donacion.getId())
             .getResultList()
             .stream()
             .findFirst()

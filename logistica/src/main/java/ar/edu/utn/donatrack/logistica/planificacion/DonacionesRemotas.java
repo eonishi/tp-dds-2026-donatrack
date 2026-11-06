@@ -1,7 +1,7 @@
 package ar.edu.utn.donatrack.logistica.planificacion;
 
-import ar.edu.utn.donatrack.logistica.DonacionId;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Puerto de logística hacia el microservicio de donaciones.
@@ -25,7 +25,7 @@ public interface DonacionesRemotas {
    *
    * @param donaciones identificadores de las donaciones planificadas (no nulo)
    */
-  void notificarListaParaEntregar(List<DonacionId> donaciones);
+  void notificarListaParaEntregar(List<UUID> donaciones);
 
-  void notificarInicioTraslado(List<DonacionId> donaciones, String urlMapa);
+  void notificarInicioTraslado(List<UUID> donaciones, String idCamion);
 }

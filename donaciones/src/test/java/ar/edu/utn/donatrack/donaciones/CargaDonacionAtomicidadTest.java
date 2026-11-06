@@ -56,7 +56,8 @@ class CargaDonacionAtomicidadTest implements WithSimplePersistenceUnit {
     entityManager().clear();
     assertTrue(
         donacionesDelDonante().isEmpty(),
-        "El rollback debe eliminar también las donaciones del donante ya persistidas antes de la falla");
+        "El rollback debe eliminar también las donaciones del donante ya persistidas antes de la"
+            + " falla");
   }
 
   /** Donaciones persistidas del donante sembrado por este test. */

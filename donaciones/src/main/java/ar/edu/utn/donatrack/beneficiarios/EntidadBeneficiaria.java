@@ -10,16 +10,20 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Stream;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 
 @Entity
 public class EntidadBeneficiaria implements Notificable {
-  @Id private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
   private String razonSocial;
   private String direccion;
@@ -44,26 +48,23 @@ public class EntidadBeneficiaria implements Notificable {
   protected EntidadBeneficiaria() {}
 
   /**
-   * Crea una entidad beneficiaria con un identificador nuevo.
+   * Crea una entidad beneficiaria sin identificador.
    *
-   * <p>El alta sin identificador explícito resuelve la asignación en el borde del servicio, igual
-   * que {@code UUID.randomUUID()} resolvía el alta sin id en el modelo anterior.
+   * <p>El identificador lo asigna el proveedor de persistencia al guardar la entidad; una entidad
+   * recién construida todavía no lo tiene.
    *
    * @param razonSocial razón social de la entidad
    * @param direccion dirección de la entidad
    * @param telefono teléfono de contacto de la entidad
    */
   public EntidadBeneficiaria(String razonSocial, String direccion, String telefono) {
-    this(
-        new EntidadBeneficiariaId(ThreadLocalRandom.current().nextLong(1, Long.MAX_VALUE)),
-        razonSocial,
-        direccion,
-        telefono);
+    this.razonSocial = razonSocial;
+    this.direccion = direccion;
+    this.telefono = telefono;
   }
 
-  public EntidadBeneficiaria(
-      EntidadBeneficiariaId id, String razonSocial, String direccion, String telefono) {
-    this.id = Objects.requireNonNull(id, "id no puede ser null").value();
+  public EntidadBeneficiaria(Long id, String razonSocial, String direccion, String telefono) {
+    this.id = Objects.requireNonNull(id, "id no puede ser null");
     this.razonSocial = razonSocial;
     this.direccion = direccion;
     this.telefono = telefono;
@@ -74,8 +75,8 @@ public class EntidadBeneficiaria implements Notificable {
    *
    * @return el identificador de la entidad beneficiaria
    */
-  public EntidadBeneficiariaId getId() {
-    return new EntidadBeneficiariaId(id);
+  public Long getId() {
+    return id;
   }
 
   public String getRazonSocial() {
@@ -116,7 +117,7 @@ public class EntidadBeneficiaria implements Notificable {
   }
 
   public Optional<Necesidad> buscarNecesidad(UUID necesidadId) {
-    return necesidades().stream().filter(n -> n.getId().equals(necesidadId)).findFirst();
+    return todasLasNecesidades().filter(n -> n.getId().equals(necesidadId)).findFirst();
   }
 
   public List<Necesidad> necesidades() {
@@ -145,16 +146,43 @@ public class EntidadBeneficiaria implements Notificable {
     }
   }
 
-  public void aplicarDonacionRecibida(Donacion donacion) {
+  /**
+   * Indica si la entidad tiene alguna necesidad compatible con la donación.
+   *
+   * @param donacion donación que se evalúa (no nula)
+   * @return {@code true} si alguna necesidad de la entidad es compatible con la donación
+   * @throws NullPointerException si {@code donacion} es {@code null}
+   */
+  public boolean tieneNecesidadCompatible(Donacion donacion) {
     Objects.requireNonNull(donacion, "donacion no puede ser null");
-    necesidadesExtraordinarias.forEach(necesidad -> aplicarSiCoincide(necesidad, donacion));
-    necesidadesRecurrentes.forEach(necesidad -> aplicarSiCoincide(necesidad, donacion));
+    return todasLasNecesidades().anyMatch(donacion::esCompatibleCon);
   }
 
-  private void aplicarSiCoincide(Necesidad necesidad, Donacion donacion) {
-    if (necesidad.getSubcategoria().equals(donacion.getSubcategoria())) {
-      necesidad.recibirDonacion(donacion.getCantidadTotal());
-    }
+  /**
+   * Calcula el mejor puntaje de compatibilidad entre sus necesidades y la donación.
+   *
+   * @param donacion donación que se puntúa (no nula)
+   * @return el puntaje máximo entre sus necesidades, o {@code 0} si ninguna es compatible
+   * @throws NullPointerException si {@code donacion} es {@code null}
+   */
+  public int calcularPuntajeCompatibilidad(Donacion donacion) {
+    Objects.requireNonNull(donacion, "donacion no puede ser null");
+    return todasLasNecesidades().mapToInt(donacion::calcularPuntajeCompatibilidad).max().orElse(0);
+  }
+
+  /**
+   * Registra la donación en cada necesidad compatible de la entidad.
+   *
+   * @param donacion donación recibida (no nula)
+   * @throws NullPointerException si {@code donacion} es {@code null}
+   */
+  public void aplicarDonacionRecibida(Donacion donacion) {
+    Objects.requireNonNull(donacion, "donacion no puede ser null");
+    todasLasNecesidades().forEach(donacion::aplicarA);
+  }
+
+  private Stream<Necesidad> todasLasNecesidades() {
+    return Stream.concat(necesidadesExtraordinarias.stream(), necesidadesRecurrentes.stream());
   }
 
   @Override
