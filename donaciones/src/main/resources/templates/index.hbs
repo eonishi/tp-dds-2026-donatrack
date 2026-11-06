@@ -1,0 +1,226 @@
+{{#partial "titulo"}}DonaTrack · Donaciones con trazabilidad{{/partial}}
+{{#partial "main-clase"}}landing{{/partial}}
+
+{{#partial "contenido"}}
+{{!-- Hero --}}
+<section class="hero">
+    <div class="hero-brillo" aria-hidden="true"></div>
+    <div class="container position-relative">
+        <div class="row justify-content-center">
+            <div class="col-lg-9 text-center">
+                <span class="chip mb-4">✦ UTN Solidaria</span>
+                <h1 class="hero-titulo">
+                    Tu donación no se pierde en un depósito.
+                    <span class="degrade">Llega, y lo podés ver.</span>
+                </h1>
+                <p class="hero-bajada">
+                    DonaTrack registra cada bien que entra al depósito, lo asigna a la entidad que lo necesita
+                    y te avisa cuando el camión lo entrega.
+                </p>
+                <div class="d-flex flex-wrap justify-content-center gap-3 mt-4">
+                    <a class="btn btn-primary btn-lg rounded-pill px-4" href="/login">Ingresar a la plataforma</a>
+                    <a class="btn btn-lg btn-link enlace-flecha" href="/entregas">Ver donaciones entregadas →</a>
+                </div>
+                <p class="confianza mt-4">Registro en el depósito · Avisos por mail, SMS o WhatsApp · Sin costo</p>
+            </div>
+        </div>
+
+        {{!-- Fila de datos --}}
+        <div class="row g-3 justify-content-center datos-fila">
+            <div class="col-md-4"><div class="dato-hero"><strong>100%</strong><span>de los bienes con trazabilidad</span></div></div>
+            <div class="col-md-4"><div class="dato-hero"><strong>En vivo</strong><span>monitoreo de cada traslado</span></div></div>
+            <div class="col-md-4"><div class="dato-hero"><strong>Por necesidad</strong><span>asignación según lo que falta</span></div></div>
+        </div>
+    </div>
+</section>
+
+{{!-- Qué donar --}}
+<section class="seccion" id="que-donar">
+    <div class="container">
+        <div class="encabezado">
+            <h2>Qué podés <span class="degrade">donar</span></h2>
+            <p>Cada bien se clasifica por categoría y subcategoría, así llega justo a quien lo pidió.</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3">
+                <article class="tarjeta categoria h-100">
+                    <span class="icono">🥫</span>
+                    <h3>Alimentos</h3>
+                    <p>No perecederos, en su envase y dentro de la fecha de vencimiento.</p>
+                </article>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <article class="tarjeta categoria h-100">
+                    <span class="icono">👕</span>
+                    <h3>Vestimenta</h3>
+                    <p>Ropa y abrigo en buen estado, para todas las edades.</p>
+                </article>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <article class="tarjeta categoria h-100">
+                    <span class="icono">🛏️</span>
+                    <h3>Colchones y frazadas</h3>
+                    <p>Lo que más se necesita cuando baja la temperatura.</p>
+                </article>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <article class="tarjeta categoria h-100">
+                    <span class="icono">🪑</span>
+                    <h3>Mobiliario</h3>
+                    <p>Sillas, mesas y muebles para hogares e instituciones.</p>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{!-- Por qué DonaTrack --}}
+<section class="seccion seccion-suave" id="por-que">
+    <div class="container">
+        <div class="encabezado">
+            <h2>Por qué <span class="degrade">DonaTrack</span></h2>
+            <p>Menos planillas sueltas, más confianza entre quien dona y quien recibe.</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="numerado">
+                    <span class="numero">01</span>
+                    <div>
+                        <h3>Un solo registro</h3>
+                        <p>Donantes, bienes y entidades en un mismo lugar. Sin duplicados ni papeles perdidos.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="numerado">
+                    <span class="numero">02</span>
+                    <div>
+                        <h3>Asignación por necesidad</h3>
+                        <p>Las entidades cargan lo que necesitan y el sistema les propone las donaciones.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="numerado">
+                    <span class="numero">03</span>
+                    <div>
+                        <h3>Traslados a la vista</h3>
+                        <p>Planificamos rutas y seguimos a cada camión en tiempo real hasta la entrega.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="numerado">
+                    <span class="numero">04</span>
+                    <div>
+                        <h3>Avisos donde vos quieras</h3>
+                        <p>Elegís tu medio de contacto preferido y te avisamos en cada paso.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{!-- Cómo funciona --}}
+<section class="seccion" id="como-funciona">
+    <div class="container">
+        <div class="encabezado">
+            <h2>Cómo <span class="degrade">funciona</span></h2>
+            <p>Cuatro pasos, del depósito a la entidad.</p>
+        </div>
+        <ol class="pasos">
+            <li class="tarjeta paso">
+                <span class="paso-num">1</span>
+                <h3>Te registramos</h3>
+                <p>En el depósito cargamos tus datos y te llega un mail de bienvenida.</p>
+            </li>
+            <li class="tarjeta paso">
+                <span class="paso-num">2</span>
+                <h3>Cargamos la donación</h3>
+                <p>Cada bien con su descripción, categoría y, si querés, una foto.</p>
+            </li>
+            <li class="tarjeta paso">
+                <span class="paso-num">3</span>
+                <h3>La asignamos</h3>
+                <p>Se cruza con las necesidades de hospitales, hogares y comedores.</p>
+            </li>
+            <li class="tarjeta paso">
+                <span class="paso-num">4</span>
+                <h3>La entregamos</h3>
+                <p>Sale en camión, lo seguimos en tiempo real y avisamos cuando llega.</p>
+            </li>
+        </ol>
+
+        <div class="tarjeta incluido mt-5">
+            <h3 class="mb-3">Siempre incluido</h3>
+            <ul class="lista-check">
+                <li>Historial completo de cada donación</li>
+                <li>Estado actualizado en todo momento</li>
+                <li>Aviso al ser asignada y al ser entregada</li>
+                <li>Datos personales protegidos</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+{{!-- Entregas: acceso público al mapa y las fotos --}}
+<section class="seccion">
+    <div class="container">
+        <div class="tarjeta entregas-acceso">
+            <div>
+                <span class="chip mb-3">Sin necesidad de cuenta</span>
+                <h2>Mirá las donaciones que <span class="degrade">ya llegaron</span></h2>
+                <p>Un mapa con cada entrega realizada y las fotos que cargaron las entidades al recibirlas.</p>
+            </div>
+            <a class="btn btn-primary btn-lg rounded-pill px-4" href="/entregas">Ver mapa de entregas</a>
+        </div>
+    </div>
+</section>
+
+{{!-- Preguntas frecuentes --}}
+<section class="seccion seccion-suave" id="preguntas">
+    <div class="container contenedor-angosto">
+        <div class="encabezado">
+            <h2>Preguntas <span class="degrade">frecuentes</span></h2>
+        </div>
+        <div class="faq">
+            <details class="tarjeta">
+                <summary>¿Cómo accedo a la plataforma?</summary>
+                <p>El acceso se habilita para usuarios autorizados. Si ya tenés credenciales, podés ingresar desde el botón de login.</p>
+            </details>
+            <details class="tarjeta">
+                <summary>¿Puedo donar en nombre de una empresa u ONG?</summary>
+                <p>Sí. Las personas jurídicas se registran con su razón social y tienen representantes habilitados para operar en su nombre.</p>
+            </details>
+            <details class="tarjeta">
+                <summary>¿Cómo me entero de a dónde fue mi donación?</summary>
+                <p>Te avisamos por tu medio de contacto preferido cuando se asigna a una entidad y cuando se entrega.</p>
+            </details>
+            <details class="tarjeta">
+                <summary>Soy una entidad, ¿cómo pido donaciones?</summary>
+                <p>Te damos de alta como entidad beneficiaria y cargás tus necesidades. El sistema te propone lo que hay disponible.</p>
+            </details>
+        </div>
+    </div>
+</section>
+
+{{!-- Llamado a la acción --}}
+<section class="seccion" id="contacto">
+    <div class="container">
+        <div class="cta">
+            <div class="hero-brillo" aria-hidden="true"></div>
+            <div class="position-relative">
+                <h2>Sumate a <span class="degrade">DonaTrack.</span></h2>
+                <p>Creá tu cuenta como donante o como entidad beneficiaria. Si ya tenés una, iniciá sesión.</p>
+                <div class="d-flex flex-wrap justify-content-center gap-3 mt-4">
+                    <a class="btn btn-primary btn-lg rounded-pill px-4" href="/login">Ingresar a la plataforma</a>
+                </div>
+                <p class="mt-3 mb-0 small">¿Ya tenés cuenta? <a href="/login">Iniciá sesión</a></p>
+            </div>
+        </div>
+    </div>
+</section>
+{{/partial}}
+
+{{> layout}}

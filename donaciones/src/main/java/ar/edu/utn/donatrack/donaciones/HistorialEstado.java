@@ -2,19 +2,14 @@ package ar.edu.utn.donatrack.donaciones;
 
 import java.time.LocalDateTime;
 import javax.persistence.Column;
-import javax.persistence.Entity;
+import javax.persistence.Embeddable;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
 
-@Entity
+// Value object: una entrada no tiene identidad ni ciclo de vida propios, vive dentro de la
+// donación.
+@Embeddable
 public class HistorialEstado {
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
-
   private LocalDateTime fecha;
 
   // Obligatorio a propósito: toda entrada del historial registra la transición que la produjo.

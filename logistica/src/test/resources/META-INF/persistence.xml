@@ -9,6 +9,7 @@
 
         <!-- La unidad de persistencia de test vive en una raíz de classpath distinta a la de las entidades, así que Hibernate no puede autodetectarlas: se listan explícitamente. -->
         <class>ar.edu.utn.donatrack.logistica.Camion</class>
+        <class>ar.edu.utn.donatrack.logistica.Repartidor</class>
         <class>ar.edu.utn.donatrack.logistica.Destino</class>
         <class>ar.edu.utn.donatrack.logistica.Ruta</class>
 

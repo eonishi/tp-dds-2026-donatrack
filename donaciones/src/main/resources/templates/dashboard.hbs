@@ -1,0 +1,45 @@
+{{#partial "titulo"}}Panel · DonaTrack{{/partial}}
+
+{{#partial "contenido"}}
+<section class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="tarjeta p-4 p-lg-5">
+                <span class="chip mb-3">Panel</span>
+                <h1 class="mb-3">Bienvenido, {{usuario.username}}</h1>
+                <p class="text-body-secondary mb-4">Tu sesión está activa con los siguientes roles.</p>
+
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    {{#each usuario.roles}}
+                        <span class="badge rounded-pill text-bg-primary px-3 py-2">{{this}}</span>
+                    {{/each}}
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 bg-light">
+                            <div class="card-body">
+                                <h2 class="h5">Email</h2>
+                                <p class="mb-0">{{usuario.email}}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 bg-light">
+                            <div class="card-body">
+                                <h2 class="h5">Acciones rápidas</h2>
+                                <ul class="mb-0 ps-3">
+                                    <li><a href="/">Volver a la landing</a></li>
+                                    <li><a href="/perfil">Ver perfil</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{{/partial}}
+
+{{> layout}}

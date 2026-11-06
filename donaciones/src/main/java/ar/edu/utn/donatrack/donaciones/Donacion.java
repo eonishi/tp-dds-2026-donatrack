@@ -9,6 +9,7 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.notificaciones.PublicadorDeEventos;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -28,6 +29,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderColumn;
 
 @Entity
 public class Donacion {
@@ -40,9 +42,12 @@ public class Donacion {
   @Enumerated(EnumType.STRING)
   private EstadoDonacion estado = EstadoDonacion.EN_DEPOSITO;
 
-  // El historial es append-only: el orden de la colección es el de inserción de sus entradas.
-  @OneToMany(cascade = CascadeType.ALL)
-  @JoinColumn(name = "donacion_id")
+  // El historial es append-only: el orden de la colección es el de inserción de sus entradas. La
+  // columna de orden lo conserva al recargar y hace que agregar una entrada sea un solo insert: sin
+  // ella, Hibernate borra y reinserta la colección entera en cada cambio.
+  @ElementCollection
+  @CollectionTable(name = "HistorialEstado", joinColumns = @JoinColumn(name = "donacion_id"))
+  @OrderColumn(name = "orden")
   private List<HistorialEstado> historialEstado = new ArrayList<>();
 
   @OneToMany(cascade = CascadeType.ALL)
@@ -109,7 +114,9 @@ public class Donacion {
    */
   public synchronized void cambiarEstado(EstadoDonacion nuevoEstado, String justificacion) {
     Objects.requireNonNull(nuevoEstado, "estado no puede ser null");
-    historialEstado.add(new HistorialEstado(LocalDateTime.now(), nuevoEstado, justificacion));
+    // Microsegundos: es la precisión de la base, así la fecha en memoria es la que se persiste.
+    LocalDateTime instante = LocalDateTime.now().truncatedTo(ChronoUnit.MICROS);
+    historialEstado.add(new HistorialEstado(instante, nuevoEstado, justificacion));
     estado = nuevoEstado;
   }
 

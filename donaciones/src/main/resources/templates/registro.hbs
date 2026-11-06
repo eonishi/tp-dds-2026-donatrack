@@ -1,0 +1,204 @@
+{{#partial "titulo"}}Creá tu cuenta · DonaTrack{{/partial}}
+{{#partial "main-clase"}}registro-pagina{{/partial}}
+
+{{#partial "contenido"}}
+{{!-- Una sola vista de registro para los dos roles: el rol se elige con el selector de abajo --}}
+<section class="registro">
+    <div class="hero-brillo" aria-hidden="true"></div>
+    <div class="container position-relative">
+        <div class="encabezado">
+            <span class="chip mb-3">✦ Sumate</span>
+            <h1 class="registro-titulo" id="registro-titulo">Creá tu <span class="degrade">cuenta</span></h1>
+            <p>Elegí con qué rol te registrás y completá tus datos. Es gratis y no te compromete a donar.</p>
+        </div>
+
+        <div class="row g-4 g-lg-5 justify-content-center align-items-start">
+            {{!-- El formulario va primero en el HTML: en el celular aparece apenas se entra --}}
+            <div class="col-lg-7">
+                <form class="tarjeta registro-form" method="post" action="/registro" aria-labelledby="registro-titulo">
+                    {{#if error}}<div class="alert alert-danger" role="alert">{{error}}</div>{{/if}}
+                    {{!--
+                      Selector de rol: dos radios con forma de tarjeta. El input real usa .btn-check de
+                      Bootstrap (queda oculto pero sigue siendo navegable con teclado) y el CSS muestra
+                      el bloque de campos del rol elegido.
+                    --}}
+                    <fieldset class="registro-rol">
+                        <legend class="registro-leyenda">Me registro como</legend>
+                        <div class="row g-2">
+                            <div class="col-sm-6">
+                                <input class="btn-check" type="radio" name="rol" id="rol-donante"
+                                       value="donante" autocomplete="off" checked>
+                                <label class="opcion-rol" for="rol-donante">
+                                    <span class="icono" aria-hidden="true">🎁</span>
+                                    <span class="opcion-rol-nombre">Donante</span>
+                                    <span class="opcion-rol-texto">Dono bienes y quiero ver a dónde llegan.</span>
+                                </label>
+                            </div>
+                            <div class="col-sm-6">
+                                <input class="btn-check" type="radio" name="rol" id="rol-entidad"
+                                       value="entidad" autocomplete="off">
+                                <label class="opcion-rol" for="rol-entidad">
+                                    <span class="icono" aria-hidden="true">🏥</span>
+                                    <span class="opcion-rol-nombre">Entidad beneficiaria</span>
+                                    <span class="opcion-rol-texto">Necesito donaciones para las personas que atiendo.</span>
+                                </label>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="registro-grupo">
+                        <legend class="registro-leyenda">Datos de la cuenta</legend>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label" for="correo">Correo electrónico</label>
+                                <input class="form-control" type="email" id="correo" name="correo"
+                                       autocomplete="email" placeholder="nombre@ejemplo.com" required>
+                                <div class="form-text">Con este correo iniciás sesión y te llegan los avisos de tus donaciones.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="contrasena">Contraseña</label>
+                                <input class="form-control" type="password" id="contrasena" name="contrasena"
+                                       autocomplete="new-password" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="contrasena-repetida">Repetir contraseña</label>
+                                <input class="form-control" type="password" id="contrasena-repetida"
+                                       name="contrasenaRepetida" autocomplete="new-password" required>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {{!--
+                      Campos que dependen del rol. Los dos bloques viajan en el formulario y el CSS
+                      esconde el que no corresponde, así que los nombres llevan el prefijo del rol
+                      para que no se pisen entre ellos.
+                    --}}
+                    <div class="panel-rol" data-rol="donante">
+                        <fieldset class="registro-grupo">
+                            <legend class="registro-leyenda">Tus datos personales</legend>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="donante-nombre">Nombre</label>
+                                    <input class="form-control" type="text" id="donante-nombre"
+                                           name="donanteNombre" autocomplete="given-name">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="donante-apellido">Apellido</label>
+                                    <input class="form-control" type="text" id="donante-apellido"
+                                           name="donanteApellido" autocomplete="family-name">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="donante-tipo-documento">Tipo de documento</label>
+                                    <select class="form-select" id="donante-tipo-documento" name="donanteTipoDocumento">
+                                        <option value="">Elegí una opción</option>
+                                        <option value="DNI">DNI</option>
+                                        <option value="CUIT">CUIT</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="donante-numero-documento">Número de documento</label>
+                                    <input class="form-control" type="text" id="donante-numero-documento"
+                                           name="donanteNumeroDocumento" inputmode="numeric">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="donante-genero">Género</label>
+                                    <select class="form-select" id="donante-genero" name="donanteGenero">
+                                        <option value="">Elegí una opción</option>
+                                        <option value="FEMENINO">Femenino</option>
+                                        <option value="MASCULINO">Masculino</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="donante-edad">Fecha de Nacimiento</label>
+                                    <input class="form-control" type="date" id="donante-edad"
+                                           name="donanteEdad" min="0">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="donante-direccion">Dirección</label>
+                                    <input class="form-control" type="text" id="donante-direccion"
+                                           name="donanteDireccion" autocomplete="street-address"
+                                           placeholder="Calle, número, localidad">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="donante-telefono">Teléfono</label>
+                                    <input class="form-control" type="tel" id="donante-telefono"
+                                           name="donanteTelefono" autocomplete="tel" placeholder="11 5555 5555">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="donante-medio-contacto">Medio de contacto preferido</label>
+                                    <select class="form-select" id="donante-medio-contacto" name="donanteMedioContacto">
+                                        <option value="CORREO" selected>Correo electrónico</option>
+                                        <option value="SMS">SMS</option>
+                                        <option value="WHATSAPP">WhatsApp</option>
+                                    </select>
+                                    <div class="form-text">Te avisamos por acá cuando tu donación se asigna y cuando se entrega.</div>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </div>
+
+                    <div class="panel-rol" data-rol="entidad">
+                        <fieldset class="registro-grupo">
+                            <legend class="registro-leyenda">Datos de la entidad</legend>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label" for="entidad-razon-social">Razón social</label>
+                                    <input class="form-control" type="text" id="entidad-razon-social"
+                                           name="entidadRazonSocial" autocomplete="organization"
+                                           placeholder="Nombre de la entidad">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="entidad-direccion">Dirección</label>
+                                    <input class="form-control" type="text" id="entidad-direccion"
+                                           name="entidadDireccion" autocomplete="street-address"
+                                           placeholder="Calle, número, localidad">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="entidad-telefono">Teléfono</label>
+                                    <input class="form-control" type="tel" id="entidad-telefono"
+                                           name="entidadTelefono" autocomplete="tel" placeholder="11 5555 5555">
+                                </div>
+                                <div class="col-12">
+                                    <p class="dato small mb-0">
+                                        Después de crear la cuenta vas a poder cargar las necesidades de tu entidad
+                                        y confirmar la recepción de cada donación.
+                                    </p>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </div>
+
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" id="terminos" name="terminos"
+                               value="acepto" required>
+                        <label class="form-check-label" for="terminos">
+                            Acepto los <a href="/legal">términos y la política de privacidad</a>.
+                        </label>
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        <button class="btn btn-primary btn-lg rounded-pill" type="submit">Crear mi cuenta</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="col-lg-5">
+                <aside class="tarjeta">
+                    <h2 class="registro-lateral-titulo">Qué podés hacer con tu cuenta</h2>
+                    <ul class="lista-check registro-beneficios">
+                        <li>Historial completo de cada donación</li>
+                        <li>Avisos por mail, SMS o WhatsApp</li>
+                        <li>Seguimiento de los traslados en el mapa</li>
+                        <li>Datos personales protegidos</li>
+                    </ul>
+                    <hr class="my-4">
+                    <p class="mb-3">¿Ya tenés una cuenta?</p>
+                    <a class="btn btn-outline-primary rounded-pill w-100" href="/login">Iniciá sesión</a>
+                </aside>
+            </div>
+        </div>
+    </div>
+</section>
+{{/partial}}
+
+{{> layout}}

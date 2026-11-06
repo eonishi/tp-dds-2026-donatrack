@@ -1,12 +1,23 @@
 package ar.edu.utn.donatrack.donantes;
 
+import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaDonacion;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ar.edu.utn.donatrack.bienes.Bien;
+import ar.edu.utn.donatrack.bienes.Categoria;
+import ar.edu.utn.donatrack.bienes.EstadoUso;
+import ar.edu.utn.donatrack.bienes.SubCategoria;
+import ar.edu.utn.donatrack.bienes.UnidadMedida;
+import ar.edu.utn.donatrack.donaciones.Donacion;
+import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
 import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -242,5 +253,50 @@ class DonantesRepositoryTest implements SimplePersistenceTest {
     assertEquals("FEMENINO", genero, "La columna debe guardar el nombre del enum, no su índice");
     assertEquals(
         "ONG", tipoOrganizacion, "La columna debe guardar el nombre del enum, no su índice");
+  }
+
+  @Test
+  void getDonantesInactivos_DistingueSegunLaUltimaActividadDelHistorial() {
+    SubCategoria subcategoria = new SubCategoria("Sub " + UUID.randomUUID(), Categoria.ALIMENTO);
+    PersonaHumana conActividad = crearDonante("111");
+    PersonaHumana sinDonaciones = crearDonante("222");
+    Donacion donacion =
+        nuevaDonacion(
+            conActividad,
+            List.of(
+                new Bien(
+                    "Arroz",
+                    "",
+                    1.0,
+                    UnidadMedida.UNIDADES,
+                    null,
+                    EstadoUso.NO_APLICA,
+                    subcategoria)));
+    donacion.cambiarEstado(EstadoDonacion.ENTREGADA, null);
+
+    persist(subcategoria);
+    persist(conActividad);
+    persist(sinDonaciones);
+    persist(donacion);
+
+    DonantesRepository repo = new DonantesRepository();
+    List<Donante> conActividadReciente = repo.getDonantesInactivos(LocalDate.now());
+    List<Donante> conActividadAnterior = repo.getDonantesInactivos(LocalDate.now().plusDays(1));
+
+    assertFalse(conActividadReciente.contains(conActividad));
+    assertTrue(conActividadReciente.contains(sinDonaciones));
+    assertTrue(conActividadAnterior.contains(conActividad));
+  }
+
+  private static PersonaHumana crearDonante(String documento) {
+    return new PersonaHumana(
+        new CorreoElectronico("donante" + documento + "@test.com"),
+        "Ana",
+        "Gomez",
+        34,
+        documento,
+        TipoDocumento.DNI,
+        Genero.FEMENINO,
+        "Av. Siempreviva 742");
   }
 }

@@ -64,13 +64,13 @@ public class DonacionesRepository implements WithSimplePersistenceUnit {
    * <p>Requiere una transacción activa del llamador (el caso de uso); nunca abre ni confirma una
    * transacción por su cuenta.
    *
-   * <p>La donación cascadea a sus bienes y a su historial, pero no a sus referencias externas: el
-   * donante, la subcategoría de cada bien y la entidad beneficiaria deben existir antes de
-   * persistirla y llegar administrados por su repositorio dueño. Al donante lo administra {@code
-   * DonantesRepository}, a la entidad beneficiaria {@code BeneficiariosRepository} y a la
-   * subcategoría de cada bien {@code SubcategoriasRepository}, el único repositorio que escribe el
-   * catálogo: este repositorio nunca crea entradas del catálogo como efecto lateral de escribir la
-   * donación.
+   * <p>La donación cascadea a sus bienes y su historial se guarda con ella, pero no cascadea a sus
+   * referencias externas: el donante, la subcategoría de cada bien y la entidad beneficiaria deben
+   * existir antes de persistirla y llegar administrados por su repositorio dueño. Al donante lo
+   * administra {@code DonantesRepository}, a la entidad beneficiaria {@code
+   * BeneficiariosRepository} y a la subcategoría de cada bien {@code SubcategoriasRepository}, el
+   * único repositorio que escribe el catálogo: este repositorio nunca crea entradas del catálogo
+   * como efecto lateral de escribir la donación.
    *
    * @param donacion la donación a registrar
    */

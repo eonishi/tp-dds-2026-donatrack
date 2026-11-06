@@ -41,10 +41,11 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
   private final HttpClient client = HttpClient.newHttpClient();
   private Javalin app;
   private String baseUrl;
+  private String sessionCookie;
   private List<String> mensajesEnviados;
 
   @BeforeEach
-  void start() {
+  void start() throws Exception {
     Clock clock = Clock.fixed(Instant.parse("2026-09-11T12:00:00Z"), ZoneOffset.UTC);
     mensajesEnviados = new CopyOnWriteArrayList<>();
     NotificadorPorCanal notificador =
@@ -64,6 +65,20 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     ServicioNotificaciones notificaciones = new ServicioNotificaciones(notificador);
     app = DonacionesApi.create(clock, notificaciones).start(0);
     baseUrl = "http://localhost:" + app.port();
+    sessionCookie = iniciarSesionComoAdmin();
+  }
+
+  private String iniciarSesionComoAdmin() throws IOException, InterruptedException {
+    HttpRequest loginRequest =
+        HttpRequest.newBuilder(URI.create(baseUrl + "/login"))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .POST(
+                HttpRequest.BodyPublishers.ofString(
+                    "email=admin%40donatrack.local&password=admin123"))
+            .build();
+    HttpResponse<String> loginResponse =
+        client.send(loginRequest, HttpResponse.BodyHandlers.ofString());
+    return loginResponse.headers().firstValue("Set-Cookie").orElse("");
   }
 
   @Test
@@ -99,6 +114,8 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     Clock clock = Clock.fixed(Instant.parse("2026-09-11T12:00:00Z"), ZoneOffset.UTC);
     app = DonacionesApi.create(clock, notificaciones).start(0);
     baseUrl = "http://localhost:" + app.port();
+    // Las sesiones viven en memoria: la app nueva no conoce la cookie de la anterior.
+    sessionCookie = iniciarSesionComoAdmin();
 
     HttpResponse<String> response =
         request("POST", "/api/v1/donantes", donanteJson("Sofía", "Pérez", "sofia@example.org"));
@@ -758,6 +775,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     HttpRequest request =
         HttpRequest.newBuilder(URI.create(baseUrl + path))
             .header("Content-Type", "application/json")
+            .header("Cookie", sessionCookie)
             .method(method, publisher)
             .build();
     return client.send(request, HttpResponse.BodyHandlers.ofString());

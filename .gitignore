@@ -67,6 +67,9 @@ logistica/src/main/resources/META-INF/persistence.xml
 #persistencia
 persistence.xmlsrc/main/resources/META-INF/persistence.xml
 
+# Credenciales de docker compose (ver .env.example)
+.env
+
 # dev env
 flake.nix
 flake.lock

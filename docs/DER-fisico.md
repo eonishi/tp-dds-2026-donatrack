@@ -48,8 +48,8 @@ erDiagram
         varchar estado
     }
     donaciones_historial_estado {
-        bigserial id PK
-        uuid donacion_id FK
+        uuid donacion_id PK, FK
+        int orden PK
         varchar estado_alcanzado
     }
     donaciones_bien {
