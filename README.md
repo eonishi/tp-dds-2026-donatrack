@@ -154,6 +154,12 @@ export TWILIO_SMS_FROM="+1..."
 export TWILIO_WHATSAPP_FROM="whatsapp:+14155238886"
 ```
 
+Las variables son opcionales y cada canal se configura por separado: correo necesita `RESEND_*`,
+SMS necesita `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` y `TWILIO_SMS_FROM`, y WhatsApp necesita
+`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` y `TWILIO_WHATSAPP_FROM`. Si a un canal le falta alguna,
+la aplicación igual arranca, ese canal queda deshabilitado y cada envío por él se registra en el
+log como fallido indicando qué variables faltan (nunca sus valores).
+
 En Twilio Trial, cada destinatario telefónico debe estar verificado y el trial dura 30 días. Para
 WhatsApp, las personas destinatarias primero deben unirse al sandbox de Twilio. Los números se
 guardan en formato E.164, por ejemplo `+541112345678`.
