@@ -1,0 +1,7 @@
+<div id="vista-logistica" class="panel-vista d-none">
+    <div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h4 mb-0">Operación logística</h2><button class="btn btn-outline-primary rounded-pill" data-action="recargar-logistica">Actualizar</button></div>
+    <div class="row g-4">
+        <div class="col-lg-5"><div class="tarjeta p-4"><h3 class="h5">Camiones</h3><form id="form-camion" class="row g-2 mb-3"><input class="form-control" name="patente" placeholder="Patente" required><input class="form-control" type="number" step="0.01" name="volumenM3" placeholder="Volumen m³" required><input class="form-control" type="number" step="0.01" name="alturaM" placeholder="Altura m" required><input class="form-control" type="number" step="0.01" name="capacidadCargaKg" placeholder="Capacidad kg" required><button class="btn btn-primary" type="submit">Agregar camión</button></form><div id="camiones-lista"></div></div></div>
+        <div class="col-lg-7"><div class="tarjeta p-4"><h3 class="h5">Rutas</h3><div id="rutas-lista"><p class="text-body-secondary">Cargando rutas…</p></div></div></div>
+    </div>
+</div>
