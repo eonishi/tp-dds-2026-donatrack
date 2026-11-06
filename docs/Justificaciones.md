@@ -15,6 +15,39 @@ Esta separación maximiza la **cohesión interna** y minimiza el **acoplamiento*
 **Decisión:** Integración sincrónica vía HTTP REST (`DonacionesRemotasImpl`).
 **Justificación:** Cuando el chofer inicia la ruta, se hace un llamado REST a Donaciones para cambiar el estado. Se eligió REST sincrónico para tener una respuesta inmediata de si el lote fue actualizado correctamente o hubo un error de negocio. Si fuera asincrónico (ej. Kafka/RabbitMQ), requeriría manejar complejidad extra de eventual consistency y sagas para un flujo que, por ahora, es secuencial e imperativo.
 
+### 1.3 Protocolo del servicio de logística: GraphQL en lugar de HTTP/REST (entrega 4)
+**Requerimiento:** la entrega 4 pide reemplazar HTTP por gRPC (opción 1) **o** por GraphQL (opción 2) en las comunicaciones con el servicio extraído en la entrega 2, que es logística. Se elige una sola opción.
+
+**Quién consume a logística:**
+1. El panel web de la administración (navegador), para la flota y las rutas.
+2. La aplicación del repartidor, para sus rutas y para reportar la posición del camión.
+3. Donaciones (servicio a servicio), para mostrarle a la donante y a la entidad dónde está el camión.
+
+**Comparación:**
+
+| Criterio | gRPC | GraphQL |
+| --- | --- | --- |
+| Esfuerzo | Contrato `.proto`, generación de código con `protoc` en Maven y un servidor gRPC aparte de Javalin. | Un esquema `.graphqls` y un endpoint en el mismo Javalin con `graphql-java`. |
+| Tooling | Plugin de `protoc` y stubs generados en los dos servicios. | Una dependencia (`graphql-java`); el cliente es un `POST` con JSON. |
+| Cliente liviano (navegador) | No funciona directo: necesita gRPC-Web y un proxy (por ejemplo Envoy) que traduzca a HTTP/2. | `fetch` común, con la misma cookie de sesión y el mismo CORS que ya existían. |
+| Despliegue | Un contenedor más (el proxy) y HTTP/2. La instancia tiene 1 GB de RAM compartido por las dos JVM. | Sin cambios: mismo contenedor, mismo puerto (9001) y HTTP/1.1. |
+| Seguridad | Hay que rehacer la autenticación con interceptores de gRPC. | El filtro existente (`LogisticaSecurity`) sigue validando las credenciales; los permisos por operación pasan a los resolvers. |
+| Rendimiento entre servicios | Mejor (binario y tipado). | JSON, igual que antes. |
+
+**Decisión:** GraphQL. Logística tiene clientes en el navegador y en una aplicación, y con gRPC todos necesitarían un proxy extra, que complica el despliegue en una instancia que ya está justa de memoria. La ventaja de rendimiento de gRPC solo pesa en la llamada entre servicios, que es una consulta puntual (la posición del camión).
+
+**Alcance:**
+* El esquema `logistica/src/main/resources/graphql/logistica.graphqls` es el contrato de logística y la única fuente de verdad: camiones, rutas, repartidores y posiciones.
+* Se retiraron los endpoints REST equivalentes (`/logistica/camiones`, `/logistica/rutas`, `/logistica/repartidores` y `/logistica/camiones/{patente}/posicion`): no quedan dos contratos vivos.
+* Siguen por HTTP, de forma explícita:
+  * `POST /logistica/login` y `/logistica/logout`: la sesión del repartidor no es una operación del dominio y su respuesta (el token) la consume la aplicación antes de poder usar GraphQL.
+  * `POST /logistica/planificacion/callback`: su contrato lo define el planificador externo, no nosotros.
+* Las llamadas de logística **hacia** donaciones (`DonacionesRemotasImpl`) siguen en REST: el requerimiento habla de las comunicaciones con el servicio extraído (logística), y donaciones no lo es.
+
+**Consecuencias:**
+* GraphQL usa un solo endpoint, así que el filtro HTTP ya no puede decidir permisos por URL: solo valida que haya credenciales, y cada resolver decide quién puede usar su operación (ver `logistica.graphql.Acceso`).
+* Los errores de negocio vuelven con código 200 dentro de `errors`, con `extensions.codigo` (`NO_ENCONTRADO`, `DATOS_INVALIDOS`, `PROHIBIDO`). Las credenciales faltantes o inválidas siguen siendo 401 y 403.
+
 ## 2. Consideraciones de Diseño Relacional (ORM y JPA)
 
 ### 2.1 Aislamiento de Bases de Datos (Schemas Independientes)

@@ -1,0 +1,110 @@
+# Contrato del servicio de logística (entrega 4): reemplaza a los endpoints REST de camiones,
+# rutas, repartidores y posiciones. Se expone en POST /logistica/graphql.
+#
+# Fuera de este esquema quedan, por HTTP:
+#   - POST /logistica/login y /logistica/logout (sesión del repartidor).
+#   - POST /logistica/planificacion/callback (contrato que define el planificador externo).
+
+type Query {
+  "Flota completa. ADMIN o REPARTIDOR."
+  camiones: [Camion!]!
+  "Un camión por patente, o null si no existe. ADMIN o REPARTIDOR."
+  camion(patente: String!): Camion
+  "ADMIN ve todas; el repartidor, solo las que tiene asignadas."
+  rutas: [Ruta!]!
+  "Una ruta por id. El repartidor solo puede ver las suyas."
+  ruta(id: ID!): Ruta
+  "Última posición del camión, o null si todavía no reportó. ADMIN, REPARTIDOR o donaciones."
+  posicion(patente: String!): Posicion
+  "Repartidores registrados. Solo ADMIN."
+  repartidores: [Repartidor!]!
+}
+
+type Mutation {
+  "Solo ADMIN."
+  crearCamion(input: CamionInput!): Camion!
+  "Solo ADMIN. La patente identifica al camión que se actualiza."
+  actualizarCamion(input: CamionInput!): Camion!
+  "Solo ADMIN. Devuelve false si el camión no existía."
+  eliminarCamion(patente: String!): Boolean!
+
+  "Solo ADMIN."
+  crearRuta(input: RutaInput!): Ruta!
+  "Solo ADMIN. Devuelve false si la ruta no existía."
+  eliminarRuta(id: ID!): Boolean!
+  "Solo ADMIN. Una ruta puede tener varios repartidores."
+  asignarRepartidor(rutaId: ID!, repartidorId: ID!): Ruta!
+  "ADMIN o un repartidor asignado. Avisa a donaciones que sus donaciones pasan a EN_TRASLADO."
+  iniciarRuta(id: ID!): Ruta!
+  "ADMIN o un repartidor asignado."
+  finalizarRuta(id: ID!): Ruta!
+
+  "Lectura del GPS o de la app del chofer. ADMIN o REPARTIDOR."
+  reportarPosicion(input: PosicionInput!): Boolean!
+}
+
+type Camion {
+  patente: String!
+  volumenM3: Float!
+  alturaM: Float!
+  capacidadCargaKg: Float!
+}
+
+type Ruta {
+  id: ID!
+  camion: Camion!
+  destinos: [Destino!]!
+  enCurso: Boolean!
+  "Ids de los repartidores asignados."
+  repartidores: [ID!]!
+}
+
+type Destino {
+  entidadId: ID!
+  direccion: String!
+  "Ids de las donaciones que se entregan en este destino."
+  donaciones: [ID!]!
+}
+
+type Posicion {
+  patente: String!
+  "Ruta en curso del camión, si tiene."
+  rutaActiva: ID
+  latitud: Float!
+  longitud: Float!
+  "Fecha y hora de la lectura, ISO-8601 sin zona (ej. 2026-09-11T11:59:00)."
+  actualizadaEn: String!
+}
+
+type Repartidor {
+  id: ID!
+  nombre: String!
+  email: String!
+}
+
+input CamionInput {
+  patente: String!
+  volumenM3: Float!
+  alturaM: Float!
+  capacidadCargaKg: Float!
+}
+
+input RutaInput {
+  patenteCamion: String!
+  destinos: [DestinoInput!]!
+}
+
+input DestinoInput {
+  entidadId: ID!
+  direccion: String!
+  donaciones: [ID!]!
+}
+
+input PosicionInput {
+  patente: String!
+  latitud: Float!
+  longitud: Float!
+  velocidad: Float!
+  "ISO-8601 sin zona (ej. 2026-09-11T11:59:00)."
+  timestamp: String!
+}

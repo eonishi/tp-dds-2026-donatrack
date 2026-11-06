@@ -54,15 +54,14 @@ public final class LogisticaSecurity {
   private LogisticaSecurity() {}
 
   /**
-   * Filtro de acceso de todas las rutas {@code /logistica/...}. Si el que llama es un repartidor,
-   * deja su id en {@link #ATRIBUTO_REPARTIDOR} para que los controladores validen que opere solo
-   * sobre sus rutas.
+   * Filtro de acceso de todas las rutas {@code /logistica/...}. Solo verifica que haya credenciales
+   * válidas: los permisos de cada operación GraphQL los decide su resolver. Si el que llama es un
+   * repartidor, deja su id en {@link #ATRIBUTO_REPARTIDOR}.
    */
   public static void autorizar(Context ctx) {
     String path = ctx.path();
-    String method = ctx.method().toString();
     // Las consultas previas de CORS (OPTIONS) las manda el navegador sin credenciales.
-    if ("OPTIONS".equals(method)) {
+    if ("OPTIONS".equals(ctx.method().toString())) {
       return;
     }
     if (!path.startsWith("/logistica/")
@@ -73,12 +72,12 @@ public final class LogisticaSecurity {
     if ("/logistica/planificacion/callback".equals(path) && isServiceRequest(ctx)) {
       return;
     }
-    // Donaciones consulta la posición para mostrarle el camión a la donante y a la entidad,
-    // después de verificar que la donación sea de ellas.
-    if (path.endsWith("/posicion") && "GET".equals(method) && isServiceRequest(ctx)) {
+    // Donaciones entra con la clave interna; en GraphQL solo puede consultar posiciones (ver
+    // Acceso).
+    if ("/logistica/graphql".equals(path) && isServiceRequest(ctx)) {
       return;
     }
-    if (soloAdministradores(path, method)) {
+    if (path.startsWith("/logistica/planificacion")) {
       enforce(ctx);
     } else {
       enforce(ctx, Role.REPARTIDOR);
@@ -86,22 +85,9 @@ public final class LogisticaSecurity {
     repartidorActual(ctx).ifPresent(id -> ctx.attribute(ATRIBUTO_REPARTIDOR, id));
   }
 
-  /**
-   * Operaciones de gestión: administrar la flota, crear o borrar rutas, asignarles repartidores y
-   * planificar. Al repartidor le quedan consultar camiones y rutas, iniciar o finalizar las suyas y
-   * reportar posiciones.
-   */
-  static boolean soloAdministradores(String path, String method) {
-    if (path.startsWith("/logistica/repartidores") || path.startsWith("/logistica/planificacion")) {
-      return true;
-    }
-    if (path.startsWith("/logistica/camiones")) {
-      return !path.endsWith("/posicion") && !"GET".equals(method);
-    }
-    if (path.startsWith("/logistica/rutas")) {
-      return !"GET".equals(method) && !"PATCH".equals(method);
-    }
-    return true;
+  /** Si quien llama es una persona administradora (token emitido por donaciones). */
+  public static boolean esAdministrador(Context ctx) {
+    return hasRole(ctx, Role.ADMIN);
   }
 
   /** Exige un usuario ADMIN o con alguno de los roles indicados. Sin roles, solo ADMIN. */

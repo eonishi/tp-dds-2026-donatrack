@@ -19,6 +19,12 @@
     -->
 
     <dependencies>
+        <!-- GraphQL: reemplaza a HTTP/REST como contrato del servicio de logística (entrega 4). -->
+        <dependency>
+            <groupId>com.graphql-java</groupId>
+            <artifactId>graphql-java</artifactId>
+            <version>21.5</version>
+        </dependency>
         <!-- Hash de contraseñas con BCrypt: cada hash lleva su propia sal aleatoria. -->
         <dependency>
             <groupId>org.mindrot</groupId>

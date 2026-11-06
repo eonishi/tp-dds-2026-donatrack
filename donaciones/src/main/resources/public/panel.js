@@ -59,12 +59,19 @@
     } catch (e) { showAlert(e.message); }
   }
 
+  // Logística expone sus operaciones por GraphQL: un solo endpoint, y los errores llegan en `errors`.
+  async function logistica(query, variables = {}) {
+    const respuesta = await request(`${logisticsBase}/graphql`, { method: 'POST', body: JSON.stringify({ query, variables }) });
+    if (respuesta.errors?.length) throw new Error(respuesta.errors.map(e => e.message).join(' · '));
+    return respuesta.data;
+  }
+
   async function loadLogistica() {
     try {
-      const [camiones, rutas] = await Promise.all([request(`${logisticsBase}/camiones`), request(`${logisticsBase}/rutas`)]);
+      const { camiones, rutas } = await logistica('{ camiones { patente volumenM3 capacidadCargaKg } rutas { id enCurso camion { patente } } }');
       document.querySelector('#camiones-lista').innerHTML = camiones.length ? camiones.map(c => `<p class="mb-2"><strong>${c.patente}</strong><br><span class="small text-body-secondary">${c.capacidadCargaKg} kg · ${c.volumenM3} m³</span></p>`).join('') : '<p class="text-body-secondary">No hay camiones.</p>';
-      document.querySelector('#rutas-lista').innerHTML = rutas.length ? rutas.map(r => card(r.id, `Camión: ${r.camion?.patente || 'sin patente'}<br>Estado: ${r.estado || 'pendiente'}`, `<button class="btn btn-sm btn-primary" data-route-start="${r.id}">Iniciar</button><button class="btn btn-sm btn-outline-secondary" data-route-finish="${r.id}">Finalizar</button>`)).join('') : '<p class="text-body-secondary">No hay rutas.</p>';
-      document.querySelectorAll('[data-route-start], [data-route-finish]').forEach(b => b.onclick = async () => { const estado = b.dataset.routeStart ? 'EN_CURSO' : 'FINALIZADA'; try { await request(`${logisticsBase}/rutas/${b.dataset.routeStart || b.dataset.routeFinish}`, { method: 'PATCH', body: JSON.stringify({ estado }) }); await loadLogistica(); } catch (e) { showAlert(e.message); } });
+      document.querySelector('#rutas-lista').innerHTML = rutas.length ? rutas.map(r => card(r.id, `Camión: ${r.camion?.patente || 'sin patente'}<br>Estado: ${r.enCurso ? 'en curso' : 'pendiente'}`, `<button class="btn btn-sm btn-primary" data-route-start="${r.id}">Iniciar</button><button class="btn btn-sm btn-outline-secondary" data-route-finish="${r.id}">Finalizar</button>`)).join('') : '<p class="text-body-secondary">No hay rutas.</p>';
+      document.querySelectorAll('[data-route-start], [data-route-finish]').forEach(b => b.onclick = async () => { const mutacion = b.dataset.routeStart ? 'iniciarRuta' : 'finalizarRuta'; try { await logistica(`mutation($id: ID!) { ${mutacion}(id: $id) { id } }`, { id: b.dataset.routeStart || b.dataset.routeFinish }); await loadLogistica(); } catch (e) { showAlert(e.message); } });
     } catch (e) { showAlert(`No se pudo consultar logística: ${e.message}`); }
   }
 
@@ -91,7 +98,7 @@
   document.querySelector('[data-action="recargar-matchmaking"]')?.addEventListener('click', loadMatchmaking);
   document.querySelector('#form-donacion')?.addEventListener('submit', async e => { e.preventDefault(); const f = new FormData(e.target); try { await request(`${base}/donaciones`, { method: 'POST', body: JSON.stringify({ donanteId: f.get('donanteId'), bienes: [{ descripcion: f.get('descripcion'), cantidad: Number(f.get('cantidad')), unidad: f.get('unidad'), estadoDeUso: 'NO_APLICA', categoria: f.get('categoria'), subcategoria: f.get('subcategoria') }] }) }); e.target.reset(); e.target.classList.add('d-none'); await loadDonaciones(); } catch (err) { showAlert(err.message); } });
   document.querySelector('#form-necesidad')?.addEventListener('submit', async e => { e.preventDefault(); const f = new FormData(e.target); try { await request(`${base}/beneficiarias/${encodeURIComponent(f.get('entidadId'))}/necesidades`, { method: 'POST', body: JSON.stringify({ tipo: f.get('tipo'), subcategoria: f.get('subcategoria'), categoria: f.get('categoria'), cantidadObjetivo: Number(f.get('cantidadObjetivo')), unidad: f.get('unidad'), descripcion: f.get('descripcion') }) }); await loadNecesidades(f.get('entidadId')); } catch (err) { showAlert(err.message); } });
-  document.querySelector('#form-camion')?.addEventListener('submit', async e => { e.preventDefault(); const f = new FormData(e.target); try { await request(`${logisticsBase}/camiones`, { method: 'POST', body: JSON.stringify({ patente: f.get('patente'), volumenM3: Number(f.get('volumenM3')), alturaM: Number(f.get('alturaM')), capacidadCargaKg: Number(f.get('capacidadCargaKg')) }) }); e.target.reset(); await loadLogistica(); } catch (err) { showAlert(err.message); } });
+  document.querySelector('#form-camion')?.addEventListener('submit', async e => { e.preventDefault(); const f = new FormData(e.target); try { await logistica('mutation($input: CamionInput!) { crearCamion(input: $input) { patente } }', { input: { patente: f.get('patente'), volumenM3: Number(f.get('volumenM3')), alturaM: Number(f.get('alturaM')), capacidadCargaKg: Number(f.get('capacidadCargaKg')) } }); e.target.reset(); await loadLogistica(); } catch (err) { showAlert(err.message); } });
   document.querySelector('#form-subcategoria')?.addEventListener('submit', async e => { e.preventDefault(); const f = new FormData(e.target); try { await request(`${base}/subcategorias`, { method: 'POST', body: JSON.stringify({ nombre: f.get('nombre'), categoria: f.get('categoria') }) }); e.target.reset(); await loadCatalogo(); } catch (err) { showAlert(err.message); } });
   document.querySelector('#form-matchmaking')?.addEventListener('submit', async e => { e.preventDefault(); const id = new FormData(e.target).get('donacionId'); try { await request(`${base}/donaciones/${encodeURIComponent(id)}/propuesta-asignacion`, { method: 'POST' }); await loadMatchmaking(); } catch (err) { showAlert(err.message); } });
 

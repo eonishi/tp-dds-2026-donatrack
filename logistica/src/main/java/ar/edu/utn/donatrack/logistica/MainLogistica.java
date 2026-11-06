@@ -1,10 +1,10 @@
 package ar.edu.utn.donatrack.logistica;
 
-import ar.edu.utn.donatrack.logistica.controllers.CamionController;
 import ar.edu.utn.donatrack.logistica.controllers.PlanificacionController;
-import ar.edu.utn.donatrack.logistica.controllers.PosicionController;
 import ar.edu.utn.donatrack.logistica.controllers.RepartidorController;
-import ar.edu.utn.donatrack.logistica.controllers.RutaController;
+import ar.edu.utn.donatrack.logistica.graphql.GraphqlController;
+import ar.edu.utn.donatrack.logistica.graphql.GraphqlLogistica;
+import ar.edu.utn.donatrack.logistica.graphql.ResolversLogistica;
 import ar.edu.utn.donatrack.logistica.monitoreo.MonitorRutas;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotasImpl;
@@ -61,8 +61,6 @@ public class MainLogistica implements WithSimplePersistenceUnit {
     MonitorRutas monitorRutas = new MonitorRutas(Clock.systemUTC(), rutaRepo);
 
     // 2. Instanciamos Controladores
-    CamionController camionController = new CamionController(camionRepo);
-
     ObjectMapper objectMapper = new ObjectMapper();
     HttpClient httpClient = HttpClient.newHttpClient();
     String apiUrl = System.getenv().getOrDefault("DONACIONES_API_URL", "http://localhost:7070");
@@ -71,11 +69,14 @@ public class MainLogistica implements WithSimplePersistenceUnit {
     DonacionesRemotas donacionesRemotas =
         new DonacionesRemotasImpl(apiUrl, apiKey, httpClient, objectMapper);
 
-    RutaController rutaController = new RutaController(rutaRepo, camionRepo, donacionesRemotas);
     RepartidorController repartidorController =
-        new RepartidorController(repartidorRepo, rutaRepo, Clock.systemUTC());
-    PosicionController posicionController =
-        new PosicionController(monitorRutas, camionRepo, rutaRepo);
+        new RepartidorController(repartidorRepo, Clock.systemUTC());
+    // Camiones, rutas, repartidores y posiciones se exponen por GraphQL (entrega 4).
+    GraphqlController graphqlController =
+        new GraphqlController(
+            GraphqlLogistica.crear(
+                new ResolversLogistica(
+                    camionRepo, rutaRepo, repartidorRepo, monitorRutas, donacionesRemotas)));
 
     // Este UUID es el id del lote que devuelve el planificador externo (stub), no la clave de una
     // entidad: el @GeneratedValue de las entidades no aplica acá.
@@ -87,35 +88,18 @@ public class MainLogistica implements WithSimplePersistenceUnit {
 
     // 3. Registramos los Endpoints
 
-    // Las reglas de acceso por rol están en LogisticaSecurity: la gestión es solo de ADMIN, y el
-    // repartidor opera únicamente sus rutas. El login y el callback del planificador quedan afuera.
+    // El filtro valida las credenciales; los permisos de cada operación GraphQL los decide su
+    // resolver. El login y el callback del planificador quedan afuera.
     app.before(LogisticaSecurity::autorizar);
 
-    // --- Endpoints de Repartidores ---
+    // --- Contrato GraphQL (camiones, rutas, repartidores y posiciones) ---
+    app.post("/logistica/graphql", graphqlController::ejecutar);
+
+    // --- Sesión del repartidor (HTTP) ---
     app.post("/logistica/login", repartidorController::login);
     app.post("/logistica/logout", repartidorController::logout);
-    app.get("/logistica/repartidores", repartidorController::listar);
-    app.post("/logistica/rutas/{id}/repartidores", repartidorController::asignarRuta);
 
-    // --- Endpoints de Camiones ---
-    app.get("/logistica/camiones", camionController::listar);
-    app.get("/logistica/camiones/{patente}", camionController::buscar);
-    app.post("/logistica/camiones", camionController::crear);
-    app.put("/logistica/camiones/{patente}", camionController::actualizar);
-    app.delete("/logistica/camiones/{patente}", camionController::eliminar);
-
-    // --- Endpoints de Rutas ---
-    app.get("/logistica/rutas", rutaController::listar);
-    app.get("/logistica/rutas/{id}", rutaController::buscar);
-    app.post("/logistica/rutas", rutaController::crear);
-    app.patch("/logistica/rutas/{id}", rutaController::actualizar);
-    app.delete("/logistica/rutas/{id}", rutaController::eliminar);
-
-    // --- Endpoints de Posición (GPS) ---
-    app.post("/logistica/camiones/{patente}/posicion", posicionController::ingestar);
-    app.get("/logistica/camiones/{patente}/posicion", posicionController::leerPosicion);
-
-    // --- Endpoints de Planificación ---
+    // --- Callback del planificador externo (HTTP: el contrato lo define el proveedor) ---
     app.post("/logistica/planificacion/callback", planificacionController::procesarResultado);
 
     return app;

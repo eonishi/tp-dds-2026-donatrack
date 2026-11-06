@@ -1,7 +1,11 @@
 package ar.edu.utn.donatrack.logistica.controllers;
 
+import static ar.edu.utn.donatrack.logistica.graphql.GraphqlDePrueba.admin;
+import static ar.edu.utn.donatrack.logistica.graphql.GraphqlDePrueba.pedir;
+import static ar.edu.utn.donatrack.logistica.graphql.GraphqlDePrueba.repartidor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ar.edu.utn.donatrack.logistica.Camion;
@@ -9,87 +13,64 @@ import ar.edu.utn.donatrack.logistica.Repartidor;
 import ar.edu.utn.donatrack.logistica.RepartidorRepository;
 import ar.edu.utn.donatrack.logistica.Ruta;
 import ar.edu.utn.donatrack.logistica.RutaRepository;
+import ar.edu.utn.donatrack.logistica.graphql.GraphqlDePrueba;
+import ar.edu.utn.donatrack.logistica.monitoreo.MonitorRutas;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
-import ar.edu.utn.donatrack.logistica.security.LogisticaSecurity;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.Javalin;
 import io.javalin.testtools.JavalinTest;
-import java.nio.charset.StandardCharsets;
 import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.util.Base64;
 import java.util.List;
-import java.util.UUID;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
+import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+/** Sesión del repartidor y permisos sobre las rutas, con las operaciones por GraphQL. */
 class RepartidorAccesoTest implements WithSimplePersistenceUnit {
-
-  // Los ids los asigna la base al persistir.
-  private UUID idChofer;
-  private UUID idAcompaniante;
-  private UUID idOtro;
 
   private final ObjectMapper mapper = new ObjectMapper();
   private RepartidorRepository repartidorRepo;
   private RutaRepository rutaRepo;
+  private Repartidor chofer;
+  private Repartidor acompaniante;
+  private Repartidor otro;
   private Ruta ruta;
   private Javalin app;
 
   @BeforeEach
   void setUp() {
     repartidorRepo = new RepartidorRepository();
-    Repartidor chofer = new Repartidor("Chofer", "chofer@donatrack.local", "clave1");
-    Repartidor acompaniante = new Repartidor("Acompañante", "acomp@donatrack.local", "clave2");
-    Repartidor otro = new Repartidor("Otro", "otro@donatrack.local", "clave3");
+    chofer = new Repartidor("Chofer", "chofer@donatrack.local", "clave1");
+    acompaniante = new Repartidor("Acompañante", "acomp@donatrack.local", "clave2");
+    otro = new Repartidor("Otro", "otro@donatrack.local", "clave3");
+
+    // La ruta y su camión se guardan en la base, igual que en producción.
+    rutaRepo = new RutaRepository();
+    Camion camion = new Camion("AB123CD", 20.0, 2.5, 10000.0);
     withTransaction(
         () -> {
           repartidorRepo.agregar(chofer);
           repartidorRepo.agregar(acompaniante);
           repartidorRepo.agregar(otro);
+          persist(camion);
         });
-    idChofer = chofer.getId();
-    idAcompaniante = acompaniante.getId();
-    idOtro = otro.getId();
-
-    // La ruta y su camión se guardan en la base, igual que en producción.
-    rutaRepo = new RutaRepository();
-    Camion camion = new Camion("AB123CD", 20.0, 2.5, 10000.0);
     ruta = new Ruta(camion, List.of());
     ruta.asignarRepartidor(chofer);
     ruta.asignarRepartidor(acompaniante);
-    withTransaction(
-        () -> {
-          persist(camion);
-          rutaRepo.agregar(ruta);
-        });
-
-    Clock clock = Clock.fixed(Instant.now(), ZoneOffset.UTC);
-    RepartidorController repartidores = new RepartidorController(repartidorRepo, rutaRepo, clock);
-    RutaController rutas =
-        new RutaController(rutaRepo, null, Mockito.mock(DonacionesRemotas.class));
+    withTransaction(() -> rutaRepo.agregar(ruta));
 
     app =
-        Javalin.create()
-            .before(LogisticaSecurity::autorizar)
-            .post("/logistica/login", repartidores::login)
-            .post("/logistica/logout", repartidores::logout)
-            .post("/logistica/rutas/{id}/repartidores", repartidores::asignarRuta)
-            .get("/logistica/rutas", rutas::listar)
-            .patch("/logistica/rutas/{id}", rutas::actualizar)
-            // La gestión de la flota no se prueba acá: alcanza con ver que el filtro la ataje.
-            .post("/logistica/camiones", ctx -> ctx.status(201))
-            .get("/logistica/camiones/{patente}/posicion", ctx -> ctx.status(200));
+        GraphqlDePrueba.app(
+            new ar.edu.utn.donatrack.logistica.CamionRepository(),
+            rutaRepo,
+            repartidorRepo,
+            new MonitorRutas(Clock.systemUTC(), rutaRepo),
+            Mockito.mock(DonacionesRemotas.class));
   }
 
-  // El login confirma sus lecturas fuera de toda transacción del test: se borran los repartidores
-  // persistidos para que no choquen con el email único en la próxima prueba.
   @AfterEach
   void limpiarPersistencia() {
     entityManager().clear();
@@ -104,10 +85,14 @@ class RepartidorAccesoTest implements WithSimplePersistenceUnit {
     entityManager().clear();
   }
 
-  // Los controladores leen y guardan la ruta en la base desde otro hilo: hay que volver a leerla.
+  // Los resolvers leen y guardan la ruta en la base desde otro hilo: hay que volver a leerla.
   private Ruta rutaGuardada() {
     entityManager().clear();
     return rutaRepo.buscarPorId(ruta.getId()).orElseThrow();
+  }
+
+  private Map<String, Object> idRuta() {
+    return Map.of("id", ruta.getId().toString());
   }
 
   @Test
@@ -122,7 +107,7 @@ class RepartidorAccesoTest implements WithSimplePersistenceUnit {
 
           assertEquals(200, response.code());
           var body = mapper.readTree(response.body().string());
-          assertEquals(idChofer.toString(), body.get("repartidorId").asText());
+          assertEquals(chofer.getId().toString(), body.get("repartidorId").asText());
           assertFalse(body.get("token").asText().isBlank());
         });
   }
@@ -131,14 +116,14 @@ class RepartidorAccesoTest implements WithSimplePersistenceUnit {
   void elLoginConContraseniaIncorrectaDevuelve401() {
     JavalinTest.test(
         app,
-        (server, client) -> {
-          var response =
-              client.post(
-                  "/logistica/login",
-                  "{\"email\":\"chofer@donatrack.local\",\"password\":\"mal\"}");
-
-          assertEquals(401, response.code());
-        });
+        (server, client) ->
+            assertEquals(
+                401,
+                client
+                    .post(
+                        "/logistica/login",
+                        "{\"email\":\"chofer@donatrack.local\",\"password\":\"mal\"}")
+                    .code()));
   }
 
   @Test
@@ -146,25 +131,22 @@ class RepartidorAccesoTest implements WithSimplePersistenceUnit {
     JavalinTest.test(
         app,
         (server, client) -> {
-          String token = bearer(idChofer);
-          assertEquals(
-              200,
-              client.get("/logistica/rutas", req -> req.header("Authorization", token)).code());
+          String token = repartidor(chofer);
+          assertEquals(200, pedir(client, token, "{ rutas { id } }").status());
 
           var logout =
               client.post("/logistica/logout", "", req -> req.header("Authorization", token));
 
           assertEquals(204, logout.code());
-          assertEquals(
-              401,
-              client.get("/logistica/rutas", req -> req.header("Authorization", token)).code());
+          assertEquals(401, pedir(client, token, "{ rutas { id } }").status());
         });
   }
 
   @Test
   void sinTokenNoSePuedeOperar() {
     JavalinTest.test(
-        app, (server, client) -> assertEquals(401, client.get("/logistica/rutas").code()));
+        app,
+        (server, client) -> assertEquals(401, pedir(client, null, "{ rutas { id } }").status()));
   }
 
   @Test
@@ -172,13 +154,14 @@ class RepartidorAccesoTest implements WithSimplePersistenceUnit {
     JavalinTest.test(
         app,
         (server, client) -> {
-          var response =
-              client.patch(
-                  "/logistica/rutas/" + ruta.getId(),
-                  "{\"estado\":\"EN_CURSO\"}",
-                  req -> req.header("Authorization", bearer(idAcompaniante)));
+          var respuesta =
+              pedir(
+                  client,
+                  repartidor(acompaniante),
+                  "mutation($id: ID!) { iniciarRuta(id: $id) { enCurso } }",
+                  idRuta());
 
-          assertEquals(200, response.code());
+          assertNull(respuesta.codigoDeError());
           assertTrue(rutaGuardada().isEnCurso());
         });
   }
@@ -188,13 +171,14 @@ class RepartidorAccesoTest implements WithSimplePersistenceUnit {
     JavalinTest.test(
         app,
         (server, client) -> {
-          var response =
-              client.patch(
-                  "/logistica/rutas/" + ruta.getId(),
-                  "{\"estado\":\"EN_CURSO\"}",
-                  req -> req.header("Authorization", bearer(idOtro)));
+          var respuesta =
+              pedir(
+                  client,
+                  repartidor(otro),
+                  "mutation($id: ID!) { iniciarRuta(id: $id) { enCurso } }",
+                  idRuta());
 
-          assertEquals(403, response.code());
+          assertEquals("PROHIBIDO", respuesta.codigoDeError());
           assertFalse(rutaGuardada().isEnCurso());
         });
   }
@@ -204,13 +188,11 @@ class RepartidorAccesoTest implements WithSimplePersistenceUnit {
     JavalinTest.test(
         app,
         (server, client) -> {
-          var delChofer =
-              client.get("/logistica/rutas", req -> req.header("Authorization", bearer(idChofer)));
-          var delOtro =
-              client.get("/logistica/rutas", req -> req.header("Authorization", bearer(idOtro)));
+          var delChofer = pedir(client, repartidor(chofer), "{ rutas { id } }");
+          var delOtro = pedir(client, repartidor(otro), "{ rutas { id } }");
 
-          assertEquals(1, mapper.readTree(delChofer.body().string()).size());
-          assertEquals(0, mapper.readTree(delOtro.body().string()).size());
+          assertEquals(1, delChofer.data().path("rutas").size());
+          assertEquals(0, delOtro.data().path("rutas").size());
         });
   }
 
@@ -220,19 +202,22 @@ class RepartidorAccesoTest implements WithSimplePersistenceUnit {
         app,
         (server, client) -> {
           var camion =
-              client.post(
-                  "/logistica/camiones",
-                  "{}",
-                  req -> req.header("Authorization", bearer(idChofer)));
+              pedir(
+                  client,
+                  repartidor(chofer),
+                  "mutation { crearCamion(input: {patente: \"ZZ999ZZ\", volumenM3: 1, alturaM: 1,"
+                      + " capacidadCargaKg: 1}) { patente } }");
           var asignacion =
-              client.post(
-                  "/logistica/rutas/" + ruta.getId() + "/repartidores",
-                  "{\"repartidorId\":\"" + idOtro + "\"}",
-                  req -> req.header("Authorization", bearer(idChofer)));
+              pedir(
+                  client,
+                  repartidor(chofer),
+                  "mutation($ruta: ID!, $rep: ID!) { asignarRepartidor(rutaId: $ruta, repartidorId:"
+                      + " $rep) { id } }",
+                  Map.of("ruta", ruta.getId().toString(), "rep", otro.getId().toString()));
 
-          assertEquals(403, camion.code());
-          assertEquals(403, asignacion.code());
-          assertFalse(rutaGuardada().tieneAsignado(idOtro));
+          assertEquals("PROHIBIDO", camion.codigoDeError());
+          assertEquals("PROHIBIDO", asignacion.codigoDeError());
+          assertFalse(rutaGuardada().tieneAsignado(otro.getId()));
         });
   }
 
@@ -241,59 +226,16 @@ class RepartidorAccesoTest implements WithSimplePersistenceUnit {
     JavalinTest.test(
         app,
         (server, client) -> {
-          String admin = "Bearer " + tokenDeAdministrador();
-          var response =
-              client.post(
-                  "/logistica/rutas/" + ruta.getId() + "/repartidores",
-                  "{\"repartidorId\":\"" + idOtro + "\"}",
-                  req -> req.header("Authorization", admin));
+          var respuesta =
+              pedir(
+                  client,
+                  admin(),
+                  "mutation($ruta: ID!, $rep: ID!) { asignarRepartidor(rutaId: $ruta, repartidorId:"
+                      + " $rep) { repartidores } }",
+                  Map.of("ruta", ruta.getId().toString(), "rep", otro.getId().toString()));
 
-          assertEquals(200, response.code());
+          assertEquals(3, respuesta.data().path("asignarRepartidor").path("repartidores").size());
           assertEquals(3, rutaGuardada().getRepartidores().size());
         });
-  }
-
-  @Test
-  void donacionesConsultaLaPosicionConLaClaveInternaYNadaMas() {
-    JavalinTest.test(
-        app,
-        (server, client) -> {
-          var consulta =
-              client.get(
-                  "/logistica/camiones/AB123CD/posicion",
-                  req -> req.header("Authorization", "clave-interna-de-prueba"));
-          var otraOperacion =
-              client.get(
-                  "/logistica/rutas",
-                  req -> req.header("Authorization", "clave-interna-de-prueba"));
-
-          assertEquals(200, consulta.code());
-          assertEquals(401, otraOperacion.code());
-        });
-  }
-
-  private String bearer(UUID idRepartidor) {
-    Repartidor repartidor = repartidorRepo.buscarPorId(idRepartidor).orElseThrow();
-    return "Bearer " + LogisticaSecurity.emitirToken(repartidor, Instant.now());
-  }
-
-  // Simula el token que emite donaciones para una persona administradora, firmado con el secreto
-  // compartido por defecto.
-  private static String tokenDeAdministrador() throws Exception {
-    Base64.Encoder b64 = Base64.getUrlEncoder().withoutPadding();
-    String header = b64.encodeToString("{\"alg\":\"HS256\",\"typ\":\"JWT\"}".getBytes());
-    String payload =
-        b64.encodeToString(
-            ("{\"sub\":\"u-admin\",\"roles\":[\"ADMIN\"],\"exp\":"
-                    + Instant.now().plusSeconds(600).getEpochSecond()
-                    + "}")
-                .getBytes(StandardCharsets.UTF_8));
-    Mac mac = Mac.getInstance("HmacSHA256");
-    mac.init(
-        new SecretKeySpec(
-            "donatrack-dev-secret-change-me".getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-    String firma =
-        b64.encodeToString(mac.doFinal((header + "." + payload).getBytes(StandardCharsets.UTF_8)));
-    return header + "." + payload + "." + firma;
   }
 }
