@@ -19,35 +19,21 @@ public class ServicioNotificaciones {
   }
 
   public Notificacion enviar(Notificacion notificacion) {
-    ResultadoEnvio resultado = intentarEnvio(notificacion);
-    if (!resultado.exitoso()) {
+    String destinatario = notificacion.getDestinatario().getClass().getSimpleName();
+    try {
+      for (Envio envio : notificacion.enviarCon(notificador)) {
+        if (!envio.resultado().exitoso()) {
+          LOGGER.warn(
+              "Fallo de notificación destinatario={} canal={} detalle={}",
+              destinatario,
+              envio.canal(),
+              envio.resultado().detalle());
+        }
+      }
+    } catch (RuntimeException error) {
       LOGGER.warn(
-          "Fallo de notificación canal={} destinatario={} detalle={}",
-          notificacion.getDestinatario().getClass().getSimpleName(),
-          enmascarar(notificacion.getDestinatario().getContacto()),
-          resultado.detalle());
+          "Fallo de notificación destinatario={} detalle={}", destinatario, error.getMessage());
     }
     return notificacion;
-  }
-
-  private ResultadoEnvio intentarEnvio(Notificacion notificacion) {
-    try {
-      return notificador.enviarNotificacion(
-          notificacion.getDestinatario(), notificacion.getMensaje());
-    } catch (RuntimeException error) {
-      return ResultadoEnvio.fallido(
-          error.getMessage() == null ? "Error inesperado." : error.getMessage());
-    }
-  }
-
-  private String enmascarar(String destinatario) {
-    if (destinatario == null || destinatario.length() < 3) {
-      return "***";
-    }
-    int arroba = destinatario.indexOf('@');
-    if (arroba > 0) {
-      return destinatario.substring(0, 1) + "***" + destinatario.substring(arroba);
-    }
-    return "***" + destinatario.substring(destinatario.length() - 2);
   }
 }

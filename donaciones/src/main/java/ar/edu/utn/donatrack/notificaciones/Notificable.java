@@ -1,8 +1,15 @@
 package ar.edu.utn.donatrack.notificaciones;
 
-import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import java.util.List;
 
+/** Destinatario de notificaciones: sabe por qué medios de contacto notificarse. */
 public interface Notificable {
-  List<MedioDeContacto> getMediosDeContacto();
+  /**
+   * Envía el mensaje por los medios de contacto que este destinatario elige.
+   *
+   * @param mensaje texto a enviar
+   * @param canales gateways disponibles para enviar
+   * @return un envío por cada medio usado
+   */
+  List<Envio> notificar(String mensaje, NotificadorPorCanal canales);
 }

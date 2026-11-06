@@ -2,7 +2,6 @@ package ar.edu.utn.donatrack.notificaciones.eventos;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donantes.Donante;
-import ar.edu.utn.donatrack.notificaciones.DestinatariosNotificacion;
 import ar.edu.utn.donatrack.notificaciones.Notificacion;
 import ar.edu.utn.donatrack.notificaciones.payloads.ComprobanteEntrega;
 import java.time.LocalDateTime;
@@ -60,13 +59,9 @@ public class EventoEntregaExitosa extends EventoNotificable {
             + entidad.getRazonSocial()
             + "."
             + detalleEntrega;
-    for (var medio : DestinatariosNotificacion.predeterminado(donante)) {
-      notificaciones.add(new Notificacion(medio, mensajeDonante, comprobante));
-    }
+    notificaciones.add(new Notificacion(donante, mensajeDonante, comprobante));
     String mensajeEntidad = "Has recibido una donación exitosamente." + detalleEntrega;
-    for (var medio : DestinatariosNotificacion.predeterminado(entidad)) {
-      notificaciones.add(new Notificacion(medio, mensajeEntidad, comprobante));
-    }
+    notificaciones.add(new Notificacion(entidad, mensajeEntidad, comprobante));
     return notificaciones;
   }
 }

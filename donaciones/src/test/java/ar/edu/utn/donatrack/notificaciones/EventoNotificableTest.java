@@ -7,7 +7,6 @@ import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
-import ar.edu.utn.donatrack.donantes.Sms;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoAsignacion;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoAusenciaDonante;
@@ -120,16 +119,28 @@ class EventoNotificableTest {
   }
 
   @Test
-  void eventoAsignacion_usaSoloElContactoPredeterminadoDelDonante() {
-    donante.addMedioDeContacto(new Sms("+541112345678"));
-    donante.setContactoPredeterminado(new Sms("+541112345678"));
+  void eventoAsignacion_tieneComoDestinatariosAlDonanteYALaEntidad() {
     entidad.agregarCorreo(new CorreoElectronico("entidad@test.com"));
 
     List<Notificacion> notificaciones =
         new EventoAsignacion(donante, entidad).generarNotificaciones();
 
     assertEquals(2, notificaciones.size());
-    assertInstanceOf(Sms.class, notificaciones.get(0).getDestinatario());
+    assertSame(donante, notificaciones.get(0).getDestinatario());
+    assertSame(entidad, notificaciones.get(1).getDestinatario());
+  }
+
+  @Test
+  void eventoEntregaExitosa_entidadConVariosCorreos_generaUnaNotificacionPorDestinatario() {
+    entidad.agregarCorreo(new CorreoElectronico("entidad@test.com"));
+    entidad.agregarCorreo(new CorreoElectronico("otro@test.com"));
+    LocalDateTime fecha = LocalDateTime.of(2026, 7, 10, 15, 0);
+
+    List<Notificacion> notificaciones =
+        new EventoEntregaExitosa(donante, entidad, fecha, "ABC123").generarNotificaciones();
+
+    assertEquals(2, notificaciones.size());
+    assertSame(entidad, notificaciones.get(1).getDestinatario());
   }
 
   @Test
