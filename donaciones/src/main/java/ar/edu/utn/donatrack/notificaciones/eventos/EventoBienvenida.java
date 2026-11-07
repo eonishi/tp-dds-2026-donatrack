@@ -29,7 +29,7 @@ public class EventoBienvenida extends EventoNotificable {
                 new Notificacion(
                     titular,
                     medio,
-                    "¡Bienvenido a DonaTrack! Gracias por formar parte del proyecto. Ingresá a la página: "
+                    "¡Bienvenido a DonaTrack! Gracias por formar parte del proyecto. "
                         + enlaceIngreso,
                     SinPayload.INSTANCE,
                     EstadoNotificacion.PENDIENTE))

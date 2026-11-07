@@ -44,6 +44,7 @@ public final class DemoDataset implements WithSimplePersistenceUnit {
           "demo.admin@example.test", "demo.humana@example.test",
           "demo.juridica@example.test", "demo.entidad@example.test");
 
+  /** Initializes versioned demo records only when explicitly enabled in the environment. */
   public void initialize(Map<String, String> environment, AuthService auth, Clock clock) {
     if (!"true".equalsIgnoreCase(environment.get("DONATRACK_DEMO_DATA"))) {
       return;
@@ -56,7 +57,8 @@ public final class DemoDataset implements WithSimplePersistenceUnit {
                   "Demo account collision: existing accounts were not modified.");
             }
             if (createQuery(
-                        "select count(d) from Donante d where d.numDocumento in ('99000001', '30999999991')",
+                        "select count(d) from Donante d "
+                            + "where d.numDocumento in ('99000001', '30999999991')",
                         Long.class)
                     .getSingleResult()
                 > 0) {
@@ -75,10 +77,10 @@ public final class DemoDataset implements WithSimplePersistenceUnit {
 
   private void seed(AuthService auth, Clock clock) {
     LocalDate today = LocalDate.now(clock);
-    LocalDateTime now = LocalDateTime.now(clock);
-    SubCategoria food = category("[DEMO] Arroz", Categoria.ALIMENTO);
-    SubCategoria chairs = category("[DEMO] Sillas", Categoria.MOBILIARIO);
-    SubCategoria clothing = category("[DEMO] Abrigos", Categoria.VESTIMENTA);
+    final LocalDateTime now = LocalDateTime.now(clock);
+    final SubCategoria food = category("[DEMO] Arroz", Categoria.ALIMENTO);
+    final SubCategoria chairs = category("[DEMO] Sillas", Categoria.MOBILIARIO);
+    final SubCategoria clothing = category("[DEMO] Abrigos", Categoria.VESTIMENTA);
     PersonaHumana human =
         new PersonaHumana(
             new CorreoElectronico(EMAILS.get(1)),
@@ -238,7 +240,9 @@ public final class DemoDataset implements WithSimplePersistenceUnit {
                         "[DEMO] Gracias: una de tus donaciones ya fue entregada.")
                     .get(notice),
                 LocalDateTime.now(clock).minusHours(notice));
-        if (notice >= 2) message.marcarLeido();
+        if (notice >= 2) {
+          message.marcarLeido();
+        }
         persist(message);
       }
     }
@@ -259,7 +263,9 @@ public final class DemoDataset implements WithSimplePersistenceUnit {
                       "[DEMO] Una entrega falló: el establecimiento estaba cerrado.")
                   .get(notice),
               LocalDateTime.now(clock).minusHours(notice));
-      if (notice >= 2) message.marcarLeido();
+      if (notice >= 2) {
+        message.marcarLeido();
+      }
       persist(message);
     }
   }
