@@ -23,6 +23,7 @@
         <class>ar.edu.utn.donatrack.donantes.Sms</class>
         <class>ar.edu.utn.donatrack.donantes.Whatsapp</class>
         <class>ar.edu.utn.donatrack.security.Usuario</class>
+        <class>ar.edu.utn.donatrack.demo.DemoDatasetVersion</class>
         <class>ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion</class>
         <class>ar.edu.utn.donatrack.propuestas.matchmaking.MatchCandidato</class>
         <class>ar.edu.utn.donatrack.notificaciones.AvisoBandeja</class>

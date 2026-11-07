@@ -132,6 +132,19 @@ public class Donacion {
         || nuevosBienes.stream().anyMatch(Objects::isNull)) {
       throw new IllegalArgumentException("La donación debe contener al menos un bien válido.");
     }
+    long segmentos =
+        nuevosBienes.stream()
+            .map(
+                b ->
+                    new SegmentacionKey(
+                        b.getSubcategoria(), b.getFechaVencimiento(), b.getEstadoDeUso()))
+            .distinct()
+            .count();
+    if (segmentos != 1) {
+      throw new IllegalArgumentException(
+          "Una donación debe mantener una única subcategoría, fecha de vencimiento y estado de uso."
+              + " Para mezclar segmentos, registre una nueva carga.");
+    }
     this.bienes.clear();
     this.bienes.addAll(nuevosBienes);
   }

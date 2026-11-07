@@ -125,7 +125,7 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
     PaginasPublicasController paginasPublicas =
         new PaginasPublicasController(authService, donaciones);
     RegistroController registroController =
-        new RegistroController(authService, donantes, entidades);
+        new RegistroController(authService, donantes, entidades, notificaciones);
     AlmacenFotos almacenFotos = AlmacenFotosDesdeEntorno.crear();
     RecepcionesController recepciones =
         new RecepcionesController(

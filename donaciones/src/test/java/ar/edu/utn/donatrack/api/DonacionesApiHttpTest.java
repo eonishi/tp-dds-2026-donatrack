@@ -70,6 +70,100 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
   }
 
   @Test
+  void cargaCompletaSegmentaPorSubcategoriaVencimientoYEstado() throws Exception {
+    UUID donanteId = crearDonante();
+    String bienes =
+        "["
+            + bienCarga("Silla nueva", "Sillas", "MOBILIARIO", "NUEVO", null)
+            + ","
+            + bienCarga("Silla usada", "Sillas", "MOBILIARIO", "USADO", null)
+            + ","
+            + bienCarga("Fideos cortos", "Fideos", "ALIMENTO", "NO_APLICA", "2027-01-01")
+            + ","
+            + bienCarga("Fideos largos", "Fideos", "ALIMENTO", "NO_APLICA", "2027-01-01")
+            + ","
+            + bienCarga("Otro lote", "Fideos", "ALIMENTO", "NO_APLICA", "2027-02-01")
+            + "]";
+    HttpResponse<String> response =
+        request(
+            "POST",
+            "/api/v1/donaciones",
+            "{\"donanteId\":\"" + donanteId + "\",\"bienes\":" + bienes + "}");
+    assertEquals(201, response.statusCode(), response.body());
+    JsonNode creadas = json(response);
+    assertEquals(4, creadas.size());
+    java.util.Set<String> ids = new java.util.HashSet<>();
+    int total = 0;
+    for (JsonNode donacion : creadas) {
+      ids.add(donacion.get("id").asText());
+      JsonNode primero = donacion.get("bienes").get(0);
+      for (JsonNode bien : donacion.get("bienes")) {
+        assertEquals(primero.get("subcategoria"), bien.get("subcategoria"));
+        assertEquals(primero.get("fechaVencimiento"), bien.get("fechaVencimiento"));
+        assertEquals(primero.get("estadoDeUso"), bien.get("estadoDeUso"));
+        total++;
+      }
+    }
+    assertEquals(4, ids.size());
+    assertEquals(5, total);
+  }
+
+  @Test
+  void estadoEsObligatorioParaMobiliarioYVestimentaYLaCargaEsAtomica() throws Exception {
+    UUID donanteId = crearDonante();
+    for (String categoria : List.of("MOBILIARIO", "VESTIMENTA")) {
+      for (String estado : java.util.Arrays.asList(null, "NO_APLICA")) {
+        String bienes =
+            "["
+                + bienCarga("Arroz", "Arroz", "ALIMENTO", "NO_APLICA", null)
+                + ","
+                + bienCarga("Sin estado", "Prueba" + categoria, categoria, estado, null)
+                + "]";
+        HttpResponse<String> response =
+            request(
+                "POST",
+                "/api/v1/donaciones",
+                "{\"donanteId\":\"" + donanteId + "\",\"bienes\":" + bienes + "}");
+        assertEquals(400, response.statusCode(), response.body());
+        assertEquals(0, json(request("GET", "/api/v1/donaciones", null)).size());
+      }
+    }
+  }
+
+  @Test
+  void editarRechazaMezclarSegmentosSinModificarLaDonacion() throws Exception {
+    UUID donanteId = crearDonante();
+    UUID id = crearDonacion(donanteId, "Arroz");
+    String original = request("GET", "/api/v1/donaciones/" + id, null).body();
+    String primero = bienCarga("Arroz", "Arroz", "ALIMENTO", "NO_APLICA", null);
+    for (String otro :
+        List.of(
+            bienCarga("Fideos", "Fideos", "ALIMENTO", "NO_APLICA", null),
+            bienCarga("Arroz", "Arroz", "ALIMENTO", "NO_APLICA", "2027-01-01"),
+            bienCarga("Arroz", "Arroz", "ALIMENTO", "NUEVO", null))) {
+      HttpResponse<String> response =
+          request("PUT", "/api/v1/donaciones/" + id, "{\"bienes\":[" + primero + "," + otro + "]}");
+      assertEquals(400, response.statusCode(), response.body());
+      assertEquals(
+          mapper.readTree(original), json(request("GET", "/api/v1/donaciones/" + id, null)));
+    }
+  }
+
+  private String bienCarga(
+      String descripcion, String subcategoria, String categoria, String estado, String vencimiento)
+      throws Exception {
+    var bien = mapper.createObjectNode();
+    bien.put("descripcion", descripcion);
+    bien.put("cantidad", 1);
+    bien.put("unidad", "UNIDADES");
+    bien.put("subcategoria", subcategoria);
+    bien.put("categoria", categoria);
+    if (estado != null) bien.put("estadoDeUso", estado);
+    if (vencimiento != null) bien.put("fechaVencimiento", vencimiento);
+    return mapper.writeValueAsString(bien);
+  }
+
+  @Test
   void altaDeDonanteEnviaUnaBienvenidaUnaSolaVez() throws Exception {
     UUID donanteId = crearDonante();
 

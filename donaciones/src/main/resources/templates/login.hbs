@@ -26,16 +26,19 @@
                 </form>
 
                 <p class="mt-3 mb-0 text-center small">¿No tenés cuenta? <a href="/registro">Registrate</a></p>
-                <p class="mt-1 mb-0 text-center small">¿Ya donaste y no tenés contraseña? <a href="/activar">Activá tu cuenta</a></p>
 
-                <div class="mt-4 small text-body-secondary">
-                    <p class="mb-2">Usuarios de prueba:</p>
-                    <ul class="mb-0 ps-3">
-                        <li>admin@donatrack.local / admin123</li>
-                        <li>donante@donatrack.local / donante123</li>
-                        <li>beneficiario@donatrack.local / beneficiario123</li>
-                    </ul>
-                </div>
+                {{#if demoDataEnabled}}
+                    <aside class="alert alert-info mt-4 mb-0" aria-label="Credenciales de demostración">
+                        <h2 class="h6 mb-2">Cuentas de prueba</h2>
+                        <p class="small mb-2">Contraseña para todas: <code>Demo12345!</code></p>
+                        <ul class="small mb-0 ps-3">
+                            <li>Administrador: <code>demo.admin@example.test</code></li>
+                            <li>Donante humano: <code>demo.humana@example.test</code></li>
+                            <li>Donante jurídico: <code>demo.juridica@example.test</code></li>
+                            <li>Entidad beneficiaria: <code>demo.entidad@example.test</code></li>
+                        </ul>
+                    </aside>
+                {{/if}}
             </div>
         </div>
     </div>

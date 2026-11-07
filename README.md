@@ -182,3 +182,7 @@ guardan en formato E.164, por ejemplo `+541112345678`.
 Si falta la configuración de un canal, sus notificaciones quedan registradas como `FALLIDA` y se
 reintentan hasta tres veces. Las pruebas usan dobles de gateway, por lo que no invocan proveedores
 externos.
+
+## Datos de prueba
+
+El conjunto opcional de usuarios vinculados, donaciones en los siete estados y necesidades se activa con `DONATRACK_DEMO_DATA=true`. Consultar [las credenciales e instrucciones](docs/DemoData.md). Utilizar únicamente en una base de desarrollo descartable.
