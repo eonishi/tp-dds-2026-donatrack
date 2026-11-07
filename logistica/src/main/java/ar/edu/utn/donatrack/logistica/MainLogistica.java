@@ -2,6 +2,7 @@ package ar.edu.utn.donatrack.logistica;
 
 import ar.edu.utn.donatrack.logistica.controllers.PlanificacionController;
 import ar.edu.utn.donatrack.logistica.controllers.RepartidorController;
+import ar.edu.utn.donatrack.logistica.demo.LogisticsDemoDataset;
 import ar.edu.utn.donatrack.logistica.graphql.GraphqlController;
 import ar.edu.utn.donatrack.logistica.graphql.GraphqlLogistica;
 import ar.edu.utn.donatrack.logistica.graphql.ResolversLogistica;
@@ -26,9 +27,12 @@ public class MainLogistica implements WithSimplePersistenceUnit {
   }
 
   private ServicioPlanificacionRutas servicioPlanificacion;
+  private MonitorRutas monitorRutas;
 
   private void iniciar() {
-    crearApp().start(9001);
+    Javalin app = crearApp();
+    new LogisticsDemoDataset().initialize(System.getenv(), monitorRutas, Clock.systemUTC());
+    app.start(9001);
     // Solo en el proceso real: las pruebas arman la app con crearApp() sin programar tareas.
     PlanificacionScheduler.desdeEntorno(servicioPlanificacion).iniciar();
     System.out.println("Microservicio de Logística corriendo en http://localhost:9001");
@@ -63,7 +67,7 @@ public class MainLogistica implements WithSimplePersistenceUnit {
     RutaRepository rutaRepo = new RutaRepository();
     RepartidorRepository repartidorRepo = new RepartidorRepository();
     cargarRepartidoresDePrueba(repartidorRepo);
-    MonitorRutas monitorRutas = new MonitorRutas(Clock.systemUTC(), rutaRepo);
+    monitorRutas = new MonitorRutas(Clock.systemUTC(), rutaRepo);
 
     // 2. Instanciamos Controladores
     ObjectMapper objectMapper = new ObjectMapper();

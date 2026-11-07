@@ -11,9 +11,15 @@ import java.util.Optional;
 
 public final class AuthController {
   private final AuthService authService;
+  private final boolean demoDataEnabled;
 
   public AuthController(AuthService authService) {
+    this(authService, "true".equalsIgnoreCase(System.getenv("DONATRACK_DEMO_DATA")));
+  }
+
+  public AuthController(AuthService authService, boolean demoDataEnabled) {
     this.authService = authService;
+    this.demoDataEnabled = demoDataEnabled;
   }
 
   public void routes() {
@@ -34,7 +40,7 @@ public final class AuthController {
       ctx.redirect("/dashboard");
       return;
     }
-    ctx.render("login", Map.of("error", ""));
+    ctx.render("login", Map.of("error", "", "demoDataEnabled", demoDataEnabled));
   }
 
   private void login(Context ctx) {
@@ -45,7 +51,13 @@ public final class AuthController {
       // Se conserva el correo para no tener que reescribirlo; la contraseña nunca vuelve.
       ctx.render(
           "login",
-          Map.of("error", "Correo o contraseña incorrectos.", "email", email == null ? "" : email));
+          Map.of(
+              "error",
+              "Correo o contraseña incorrectos.",
+              "email",
+              email == null ? "" : email,
+              "demoDataEnabled",
+              demoDataEnabled));
       return;
     }
     ctx.redirect("/dashboard");

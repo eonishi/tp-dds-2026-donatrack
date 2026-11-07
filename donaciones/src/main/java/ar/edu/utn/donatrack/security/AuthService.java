@@ -1,5 +1,7 @@
 package ar.edu.utn.donatrack.security;
 
+import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
+import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -199,9 +201,29 @@ public class AuthService implements WithSimplePersistenceUnit {
     registrarUsuario("admin@donatrack.local", "admin123", Role.ADMIN);
     registrarUsuario("donante@donatrack.local", "donante123", Role.DONANTE);
     registrarUsuario("beneficiario@donatrack.local", "beneficiario123", Role.BENEFICIARIO);
+    vincularEntidadDePrueba();
   }
 
-  // Los usuarios de prueba se crean una sola vez: si ya están en la base no se tocan.
+  private void vincularEntidadDePrueba() {
+    withTransaction(
+        () -> {
+          Usuario usuario = usuarios.buscarPorEmail("beneficiario@donatrack.local").orElseThrow();
+          if (!usuario.hasRole(Role.BENEFICIARIO)
+              || usuario
+                  .getEntidadId()
+                  .filter(id -> find(EntidadBeneficiaria.class, id) != null)
+                  .isPresent()) {
+            return;
+          }
+          EntidadBeneficiaria entidad =
+              new EntidadBeneficiaria("Entidad beneficiaria de ejemplo", "", "");
+          entidad.agregarCorreo(new CorreoElectronico(usuario.getEmail()));
+          persist(entidad);
+          usuario.vincularEntidad(entidad.getId());
+        });
+  }
+
+  // Los usuarios de prueba se crean una sola vez: se conservan sus credenciales y roles.
   private void registrarUsuario(String email, String password, Role rol) {
     if (!usuarios.existeEmail(email)) {
       Usuario usuario = new Usuario(email, hashPassword(password), Set.of(rol));

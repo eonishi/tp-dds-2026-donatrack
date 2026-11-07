@@ -1,16 +1,37 @@
 <div id="vista-donaciones" class="panel-vista">
     <div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h4 mb-0">Donaciones</h2><button class="btn btn-primary rounded-pill" data-action="mostrar-form-donacion">Nueva donación</button></div>
     <form id="form-donacion" class="tarjeta p-4 mb-4 d-none">
-        <h3 class="h5">Cargar donación</h3>
-        <div class="row g-3">
-            <div class="col-md-5"><label class="form-label" for="select-donante">Donante</label><select class="form-select" id="select-donante" name="donanteId" required><option value="">Cargando donantes…</option></select></div>
-            <div class="col-md-7"><label class="form-label">Descripción del bien</label><input class="form-control" name="descripcion" required></div>
-            <div class="col-md-3"><label class="form-label">Cantidad</label><input class="form-control" type="number" step="0.01" min="0.01" name="cantidad" required></div>
-            <div class="col-md-3"><label class="form-label">Unidad</label><select class="form-select" name="unidad"><option>UNIDADES</option><option>KILOGRAMOS</option><option>LITROS</option></select></div>
-            <div class="col-md-3"><label class="form-label">Categoría</label><select class="form-select" name="categoria"><option>ALIMENTO</option><option>VESTIMENTA</option><option>MOBILIARIO</option></select></div>
-            <div class="col-md-3"><label class="form-label">Subcategoría</label><input class="form-control" name="subcategoria" required></div>
-        </div>
-        <div class="mt-3 d-flex gap-2"><button class="btn btn-primary" type="submit">Guardar</button><button class="btn btn-link" type="button" data-action="ocultar-form-donacion">Cancelar</button></div>
+        <h3 class="h5">Cargar todos los bienes de una donación</h3>
+        <p class="text-body-secondary">Agregá todos los bienes antes de guardar. El sistema generará donaciones independientes por subcategoría, vencimiento y estado.</p>
+        <div class="mb-3"><label class="form-label" for="select-donante">Donante</label><select class="form-select" id="select-donante" name="donanteId" required><option value="">Cargando donantes…</option></select></div>
+        <div id="bienes-carga" class="d-grid gap-3"></div>
+        <button class="btn btn-outline-primary mt-3" type="button" id="agregar-bien">Agregar otro bien</button>
+        <div class="mt-3 d-flex gap-2"><button class="btn btn-primary" type="submit">Guardar carga completa</button><button class="btn btn-link" type="button" data-action="ocultar-form-donacion">Cancelar</button></div>
     </form>
     <div id="donaciones-lista" class="row g-3"><p class="text-body-secondary">Cargando donaciones…</p></div>
 </div>
+
+<template id="bien-carga-template">
+    <fieldset class="border rounded p-3" data-bien>
+        <legend class="h6 float-none w-auto px-2">Bien</legend>
+        <div class="row g-3">
+            <div class="col-md-6"><label class="form-label">Descripción <input class="form-control" name="descripcion" required></label></div>
+            <div class="col-md-3"><label class="form-label">Cantidad <input class="form-control" type="number" step="0.01" min="0.01" name="cantidad" required></label></div>
+            <div class="col-md-3"><label class="form-label">Unidad <select class="form-select" name="unidad" required><option>UNIDADES</option><option>KILOGRAMOS</option><option>LITROS</option></select></label></div>
+            <div class="col-md-4"><label class="form-label">Categoría <select class="form-select" name="categoria" required><option>ALIMENTO</option><option>VESTIMENTA</option><option>MOBILIARIO</option></select></label></div>
+            <div class="col-md-4"><label class="form-label">Subcategoría <input class="form-control" name="subcategoria" required></label></div>
+            <div class="col-md-4" data-estado-container hidden><label class="form-label">Estado <select class="form-select" name="estadoDeUso" disabled><option value="">Seleccioná nuevo o usado</option><option value="NUEVO">Nuevo</option><option value="USADO">Usado</option></select></label></div>
+            <div class="col-md-4" data-vencimiento-container><label class="form-label">Fecha de vencimiento <input class="form-control" type="date" name="fechaVencimiento"></label><div class="form-text">Completá si el bien es perecedero.</div></div>
+        </div>
+        <button class="btn btn-outline-danger btn-sm mt-3" type="button" data-quitar-bien>Quitar bien</button>
+    </fieldset>
+</template>
+
+<dialog id="detalle-donacion" class="donacion-dialog tarjeta p-4" aria-labelledby="detalle-donacion-titulo">
+    <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+        <h2 id="detalle-donacion-titulo" class="h4 mb-0" data-detail-title>Detalle de la donación</h2>
+        <form method="dialog"><button type="submit" class="btn-close" aria-label="Cerrar detalle"></button></form>
+    </div>
+    <div data-detail-content aria-live="polite"></div>
+    <form method="dialog" class="mt-3"><button type="submit" class="btn btn-outline-secondary">Cerrar</button></form>
+</dialog>

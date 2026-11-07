@@ -9,6 +9,7 @@ import javax.persistence.Enumerated;
 public class PersonaHumana extends Donante {
   private String nombre;
   private String apellido;
+  private Integer edad;
 
   @Enumerated(EnumType.STRING)
   private Genero genero;
@@ -54,6 +55,17 @@ public class PersonaHumana extends Donante {
 
   public String getApellido() {
     return apellido;
+  }
+
+  public Integer getEdad() {
+    return edad;
+  }
+
+  public void setEdad(int edad) {
+    if (edad < 0 || edad > 130) {
+      throw new IllegalArgumentException("La edad debe estar entre 0 y 130.");
+    }
+    this.edad = edad;
   }
 
   public Genero getGenero() {

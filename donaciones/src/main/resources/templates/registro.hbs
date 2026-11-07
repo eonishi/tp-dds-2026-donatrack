@@ -16,12 +16,8 @@
             {{!-- El formulario va primero en el HTML: en el celular aparece apenas se entra --}}
             <div class="col-lg-7">
                 <form class="tarjeta registro-form" method="post" action="/registro" aria-labelledby="registro-titulo">
+                    <p class="form-text">Los campos con <span class="campo-obligatorio" aria-hidden="true">*</span> son obligatorios.</p>
                     {{#if error}}<div class="alert alert-danger" role="alert">{{error}}</div>{{/if}}
-                    {{!--
-                      Selector de rol: dos radios con forma de tarjeta. El input real usa .btn-check de
-                      Bootstrap (queda oculto pero sigue siendo navegable con teclado) y el CSS muestra
-                      el bloque de campos del rol elegido.
-                    --}}
                     <fieldset class="registro-rol">
                         <legend class="registro-leyenda">Me registro como</legend>
                         <div class="row g-2">
@@ -50,83 +46,123 @@
                         <legend class="registro-leyenda">Datos de la cuenta</legend>
                         <div class="row g-3">
                             <div class="col-12">
-                                <label class="form-label" for="correo">Correo electrónico</label>
+                                <label class="form-label" for="correo">Correo electrónico <span class="campo-obligatorio" aria-hidden="true">*</span></label>
                                 <input class="form-control" type="email" id="correo" name="correo"
                                        autocomplete="email" placeholder="nombre@ejemplo.com" required>
-                                <div class="form-text">Con este correo iniciás sesión y te llegan los avisos de tus donaciones.</div>
+                                <div class="form-text">Este correo es obligatorio para iniciar sesión, aunque elijas otro medio para recibir avisos.</div>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label" for="contrasena">Contraseña</label>
+                                <label class="form-label" for="contrasena">Contraseña <span class="campo-obligatorio" aria-hidden="true">*</span></label>
                                 <input class="form-control" type="password" id="contrasena" name="contrasena"
                                        autocomplete="new-password" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label" for="contrasena-repetida">Repetir contraseña</label>
+                                <label class="form-label" for="contrasena-repetida">Repetir contraseña <span class="campo-obligatorio" aria-hidden="true">*</span></label>
                                 <input class="form-control" type="password" id="contrasena-repetida"
                                        name="contrasenaRepetida" autocomplete="new-password" required>
                             </div>
                         </div>
                     </fieldset>
 
-                    {{!--
-                      Campos que dependen del rol. Los dos bloques viajan en el formulario y el CSS
-                      esconde el que no corresponde, así que los nombres llevan el prefijo del rol
-                      para que no se pisen entre ellos.
-                    --}}
                     <div class="panel-rol" data-rol="donante">
                         <fieldset class="registro-grupo">
+                            <legend class="registro-leyenda">Tipo de donante <span class="campo-obligatorio" aria-hidden="true">*</span></legend>
+                            <div class="btn-group w-100" role="group" aria-label="Tipo de donante">
+                                <input class="btn-check" type="radio" name="donanteTipoPersona" id="persona-humana" value="HUMANA" checked required>
+                                <label class="btn btn-outline-primary" for="persona-humana">Persona humana</label>
+                                <input class="btn-check" type="radio" name="donanteTipoPersona" id="persona-juridica" value="JURIDICA" required>
+                                <label class="btn btn-outline-primary" for="persona-juridica">Persona jurídica</label>
+                            </div>
+                        </fieldset>
+                        <fieldset class="registro-grupo" data-persona="HUMANA">
                             <legend class="registro-leyenda">Tus datos personales</legend>
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label" for="donante-nombre">Nombre</label>
+                                    <label class="form-label" for="donante-nombre">Nombre <span class="campo-obligatorio" aria-hidden="true">*</span></label>
                                     <input class="form-control" type="text" id="donante-nombre"
-                                           name="donanteNombre" autocomplete="given-name">
+                                           name="donanteNombre" autocomplete="given-name" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label" for="donante-apellido">Apellido</label>
+                                    <label class="form-label" for="donante-apellido">Apellido <span class="campo-obligatorio" aria-hidden="true">*</span></label>
                                     <input class="form-control" type="text" id="donante-apellido"
-                                           name="donanteApellido" autocomplete="family-name">
+                                           name="donanteApellido" autocomplete="family-name" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label" for="donante-tipo-documento">Tipo de documento</label>
-                                    <select class="form-select" id="donante-tipo-documento" name="donanteTipoDocumento">
+                                    <label class="form-label" for="donante-edad">Edad <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+                                    <input class="form-control" type="number" id="donante-edad" name="donanteEdad" min="0" max="130" step="1" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="donante-tipo-documento">Tipo de documento <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+                                    <select class="form-select" id="donante-tipo-documento" name="donanteTipoDocumento" required>
                                         <option value="">Elegí una opción</option>
                                         <option value="DNI">DNI</option>
                                         <option value="CUIT">CUIT</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label" for="donante-numero-documento">Número de documento</label>
+                                    <label class="form-label" for="donante-numero-documento">Número de documento <span class="campo-obligatorio" aria-hidden="true">*</span></label>
                                     <input class="form-control" type="text" id="donante-numero-documento"
-                                           name="donanteNumeroDocumento" inputmode="numeric">
+                                           name="donanteNumeroDocumento" inputmode="numeric" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label" for="donante-genero">Género</label>
-                                    <select class="form-select" id="donante-genero" name="donanteGenero">
+                                    <label class="form-label" for="donante-genero">Género <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+                                    <select class="form-select" id="donante-genero" name="donanteGenero" required>
                                         <option value="">Elegí una opción</option>
                                         <option value="FEMENINO">Femenino</option>
                                         <option value="MASCULINO">Masculino</option>
                                     </select>
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label" for="donante-direccion">Dirección</label>
+                                    <label class="form-label" for="donante-direccion">Dirección <span class="campo-obligatorio" aria-hidden="true">*</span></label>
                                     <input class="form-control" type="text" id="donante-direccion"
                                            name="donanteDireccion" autocomplete="street-address"
-                                           placeholder="Calle, número, localidad">
+                                           placeholder="Calle, número, localidad" required>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <fieldset class="registro-grupo" data-persona="JURIDICA" hidden disabled>
+                            <legend class="registro-leyenda">Datos de la persona jurídica</legend>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label" for="donante-razon-social">Razón social <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+                                    <input class="form-control" id="donante-razon-social" name="donanteRazonSocial" autocomplete="organization" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label" for="donante-telefono">Teléfono</label>
-                                    <input class="form-control" type="tel" id="donante-telefono"
-                                           name="donanteTelefono" autocomplete="tel" placeholder="11 5555 5555">
+                                    <label class="form-label" for="donante-cuit">CUIT <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+                                    <input class="form-control" id="donante-cuit" name="donanteCuit" inputmode="numeric" pattern="[0-9]{2}-?[0-9]{8}-?[0-9]" placeholder="30-12345678-9" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label" for="donante-medio-contacto">Medio de contacto preferido</label>
-                                    <select class="form-select" id="donante-medio-contacto" name="donanteMedioContacto">
-                                        <option value="CORREO" selected>Correo electrónico</option>
-                                        <option value="SMS">SMS</option>
-                                        <option value="WHATSAPP">WhatsApp</option>
+                                    <label class="form-label" for="donante-tipo-organizacion">Tipo de organización <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+                                    <select class="form-select" id="donante-tipo-organizacion" name="donanteTipoOrganizacion" required>
+                                        <option value="">Elegí una opción</option>
+                                        <option value="GUBERNAMENTAL">Gubernamental</option>
+                                        <option value="ONG">ONG</option>
+                                        <option value="EMPRESA">Empresa</option>
+                                        <option value="INSTITUCION">Institución</option>
                                     </select>
-                                    <div class="form-text">Te avisamos por acá cuando tu donación se asigna y cuando se entrega.</div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="donante-rubro">Rubro <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+                                    <input class="form-control" id="donante-rubro" name="donanteRubro" required>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <fieldset class="registro-grupo">
+                            <legend class="registro-leyenda">Contacto y notificaciones</legend>
+                            <p class="form-text">Tu correo electrónico ya cuenta como medio de contacto. El teléfono debe incluir + y código de país, sin espacios (formato E.164).</p>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="donante-telefono">Teléfono (opcional)</label>
+                                    <input class="form-control" type="tel" id="donante-telefono" name="donanteTelefono" autocomplete="tel" pattern="\+[1-9][0-9]{1,14}" placeholder="Ej.: +5491155555555">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="donante-medio-contacto">Medio de contacto predeterminado <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+                                    <select class="form-select" id="donante-medio-contacto" name="donanteMedioContacto" required>
+                                        <option value="CORREO" selected>Correo electrónico</option>
+                                        <option value="SMS" disabled>SMS</option>
+                                        <option value="WHATSAPP" disabled>WhatsApp</option>
+                                    </select>
+                                    <div class="form-text">Recibirás la bienvenida y las notificaciones por este medio. Para elegir SMS o WhatsApp, agregá un teléfono.</div>
                                 </div>
                             </div>
                         </fieldset>
@@ -137,21 +173,21 @@
                             <legend class="registro-leyenda">Datos de la entidad</legend>
                             <div class="row g-3">
                                 <div class="col-12">
-                                    <label class="form-label" for="entidad-razon-social">Razón social</label>
+                                    <label class="form-label" for="entidad-razon-social">Razón social <span class="campo-obligatorio" aria-hidden="true">*</span></label>
                                     <input class="form-control" type="text" id="entidad-razon-social"
                                            name="entidadRazonSocial" autocomplete="organization"
-                                           placeholder="Nombre de la entidad">
+                                           placeholder="Nombre de la entidad" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label" for="entidad-direccion">Dirección</label>
+                                    <label class="form-label" for="entidad-direccion">Dirección <span class="campo-obligatorio" aria-hidden="true">*</span></label>
                                     <input class="form-control" type="text" id="entidad-direccion"
                                            name="entidadDireccion" autocomplete="street-address"
-                                           placeholder="Calle, número, localidad">
+                                           placeholder="Calle, número, localidad" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label" for="entidad-telefono">Teléfono</label>
+                                    <label class="form-label" for="entidad-telefono">Teléfono <span class="campo-obligatorio" aria-hidden="true">*</span></label>
                                     <input class="form-control" type="tel" id="entidad-telefono"
-                                           name="entidadTelefono" autocomplete="tel" placeholder="11 5555 5555">
+                                           name="entidadTelefono" autocomplete="tel" placeholder="11 5555 5555" required>
                                 </div>
                                 <div class="col-12">
                                     <p class="dato small mb-0">
@@ -167,7 +203,7 @@
                         <input class="form-check-input" type="checkbox" id="terminos" name="terminos"
                                value="acepto" required>
                         <label class="form-check-label" for="terminos">
-                            Acepto los <a href="/legal">términos y la política de privacidad</a>.
+                            Acepto los <a href="/legal">términos y la política de privacidad</a>. <span class="campo-obligatorio" aria-hidden="true">*</span>
                         </label>
                     </div>
 
@@ -195,5 +231,7 @@
     </div>
 </section>
 {{/partial}}
+
+{{#partial "scripts"}}<script src="/registro.js" defer></script>{{/partial}}
 
 {{> layout}}

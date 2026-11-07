@@ -90,6 +90,10 @@ public class Usuario {
     return Optional.ofNullable(entidadId);
   }
 
+  void vincularEntidad(Long entidadId) {
+    this.entidadId = Objects.requireNonNull(entidadId);
+  }
+
   public String getUsername() {
     return email.contains("@") ? email.substring(0, email.indexOf('@')) : email;
   }
