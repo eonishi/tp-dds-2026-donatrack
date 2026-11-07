@@ -52,9 +52,12 @@ public final class AuthController {
       ctx.render(
           "login",
           Map.of(
-              "error", "Correo o contraseña incorrectos.",
-              "email", email == null ? "" : email,
-              "demoDataEnabled", demoDataEnabled));
+              "error",
+              "Correo o contraseña incorrectos.",
+              "email",
+              email == null ? "" : email,
+              "demoDataEnabled",
+              demoDataEnabled));
       return;
     }
     ctx.redirect("/dashboard");
