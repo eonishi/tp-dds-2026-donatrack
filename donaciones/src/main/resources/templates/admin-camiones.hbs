@@ -1,0 +1,56 @@
+{{#partial "titulo"}}Camiones · DonaTrack{{/partial}}
+
+{{#partial "contenido"}}
+<section class="py-4">
+    <div class="encabezado text-start mx-0 mb-4">
+        <span class="chip mb-3">Administración · Logística</span>
+        <h1 class="fs-2 fw-semibold">Camiones</h1>
+        <p>La flota disponible para las entregas. Los datos viven en el servicio de logística.</p>
+    </div>
+    {{#if error}}<div class="alert alert-danger" role="alert">{{error}}</div>{{/if}}
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <form method="post" action="/admin/camiones" class="tarjeta p-4">
+                <h2 class="h5 mb-3">Agregar camión</h2>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold" for="patente">Patente</label>
+                    <input class="form-control text-uppercase" id="patente" name="patente" maxlength="7" pattern="[A-Za-z0-9]{6,7}" placeholder="AB123CD" value="{{form.patente}}" required>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-4"><label class="form-label small fw-semibold" for="volumen">Volumen (m³)</label><input class="form-control" id="volumen" name="volumen" type="number" min="0.1" step="0.1" required></div>
+                    <div class="col-4"><label class="form-label small fw-semibold" for="altura">Altura (m)</label><input class="form-control" id="altura" name="altura" type="number" min="0.1" step="0.01" required></div>
+                    <div class="col-4"><label class="form-label small fw-semibold" for="capacidad">Carga (kg)</label><input class="form-control" id="capacidad" name="capacidad" type="number" min="1" step="1" required></div>
+                </div>
+                <button class="btn btn-primary rounded-pill px-4" type="submit">Agregar</button>
+            </form>
+        </div>
+        <div class="col-lg-8">
+            {{#if camiones}}
+            <div class="d-flex flex-column gap-3">
+                {{#each camiones}}
+                <div class="tarjeta p-3 px-4">
+                    <form method="post" action="/admin/camiones" class="row g-2 align-items-end">
+                        <input type="hidden" name="modo" value="editar">
+                        <input type="hidden" name="patente" value="{{patente}}">
+                        <div class="col-sm-3"><span class="small text-body-secondary d-block">Patente</span><strong class="fs-5">{{patente}}</strong></div>
+                        <div class="col-4 col-sm-2"><label class="form-label small" for="v-{{patente}}">m³</label><input class="form-control form-control-sm" id="v-{{patente}}" name="volumen" type="number" min="0.1" step="0.1" value="{{volumenM3}}" required></div>
+                        <div class="col-4 col-sm-2"><label class="form-label small" for="a-{{patente}}">Altura</label><input class="form-control form-control-sm" id="a-{{patente}}" name="altura" type="number" min="0.1" step="0.01" value="{{alturaM}}" required></div>
+                        <div class="col-4 col-sm-2"><label class="form-label small" for="c-{{patente}}">Kg</label><input class="form-control form-control-sm" id="c-{{patente}}" name="capacidad" type="number" min="1" step="1" value="{{capacidadCargaKg}}" required></div>
+                        <div class="col-sm-3 d-flex gap-2 justify-content-sm-end">
+                            <button class="btn btn-sm btn-outline-primary rounded-pill" type="submit">Guardar</button>
+                            <button class="btn btn-sm btn-outline-danger rounded-pill" type="submit" formaction="/admin/camiones/{{patente}}/eliminar" formnovalidate>Eliminar</button>
+                        </div>
+                    </form>
+                </div>
+                {{/each}}
+            </div>
+            {{else}}
+            <div class="tarjeta p-4 text-center"><p class="mb-0">No hay camiones cargados.</p></div>
+            {{/if}}
+        </div>
+    </div>
+</section>
+{{/partial}}
+
+{{> layout}}

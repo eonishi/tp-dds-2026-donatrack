@@ -1,0 +1,48 @@
+%% ============================================================================
+%% ENTREGA 1 — Notificaciones (primera iteración, incluida en el alcance)
+%% "Exponer un componente notificador que, dado un destinatario, un mensaje y
+%%  un medio (correo, SMS, WhatsApp), realice el envío (simulado)."
+%% Double dispatch: MedioDeContacto.aceptar(notificador) delega el envío.
+%% Fragmento mínimo del dominio involucrado.
+%% ============================================================================
+classDiagram
+    direction TB
+
+    class Notificador {
+        <<interface>>
+        +enviarNotificacion(destinatario: MedioDeContacto, mensaje: String)
+        +enviar(destinatario: CorreoElectronico, mensaje: String)
+        +enviar(destinatario: Whatsapp, mensaje: String)
+        +enviar(destinatario: Sms, mensaje: String)
+    }
+    class NotificadorSimulado
+    class Notificacion {
+        -destinatario: MedioDeContacto
+        -mensaje: String
+        -fechaCreacion: LocalDateTime
+        -estado: EstadoNotificacion
+        +marcarEnviada()
+        +marcarFallida()
+    }
+    class EstadoNotificacion {
+        <<enumeration>>
+        PENDIENTE
+        ENVIADA
+        FALLIDA
+    }
+    class MedioDeContacto {
+        <<abstract>>
+        -contacto: String
+        +aceptar(notificador: Notificador, mensaje: String)
+    }
+    class CorreoElectronico
+    class Whatsapp
+    class Sms
+
+    Notificador <|.. NotificadorSimulado
+    Notificacion *-- MedioDeContacto : destinatario
+    Notificacion --> EstadoNotificacion : estado
+    MedioDeContacto <|-- CorreoElectronico
+    MedioDeContacto <|-- Whatsapp
+    MedioDeContacto <|-- Sms
+    MedioDeContacto ..> Notificador : aceptar(notificador)

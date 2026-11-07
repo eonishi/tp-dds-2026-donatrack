@@ -1,0 +1,76 @@
+{{#partial "titulo"}}Mis donaciones · DonaTrack{{/partial}}
+
+{{#partial "contenido"}}
+<section class="py-4">
+    <div class="encabezado text-start mx-0 mb-4">
+        <span class="chip mb-3">Persona donante</span>
+        <h1 class="fs-2 fw-semibold">Mis donaciones</h1>
+        <p>Todo lo que donaste y en qué estado está. Filtrá por estado o por lo que entregaste.</p>
+    </div>
+
+    <form method="get" action="/donante/donaciones" class="tarjeta p-4 mb-4 filtros" aria-label="Filtros">
+        <div class="row g-3 align-items-start">
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold" for="filtro-estado">Estado</label>
+                <select class="form-select" id="filtro-estado" name="estado">
+                    <option value="">Todos</option>
+                    {{#each estados}}<option value="{{valor}}"{{#if elegida}} selected{{/if}}>{{texto}}</option>{{/each}}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold" for="filtro-categoria">Categoría</label>
+                <select class="form-select" id="filtro-categoria" name="categoria">
+                    <option value="">Todas</option>
+                    {{#each categorias}}<option value="{{valor}}"{{#if elegida}} selected{{/if}}>{{texto}}</option>{{/each}}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold" for="filtro-subcategoria">Subcategorías</label>
+                <select class="form-select" id="filtro-subcategoria" name="subcategoria" multiple aria-describedby="ayuda-subcategoria">
+                    {{#each subcategorias}}<option value="{{valor}}"{{#if elegida}} selected{{/if}}>{{texto}}</option>{{/each}}
+                </select>
+                <div class="form-text" id="ayuda-subcategoria">Ctrl o Cmd + clic para elegir varias.</div>
+            </div>
+            <div class="col-md-2 d-grid gap-2">
+                <span class="form-label small d-none d-md-block" aria-hidden="true">&nbsp;</span>
+                <button class="btn btn-primary rounded-pill" type="submit">Filtrar</button>
+                {{#if hayFiltros}}<a class="btn btn-link btn-sm" href="/donante/donaciones">Limpiar</a>{{/if}}
+            </div>
+        </div>
+    </form>
+
+    <p class="small text-body-secondary">Mostrando {{cantidad}}{{#if hayFiltros}} de {{total}}{{/if}} donaciones.</p>
+
+    {{#if donaciones}}
+    <div class="row g-4">
+        {{#each donaciones}}
+        <div class="col-md-6 col-xl-4">
+            <article class="tarjeta p-4 h-100 d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                    <span class="badge rounded-pill {{claseEstado}}">{{estado}}</span>
+                    {{#if actualizada}}<span class="small text-body-secondary">{{actualizada}}</span>{{/if}}
+                </div>
+                <ul class="small mb-2 ps-3">
+                    {{#each bienes}}<li>{{this}}</li>{{/each}}
+                </ul>
+                {{#if entidad}}<p class="small mb-2">Para <strong>{{entidad}}</strong></p>{{/if}}
+                {{#if fotos}}
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    {{#each fotos}}<a href="{{this}}" target="_blank" rel="noopener"><img src="{{this}}" alt="Foto de la entrega" class="rounded-3" width="64" height="64" style="object-fit: cover;" loading="lazy"></a>{{/each}}
+                </div>
+                {{/if}}
+                {{#if enCamino}}<a class="btn btn-sm btn-outline-primary rounded-pill mt-auto align-self-start" href="/donante/seguimiento">Ver el camión en el mapa</a>{{/if}}
+            </article>
+        </div>
+        {{/each}}
+    </div>
+    {{else}}
+    <div class="tarjeta p-4 text-center">
+        {{#if hayFiltros}}<p class="mb-0">Ninguna donación coincide con esos filtros.</p>
+        {{else}}<p class="mb-0">Todavía no registramos donaciones tuyas. Cuando lleves una al depósito, aparece acá.</p>{{/if}}
+    </div>
+    {{/if}}
+</section>
+{{/partial}}
+
+{{> layout}}

@@ -1,0 +1,43 @@
+# Compose de producción (EC2). A diferencia del docker-compose.yml no compila nada: baja las imágenes
+# que el CI publica en GHCR. Lo copia el job "deploy" a ~/donatrack junto al .env, que se crea a mano
+# en la VM y nunca se versiona.
+#   docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d
+
+x-comun: &comun
+  env_file:
+    - path: .env
+    # Lo escribe el job "deploy" desde los GitHub Secrets (Resend/Twilio). Opcional para que el
+    # compose ande igual en una VM recién creada, antes del primer deploy.
+    - path: .env.notificaciones
+      required: false
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  donaciones:
+    <<: *comun
+    image: ghcr.io/eonishi/donatrack-donaciones:latest
+    environment:
+      PORT: "7070"
+      DB_SCHEMA: donaciones
+      LOGISTICA_API_URL: http://logistica:9001
+      # Las dos JVM comparten 1 GB de RAM (más 2 GB de swap): se acota el heap de cada una.
+      JAVA_TOOL_OPTIONS: -Xmx320m -XX:+UseSerialGC
+    ports:
+      - "7070:7070"
+
+  logistica:
+    <<: *comun
+    image: ghcr.io/eonishi/donatrack-logistica:latest
+    environment:
+      DB_SCHEMA: logistica
+      DONACIONES_API_URL: http://donaciones:7070
+      JAVA_TOOL_OPTIONS: -Xmx256m -XX:+UseSerialGC
+    ports:
+      - "9001:9001"
+    depends_on:
+      - donaciones

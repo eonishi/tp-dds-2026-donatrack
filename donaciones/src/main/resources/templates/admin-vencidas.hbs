@@ -1,0 +1,45 @@
+{{#partial "titulo"}}Vencidas en depósito · DonaTrack{{/partial}}
+
+{{#partial "contenido"}}
+<section class="py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div class="encabezado text-start mx-0 mb-0">
+            <span class="chip mb-3">Administración</span>
+            <h1 class="fs-2 fw-semibold">Donaciones en depósito</h1>
+            <p class="mb-0">Las vencidas aparecen primero. Al marcarlas, salen de las propuestas de asignación.</p>
+        </div>
+        {{#if vencidas}}
+        <form method="post" action="/admin/vencidas" class="m-0">
+            <button class="btn btn-danger rounded-pill px-4" type="submit">Marcar las {{vencidas}} vencidas</button>
+        </form>
+        {{/if}}
+    </div>
+
+    {{#if donaciones}}
+    <div class="tarjeta p-0 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead><tr><th scope="col">Bienes</th><th scope="col">Vence</th><th scope="col"><span class="visually-hidden">Acción</span></th></tr></thead>
+                <tbody>
+                {{#each donaciones}}
+                <tr{{#if vencida}} class="table-danger"{{/if}}>
+                    <td><ul class="small mb-0 ps-3">{{#each bienes}}<li>{{this}}</li>{{/each}}</ul></td>
+                    <td class="small">{{#if vence}}{{vence}}{{#if vencida}} <span class="badge text-bg-danger">Vencida</span>{{/if}}{{else}}<span class="text-body-secondary">No perecedera</span>{{/if}}</td>
+                    <td class="text-end">
+                        <form method="post" action="/admin/vencidas/{{id}}" class="m-0">
+                            <button class="btn btn-sm {{#if vencida}}btn-danger{{else}}btn-outline-danger{{/if}} rounded-pill" type="submit">Marcar vencida</button>
+                        </form>
+                    </td>
+                </tr>
+                {{/each}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {{else}}
+    <div class="tarjeta p-4 text-center"><p class="mb-0">No hay donaciones en el depósito.</p></div>
+    {{/if}}
+</section>
+{{/partial}}
+
+{{> layout}}

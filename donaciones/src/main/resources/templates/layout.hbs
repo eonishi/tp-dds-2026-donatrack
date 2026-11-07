@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{#block "titulo"}}DonaTrack{{/block}}</title>
+    <link rel="icon" type="image/png" href="/DonaTrack.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="/estilos.css">
+    {{#block "head"}}{{/block}}
+</head>
+<body>
+<a class="visually-hidden-focusable" href="#contenido">Saltar al contenido</a>
+
+{{!-- Navbar: navbar-expand-lg = en celular se colapsa en el botón de líneas --}}
+<nav class="navbar navbar-expand-lg sticky-top barra">
+    <div class="container">
+        <a class="navbar-brand marca d-flex align-items-center gap-2" href="/">
+            <img src="/DonaTrack.png" alt="" width="36" height="36" class="logo">
+            DonaTrack
+        </a>
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#menu"
+                aria-controls="menu" aria-expanded="false" aria-label="Abrir menú">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="menu">
+            {{#if usuario}}
+                <ul class="navbar-nav me-auto ms-lg-4">
+                    <li class="nav-item"><a class="nav-link" href="/dashboard">Inicio</a></li>
+                    {{#if usuario.esDonante}}
+                    <li class="nav-item"><a class="nav-link" href="/donante/donaciones">Mis donaciones</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/donante/seguimiento">Seguimiento</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/donante/notificaciones">Avisos</a></li>
+                    {{/if}}
+                    {{#if usuario.esEntidad}}
+                    <li class="nav-item"><a class="nav-link" href="/entidad/necesidades">Necesidades</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/entidad/recepciones">Recibir donaciones</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/entidad/seguimiento">Seguimiento</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/entidad/notificaciones">Avisos</a></li>
+                    {{/if}}
+                    {{#if usuario.esAdmin}}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Donaciones</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/donaciones">Registrar y gestionar</a></li>
+                            <li><a class="dropdown-item" href="/admin/vencidas">Vencidas en depósito</a></li>
+                            <li><a class="dropdown-item" href="/admin/asignaciones">Asignar entidad</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Logística</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/admin/camiones">Camiones</a></li>
+                            <li><a class="dropdown-item" href="/logistica">Rutas</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="/admin/importar">Importar donantes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/catalogo">Catálogo</a></li>
+                    {{/if}}
+                </ul>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="text-body-secondary">
+                        {{usuario.username}}
+                        {{#if usuario.esAdmin}}<span class="badge rounded-pill text-bg-success ms-1">admin</span>{{/if}}
+                    </span>
+                    <form method="post" action="/logout" class="m-0">
+                        <input type="hidden" name="_csrf" value="{{csrf}}">
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3">Salir</button>
+                    </form>
+                </div>
+            {{else}}
+                <ul class="navbar-nav mx-auto">
+                    <li class="nav-item"><a class="nav-link" href="/#como-funciona">Cómo funciona</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#que-donar">Qué donar</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/entregas">Entregas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#preguntas">Preguntas</a></li>
+                </ul>
+                <div class="d-flex gap-2">
+                    <a class="btn btn-primary rounded-pill px-4" href="/login">Ingresar</a>
+                </div>
+            {{/if}}
+        </div>
+    </div>
+</nav>
+
+{{!-- Las páginas comunes usan "container py-4"; la landing lo pisa con "landing" para tener secciones a todo el ancho (un partial vacío no pisa el default) --}}
+<main id="contenido" class="{{#block "main-clase"}}container py-4{{/block}}">
+    {{#if flash}}
+        <div class="container pt-3">
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{flash}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        </div>
+    {{/if}}
+    {{#block "contenido"}}{{/block}}
+</main>
+
+<footer class="pie">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-5">
+                <a class="marca d-flex align-items-center gap-2 mb-2" href="/">
+                    <img src="/DonaTrack.png" alt="" width="32" height="32" class="logo">
+                    DonaTrack
+                </a>
+                <p class="text-body-secondary mb-0">
+                    Trazabilidad de donaciones, del depósito a quien las necesita.
+                    Una iniciativa de UTN Solidaria.
+                </p>
+            </div>
+            <div class="col-6 col-md-3">
+                <h3 class="pie-titulo">Plataforma</h3>
+                <ul class="list-unstyled pie-links">
+                    <li><a href="/#como-funciona">Cómo funciona</a></li>
+                    <li><a href="/#que-donar">Qué donar</a></li>
+                    <li><a href="/entregas">Donaciones entregadas</a></li>
+                    <li><a href="/#preguntas">Preguntas frecuentes</a></li>
+                    <li><a href="/legal">Legal y privacidad</a></li>
+                </ul>
+            </div>
+            <div class="col-6 col-md-4">
+                <h3 class="pie-titulo">Contacto</h3>
+                <ul class="list-unstyled pie-links">
+                    <li><a class="text-break" href="mailto:solidaria@frba.utn.edu.ar">solidaria@frba.utn.edu.ar</a></li>
+                </ul>
+            </div>
+        </div>
+        <hr class="my-4">
+        <p class="small text-body-secondary mb-0">© 2026 DonaTrack · TP Diseño de Sistemas — Grupo 7</p>
+    </div>
+</footer>
+
+{{!-- El JS va al final del body: el navbar colapsable y la X del alert lo necesitan --}}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+{{#block "scripts"}}{{/block}}
+</body>
+</html>

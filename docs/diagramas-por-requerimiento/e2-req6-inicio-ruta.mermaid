@@ -1,0 +1,59 @@
+%% ============================================================================
+%% ENTREGA 2 — Requerimiento 6
+%% "El sistema debe permitir a los choferes de los camiones informar del
+%%  comienzo de su ruta."
+%% Al iniciar la ruta, las donaciones asignadas pasan a "En traslado".
+%% Fragmento mínimo del dominio involucrado.
+%% ============================================================================
+classDiagram
+    direction TB
+
+    class Ruta {
+        -id: UUID
+        -camion: Camion
+        -destinos: List~Destino~
+        -enCurso: boolean
+        +iniciar()
+        +finalizar()
+    }
+    class Camion {
+        -patente: String
+        -volumenM3: double
+        -alturaM: double
+        -capacidadCargaKg: double
+    }
+    class Destino {
+        -entidadBeneficiaria: EntidadBeneficiaria
+        -donaciones: List~DonacionPlanificable~
+    }
+    class Donacion {
+        -estado: EstadoDonacion
+        -camion: Camion
+        +iniciarTraslado()
+    }
+    class EstadoDonacion {
+        <<abstract>>
+        +iniciarTraslado(donacion: Donacion)
+    }
+    class ListaParaEntregar
+    class EnTraslado
+    class NombreEstado {
+        <<enumeration>>
+        EN_DEPOSITO
+        ASIGNACION_REALIZADA
+        LISTA_PARA_ENTREGAR
+        EN_TRASLADO
+        ENTREGADA
+        ENTREGA_FALLIDA
+        VENCIDA
+    }
+
+    Ruta *-- Camion : camion
+    Ruta *-- "*" Destino : destinos
+    Destino ..> Donacion : donacionId (API)
+    Ruta ..> Donacion : al iniciar, pasa a En traslado
+    Donacion *-- EstadoDonacion : estado actual
+    Donacion ..> Camion : idCamion (API)
+    EstadoDonacion <|-- ListaParaEntregar
+    EstadoDonacion <|-- EnTraslado
+    Donacion ..> NombreEstado : getNombreEstado()

@@ -1,0 +1,87 @@
+%% ============================================================================
+%% ENTREGA 2 — Requerimiento 2
+%% "El sistema debe garantizar el envío de notificaciones por distintos medios
+%%  ante: inactividad de una persona donante, asignación de donaciones a la
+%%  entidad beneficiaria, inicio de rutas de las entregas y estado de las
+%%  entregas."
+%% Patrón Template Method (EventoNotificable.generarNotificaciones) + payloads.
+%% Fragmento mínimo del dominio involucrado.
+%% ============================================================================
+classDiagram
+    direction TB
+
+    class EventoNotificable {
+        <<abstract>>
+        +generarNotificaciones() List~Notificacion~
+    }
+    class EventoBienvenida
+    class EventoAsignacion
+    class EventoInicioRuta
+    class EventoEntregaExitosa
+    class EventoEntregaNoSatisfactoria
+    class EventoAusenciaDonante
+    class Notificacion {
+        -destinatario: MedioDeContacto
+        -mensaje: String
+        -payload: NotificacionPayload
+        -fechaCreacion: LocalDateTime
+        -estado: EstadoNotificacion
+        +marcarEnviada()
+        +marcarFallida()
+    }
+    class NotificacionPayload {
+        <<interface>>
+    }
+    class ComprobanteEntrega
+    class InfoMapa
+    class SinPayload
+    class EstadoNotificacion {
+        <<enumeration>>
+        PENDIENTE
+        ENVIADA
+        FALLIDA
+    }
+    class Notificable {
+        <<interface>>
+        +getMediosDeContacto() List~MedioDeContacto~
+    }
+    class Notificador {
+        <<interface>>
+        +enviar(destinatario: MedioDeContacto, mensaje: String)
+    }
+    class NotificadorSimulado
+    class Donante
+    class EntidadBeneficiaria
+    class MedioDeContacto {
+        <<abstract>>
+        -contacto: String
+        +aceptar(notificador: Notificador, mensaje: String)
+    }
+    class CorreoElectronico
+    class Whatsapp
+    class Sms
+
+    EventoNotificable <|-- EventoBienvenida
+    EventoNotificable <|-- EventoAsignacion
+    EventoNotificable <|-- EventoInicioRuta
+    EventoNotificable <|-- EventoEntregaExitosa
+    EventoNotificable <|-- EventoEntregaNoSatisfactoria
+    EventoNotificable <|-- EventoAusenciaDonante
+    EventoNotificable ..> Notificacion : genera
+    Notificacion *-- MedioDeContacto : destinatario
+    Notificacion o-- NotificacionPayload : payload
+    Notificacion --> EstadoNotificacion : estado
+    NotificacionPayload <|.. ComprobanteEntrega
+    NotificacionPayload <|.. InfoMapa
+    NotificacionPayload <|.. SinPayload
+    Donante ..|> Notificable
+    EntidadBeneficiaria ..|> Notificable
+    Notificador <|.. NotificadorSimulado
+    MedioDeContacto <|-- CorreoElectronico
+    MedioDeContacto <|-- Whatsapp
+    MedioDeContacto <|-- Sms
+    MedioDeContacto ..> Notificador : aceptar
+    EventoInicioRuta ..> InfoMapa : enlace al mapa
+    EventoEntregaExitosa ..> ComprobanteEntrega : comprobante
+    EventoAusenciaDonante --> Donante : donante inactivo >20 días
+    EventoEntregaNoSatisfactoria --> EntidadBeneficiaria : entrega fallida

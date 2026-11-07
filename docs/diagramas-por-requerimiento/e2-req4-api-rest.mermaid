@@ -1,0 +1,52 @@
+%% ============================================================================
+%% ENTREGA 2 — Requerimiento 4
+%% "El sistema debe permitir la realización de operaciones a través de los
+%%  endpoints solicitados, mediante el desarrollo de una API REST."
+%% Muestra los agregados del dominio que la API expone. La capa de
+%% controladores REST aún no está implementada en el código (dominio puro).
+%% Fragmento mínimo del dominio involucrado.
+%% ============================================================================
+classDiagram
+    direction TB
+
+    class ApiRest {
+        <<infraestructura / pendiente>>
+        +CRUD donaciones
+        +CRUD donantes (humanas y jurídicas)
+        +cambios de estado de una donación
+        +CRUD entidades beneficiarias
+        +CRUD necesidades (recurrentes y extraordinarias)
+        +ranking de asignación y selección final
+        +ejecución a demanda de algoritmos
+        +gestión de flota de camiones
+        +CRUD rutas y entregas
+    }
+    class Donante
+    class PersonaHumana
+    class PersonajeJuridica
+    class Donacion
+    class EntidadBeneficiaria
+    class Necesidad
+    class NecesidadRecurrente
+    class MatchCandidato
+    class PropuestaDeAsignacion
+    class Camion
+    class Ruta
+    class Destino
+
+    Donante <|-- PersonaHumana
+    Donante <|-- PersonajeJuridica
+    Necesidad <|-- NecesidadRecurrente
+    Ruta *-- Camion : camion
+    Ruta *-- "*" Destino : destinos
+    Destino ..> Donacion : donacionId (API)
+    PropuestaDeAsignacion *-- Donacion : donacion
+    PropuestaDeAsignacion *-- "*" MatchCandidato : candidatos
+
+    ApiRest ..> Donante : CRUD donantes
+    ApiRest ..> Donacion : CRUD + cambios de estado
+    ApiRest ..> EntidadBeneficiaria : CRUD
+    ApiRest ..> Necesidad : CRUD
+    ApiRest ..> PropuestaDeAsignacion : ranking + selección
+    ApiRest ..> Camion : flota
+    ApiRest ..> Ruta : CRUD rutas/entregas

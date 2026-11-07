@@ -1,0 +1,69 @@
+%% ============================================================================
+%% ENTREGA 1 — Requerimiento 3
+%% "El sistema deberá permitir la gestión de entidades beneficiarias y sus
+%%  necesidades."
+%% Necesidades recurrentes vs. extraordinarias, satisfacción por cantidades.
+%% Fragmento mínimo del dominio involucrado.
+%% ============================================================================
+classDiagram
+    direction TB
+
+    class EntidadBeneficiaria {
+        -razonSocial: String
+        -direccion: String
+        -telefono: String
+        -necesidadesExtraordinarias: List~Necesidad~
+        -necesidadesRecurrentes: List~NecesidadRecurrente~
+        -recepciones: List~RecepcionDonacion~
+        +agregarNecesidadExtraordinaria(n: Necesidad)
+        +agregarNecesidadRecurrente(n: NecesidadRecurrente)
+        +registrarRecepcion(donacion: Donacion, fechaRecepcion: LocalDate)
+    }
+    class Necesidad {
+        -descripcion: String
+        -cantidadRecibida: double
+        -cantidadObjetivo: double
+        -unidad: UnidadMedida
+        -subcategoria: SubCategoria
+        +estaSatisfecha() boolean
+        +recibirDonacion(cantidad: double)
+    }
+    class NecesidadRecurrente {
+        -periodo: TipoPeriodo
+        +reiniciarPeriodo()
+    }
+    class TipoPeriodo {
+        <<enumeration>>
+        SEMANAL
+        MENSUAL
+    }
+    class RecepcionDonacion {
+        -donacion: Donacion
+        -fechaRecepcion: LocalDate
+    }
+    class SubCategoria {
+        -nombre: String
+        -categoria: Categoria
+    }
+    class Categoria {
+        <<enumeration>>
+        ALIMENTO
+        MOBILIARIO
+        VESTIMENTA
+    }
+    class UnidadMedida {
+        <<enumeration>>
+        KILOGRAMOS
+        UNIDADES
+        LITROS
+    }
+
+    EntidadBeneficiaria *-- "*" Necesidad : extraordinarias
+    EntidadBeneficiaria *-- "*" NecesidadRecurrente : recurrentes
+    EntidadBeneficiaria *-- "*" RecepcionDonacion : recepciones
+    Necesidad <|-- NecesidadRecurrente
+    Necesidad *-- SubCategoria : subcategoria
+    Necesidad --> UnidadMedida : unidad
+    NecesidadRecurrente --> TipoPeriodo : periodo
+    SubCategoria --> Categoria : categoria
+    RecepcionDonacion --> Donacion : registra

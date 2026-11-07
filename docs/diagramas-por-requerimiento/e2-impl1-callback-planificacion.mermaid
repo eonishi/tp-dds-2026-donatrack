@@ -1,0 +1,67 @@
+%% ============================================================================
+%% ENTREGA 2 — Requerimiento de implementación 1
+%% "El sistema deberá exponer una URL de callback donde el componente externo
+%%  podrá notificar el resultado de la planificación. La llamada de retorno
+%%  permitirá registrar las rutas generadas y actualizar el estado de las
+%%  entregas efectivamente asignadas."
+%% Fragmento mínimo del dominio involucrado (incluye infraestructura).
+%% ============================================================================
+classDiagram
+    direction TB
+
+    class PlanificadorRutas {
+        <<interface / componente externo>>
+        +enviarLote(lote: LoteDonaciones) LoteId
+    }
+    class ServicioPlanificacionRutas {
+        <<infraestructura>>
+        +planificar() List~LoteId~
+        +procesarResultado(resultado: ResultadoPlanificacion)
+    }
+    class ResultadoPlanificacion {
+        <<record>>
+        -loteId: LoteId
+        -rutas: Map
+    }
+    class Ruta {
+        -id: UUID
+        -camion: Camion
+        -destinos: List~Destino~
+        -enCurso: boolean
+    }
+    class Destino {
+        -entidadBeneficiaria: EntidadBeneficiaria
+        -donaciones: List~DonacionPlanificable~
+    }
+    class Camion {
+        -patente: String
+    }
+    class Donacion {
+        -estado: EstadoDonacion
+        +planificarRuta()
+    }
+    class EntidadBeneficiaria
+    class EstadoDonacion {
+        <<abstract>>
+        +planificarRuta(donacion: Donacion)
+    }
+    class AsignacionRealizada
+    class ListaParaEntregar
+    class RutaRepository {
+        <<infraestructura>>
+        +agregar(ruta: Ruta)
+    }
+
+    PlanificadorRutas ..> ServicioPlanificacionRutas : callback con resultado
+    ServicioPlanificacionRutas ..> ResultadoPlanificacion : procesarResultado()
+    ResultadoPlanificacion o-- "*" Camion : rutas
+    ResultadoPlanificacion o-- "*" EntidadBeneficiaria : destinos
+    ServicioPlanificacionRutas ..> Ruta : crea
+    ServicioPlanificacionRutas ..> RutaRepository : persiste
+    Ruta *-- Camion : camion
+    Ruta *-- "*" Destino : destinos
+    Destino ..> EntidadBeneficiaria : entidadId (API)
+    Destino ..> Donacion : donacionId (API)
+    Donacion *-- EstadoDonacion : estado actual
+    EstadoDonacion <|-- AsignacionRealizada
+    EstadoDonacion <|-- ListaParaEntregar

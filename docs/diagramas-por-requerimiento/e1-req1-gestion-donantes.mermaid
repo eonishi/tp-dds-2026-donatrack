@@ -1,0 +1,73 @@
+%% ============================================================================
+%% ENTREGA 1 — Requerimiento 1
+%% "El sistema deberá permitir la gestión de personas donantes."
+%% Fragmento mínimo del dominio involucrado en este requerimiento.
+%% ============================================================================
+classDiagram
+    direction TB
+
+    class Donante {
+        <<abstract>>
+        #numDocumento: String
+        #documento: TipoDocumento
+        #mediosDeContacto: List~MedioDeContacto~
+        #contactoPredeterminado: MedioDeContacto
+        +addMedioDeContacto(medio: MedioDeContacto)
+        +setContactoPredeterminado(medio: MedioDeContacto)
+        +getMediosDeContacto() List~MedioDeContacto~
+    }
+    class PersonaHumana {
+        -nombre: String
+        -apellido: String
+        -edad: Integer
+        -genero: Genero
+        -direccion: String
+        +setEdad(edad: int)
+        +setDireccion(direccion: String)
+    }
+    class PersonajeJuridica {
+        -razonSocial: String
+        -tipoOrganizacion: TipoOrganizacion
+        -rubro: String
+        -representantes: List~Representante~
+        +agregarRepresentante(representante: Representante)
+    }
+    class Representante {
+        -nombre: String
+        -apellido: String
+    }
+    class MedioDeContacto {
+        <<abstract>>
+        -contacto: String
+    }
+    class CorreoElectronico
+    class Whatsapp
+    class Sms
+    class TipoDocumento {
+        <<enumeration>>
+        DNI
+        CUIT
+    }
+    class Genero {
+        <<enumeration>>
+        FEMENINO
+        MASCULINO
+    }
+    class TipoOrganizacion {
+        <<enumeration>>
+        GUBERNAMENTAL
+        ONG
+        EMPRESA
+        INSTITUCION
+    }
+
+    Donante <|-- PersonaHumana
+    Donante <|-- PersonajeJuridica
+    Donante *-- "*" MedioDeContacto : medios
+    Donante --> TipoDocumento : documento
+    PersonaHumana --> Genero : genero
+    PersonajeJuridica --> TipoOrganizacion : tipo
+    PersonajeJuridica o-- "*" Representante : representantes
+    MedioDeContacto <|-- CorreoElectronico
+    MedioDeContacto <|-- Whatsapp
+    MedioDeContacto <|-- Sms

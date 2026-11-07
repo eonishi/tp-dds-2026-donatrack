@@ -1,0 +1,23 @@
+{{#partial "titulo"}}{{titulo}} · DonaTrack{{/partial}}
+
+{{#partial "contenido"}}
+<section class="container py-5 panel-app" data-seccion="{{seccion}}">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div>
+            <span class="chip mb-2">Panel operativo</span>
+            <h1 class="mb-1">{{titulo}}</h1>
+            <p class="text-body-secondary mb-0">Sesión: {{usuario.email}}</p>
+        </div>
+        <a class="btn btn-outline-primary rounded-pill" href="/dashboard">Volver al panel</a>
+    </div>
+    <div id="panel-alert" class="alert d-none" role="alert"></div>
+    {{> panel/donaciones}}
+    {{> panel/necesidades}}
+    {{> panel/logistica}}
+    {{> panel/matchmaking}}
+    {{> panel/catalogo}}
+</section>
+<script type="module" src="/panel.js"></script>
+{{/partial}}
+
+{{> layout}}

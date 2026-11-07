@@ -1,0 +1,45 @@
+{{#partial "titulo"}}Ingresar · DonaTrack{{/partial}}
+
+{{#partial "contenido"}}
+<section class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-5">
+            <div class="tarjeta p-4 p-lg-5">
+                <span class="chip mb-3">DonaTrack</span>
+                <h1 class="mb-3">Ingresá a tu cuenta</h1>
+                <p class="text-body-secondary">Personas donantes, entidades beneficiarias y equipo de DonaTrack ingresan desde acá.</p>
+
+                {{#if error}}
+                    <div class="alert alert-danger" role="alert">{{error}}</div>
+                {{/if}}
+
+                <form method="post" action="/login" class="mt-4">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input id="email" name="email" type="email" class="form-control" placeholder="tu@correo.com" value="{{email}}" autocomplete="username" autofocus required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Contraseña</label>
+                        <input id="password" name="password" type="password" class="form-control" placeholder="••••••••" autocomplete="current-password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill">Iniciar sesión</button>
+                </form>
+
+                <p class="mt-3 mb-0 text-center small">¿No tenés cuenta? <a href="/registro">Registrate</a></p>
+                <p class="mt-1 mb-0 text-center small">¿Ya donaste y no tenés contraseña? <a href="/activar">Activá tu cuenta</a></p>
+
+                <div class="mt-4 small text-body-secondary">
+                    <p class="mb-2">Usuarios de prueba:</p>
+                    <ul class="mb-0 ps-3">
+                        <li>admin@donatrack.local / admin123</li>
+                        <li>donante@donatrack.local / donante123</li>
+                        <li>beneficiario@donatrack.local / beneficiario123</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{{/partial}}
+
+{{> layout}}

@@ -42,3 +42,34 @@ buildNumber.properties
 .project
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
+
+# AI tooling files
+.agents
+.atl
+.settings
+skills-lock.json
+AGENTS.md
+docs/agents/
+.codegraph/
+opencode.jsonc
+odd/
+
+# vscode
+.vscode/
+
+# checkstyle
+*.iml
+
+secrets.local.sh
+donaciones/src/main/resources/META-INF/persistence.xml
+logistica/src/main/resources/META-INF/persistence.xml
+
+#persistencia
+persistence.xmlsrc/main/resources/META-INF/persistence.xml
+
+# Credenciales de docker compose (ver .env.example)
+.env
+
+# dev env
+flake.nix
+flake.lock

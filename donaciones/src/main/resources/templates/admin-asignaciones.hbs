@@ -1,0 +1,51 @@
+{{#partial "titulo"}}Asignar entidad · DonaTrack{{/partial}}
+
+{{#partial "contenido"}}
+<section class="py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div class="encabezado text-start mx-0 mb-0">
+            <span class="chip mb-3">Administración</span>
+            <h1 class="fs-2 fw-semibold">Asignar entidad final</h1>
+            <p class="mb-0">Los algoritmos de selección propusieron estas entidades. Elegí a cuál va cada donación.</p>
+        </div>
+        {{#if sinPropuesta}}
+        <form method="post" action="/admin/asignaciones" class="m-0">
+            <button class="btn btn-outline-primary rounded-pill px-4" type="submit">Generar propuestas ({{sinPropuesta}} sin propuesta)</button>
+        </form>
+        {{/if}}
+    </div>
+
+    {{#if propuestas}}
+    <div class="row g-4">
+        {{#each propuestas}}
+        <div class="col-lg-6">
+            <form method="post" action="/admin/asignaciones/{{id}}" class="tarjeta p-4 h-100 d-flex flex-column">
+                <h2 class="h6">Donación</h2>
+                <ul class="small mb-3 ps-3">{{#each bienes}}<li>{{this}}</li>{{/each}}</ul>
+                {{#if error}}<div class="alert alert-danger py-2 small" role="alert">{{error}}</div>{{/if}}
+                <fieldset class="mb-3">
+                    <legend class="form-label small fw-semibold">Entidades propuestas</legend>
+                    {{#each candidatos}}
+                    <div class="d-flex justify-content-between align-items-center border rounded-3 px-3 py-2 mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <input class="form-check-input mt-0" type="radio" name="entidad" id="c-{{../id}}-{{id}}" value="{{id}}"{{#if primera}} checked{{/if}}>
+                            <label class="form-check-label" for="c-{{../id}}-{{id}}">{{nombre}}</label>
+                        </div>
+                        <span class="badge rounded-pill text-bg-light border">{{puntaje}} pts</span>
+                    </div>
+                    {{else}}
+                    <p class="small text-body-secondary">Ninguna entidad tiene necesidades compatibles.</p>
+                    {{/each}}
+                </fieldset>
+                {{#if candidatos}}<button class="btn btn-primary rounded-pill px-4 mt-auto align-self-start" type="submit">Asignar</button>{{/if}}
+            </form>
+        </div>
+        {{/each}}
+    </div>
+    {{else}}
+    <div class="tarjeta p-4 text-center"><p class="mb-0">No hay propuestas pendientes.{{#if sinPropuesta}} Generalas con el botón de arriba.{{/if}}</p></div>
+    {{/if}}
+</section>
+{{/partial}}
+
+{{> layout}}

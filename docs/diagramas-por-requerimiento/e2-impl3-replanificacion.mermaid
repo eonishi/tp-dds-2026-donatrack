@@ -1,0 +1,50 @@
+%% ============================================================================
+%% ENTREGA 2 — Requerimiento de implementación 3
+%% "Es posible que el planificador no pueda asignar todas las donaciones en una
+%%  única ruta. En ese caso devolverá las donaciones sin asignar en un campo
+%%  aparte, y será responsabilidad de nuestro sistema volver a planificarlas."
+%% En el código actual las no asignadas permanecen en "Asignación realizada"
+%% y entran a la siguiente ejecución de planificación.
+%% Fragmento mínimo del dominio involucrado (incluye infraestructura).
+%% ============================================================================
+classDiagram
+    direction TB
+
+    class ServicioPlanificacionRutas {
+        <<infraestructura>>
+        +planificar() List~LoteId~
+        +procesarResultado(resultado: ResultadoPlanificacion)
+    }
+    class PlanificadorRutas {
+        <<interface / componente externo>>
+        +enviarLote(lote: LoteDonaciones) LoteId
+    }
+    class ResultadoPlanificacion {
+        <<record>>
+        -loteId: LoteId
+        -rutas: Map
+    }
+    class Donacion {
+        -estado: EstadoDonacion
+    }
+    class EstadoDonacion {
+        <<abstract>>
+    }
+    class AsignacionRealizada
+    class Ruta {
+        -id: UUID
+        -camion: Camion
+        -destinos: List~Destino~
+    }
+    class Camion
+    class Destino
+
+    PlanificadorRutas ..> ResultadoPlanificacion : devuelve (asignadas y no asignadas)
+    ResultadoPlanificacion o-- "*" Camion : rutas
+    ServicioPlanificacionRutas ..> ResultadoPlanificacion : procesarResultado()
+    Donacion *-- EstadoDonacion : estado actual
+    EstadoDonacion <|-- AsignacionRealizada : no planificadas permanecen aquí
+    ServicioPlanificacionRutas ..> Donacion : replanifica en la siguiente jornada
+    Ruta *-- Camion : camion
+    Ruta *-- "*" Destino : destinos
+    Destino ..> Donacion : donacionId (API)

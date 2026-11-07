@@ -1,0 +1,66 @@
+%% ============================================================================
+%% ENTREGA 1 — Requerimiento 4
+%% "El sistema debe garantizar la trazabilidad de los estados de las donaciones,
+%%  desde su recepción hasta su entrega."
+%% Patrón State sobre Donacion + historial de auditoría.
+%% Fragmento mínimo del dominio involucrado.
+%% ============================================================================
+classDiagram
+    direction TB
+
+    class Donacion {
+        -estado: EstadoDonacion
+        -historialEstado: List~HistorialEstado~
+        +asignar()
+        +planificarRuta()
+        +iniciarTraslado()
+        +confirmarEntrega()
+        +reportarFalla(justificacion: String)
+        +marcarVencida()
+        +retornarAlDeposito()
+    }
+    class HistorialEstado {
+        -fecha: LocalDate
+        -estadoAlcanzado: NombreEstado
+        -justificacion: String
+    }
+    class EstadoDonacion {
+        <<abstract>>
+        +getNombreEstado() NombreEstado
+        +asignar(donacion: Donacion)
+        +planificarRuta(donacion: Donacion)
+        +iniciarTraslado(donacion: Donacion)
+        +confirmarEntrega(donacion: Donacion)
+        +reportarFalla(donacion: Donacion, justificacion: String)
+        +marcarVencida(donacion: Donacion)
+        +retornarAlDeposito(donacion: Donacion)
+    }
+    class EnDeposito
+    class AsignacionRealizada
+    class ListaParaEntregar
+    class EnTraslado
+    class Entregada
+    class EntregaFallida
+    class Vencida
+    class NombreEstado {
+        <<enumeration>>
+        EN_DEPOSITO
+        ASIGNACION_REALIZADA
+        LISTA_PARA_ENTREGAR
+        EN_TRASLADO
+        ENTREGADA
+        ENTREGA_FALLIDA
+        VENCIDA
+    }
+
+    Donacion *-- EstadoDonacion : estado actual
+    Donacion *-- "*" HistorialEstado : historial
+    HistorialEstado --> NombreEstado : estadoAlcanzado
+    EstadoDonacion <|-- EnDeposito
+    EstadoDonacion <|-- AsignacionRealizada
+    EstadoDonacion <|-- ListaParaEntregar
+    EstadoDonacion <|-- EnTraslado
+    EstadoDonacion <|-- Entregada
+    EstadoDonacion <|-- EntregaFallida
+    EstadoDonacion <|-- Vencida
+    EstadoDonacion ..> Donacion : transiciona

@@ -1,0 +1,64 @@
+{{#partial "titulo"}}Donaciones entregadas · DonaTrack{{/partial}}
+
+{{#partial "head"}}<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">{{/partial}}
+{{#partial "scripts"}}<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script><script src="/mapas.js"></script>{{/partial}}
+
+{{#partial "contenido"}}
+{{!-- Pública: cualquier visitante la ve, con o sin sesión. No muestra datos de las personas donantes. --}}
+<section class="position-relative overflow-hidden py-4">
+    <div class="hero-brillo" aria-hidden="true"></div>
+    <div class="position-relative">
+        <div class="encabezado">
+            <span class="chip mb-3">✦ Sin necesidad de cuenta</span>
+            <h1 class="fs-1 fw-semibold">Donaciones que <span class="degrade">ya llegaron</span></h1>
+            <p>
+                Cada entrega confirmada por la entidad que la recibió, con las fotos que cargó.
+                Nunca mostramos datos de las personas donantes.
+            </p>
+        </div>
+
+        <div class="mb-5">
+            <div class="mapa" data-mapa="entregas" data-fuente="/entregas/mapa" role="region" aria-label="Mapa de entidades que recibieron donaciones"></div>
+            <p class="small text-body-secondary mt-2 mb-0" data-aviso-mapa>Tocá un marcador para ver qué recibió cada entidad.</p>
+        </div>
+
+        {{#if entregas}}
+        <h2 class="h4 mb-3">Todas las entregas</h2>
+        <div class="row g-4">
+            {{#each entregas}}
+            <div class="col-md-6 col-xl-4">
+                <article class="tarjeta p-4 h-100">
+                    <h2 class="h5 mb-1">{{entidad}}</h2>
+                    {{#if fecha}}<p class="small text-body-secondary mb-3">Entregada el {{fecha}}</p>{{/if}}
+                    <ul class="small mb-3 ps-3">
+                        {{#each bienes}}<li>{{this}}</li>{{/each}}
+                    </ul>
+                    {{#if fotos}}
+                    <div class="d-flex flex-wrap gap-2">
+                        {{#each fotos}}
+                        <a href="{{this}}" target="_blank" rel="noopener">
+                            <img src="{{this}}" alt="Foto de la entrega a {{../entidad}}" class="rounded-3" width="96" height="96" style="object-fit: cover;" loading="lazy">
+                        </a>
+                        {{/each}}
+                    </div>
+                    {{else}}
+                    <p class="small text-body-secondary mb-0">La entidad todavía no cargó fotos.</p>
+                    {{/if}}
+                </article>
+            </div>
+            {{/each}}
+        </div>
+        {{else}}
+        <div class="pagina-simple text-center">
+            <p class="text-body-secondary">Todavía no hay entregas confirmadas.</p>
+        </div>
+        {{/if}}
+
+        <div class="text-center mt-4">
+            <a class="btn btn-outline-primary rounded-pill" href="/">Volver al inicio</a>
+        </div>
+    </div>
+</section>
+{{/partial}}
+
+{{> layout}}
