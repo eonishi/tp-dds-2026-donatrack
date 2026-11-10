@@ -1,4 +1,4 @@
-package ar.edu.utn.donatrack;
+package ar.edu.utn.donatrack.donaciones;
 
 import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.notificacionesDescartadas;
 import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaDonacion;
@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.beneficiarios.*;
 import ar.edu.utn.donatrack.bienes.*;
-import ar.edu.utn.donatrack.donaciones.*;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
@@ -20,7 +19,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class DonaTrackTest implements SimplePersistenceTest {
+class GestionSistemaTest implements SimplePersistenceTest {
 
   private SubCategoria subcatSillas;
   private SubCategoria subcatFideos;

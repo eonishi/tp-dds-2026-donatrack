@@ -1,4 +1,4 @@
-package ar.edu.utn.donatrack;
+package ar.edu.utn.donatrack.propuestas;
 
 import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.notificacionesDescartadas;
 import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaDonacion;
@@ -23,9 +23,6 @@ import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
-import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
-import ar.edu.utn.donatrack.propuestas.PropuestaRepository;
-import ar.edu.utn.donatrack.propuestas.ServicioMatchmakingDonaciones;
 import ar.edu.utn.donatrack.propuestas.matchmaking.AlgoritmoMatchmaking;
 import ar.edu.utn.donatrack.propuestas.matchmaking.MatchCandidato;
 import java.time.LocalDate;

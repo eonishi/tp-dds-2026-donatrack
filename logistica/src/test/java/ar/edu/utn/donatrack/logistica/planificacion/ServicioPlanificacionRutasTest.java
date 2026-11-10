@@ -1,4 +1,4 @@
-package ar.edu.utn.donatrack.planificacion;
+package ar.edu.utn.donatrack.logistica.planificacion;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -9,12 +9,6 @@ import ar.edu.utn.donatrack.logistica.Destino;
 import ar.edu.utn.donatrack.logistica.Ruta;
 import ar.edu.utn.donatrack.logistica.RutaRepository;
 import ar.edu.utn.donatrack.logistica.monitoreo.Coordenada;
-import ar.edu.utn.donatrack.logistica.planificacion.DonacionPlanificable;
-import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
-import ar.edu.utn.donatrack.logistica.planificacion.LoteDonaciones;
-import ar.edu.utn.donatrack.logistica.planificacion.PlanificadorRutas;
-import ar.edu.utn.donatrack.logistica.planificacion.ResultadoPlanificacion;
-import ar.edu.utn.donatrack.logistica.planificacion.ServicioPlanificacionRutas;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;

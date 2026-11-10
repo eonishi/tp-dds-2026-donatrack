@@ -1,4 +1,4 @@
-package ar.edu.utn.donatrack.donaciones;
+package ar.edu.utn.donatrack.propuestas.matchmaking;
 
 import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.notificacionesDescartadas;
 import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaDonacion;
@@ -11,12 +11,13 @@ import ar.edu.utn.donatrack.bienes.Categoria;
 import ar.edu.utn.donatrack.bienes.EstadoUso;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
+import ar.edu.utn.donatrack.donaciones.Donacion;
+import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
-import ar.edu.utn.donatrack.propuestas.matchmaking.AlgoritmoPrioridadSubAtendidos;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.IntStream;

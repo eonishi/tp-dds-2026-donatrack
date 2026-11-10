@@ -1,11 +1,9 @@
-package ar.edu.utn.donatrack.planificacion;
+package ar.edu.utn.donatrack.logistica.planificacion;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.logistica.Camion;
 import ar.edu.utn.donatrack.logistica.monitoreo.Coordenada;
-import ar.edu.utn.donatrack.logistica.planificacion.DonacionPlanificable;
-import ar.edu.utn.donatrack.logistica.planificacion.LoteDonaciones;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;

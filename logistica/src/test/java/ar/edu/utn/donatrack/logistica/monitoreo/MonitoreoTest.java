@@ -1,4 +1,4 @@
-package ar.edu.utn.donatrack.monitoreo;
+package ar.edu.utn.donatrack.logistica.monitoreo;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -6,9 +6,6 @@ import ar.edu.utn.donatrack.logistica.Camion;
 import ar.edu.utn.donatrack.logistica.Destino;
 import ar.edu.utn.donatrack.logistica.Ruta;
 import ar.edu.utn.donatrack.logistica.RutaRepository;
-import ar.edu.utn.donatrack.logistica.monitoreo.Coordenada;
-import ar.edu.utn.donatrack.logistica.monitoreo.LecturaPosicion;
-import ar.edu.utn.donatrack.logistica.monitoreo.MonitorRutas;
 import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.time.Clock;
 import java.time.Instant;

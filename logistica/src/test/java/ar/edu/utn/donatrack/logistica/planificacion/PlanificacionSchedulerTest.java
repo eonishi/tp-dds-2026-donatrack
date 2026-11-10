@@ -1,4 +1,4 @@
-package ar.edu.utn.donatrack.planificacion;
+package ar.edu.utn.donatrack.logistica.planificacion;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -7,8 +7,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import ar.edu.utn.donatrack.logistica.planificacion.PlanificacionScheduler;
-import ar.edu.utn.donatrack.logistica.planificacion.ServicioPlanificacionRutas;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;

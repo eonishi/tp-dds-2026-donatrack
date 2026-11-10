@@ -1,4 +1,4 @@
-package ar.edu.utn.donatrack.planificacion;
+package ar.edu.utn.donatrack.logistica.planificacion;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -7,7 +7,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
-import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotasImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
 import java.net.http.HttpClient;
