@@ -11,6 +11,7 @@ import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.Categoria;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
+import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.notificaciones.NotificadorPorCanal;
 import ar.edu.utn.donatrack.notificaciones.ResultadoEnvio;
@@ -784,6 +785,49 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
                 + "\",\"nuevoEstado\":\"ENTREGADA\"}]");
 
     assertEquals(409, response.statusCode(), response.body());
+    assertEquals(List.of(), mensajesEnviados.subList(antes, mensajesEnviados.size()));
+  }
+
+  @Test
+  void transicionMasivaConCamionInvalidoNoPersisteNingunItem() throws Exception {
+    UUID donanteId = crearDonante();
+    long entidadId = crearEntidad("Hogar Lote Camion");
+    crearNecesidad(entidadId, "Harina");
+    UUID valida = crearDonacion(donanteId, "Harina");
+    UUID sinCamion = crearDonacion(donanteId, "Harina");
+    for (UUID donacionId : List.of(valida, sinCamion)) {
+      asignarDesdePropuesta(donacionId, entidadId);
+      assertEquals(
+          200,
+          request(
+                  "PATCH",
+                  "/api/v1/donaciones/" + donacionId + "/estado",
+                  "{\"estado\":\"LISTA_PARA_ENTREGAR\"}")
+              .statusCode());
+    }
+
+    int antes = mensajesEnviados.size();
+    HttpResponse<String> response =
+        request(
+            "PATCH",
+            "/api/v1/donaciones/estado",
+            "[{\"idDonacion\":\""
+                + valida
+                + "\",\"nuevoEstado\":\"EN_TRASLADO\",\"idCamion\":\"AD789EF\"},"
+                + "{\"idDonacion\":\""
+                + sinCamion
+                + "\",\"nuevoEstado\":\"EN_TRASLADO\",\"idCamion\":\" \"}]");
+
+    assertEquals(400, response.statusCode(), response.body());
+    assertEquals("INVALID_ARGUMENT", json(response).get("code").asText(), response.body());
+    for (UUID donacionId : List.of(valida, sinCamion)) {
+      Donacion donacion =
+          createQuery("select d from Donacion d where d.id = :id", Donacion.class)
+              .setParameter("id", donacionId)
+              .getSingleResult();
+      assertEquals(EstadoDonacion.LISTA_PARA_ENTREGAR, donacion.getEstado());
+      assertTrue(donacion.getIdCamion().isEmpty());
+    }
     assertEquals(List.of(), mensajesEnviados.subList(antes, mensajesEnviados.size()));
   }
 

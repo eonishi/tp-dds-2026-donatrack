@@ -154,7 +154,7 @@ class GestionSistemaTest implements SimplePersistenceTest {
     assertEquals(EstadoDonacion.LISTA_PARA_ENTREGAR, donacion.getEstado());
 
     // Transición: Lista para entregar -> En traslado
-    donacion.iniciarTraslado("http://test.mapa", notificacionesDescartadas());
+    donacion.iniciarTraslado("AA123BB", notificacionesDescartadas());
     assertEquals(EstadoDonacion.EN_TRASLADO, donacion.getEstado());
 
     // Transición: En traslado -> Entrega fallida (Único estado que requiere justificación según
@@ -186,7 +186,7 @@ class GestionSistemaTest implements SimplePersistenceTest {
     // Intentar iniciar un traslado desde el depósito sin asignar ni planificar
     assertThrows(
         IllegalStateException.class,
-        () -> donacion.iniciarTraslado("http://test.mapa", notificacionesDescartadas()));
+        () -> donacion.iniciarTraslado("AA123BB", notificacionesDescartadas()));
   }
 
   @Test
@@ -229,7 +229,7 @@ class GestionSistemaTest implements SimplePersistenceTest {
     Donacion traslado = nuevaDonacion(donanteDummy, List.of(fideos));
     traslado.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"), notificacionesDescartadas());
     traslado.planificarRuta();
-    traslado.iniciarTraslado("http://test.mapa", notificacionesDescartadas());
+    traslado.iniciarTraslado("AA123BB", notificacionesDescartadas());
     assertThrows(
         IllegalStateException.class,
         traslado::retornarAlDeposito,
@@ -239,7 +239,7 @@ class GestionSistemaTest implements SimplePersistenceTest {
     Donacion entregada = nuevaDonacion(donanteDummy, List.of(fideos));
     entregada.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"), notificacionesDescartadas());
     entregada.planificarRuta();
-    entregada.iniciarTraslado("http://test.mapa", notificacionesDescartadas());
+    entregada.iniciarTraslado("AA123BB", notificacionesDescartadas());
     entregada.confirmarEntrega(notificacionesDescartadas());
     assertThrows(
         IllegalStateException.class,
@@ -277,7 +277,7 @@ class GestionSistemaTest implements SimplePersistenceTest {
     assertEquals(entidad, donacion.getEntidadBeneficiaria());
 
     donacion.planificarRuta(); // → ListaParaEntregar
-    donacion.iniciarTraslado("http://test.mapa", notificacionesDescartadas()); // → EnTraslado
+    donacion.iniciarTraslado("AA123BB", notificacionesDescartadas()); // → EnTraslado
     donacion.reportarFalla("Dirección incorrecta", notificacionesDescartadas()); // → EntregaFallida
     assertEquals(EstadoDonacion.ENTREGA_FALLIDA, donacion.getEstado());
 
@@ -316,7 +316,7 @@ class GestionSistemaTest implements SimplePersistenceTest {
     // Llevar la donacion hasta EntregaFallida
     donacion.confirmarEntidadBeneficiaria(entidad, notificacionesDescartadas());
     donacion.planificarRuta();
-    donacion.iniciarTraslado("http://test.mapa", notificacionesDescartadas());
+    donacion.iniciarTraslado("AA123BB", notificacionesDescartadas());
     donacion.reportarFalla("No respondieron", notificacionesDescartadas());
     assertEquals(EstadoDonacion.ENTREGA_FALLIDA, donacion.getEstado());
 

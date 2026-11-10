@@ -22,6 +22,8 @@ import ar.edu.utn.donatrack.notificaciones.NotificadorPorCanal;
 import ar.edu.utn.donatrack.notificaciones.ResultadoEnvio;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoEntregaExitosa;
+import ar.edu.utn.donatrack.notificaciones.eventos.EventoInicioRuta;
+import ar.edu.utn.donatrack.notificaciones.eventos.EventoNotificable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -84,7 +86,7 @@ class DonacionTest {
 
     donacion.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"), notificaciones);
     donacion.planificarRuta();
-    donacion.iniciarTraslado("http://test.mapa", notificaciones);
+    donacion.iniciarTraslado("AA123BB", notificaciones);
     donacion.reportarFalla("Dirección incorrecta", notificaciones);
     donacion.retornarAlDeposito();
 
@@ -116,7 +118,7 @@ class DonacionTest {
     // Walk through state machine: EnDeposito → Asignada → ListaParaEntregar → EnTraslado
     donacion.confirmarEntidadBeneficiaria(entidad, notificaciones);
     donacion.planificarRuta();
-    donacion.iniciarTraslado("http://test.mapa", notificaciones);
+    donacion.iniciarTraslado("AA123BB", notificaciones);
 
     // Pre-condition: necesidad starts at 0, not satisfied
     assertFalse(necesidad.estaSatisfecha(), "Necesidad aún no debería estar satisfecha");
@@ -154,7 +156,7 @@ class DonacionTest {
 
     donacion.confirmarEntidadBeneficiaria(entidad, notificaciones);
     donacion.planificarRuta();
-    donacion.iniciarTraslado("http://test.mapa", notificaciones);
+    donacion.iniciarTraslado("AA123BB", notificaciones);
 
     // Pre-condition
     assertEquals(0.0, necesidad.getCantidadRecibida(), 0.001);
@@ -374,22 +376,60 @@ class DonacionTest {
   }
 
   @Test
-  void registrarCamion_GetIdCamionRetornaLaPatente() {
+  void iniciarTraslado_ConPatente_RegistraElCamionYPublicaElInicioDeRuta() {
     Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"), notificaciones);
+    donacion.planificarRuta();
+    List<EventoNotificable> publicados = new ArrayList<>();
 
-    donacion.registrarCamion("ABC123");
+    donacion.iniciarTraslado("ABC123", publicados::add);
 
+    assertEquals(EstadoDonacion.EN_TRASLADO, donacion.getEstado());
     assertEquals("ABC123", donacion.getIdCamion().orElseThrow());
+    assertEquals(1, publicados.size());
+    assertInstanceOf(EventoInicioRuta.class, publicados.get(0));
   }
 
   @Test
-  void registrarCamionNull_LanzaNullPointerException() {
+  void iniciarTraslado_PatenteNull_LanzaIllegalArgumentExceptionSinCambiarNada() {
+    assertIniciarTrasladoRechazaLaPatente(null);
+  }
+
+  @Test
+  void iniciarTraslado_PatenteEnBlanco_LanzaIllegalArgumentExceptionSinCambiarNada() {
+    assertIniciarTrasladoRechazaLaPatente("   ");
+  }
+
+  private void assertIniciarTrasladoRechazaLaPatente(String patente) {
     Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"), notificaciones);
+    donacion.planificarRuta();
+    int historialAntes = donacion.getHistorialEstado().size();
+    List<EventoNotificable> publicados = new ArrayList<>();
+
+    IllegalArgumentException error =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> donacion.iniciarTraslado(patente, publicados::add));
+
+    assertEquals("idCamion es obligatorio para iniciar el traslado.", error.getMessage());
+    assertEquals(EstadoDonacion.LISTA_PARA_ENTREGAR, donacion.getEstado());
+    assertTrue(donacion.getIdCamion().isEmpty());
+    assertEquals(historialAntes, donacion.getHistorialEstado().size());
+    assertTrue(publicados.isEmpty());
+  }
+
+  @Test
+  void iniciarTraslado_DesdeEstadoNoPermitido_NoRegistraElCamion() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    List<EventoNotificable> publicados = new ArrayList<>();
 
     assertThrows(
-        NullPointerException.class,
-        () -> donacion.registrarCamion(null),
-        "registrarCamion(null) debe lanzar NullPointerException");
+        IllegalStateException.class, () -> donacion.iniciarTraslado("ABC123", publicados::add));
+
+    assertEquals(EstadoDonacion.EN_DEPOSITO, donacion.getEstado());
+    assertTrue(donacion.getIdCamion().isEmpty(), "Un traslado rechazado no debe dejar camión");
+    assertTrue(publicados.isEmpty());
   }
 
   @Test
@@ -407,8 +447,7 @@ class DonacionTest {
     Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
     donacion.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"), notificaciones);
     donacion.planificarRuta();
-    donacion.registrarCamion("XYZ789");
-    donacion.iniciarTraslado("http://test.mapa", notificaciones);
+    donacion.iniciarTraslado("XYZ789", notificaciones);
     donacion.reportarFalla("Dirección incorrecta", notificaciones);
 
     assertEquals(
@@ -430,8 +469,7 @@ class DonacionTest {
 
     donacion.confirmarEntidadBeneficiaria(entidad, notificaciones);
     donacion.planificarRuta();
-    donacion.registrarCamion("AF123ZZ");
-    donacion.iniciarTraslado("http://test.mapa", notificaciones);
+    donacion.iniciarTraslado("AF123ZZ", notificaciones);
     donacion.confirmarEntrega(notificaciones);
 
     LocalDateTime fechaEntrega =
@@ -491,10 +529,11 @@ class DonacionTest {
     donacion.planificarRuta();
     correosEnviados.clear();
 
-    donacion.iniciarTraslado("http://test.mapa", notificaciones);
+    donacion.iniciarTraslado("AA123BB", notificaciones);
 
     String mensaje =
-        "La ruta de entrega ha comenzado. Seguí el recorrido en el mapa: http://test.mapa";
+        "La ruta de entrega ha comenzado. Seguí el recorrido en el mapa: "
+            + "https://mapa.donatrack.org/tracking/AA123BB";
     assertEquals(List.of("test@test.com|" + mensaje, "hogar@test.com|" + mensaje), correosEnviados);
   }
 
@@ -503,8 +542,7 @@ class DonacionTest {
     Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
     donacion.confirmarEntidadBeneficiaria(entidadConCorreo(), notificaciones);
     donacion.planificarRuta();
-    donacion.registrarCamion("AF123ZZ");
-    donacion.iniciarTraslado("http://test.mapa", notificaciones);
+    donacion.iniciarTraslado("AF123ZZ", notificaciones);
     correosEnviados.clear();
 
     donacion.confirmarEntrega(notificaciones);
@@ -526,8 +564,7 @@ class DonacionTest {
     Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
     donacion.confirmarEntidadBeneficiaria(entidadConCorreo(), notificaciones);
     donacion.planificarRuta();
-    donacion.registrarCamion("AF123ZZ");
-    donacion.iniciarTraslado("http://test.mapa", notificaciones);
+    donacion.iniciarTraslado("AF123ZZ", notificaciones);
     correosEnviados.clear();
 
     donacion.reportarFalla("Destino cerrado", notificaciones);

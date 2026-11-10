@@ -148,17 +148,59 @@ class EventoNotificableTest {
   }
 
   @Test
-  void eventoInicioRuta_generaNotificaciones_conLaUrlDelMapa() {
-    entidad.agregarCorreo(new CorreoElectronico("entidad@test.com"));
-    List<Notificable> destinatarios = List.of(donante, entidad);
-    EventoInicioRuta evento =
-        new EventoInicioRuta(destinatarios, "https://maps.example.com/ruta/1");
+  void eventoInicioRuta_sinBaseConfigurada_usaElMapaPorDefecto() {
+    String anterior = System.clearProperty(PROPIEDAD_TRACKING);
+    try {
+      assertCadaNotificacionContieneUnaVez(
+          new EventoInicioRuta(List.of(donante, entidad), "AB123CD"),
+          "https://mapa.donatrack.org/tracking/AB123CD");
+    } finally {
+      restaurarPropiedad(anterior);
+    }
+  }
 
+  @Test
+  void eventoInicioRuta_conBaseConfigurada_normalizaLaBarraFinal() {
+    String anterior = System.setProperty(PROPIEDAD_TRACKING, "https://otro.mapa/t/");
+    try {
+      assertCadaNotificacionContieneUnaVez(
+          new EventoInicioRuta(List.of(donante, entidad), "AB123CD"),
+          "https://otro.mapa/t/AB123CD");
+    } finally {
+      restaurarPropiedad(anterior);
+    }
+  }
+
+  @Test
+  void eventoInicioRuta_conBaseSinBarraFinal_agregaLaBarra() {
+    String anterior = System.setProperty(PROPIEDAD_TRACKING, "https://otro.mapa/t");
+    try {
+      assertCadaNotificacionContieneUnaVez(
+          new EventoInicioRuta(List.of(donante, entidad), "AB123CD"),
+          "https://otro.mapa/t/AB123CD");
+    } finally {
+      restaurarPropiedad(anterior);
+    }
+  }
+
+  private static final String PROPIEDAD_TRACKING = "donatrack.tracking.url";
+
+  private static void restaurarPropiedad(String anterior) {
+    if (anterior == null) {
+      System.clearProperty(PROPIEDAD_TRACKING);
+    } else {
+      System.setProperty(PROPIEDAD_TRACKING, anterior);
+    }
+  }
+
+  private void assertCadaNotificacionContieneUnaVez(EventoInicioRuta evento, String url) {
     List<Notificacion> notificaciones = evento.generarNotificaciones();
 
     assertEquals(2, notificaciones.size());
     for (Notificacion n : notificaciones) {
-      assertEquals(1, apariciones(n.mensaje(), "https://maps.example.com/ruta/1"));
+      assertEquals(
+          "La ruta de entrega ha comenzado. Seguí el recorrido en el mapa: " + url, n.mensaje());
+      assertEquals(1, apariciones(n.mensaje(), url));
     }
   }
 

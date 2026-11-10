@@ -283,13 +283,13 @@ public class Donacion {
    * Registra la patente del camión que retira la donación.
    *
    * <p>La patente llega como referencia de valor desde el microservicio de logística (la flota es
-   * de logística); se registra al iniciar el traslado y no se vuelve a pedir al confirmar la
-   * entrega.
+   * de logística); solo la registra {@link EstadoDonacion} al iniciar el traslado y no se vuelve a
+   * pedir al confirmar la entrega.
    *
    * @param patente patente del camión (no nula)
    * @throws NullPointerException si {@code patente} es {@code null}
    */
-  public void registrarCamion(String patente) {
+  void registrarCamion(String patente) {
     this.idCamion = Objects.requireNonNull(patente, "idCamion no debe ser null");
   }
 
@@ -332,8 +332,19 @@ public class Donacion {
     this.estado.planificarRuta(this);
   }
 
-  public void iniciarTraslado(String urlMapa, PublicadorDeEventos publicador) {
-    this.estado.iniciarTraslado(this, urlMapa, publicador);
+  /**
+   * Inicia el traslado con el camión indicado y publica el aviso de inicio de ruta.
+   *
+   * <p>Toda donación en {@link EstadoDonacion#EN_TRASLADO} tiene camión: la patente se valida y se
+   * registra junto con la transición, y si la transición no está permitida el camión no se toca.
+   *
+   * @param idCamion patente del camión que retira la donación
+   * @param publicador destino del evento de la transición
+   * @throws IllegalArgumentException si {@code idCamion} es {@code null} o está en blanco
+   * @throws IllegalStateException si la donación no está lista para entregar
+   */
+  public void iniciarTraslado(String idCamion, PublicadorDeEventos publicador) {
+    this.estado.iniciarTraslado(this, idCamion, publicador);
   }
 
   public void confirmarEntrega(PublicadorDeEventos publicador) {

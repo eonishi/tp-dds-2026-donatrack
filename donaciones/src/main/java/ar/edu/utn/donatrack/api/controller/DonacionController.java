@@ -284,7 +284,7 @@ public final class DonacionController implements WithSimplePersistenceUnit {
       Donacion donacion, TransicionEstadoRequest request, PublicadorDeEventos publicador) {
     switch (request.estado()) {
       case LISTA_PARA_ENTREGAR -> donacion.planificarRuta();
-      case EN_TRASLADO -> iniciarTraslado(donacion, request.idCamion(), publicador);
+      case EN_TRASLADO -> donacion.iniciarTraslado(request.idCamion(), publicador);
       case ENTREGADA -> donacion.confirmarEntrega(publicador);
       case ENTREGA_FALLIDA -> donacion.reportarFalla(request.justificacion(), publicador);
       case VENCIDA -> {
@@ -312,9 +312,6 @@ public final class DonacionController implements WithSimplePersistenceUnit {
     for (TransicionMasivaRequest req : requests) {
       DtoValidator.validate(req);
       buscar(req.idDonacion());
-      if (req.nuevoEstado() == EstadoDonacion.EN_TRASLADO) {
-        validarIdCamion(req.idCamion());
-      }
     }
 
     PublicadorDiferido publicador = notificaciones.publicadorDiferido();
@@ -332,18 +329,5 @@ public final class DonacionController implements WithSimplePersistenceUnit {
 
     publicador.enviarPendientes();
     ctx.status(200);
-  }
-
-  private void iniciarTraslado(Donacion donacion, String idCamion, PublicadorDeEventos publicador) {
-    validarIdCamion(idCamion);
-    donacion.registrarCamion(idCamion);
-    String urlMapa = "https://mapa.donatrack.org/tracking/" + idCamion;
-    donacion.iniciarTraslado(urlMapa, publicador);
-  }
-
-  private void validarIdCamion(String idCamion) {
-    if (idCamion == null || idCamion.isBlank()) {
-      throw new IllegalArgumentException("idCamion es obligatorio para iniciar el traslado.");
-    }
   }
 }

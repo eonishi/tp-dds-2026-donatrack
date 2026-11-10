@@ -310,8 +310,7 @@ public final class DemoDataset implements WithSimplePersistenceUnit {
     if (target == EstadoDonacion.LISTA_PARA_ENTREGAR) {
       return;
     }
-    donation.registrarCamion("DEMO-01");
-    donation.iniciarTraslado(null, sinAvisos);
+    donation.iniciarTraslado("DEMO-01", sinAvisos);
     if (target == EstadoDonacion.ENTREGADA) {
       donation.confirmarEntrega(sinAvisos);
     } else if (target == EstadoDonacion.ENTREGA_FALLIDA) {

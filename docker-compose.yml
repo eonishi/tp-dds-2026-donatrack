@@ -10,6 +10,8 @@ services:
       PORT: "7070"
       DB_SCHEMA: donaciones
       LOGISTICA_API_URL: http://logistica:9001
+      # Base del mapa de seguimiento que se manda en el aviso de inicio de ruta.
+      DONATRACK_TRACKING_URL: ${DONATRACK_TRACKING_URL:-https://mapa.donatrack.org/tracking}
     ports:
       - "7070:7070"
     depends_on:

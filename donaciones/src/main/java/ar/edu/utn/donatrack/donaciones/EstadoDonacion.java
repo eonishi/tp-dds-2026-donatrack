@@ -53,14 +53,17 @@ public enum EstadoDonacion {
   },
   LISTA_PARA_ENTREGAR {
     @Override
-    public void iniciarTraslado(Donacion donacion, String urlMapa, PublicadorDeEventos publicador) {
+    public void iniciarTraslado(
+        Donacion donacion, String idCamion, PublicadorDeEventos publicador) {
+      if (idCamion == null || idCamion.isBlank()) {
+        throw new IllegalArgumentException("idCamion es obligatorio para iniciar el traslado.");
+      }
+      donacion.registrarCamion(idCamion);
       transicionar(donacion, EN_TRASLADO, null);
-      if (donacion.getDonante() != null
-          && donacion.getEntidadBeneficiaria() != null
-          && urlMapa != null) {
+      if (donacion.getDonante() != null && donacion.getEntidadBeneficiaria() != null) {
         publicador.publicar(
             new EventoInicioRuta(
-                List.of(donacion.getDonante(), donacion.getEntidadBeneficiaria()), urlMapa));
+                List.of(donacion.getDonante(), donacion.getEntidadBeneficiaria()), idCamion));
       }
     }
 
@@ -128,7 +131,7 @@ public enum EstadoDonacion {
     noPermitido("planificar la ruta");
   }
 
-  public void iniciarTraslado(Donacion donacion, String urlMapa, PublicadorDeEventos publicador) {
+  public void iniciarTraslado(Donacion donacion, String idCamion, PublicadorDeEventos publicador) {
     noPermitido("iniciar el traslado");
   }
 
