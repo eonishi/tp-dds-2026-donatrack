@@ -3,14 +3,6 @@ package ar.edu.utn.donatrack.testsupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-import ar.edu.utn.donatrack.beneficiarios.Necesidad;
-import ar.edu.utn.donatrack.bienes.Bien;
-import ar.edu.utn.donatrack.bienes.SubCategoria;
-import ar.edu.utn.donatrack.donaciones.Donacion;
-import ar.edu.utn.donatrack.donantes.Donante;
-import ar.edu.utn.donatrack.notificaciones.AvisoBandeja;
-import ar.edu.utn.donatrack.security.Usuario;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
@@ -51,33 +43,7 @@ public final class EscenarioHttp implements WithSimplePersistenceUnit {
 
   /** Borra lo que crearon las pruebas, del hijo al padre; conserva los usuarios semilla. */
   public void limpiar() {
-    withTransaction(
-        () -> {
-          createQuery("select a from AvisoBandeja a", AvisoBandeja.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select b from Bien b", Bien.class).getResultList().forEach(this::remove);
-          createQuery("select n from Necesidad n", Necesidad.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select d from Donacion d", Donacion.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select e from EntidadBeneficiaria e", EntidadBeneficiaria.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select d from Donante d", Donante.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select s from SubCategoria s", SubCategoria.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery(
-                  "select u from Usuario u where u.email not like '%@donatrack.local'",
-                  Usuario.class)
-              .getResultList()
-              .forEach(this::remove);
-        });
+    BaseDePrueba.vaciar();
   }
 
   // --- Altas ---

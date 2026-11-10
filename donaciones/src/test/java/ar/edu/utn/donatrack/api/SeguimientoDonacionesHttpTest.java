@@ -3,15 +3,9 @@ package ar.edu.utn.donatrack.api;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-import ar.edu.utn.donatrack.beneficiarios.Necesidad;
-import ar.edu.utn.donatrack.bienes.Bien;
-import ar.edu.utn.donatrack.bienes.SubCategoria;
-import ar.edu.utn.donatrack.donaciones.Donacion;
-import ar.edu.utn.donatrack.donantes.Donante;
-import ar.edu.utn.donatrack.security.Usuario;
 import ar.edu.utn.donatrack.seguimiento.PosicionCamion;
 import ar.edu.utn.donatrack.testsupport.ApiDePrueba;
+import ar.edu.utn.donatrack.testsupport.BaseDePrueba;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
@@ -65,34 +59,9 @@ class SeguimientoDonacionesHttpTest implements WithSimplePersistenceUnit {
     app.stop();
   }
 
-  // Mismo orden de borrado que DonacionesApiHttpTest (del hijo al padre), más los usuarios que dio
-  // de alta cada prueba. Los de prueba del sistema (@donatrack.local) se conservan.
   @AfterEach
   void limpiarPersistencia() {
-    withTransaction(
-        () -> {
-          createQuery("select b from Bien b", Bien.class).getResultList().forEach(this::remove);
-          createQuery("select n from Necesidad n", Necesidad.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select d from Donacion d", Donacion.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select e from EntidadBeneficiaria e", EntidadBeneficiaria.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select d from Donante d", Donante.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select s from SubCategoria s", SubCategoria.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery(
-                  "select u from Usuario u where u.email not like '%@donatrack.local'",
-                  Usuario.class)
-              .getResultList()
-              .forEach(this::remove);
-        });
+    BaseDePrueba.vaciar();
   }
 
   @Test
