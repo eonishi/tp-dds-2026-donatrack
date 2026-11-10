@@ -1,0 +1,99 @@
+{{#partial "titulo"}}Necesidades · DonaTrack{{/partial}}
+
+{{#partial "contenido"}}
+<section class="py-4">
+    <div class="encabezado text-start mx-0 mb-4">
+        <span class="chip mb-3">{{entidad}}</span>
+        <h1 class="fs-2 fw-semibold">Necesidades</h1>
+        <p>Lo que necesita tu entidad. Con esto elegimos qué donaciones te asignamos.</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <form method="post" action="/entidad/necesidades" class="tarjeta p-4" novalidate>
+                <h2 class="h5 mb-3">Cargar una necesidad</h2>
+                {{#if error}}<div class="alert alert-danger py-2 small" role="alert">{{error}}</div>{{/if}}
+
+                <fieldset class="mb-3">
+                    <legend class="form-label small fw-semibold">¿Es por única vez o se repite?</legend>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="tipo" id="tipo-unica" value="EXTRAORDINARIA"{{#unless recurrente}} checked{{/unless}}>
+                        <label class="form-check-label" for="tipo-unica">Por única vez</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="tipo" id="tipo-recurrente" value="RECURRENTE"{{#if recurrente}} checked{{/if}}>
+                        <label class="form-check-label" for="tipo-recurrente">Se repite</label>
+                    </div>
+                </fieldset>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold" for="periodo">Si se repite, ¿cada cuánto?</label>
+                    <select class="form-select" id="periodo" name="periodo">
+                        <option value="SEMANAL">Todas las semanas</option>
+                        <option value="MENSUAL"{{#if mensual}} selected{{/if}}>Todos los meses</option>
+                    </select>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-6">
+                        <label class="form-label small fw-semibold" for="categoria">Categoría</label>
+                        <select class="form-select" id="categoria" name="categoria" required>
+                            <option value="">Elegí una</option>
+                            {{#each categorias}}<option value="{{valor}}"{{#if elegida}} selected{{/if}}>{{texto}}</option>{{/each}}
+                        </select>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small fw-semibold" for="subcategoria">¿Qué necesitás?</label>
+                        <input class="form-control" id="subcategoria" name="subcategoria" list="sugerencias" value="{{datos.subcategoria}}" placeholder="Ej.: Arroz" required>
+                        <datalist id="sugerencias">{{#each sugerencias}}<option value="{{this}}">{{/each}}</datalist>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small fw-semibold" for="cantidad">Cantidad</label>
+                        <input class="form-control" id="cantidad" name="cantidad" type="number" min="0.01" step="0.01" value="{{datos.cantidad}}" required>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small fw-semibold" for="unidad">Unidad</label>
+                        <select class="form-select" id="unidad" name="unidad" required>
+                            {{#each unidades}}<option value="{{valor}}"{{#if elegida}} selected{{/if}}>{{texto}}</option>{{/each}}
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold" for="descripcion">Descripción</label>
+                    <textarea class="form-control" id="descripcion" name="descripcion" rows="2" maxlength="255" placeholder="Para qué lo necesitan o algún detalle" required>{{datos.descripcion}}</textarea>
+                </div>
+                <button class="btn btn-primary rounded-pill px-4" type="submit">Agregar necesidad</button>
+            </form>
+        </div>
+
+        <div class="col-lg-7">
+            {{#if necesidades}}
+            <div class="d-flex flex-column gap-3">
+                {{#each necesidades}}
+                <article class="tarjeta p-4">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
+                        <div>
+                            <h3 class="h6 mb-1">{{que}} <span class="small text-body-secondary fw-normal">· {{categoria}}</span></h3>
+                            <p class="small mb-2">{{descripcion}}</p>
+                        </div>
+                        <span class="badge rounded-pill {{#if satisfecha}}text-bg-success{{else}}text-bg-light border{{/if}}">{{#if satisfecha}}Cubierta{{else}}{{tipo}}{{/if}}</span>
+                    </div>
+                    <div class="progress mb-2" role="progressbar" aria-label="Recibido de {{que}}" aria-valuenow="{{porcentaje}}" aria-valuemin="0" aria-valuemax="100" style="height: .5rem;">
+                        <div class="progress-bar bg-success" style="width: {{porcentaje}}%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small text-body-secondary">Recibido: {{progreso}}</span>
+                        <form method="post" action="/entidad/necesidades/{{id}}/eliminar" class="m-0">
+                            <button class="btn btn-sm btn-link text-danger p-0" type="submit">Eliminar</button>
+                        </form>
+                    </div>
+                </article>
+                {{/each}}
+            </div>
+            {{else}}
+            <div class="tarjeta p-4 text-center"><p class="mb-0">Todavía no cargaste necesidades. Sin ellas no podemos asignarte donaciones.</p></div>
+            {{/if}}
+        </div>
+    </div>
+</section>
+{{/partial}}
+
+{{> layout}}

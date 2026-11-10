@@ -179,8 +179,8 @@ public final class DonacionController implements WithSimplePersistenceUnit {
     DonacionResponse actualizada =
         withTransaction(
             () -> {
-              propuestas.remove(donacion);
               donacion.reemplazarBienes(bienes(request.bienes(), new HashMap<>()));
+              propuestas.remove(donacion);
               return donacion(donaciones.save(donacion));
             });
     ctx.json(actualizada);
@@ -259,15 +259,24 @@ public final class DonacionController implements WithSimplePersistenceUnit {
   private List<Bien> bienes(List<BienRequest> items, Map<String, SubCategoria> cache) {
     return items.stream()
         .map(
-            b ->
-                new Bien(
-                    b.descripcion(),
-                    b.foto(),
-                    b.cantidad(),
-                    b.unidad(),
-                    b.fechaVencimiento(),
-                    b.estadoDeUso() == null ? EstadoUso.NO_APLICA : b.estadoDeUso(),
-                    subcategorias.obtenerOrCrear(b.subcategoria(), b.categoria(), cache)))
+            b -> {
+              SubCategoria subcategoria =
+                  subcategorias.obtenerOrCrear(b.subcategoria(), b.categoria(), cache);
+              if ((b.categoria().requiereEstadoDeUso()
+                      || subcategoria.getCategoria().requiereEstadoDeUso())
+                  && (b.estadoDeUso() == null || b.estadoDeUso() == EstadoUso.NO_APLICA)) {
+                throw ApiException.badRequest(
+                    "Debe indicar NUEVO o USADO para mobiliario y vestimenta.");
+              }
+              return new Bien(
+                  b.descripcion(),
+                  b.foto(),
+                  b.cantidad(),
+                  b.unidad(),
+                  b.fechaVencimiento(),
+                  b.estadoDeUso() == null ? EstadoUso.NO_APLICA : b.estadoDeUso(),
+                  subcategoria);
+            })
         .toList();
   }
 

@@ -1,10 +1,11 @@
 %% ============================================================================
 %% DonaTrack — Diagrama de clases del dominio (estado actual del código)
-%% Generado a partir de src/main/java — 2026-08-18
+%% Generado a partir de src/main/java — actualizado 2026-11-06 (entrega 4)
 %%
 %% Alcance: clases del dominio (entidades, value objects, enums y patrones de
-%% diseño: State en Donacion, Strategy en matchmaking, double dispatch en
-%% notificaciones).
+%% diseño: State en Donacion (como enum con comportamiento), Strategy y Template
+%% Method en matchmaking, double dispatch en notificaciones). Desde la entrega 4
+%% incluye también las cuentas de usuario y la bandeja web de avisos.
 %% Excluye a propósito: repositorios, servicios de aplicación, schedulers,
 %% importadores CSV y utilidades (infraestructura).
 %%
@@ -30,10 +31,8 @@ classDiagram
         class PersonaHumana {
             -nombre: String
             -apellido: String
-            -edad: Integer
             -genero: Genero
             -direccion: String
-            +setEdad(edad: int)
             +setDireccion(direccion: String)
         }
         class PersonajeJuridica {
@@ -120,9 +119,14 @@ classDiagram
             -necesidadesExtraordinarias: List~Necesidad~
             -necesidadesRecurrentes: List~NecesidadRecurrente~
             -correos: List~CorreoElectronico~
-            -recepciones: List~RecepcionDonacion~
-            +registrarRecepcion(donacion: Donacion, fechaRecepcion: LocalDate)
-            +cantidadDonacionesRecibidasDesde(fechaDesde: LocalDate) long
+            -latitud: Double
+            -longitud: Double
+            -ubicacionIntentada: boolean
+            +aplicarDonacionRecibida(donacion: Donacion)
+            +tieneNecesidadCompatible(donacion: Donacion) boolean
+            +ubicar(latitud: double, longitud: double)
+            +marcarSinUbicacion()
+            +faltaUbicar() boolean
             +agregarNecesidadExtraordinaria(n: Necesidad)
             +agregarNecesidadRecurrente(n: NecesidadRecurrente)
         }
@@ -139,10 +143,6 @@ classDiagram
             -periodo: TipoPeriodo
             +reiniciarPeriodo()
         }
-        class RecepcionDonacion {
-            -donacion: Donacion
-            -fechaRecepcion: LocalDate
-        }
         class TipoPeriodo {
             <<enumeration>>
             SEMANAL
@@ -157,7 +157,8 @@ classDiagram
             -historialEstado: List~HistorialEstado~
             -bienes: List~Bien~
             -entidadBeneficiaria: EntidadBeneficiaria
-            -camion: Camion
+            -idCamion: String
+            -fotos: List~String~
             -donante: Donante
             +asignar()
             +planificarRuta()
@@ -166,37 +167,38 @@ classDiagram
             +reportarFalla(justificacion: String)
             +marcarVencida()
             +retornarAlDeposito()
+            +agregarFoto(url: String)
             +getCantidadTotal() double
             +esPerecedera() boolean
         }
         class HistorialEstado {
             <<valueObject>>
-            -fecha: LocalDate
-            -estadoAlcanzado: NombreEstado
+            -fecha: LocalDateTime
+            -estadoAlcanzado: EstadoDonacion
             -justificacion: String
         }
         class PropuestaDeAsignacion {
             -donacion: Donacion
-            -rankings: List~RankingMatchmaking~
+            -candidatos: List~MatchCandidato~
             -pendiente: boolean
             +confirmar(elegida: EntidadBeneficiaria)
-        }
-        class RankingMatchmaking {
-            -algoritmo: String
-            -candidatos: List~MatchCandidato~
         }
         class MatchCandidato {
             -entidadBeneficiaria: EntidadBeneficiaria
             -puntaje: int
         }
         class AlgoritmoMatchmaking {
-            <<interface>>
-            +getNombre() String
-            +rankear(donacion: Donacion, entidades: Collection~EntidadBeneficiaria~, fechaReferencia: LocalDate) RankingMatchmaking
+            <<abstract>>
+            +rankear(donacion: Donacion, entidades: Collection~EntidadBeneficiaria~, fechaReferencia: LocalDate) List~MatchCandidato~
+            #ordenarCandidatos(...) List~MatchCandidato~
         }
         class AlgoritmoCompatibilidadSemantica
         class AlgoritmoPrioridadSubAtendidos
-        class NombreEstado {
+    }
+
+    %% ─────────────────────────── Estados (State) ───────────────────────────
+    namespace estados {
+        class EstadoDonacion {
             <<enumeration>>
             EN_DEPOSITO
             ASIGNACION_REALIZADA
@@ -205,29 +207,14 @@ classDiagram
             ENTREGADA
             ENTREGA_FALLIDA
             VENCIDA
+            +asignar(donacion: Donacion) List~Notificacion~
+            +planificarRuta(donacion: Donacion) List~Notificacion~
+            +iniciarTraslado(donacion: Donacion, urlMapa: String) List~Notificacion~
+            +confirmarEntrega(donacion: Donacion) List~Notificacion~
+            +reportarFalla(donacion: Donacion, justificacion: String) List~Notificacion~
+            +marcarVencida(donacion: Donacion) List~Notificacion~
+            +retornarAlDeposito(donacion: Donacion) List~Notificacion~
         }
-    }
-
-    %% ─────────────────────────── Estados (State) ───────────────────────────
-    namespace estados {
-        class EstadoDonacion {
-            <<abstract>>
-            +getNombreEstado() NombreEstado
-            +asignar(donacion: Donacion)
-            +planificarRuta(donacion: Donacion)
-            +iniciarTraslado(donacion: Donacion)
-            +confirmarEntrega(donacion: Donacion)
-            +reportarFalla(donacion: Donacion, justificacion: String)
-            +marcarVencida(donacion: Donacion)
-            +retornarAlDeposito(donacion: Donacion)
-        }
-        class EnDeposito
-        class AsignacionRealizada
-        class ListaParaEntregar
-        class EnTraslado
-        class Entregada
-        class EntregaFallida
-        class Vencida
     }
 
     %% ─────────────────────────── Logística ───────────────────────────
@@ -317,6 +304,50 @@ classDiagram
         class EventoEntregaExitosa
         class EventoEntregaNoSatisfactoria
         class EventoAusenciaDonante
+        class BandejaNotificaciones {
+            <<interface>>
+            +registrar(notificaciones: List~Notificacion~)
+        }
+        class AvisoBandeja {
+            -donanteId: UUID
+            -entidadId: Long
+            -mensaje: String
+            -fecha: LocalDateTime
+            -leido: boolean
+            +marcarLeido()
+        }
+    }
+
+    %% ─────────────────────────── Seguridad (entrega 4) ───────────────────────────
+    namespace seguridad {
+        class Usuario {
+            -email: String
+            -passwordHash: String
+            -roles: Set~Role~
+            -donanteId: UUID
+            -entidadId: Long
+            +matchesPassword(password: String) boolean
+            +isPendienteDeActivacion() boolean
+        }
+        class Role {
+            <<enumeration>>
+            ADMIN
+            DONANTE
+            BENEFICIARIO
+        }
+    }
+
+    %% ─────────────────────────── Ubicación (entrega 4) ───────────────────────────
+    namespace ubicacion {
+        class Coordenadas {
+            <<valueObject>>
+            +latitud: double
+            +longitud: double
+        }
+        class Geocodificador {
+            <<interface>>
+            +ubicar(direccion: String) Optional~Coordenadas~
+        }
     }
 
     %% ─────────────────────────── Relaciones ───────────────────────────
@@ -344,37 +375,27 @@ classDiagram
     EntidadBeneficiaria *-- "*" Necesidad : extraordinarias
     EntidadBeneficiaria *-- "*" NecesidadRecurrente : recurrentes
     EntidadBeneficiaria *-- "*" CorreoElectronico : correos
-    EntidadBeneficiaria *-- "*" RecepcionDonacion : recepciones
     Necesidad <|-- NecesidadRecurrente
     Necesidad *-- SubCategoria : subcategoria
     Necesidad --> UnidadMedida : unidad
     NecesidadRecurrente --> TipoPeriodo : periodo
-    RecepcionDonacion --> Donacion : registra
 
     %% donaciones
     Donacion *-- "*" Bien : bienes
     Donacion *-- "*" HistorialEstado : historial
-    Donacion *-- EstadoDonacion : estado actual
+    Donacion --> EstadoDonacion : estado actual
     Donacion --> Donante : donante
     Donacion --> "0..1" EntidadBeneficiaria : asignada a
-    Donacion ..> Camion : idCamion (API)
-    HistorialEstado --> NombreEstado : estadoAlcanzado
-    PropuestaDeAsignacion *-- Donacion : donacion
-    PropuestaDeAsignacion *-- "*" RankingMatchmaking : rankings
-    RankingMatchmaking *-- "*" MatchCandidato : candidatos
+    Donacion ..> Camion : idCamion = patente (API)
+    HistorialEstado --> EstadoDonacion : estadoAlcanzado
+    PropuestaDeAsignacion --> Donacion : donacion
+    PropuestaDeAsignacion *-- "*" MatchCandidato : candidatos
     MatchCandidato --> EntidadBeneficiaria : candidata
-    AlgoritmoMatchmaking <|.. AlgoritmoCompatibilidadSemantica
-    AlgoritmoMatchmaking <|.. AlgoritmoPrioridadSubAtendidos
-    AlgoritmoMatchmaking ..> RankingMatchmaking : genera
+    AlgoritmoMatchmaking <|-- AlgoritmoCompatibilidadSemantica
+    AlgoritmoMatchmaking <|-- AlgoritmoPrioridadSubAtendidos
+    AlgoritmoMatchmaking ..> MatchCandidato : rankea
 
     %% estados
-    EstadoDonacion <|-- EnDeposito
-    EstadoDonacion <|-- AsignacionRealizada
-    EstadoDonacion <|-- ListaParaEntregar
-    EstadoDonacion <|-- EnTraslado
-    EstadoDonacion <|-- Entregada
-    EstadoDonacion <|-- EntregaFallida
-    EstadoDonacion <|-- Vencida
     EstadoDonacion ..> Donacion : opera sobre
 
     %% logística
@@ -407,3 +428,16 @@ classDiagram
     EventoNotificable <|-- EventoEntregaNoSatisfactoria
     EventoNotificable <|-- EventoAusenciaDonante
     EventoNotificable ..> Notificacion : genera
+    BandejaNotificaciones ..> Notificacion : registra
+    BandejaNotificaciones ..> AvisoBandeja : guarda uno por destinatario y mensaje
+    AvisoBandeja ..> Donante : donanteId
+    AvisoBandeja ..> EntidadBeneficiaria : entidadId
+
+    %% seguridad
+    Usuario --> "1..*" Role : roles
+    Usuario ..> Donante : donanteId
+    Usuario ..> EntidadBeneficiaria : entidadId
+
+    %% ubicación
+    Geocodificador ..> Coordenadas : devuelve
+    Geocodificador ..> EntidadBeneficiaria : ubica (por su dirección)

@@ -36,7 +36,6 @@ public class RepositoriosTest implements SimplePersistenceTest {
             correoElsa,
             "Elsa",
             "Pato",
-            25,
             "111222333",
             TipoDocumento.DNI,
             Genero.FEMENINO,

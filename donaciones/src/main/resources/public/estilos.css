@@ -460,3 +460,29 @@ a:hover { text-decoration: underline; }
 @media (prefers-reduced-motion: reduce) {
     .tarjeta, .opcion-rol { transition: none; }
 }
+
+/* ---------- Mapas (Leaflet) ---------- */
+.mapa {
+    height: 26rem;
+    border-radius: 1.25rem;
+    border: 1px solid #e6ebe6;
+    overflow: hidden;
+    z-index: 0;
+}
+@media (max-width: 575.98px) { .mapa { height: 20rem; } }
+.marcador-emoji {
+    font-size: 1.6rem;
+    line-height: 32px;
+    text-align: center;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+}
+.popup-entregas img { display: block; }
+
+/* ---------- Avisos y filtros ---------- */
+.aviso-nuevo { border-left: 4px solid var(--verde); }
+.filtros .form-select[multiple] { min-height: 7rem; }
+
+.campo-obligatorio { color: #b42318; }
+
+.donacion-dialog { width: min(42rem, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); overflow-y: auto; border: 0; }
+.donacion-dialog::backdrop { background: rgb(0 0 0 / 45%); }

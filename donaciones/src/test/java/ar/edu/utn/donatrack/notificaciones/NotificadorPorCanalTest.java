@@ -30,7 +30,6 @@ class NotificadorPorCanalTest {
             new CorreoElectronico("donante@example.org"),
             "Ana",
             "Pérez",
-            30,
             "30111222",
             TipoDocumento.DNI,
             Genero.FEMENINO,

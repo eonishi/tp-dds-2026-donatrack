@@ -1,5 +1,6 @@
 package ar.edu.utn.donatrack.api.error;
 
+import ar.edu.utn.donatrack.web.controller.PaginasDeError;
 import io.javalin.Javalin;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
@@ -39,7 +40,7 @@ public final class ApiExceptionHandler {
     app.error(
         404,
         ctx -> {
-          if (ctx.contentType() == null) {
+          if (PaginasDeError.esApi(ctx) && ctx.contentType() == null) {
             write(
                 ctx,
                 clock,
@@ -49,7 +50,7 @@ public final class ApiExceptionHandler {
     app.error(
         405,
         ctx -> {
-          if (ctx.contentType() == null) {
+          if (PaginasDeError.esApi(ctx) && ctx.contentType() == null) {
             write(
                 ctx,
                 clock,
@@ -59,6 +60,11 @@ public final class ApiExceptionHandler {
   }
 
   private static void write(Context ctx, Clock clock, ApiException exception) {
+    // Fuera de la API solo se fija el código: la página de error (PaginasDeError) arma la vista.
+    if (!PaginasDeError.esApi(ctx)) {
+      ctx.status(exception.getStatus());
+      return;
+    }
     ctx.status(exception.getStatus())
         .json(
             new ApiError(

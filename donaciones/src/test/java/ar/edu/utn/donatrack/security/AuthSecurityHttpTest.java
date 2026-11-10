@@ -3,7 +3,9 @@ package ar.edu.utn.donatrack.security;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.testsupport.ApiDePrueba;
+import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.Javalin;
 import java.io.IOException;
 import java.net.URI;
@@ -14,7 +16,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class AuthSecurityHttpTest {
+class AuthSecurityHttpTest implements WithSimplePersistenceUnit {
   private final HttpClient client = HttpClient.newHttpClient();
   private Javalin app;
   private String baseUrl;
@@ -49,7 +51,7 @@ class AuthSecurityHttpTest {
     HttpResponse<String> dashboard =
         get("/dashboard", loginResponse.headers().firstValue("Set-Cookie").orElse(""));
     assertEquals(200, dashboard.statusCode());
-    assertTrue(dashboard.body().contains("Bienvenido"));
+    assertTrue(dashboard.body().contains("Hola, admin"));
   }
 
   @Test
@@ -167,6 +169,66 @@ class AuthSecurityHttpTest {
 
     String cookie = loginResponse.headers().firstValue("Set-Cookie").orElse("");
     assertEquals(403, get("/logistica", cookie).statusCode());
+  }
+
+  @Test
+  void elBeneficiarioDePruebaPuedeAbrirYCargarSusNecesidades() throws Exception {
+    HttpResponse<String> loginResponse =
+        post(
+            "/login",
+            "email=beneficiario%40donatrack.local&password=beneficiario123",
+            "application/x-www-form-urlencoded");
+
+    assertEquals(302, loginResponse.statusCode());
+    String cookie = loginResponse.headers().firstValue("Set-Cookie").orElse("");
+    assertEquals(200, get("/dashboard", cookie).statusCode());
+    assertEquals(200, get("/entidad/necesidades", cookie).statusCode());
+    HttpRequest alta =
+        HttpRequest.newBuilder(URI.create(baseUrl + "/entidad/necesidades"))
+            .header("Cookie", cookie)
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .POST(
+                HttpRequest.BodyPublishers.ofString(
+                    "tipo=EXTRAORDINARIA&categoria=ALIMENTO&subcategoria=ArrozDemo&cantidad=10&unidad=KILOGRAMOS&descripcion=Alimentos"))
+            .build();
+    HttpResponse<String> respuesta = client.send(alta, HttpResponse.BodyHandlers.ofString());
+    assertEquals(302, respuesta.statusCode(), respuesta.body());
+    assertTrue(get("/entidad/necesidades", cookie).body().contains("ArrozDemo"));
+  }
+
+  @Test
+  void reiniciarAuthConservaLaEntidadDeEjemploSinDuplicarla() {
+    UsuariosRepository usuarios = new UsuariosRepository();
+    Usuario usuario = usuarios.buscarPorEmail("beneficiario@donatrack.local").orElseThrow();
+    Long entidadId = usuario.getEntidadId().orElseThrow();
+    Long cantidad =
+        createQuery("select count(e) from EntidadBeneficiaria e", Long.class).getSingleResult();
+    new AuthService();
+    assertEquals(
+        entidadId,
+        usuarios.buscarPorEmail(usuario.getEmail()).orElseThrow().getEntidadId().orElseThrow());
+    assertEquals(
+        cantidad,
+        createQuery("select count(e) from EntidadBeneficiaria e", Long.class).getSingleResult());
+  }
+
+  @Test
+  void reiniciarAuthReparaLaCuentaDeEjemploPreexistenteSinEntidad() {
+    UsuariosRepository usuarios = new UsuariosRepository();
+    Usuario usuario = usuarios.buscarPorEmail("beneficiario@donatrack.local").orElseThrow();
+    String hash = usuario.getPasswordHash();
+    withTransaction(
+        () -> {
+          createQuery("update Usuario u set u.entidadId = null where u.id = :id")
+              .setParameter("id", usuario.getId())
+              .executeUpdate();
+        });
+    entityManager().clear();
+    new AuthService();
+    Usuario reparado = usuarios.buscarPorEmail(usuario.getEmail()).orElseThrow();
+    assertEquals(hash, reparado.getPasswordHash());
+    assertTrue(reparado.getEntidadId().isPresent());
+    assertTrue(find(EntidadBeneficiaria.class, reparado.getEntidadId().orElseThrow()) != null);
   }
 
   private HttpResponse<String> get(String ruta) throws IOException, InterruptedException {

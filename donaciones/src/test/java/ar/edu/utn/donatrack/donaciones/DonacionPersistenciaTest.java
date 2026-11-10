@@ -234,7 +234,6 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
         new CorreoElectronico("ana@test.com"),
         "Ana",
         "Gomez",
-        34,
         "30111222",
         TipoDocumento.DNI,
         Genero.FEMENINO,

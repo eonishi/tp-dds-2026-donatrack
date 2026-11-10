@@ -73,7 +73,6 @@ class CargaDonacionAtomicidadTest implements WithSimplePersistenceUnit {
             new CorreoElectronico("atomicidad@test.com"),
             "Ana",
             "Atómica",
-            30,
             "10000001",
             TipoDocumento.DNI,
             Genero.FEMENINO,

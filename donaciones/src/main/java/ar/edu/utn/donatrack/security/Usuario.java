@@ -90,12 +90,24 @@ public class Usuario {
     return Optional.ofNullable(entidadId);
   }
 
+  void vincularEntidad(Long entidadId) {
+    this.entidadId = Objects.requireNonNull(entidadId);
+  }
+
   public String getUsername() {
     return email.contains("@") ? email.substring(0, email.indexOf('@')) : email;
   }
 
   public boolean isEsAdmin() {
     return hasRole(Role.ADMIN);
+  }
+
+  public boolean isEsDonante() {
+    return hasRole(Role.DONANTE);
+  }
+
+  public boolean isEsEntidad() {
+    return hasRole(Role.BENEFICIARIO);
   }
 
   public boolean hasRole(Role role) {
@@ -109,6 +121,18 @@ public class Usuario {
       }
     }
     return false;
+  }
+
+  /**
+   * Cuenta creada por la importación de donantes: todavía no tiene contraseña y la persona la elige
+   * al activarla. Ninguna contraseña coincide con el marcador.
+   */
+  public boolean isPendienteDeActivacion() {
+    return passwordHash.startsWith(AuthService.MARCADOR_PENDIENTE);
+  }
+
+  void definirContrasena(String nuevoHash) {
+    this.passwordHash = Objects.requireNonNull(nuevoHash);
   }
 
   public boolean matchesPassword(String password) {

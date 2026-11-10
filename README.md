@@ -139,6 +139,27 @@ Ejemplo de cronjob diario a las 03:00, hora local:
 El horario, la frecuencia y los reintentos pertenecen al planificador externo: no hay
 planificación interna dentro de los microservicios.
 
+## Fotos de recepción (Supabase Storage)
+
+Cuando una entidad beneficiaria confirma una recepción, sube fotos que se publican en
+`/entregas`. En el despliegue se guardan en un bucket **público** de Supabase Storage y se sirven
+desde su CDN; la clave de servicio solo la usa el servidor para subirlas.
+
+1. En Supabase: *Storage → New bucket*, nombre `recepciones`, marcado como público.
+2. En *Project Settings → API* copiar la URL del proyecto y la `service_role` key.
+3. Ponerlas en el `.env` (están comentadas en `.env.example`):
+
+```bash
+SUPABASE_URL=https://<proyecto>.supabase.co
+SUPABASE_SERVICE_KEY=...
+SUPABASE_BUCKET=recepciones   # opcional
+```
+
+Sin esas variables las fotos se guardan en `FOTOS_DIR` (o en un directorio temporal) y las sirve
+la propia aplicación en `/fotos/...`. Sirve para desarrollo, pero en un contenedor se pierden al
+recrearlo. Se aceptan hasta 5 fotos JPG, PNG o WebP de 5 MB; el tipo se verifica por el contenido
+del archivo, no por su nombre.
+
 ## Notificaciones reales para la demo
 
 El microservicio `donaciones` usa Resend para correo y Twilio Trial para SMS y WhatsApp. Las
@@ -169,3 +190,7 @@ en memoria ni conservar un atributo `estado` (`PENDIENTE`/`ENVIADA`/`FALLIDA`) o
 reintentos en `Notificacion`. Si un proveedor rechaza el envío, el fallo se registra en el log sin
 interrumpir el caso de uso principal. Las pruebas usan dobles de gateway en `src/test`, por lo que
 no invocan proveedores externos ni requieren dobles en `src/main`.
+
+## Datos de prueba
+
+El conjunto opcional de usuarios vinculados, donaciones en los siete estados y necesidades se activa con `DONATRACK_DEMO_DATA=true`. Consultar [las credenciales e instrucciones](docs/DemoData.md). Utilizar únicamente en una base de desarrollo descartable.

@@ -67,12 +67,11 @@ public class ImportadorDonantesCsv {
                 new CorreoElectronico(csv.getEmail()),
                 nombreApellido[0],
                 (nombreApellido.length > 1) ? nombreApellido[1] : "",
-                null,
                 csv.getDocumento(),
                 csv.getTipoDoc(),
                 null,
                 null);
-        nuevaPersonaHumana.addMedioDeContacto(new Sms(csv.getTelefono()));
+        agregarTelefono(nuevaPersonaHumana, csv.getTelefono());
         return nuevaPersonaHumana;
 
       case JURIDICA:
@@ -84,11 +83,18 @@ public class ImportadorDonantesCsv {
                 csv.getNombreRazonSocial(),
                 null,
                 null);
-        nuevaPersonaJuridica.addMedioDeContacto(new Sms(csv.getTelefono()));
+        agregarTelefono(nuevaPersonaJuridica, csv.getTelefono());
         return nuevaPersonaJuridica;
 
       default:
         throw new IllegalArgumentException("TipoPersona importada no es válida");
+    }
+  }
+
+  // El teléfono es opcional: muchas filas reales no lo traen.
+  private static void agregarTelefono(Donante donante, String telefono) {
+    if (telefono != null && !telefono.isBlank()) {
+      donante.addMedioDeContacto(new Sms(telefono.trim()));
     }
   }
 }

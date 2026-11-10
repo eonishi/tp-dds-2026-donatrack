@@ -1,0 +1,41 @@
+{{#partial "titulo"}}Seguimiento · DonaTrack{{/partial}}
+{{#partial "head"}}<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">{{/partial}}
+{{#partial "scripts"}}<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script><script src="/mapas.js"></script>{{/partial}}
+
+{{#partial "contenido"}}
+<section class="py-4">
+    <div class="encabezado text-start mx-0 mb-4">
+        <span class="chip mb-3">{{#if vistaEntidad}}Entidad beneficiaria{{else}}Persona donante{{/if}}</span>
+        <h1 class="fs-2 fw-semibold">{{#if vistaEntidad}}Entregas que vas a recibir{{else}}Seguimiento de tus donaciones{{/if}}</h1>
+        <p>Los camiones que llevan {{#if vistaEntidad}}donaciones hacia tu entidad{{else}}tus donaciones{{/if}}, con su última ubicación. 🚚 es el camión y 🏠 el destino.</p>
+    </div>
+
+    <div class="mb-4">
+        <div class="mapa" data-mapa="seguimiento" data-fuente="{{posiciones}}" role="region" aria-label="Mapa de camiones en camino"></div>
+        <p class="small text-body-secondary mt-2 mb-0" data-aviso-mapa aria-live="polite">Cargando ubicaciones…</p>
+    </div>
+
+    {{#if entregas}}
+    <div class="row g-4">
+        {{#each entregas}}
+        <div class="col-md-6 col-xl-4">
+            <article class="tarjeta p-4 h-100">
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                    <h2 class="h6 mb-0">{{#if camion}}Camión {{camion}}{{else}}Sin camión{{/if}}</h2>
+                    <span class="badge rounded-pill text-bg-primary">En camino</span>
+                </div>
+                {{#if entidad}}<p class="small mb-2">Destino: <strong>{{entidad}}</strong></p>{{/if}}
+                <ul class="small mb-2 ps-3">{{#each bienes}}<li>{{this}}</li>{{/each}}</ul>
+                {{#if actualizadaEn}}<p class="small text-body-secondary mb-0">Última ubicación: {{actualizadaEn}}</p>{{/if}}
+                {{#if aviso}}<p class="small text-body-secondary mb-0">{{aviso}}</p>{{/if}}
+            </article>
+        </div>
+        {{/each}}
+    </div>
+    {{else}}
+    <div class="tarjeta p-4 text-center"><p class="mb-0">No hay entregas en camino en este momento. Te avisamos cuando salga una.</p></div>
+    {{/if}}
+</section>
+{{/partial}}
+
+{{> layout}}

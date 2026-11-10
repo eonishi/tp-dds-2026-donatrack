@@ -1,0 +1,58 @@
+{{#partial "titulo"}}Importar donantes · DonaTrack{{/partial}}
+{{#partial "head"}}{{#if enCurso}}<meta http-equiv="refresh" content="2">{{/if}}{{/partial}}
+
+{{#partial "contenido"}}
+<section class="py-4">
+    <div class="encabezado text-start mx-0 mb-4">
+        <span class="chip mb-3">Administración</span>
+        <h1 class="fs-2 fw-semibold">Importar donantes</h1>
+        <p>Subí el CSV de personas donantes ya registradas para darles una cuenta. Cada persona la activa en <strong>/activar</strong> con su correo y su documento.</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <form method="post" action="/admin/importar" enctype="multipart/form-data" class="tarjeta p-4">
+                <h2 class="h5 mb-3">Archivo</h2>
+                {{#if error}}<div class="alert alert-danger py-2 small" role="alert">{{error}}</div>{{/if}}
+                <label class="form-label small fw-semibold" for="archivo">CSV de donantes</label>
+                <input class="form-control mb-2" type="file" id="archivo" name="archivo" accept=".csv,text/csv" required>
+                <p class="form-text mb-3">Columnas: <code>TipoPersona, TipoDoc, Documento, Nombre/Razón Social, Email, Teléfono</code>. Hasta 20 MB. Los donantes que ya existen (mismo correo o documento) no se duplican.</p>
+                <button class="btn btn-primary rounded-pill px-4" type="submit">Importar</button>
+            </form>
+        </div>
+        <div class="col-lg-7">
+            {{#if importaciones}}
+            <div class="d-flex flex-column gap-3">
+                {{#each importaciones}}
+                <article class="tarjeta p-4">
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                        <h2 class="h6 mb-0 text-break">{{archivo}}</h2>
+                        {{#if enCurso}}<span class="badge rounded-pill text-bg-primary">Importando…</span>
+                        {{else if falla}}<span class="badge rounded-pill text-bg-danger">Falló</span>
+                        {{else}}<span class="badge rounded-pill text-bg-success">Terminada</span>{{/if}}
+                    </div>
+                    {{#if falla}}<p class="small text-danger mb-2">{{falla}}</p>{{/if}}
+                    <dl class="row small mb-0">
+                        <dt class="col-7 fw-normal text-body-secondary">Filas procesadas</dt><dd class="col-5 mb-1">{{procesadas}}</dd>
+                        <dt class="col-7 fw-normal text-body-secondary">Donantes nuevos</dt><dd class="col-5 mb-1">{{donantesNuevos}}</dd>
+                        <dt class="col-7 fw-normal text-body-secondary">Ya registrados</dt><dd class="col-5 mb-1">{{donantesExistentes}}</dd>
+                        <dt class="col-7 fw-normal text-body-secondary">Cuentas para activar</dt><dd class="col-5 mb-1">{{cuentasCreadas}}</dd>
+                        <dt class="col-7 fw-normal text-body-secondary">Filas con error</dt><dd class="col-5 mb-0">{{filasConError}}</dd>
+                    </dl>
+                    {{#if errores}}
+                    <details class="mt-2"><summary class="small">Ver errores</summary>
+                        <ul class="small mt-2 mb-0">{{#each errores}}<li>{{this}}</li>{{/each}}</ul>
+                    </details>
+                    {{/if}}
+                </article>
+                {{/each}}
+            </div>
+            {{else}}
+            <div class="tarjeta p-4 text-center"><p class="mb-0">Todavía no importaste archivos.</p></div>
+            {{/if}}
+        </div>
+    </div>
+</section>
+{{/partial}}
+
+{{> layout}}

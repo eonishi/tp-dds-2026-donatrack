@@ -1,0 +1,82 @@
+{{#partial "titulo"}}Recibir donaciones · DonaTrack{{/partial}}
+
+{{#partial "contenido"}}
+<section class="py-4">
+    <div class="encabezado text-start mx-0">
+        <span class="chip mb-3">Entidad beneficiaria</span>
+        <h1 class="fs-2 fw-semibold">Confirmar donación</h1>
+        <p>Cuando llegue el camión, confirmá la recepción con fotos de lo que recibiste. Las fotos se publican en la página de entregas, sin datos de quien donó.</p>
+    </div>
+
+    <h2 class="h4 mb-3">En camino</h2>
+    {{#if enCamino}}
+    <div class="row g-4 mb-5">
+        {{#each enCamino}}
+        <div class="col-lg-6">
+            <article class="tarjeta p-4 h-100" id="donacion-{{id}}">
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                    <h3 class="mb-0">Donación en camino</h3>
+                    <span class="chip">En camino</span>
+                </div>
+                <p class="small mb-3">
+                    {{#if camion}}Camión <strong>{{camion}}</strong>{{/if}}{{#if salio}} · salió el {{salio}}{{/if}}
+                </p>
+                <ul class="small mb-3 ps-3">
+                    {{#each bienes}}<li>{{this}}</li>{{/each}}
+                </ul>
+
+                {{#if error}}<div class="alert alert-danger py-2 small" role="alert">{{error}}</div>{{/if}}
+
+                <form method="post" action="/entidad/recepciones/{{id}}/confirmar" enctype="multipart/form-data" class="mb-2">
+                    <label class="form-label small fw-semibold" for="fotos-{{id}}">Fotos de lo recibido</label>
+                    <input class="form-control mb-1" type="file" id="fotos-{{id}}" name="fotos" accept="image/jpeg,image/png,image/webp" multiple required>
+                    <div class="form-text mb-3">JPG, PNG o WebP. Hasta {{../maximoFotos}} fotos de 5 MB cada una.</div>
+                    <button class="btn btn-primary rounded-pill px-4" type="submit">Confirmar recepción</button>
+                </form>
+
+                <details class="mt-3">
+                    <summary class="small text-body-secondary">¿Llegó con problemas o no llegó?</summary>
+                    <form method="post" action="/entidad/recepciones/{{id}}/reportar" class="mt-2">
+                        <label class="form-label small" for="motivo-{{id}}">Contanos qué pasó</label>
+                        <textarea class="form-control mb-2" id="motivo-{{id}}" name="motivo" rows="2" maxlength="500" required></textarea>
+                        <button class="btn btn-sm btn-outline-danger rounded-pill px-3" type="submit">Reportar problema</button>
+                    </form>
+                </details>
+            </article>
+        </div>
+        {{/each}}
+    </div>
+    {{else}}
+    <div class="tarjeta p-4 mb-5 text-center">
+        <p class="mb-0">No tenés donaciones en camino. Te avisamos cuando salga una hacia tu entidad.</p>
+    </div>
+    {{/if}}
+
+    <h2 class="h4 mb-3">Recibidas</h2>
+    {{#if recibidas}}
+    <div class="row g-4">
+        {{#each recibidas}}
+        <div class="col-md-6 col-xl-4">
+            <article class="tarjeta p-4 h-100">
+                <p class="small text-body-secondary mb-2">Recibida el {{recibida}}</p>
+                <ul class="small mb-3 ps-3">
+                    {{#each bienes}}<li>{{this}}</li>{{/each}}
+                </ul>
+                <div class="d-flex flex-wrap gap-2">
+                    {{#each fotos}}
+                    <a href="{{this}}" target="_blank" rel="noopener">
+                        <img src="{{this}}" alt="Foto de la donación recibida" class="rounded-3" width="80" height="80" style="object-fit: cover;" loading="lazy">
+                    </a>
+                    {{/each}}
+                </div>
+            </article>
+        </div>
+        {{/each}}
+    </div>
+    {{else}}
+    <p class="text-body-secondary">Todavía no confirmaste ninguna recepción.</p>
+    {{/if}}
+</section>
+{{/partial}}
+
+{{> layout}}

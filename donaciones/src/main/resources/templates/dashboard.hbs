@@ -1,43 +1,108 @@
-{{#partial "titulo"}}Panel · DonaTrack{{/partial}}
+{{#partial "titulo"}}Mi panel · DonaTrack{{/partial}}
 
 {{#partial "contenido"}}
-<section class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="tarjeta p-4 p-lg-5">
-                <span class="chip mb-3">Panel</span>
-                <h1 class="mb-3">Bienvenido, {{usuario.username}}</h1>
-                <p class="text-body-secondary mb-4">Tu sesión está activa con los siguientes roles.</p>
-
-                <div class="d-flex flex-wrap gap-2 mb-4">
-                    {{#each usuario.roles}}
-                        <span class="badge rounded-pill text-bg-primary px-3 py-2">{{this}}</span>
-                    {{/each}}
-                </div>
-
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div class="card h-100 border-0 bg-light">
-                            <div class="card-body">
-                                <h2 class="h5">Email</h2>
-                                <p class="mb-0">{{usuario.email}}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card h-100 border-0 bg-light">
-                            <div class="card-body">
-                                <h2 class="h5">Acciones rápidas</h2>
-                                <ul class="mb-0 ps-3">
-                                    <li><a href="/">Volver a la landing</a></li>
-                                    <li><a href="/perfil">Ver perfil</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<section class="py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div>
+            <span class="chip mb-2">{{#if usuario.esAdmin}}Administración{{else if usuario.esEntidad}}Entidad beneficiaria{{else}}Persona donante{{/if}}</span>
+            <h1 class="fs-2 fw-semibold mb-1">Hola, {{usuario.username}}</h1>
+            <p class="text-body-secondary mb-0">{{usuario.email}}</p>
         </div>
+    </div>
+
+    <div class="row g-4">
+        {{#if usuario.esDonante}}
+        <div class="col-md-6 col-xl-4">
+            <a class="tarjeta p-4 h-100 d-block text-reset text-decoration-none" href="/donante/donaciones">
+                <h2 class="h5">Mis donaciones</h2>
+                <p class="small mb-0">Todo lo que donaste, con filtros por estado y por lo que entregaste.</p>
+            </a>
+        </div>
+        <div class="col-md-6 col-xl-4">
+            <a class="tarjeta p-4 h-100 d-block text-reset text-decoration-none" href="/donante/seguimiento">
+                <h2 class="h5">Seguimiento</h2>
+                <p class="small mb-0">Seguí en el mapa los camiones que llevan tus donaciones.</p>
+            </a>
+        </div>
+        <div class="col-md-6 col-xl-4">
+            <a class="tarjeta p-4 h-100 d-block text-reset text-decoration-none" href="/donante/notificaciones">
+                <h2 class="h5">Avisos</h2>
+                <p class="small mb-0">Asignaciones, entregas y novedades de tus donaciones.</p>
+            </a>
+        </div>
+        {{/if}}
+
+        {{#if usuario.esEntidad}}
+        <div class="col-md-6 col-xl-4">
+            <a class="tarjeta p-4 h-100 d-block text-reset text-decoration-none" href="/entidad/necesidades">
+                <h2 class="h5">Necesidades</h2>
+                <p class="small mb-0">Cargá lo que necesita tu entidad para recibir donaciones compatibles.</p>
+            </a>
+        </div>
+        <div class="col-md-6 col-xl-4">
+            <a class="tarjeta p-4 h-100 d-block text-reset text-decoration-none" href="/entidad/recepciones">
+                <h2 class="h5">Recibir donaciones</h2>
+                <p class="small mb-0">Confirmá con fotos las donaciones que llegaron o avisá si hubo un problema.</p>
+            </a>
+        </div>
+        <div class="col-md-6 col-xl-4">
+            <a class="tarjeta p-4 h-100 d-block text-reset text-decoration-none" href="/entidad/seguimiento">
+                <h2 class="h5">Seguimiento</h2>
+                <p class="small mb-0">Seguí en el mapa los camiones que vienen hacia tu entidad.</p>
+            </a>
+        </div>
+        <div class="col-md-6 col-xl-4">
+            <a class="tarjeta p-4 h-100 d-block text-reset text-decoration-none" href="/entidad/notificaciones">
+                <h2 class="h5">Avisos</h2>
+                <p class="small mb-0">Asignaciones y entregas de tu entidad.</p>
+            </a>
+        </div>
+        {{/if}}
+
+        {{#if usuario.esAdmin}}
+        <div class="col-md-6 col-xl-4">
+            <a class="tarjeta p-4 h-100 d-block text-reset text-decoration-none" href="/donaciones">
+                <h2 class="h5">Donaciones</h2>
+                <p class="small mb-0">Registrá donaciones recibidas en el depósito y actualizá su estado.</p>
+            </a>
+        </div>
+        <div class="col-md-6 col-xl-4">
+            <a class="tarjeta p-4 h-100 d-block text-reset text-decoration-none" href="/admin/vencidas">
+                <h2 class="h5">Vencidas en depósito</h2>
+                <p class="small mb-0">Marcá como vencidas las donaciones que ya no se pueden entregar.</p>
+            </a>
+        </div>
+        <div class="col-md-6 col-xl-4">
+            <a class="tarjeta p-4 h-100 d-block text-reset text-decoration-none" href="/admin/asignaciones">
+                <h2 class="h5">Asignar entidad</h2>
+                <p class="small mb-0">Elegí la entidad final de cada donación a partir de las propuestas.</p>
+            </a>
+        </div>
+        <div class="col-md-6 col-xl-4">
+            <a class="tarjeta p-4 h-100 d-block text-reset text-decoration-none" href="/admin/camiones">
+                <h2 class="h5">Camiones</h2>
+                <p class="small mb-0">Administrá la flota disponible para las entregas.</p>
+            </a>
+        </div>
+        <div class="col-md-6 col-xl-4">
+            <a class="tarjeta p-4 h-100 d-block text-reset text-decoration-none" href="/logistica">
+                <h2 class="h5">Rutas</h2>
+                <p class="small mb-0">Rutas de entrega y su estado.</p>
+            </a>
+        </div>
+        <div class="col-md-6 col-xl-4">
+            <a class="tarjeta p-4 h-100 d-block text-reset text-decoration-none" href="/admin/importar">
+                <h2 class="h5">Importar donantes</h2>
+                <p class="small mb-0">Dale cuenta a donantes ya registrados desde un CSV.</p>
+            </a>
+        </div>
+        <div class="col-md-6 col-xl-4">
+            <a class="tarjeta p-4 h-100 d-block text-reset text-decoration-none" href="/catalogo">
+                <h2 class="h5">Catálogo</h2>
+                <p class="small mb-0">Subcategorías de bienes que se pueden donar.</p>
+            </a>
+        </div>
+        {{/if}}
     </div>
 </section>
 {{/partial}}

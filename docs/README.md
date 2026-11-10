@@ -1,6 +1,6 @@
 # DonaTrack — Modelo del dominio por requerimiento
 
-Diagramas de clases (Mermaid) del dominio de DonaTrack, uno por requerimiento de los enunciados [`enunciado-1.md`](./enunciado/enunciado-1.md) y [`enunciado-2.md`](./enunciado/enunciado-2.md).
+Diagramas de clases (Mermaid) del dominio de DonaTrack, uno por requerimiento de los enunciados [`enunciado-1.md`](./enunciado/enunciado-1.md) y [`enunciado-2.md`](./enunciado/enunciado-2.md), y la arquitectura de la [entrega 4](#entrega-4--arquitectura-y-cambios-del-dominio).
 
 Cada diagrama es el **fragmento mínimo del dominio** que cumple ese requerimiento; el diagrama completo está en [`diagrama-clases-dominio.mermaid`](./diagrama-clases-dominio.mermaid).
 
@@ -137,3 +137,84 @@ Cada diagrama es el **fragmento mínimo del dominio** que cumple ese requerimien
 
 ![Impl 3 — Replanificación de donaciones sin asignar](assets/e2-impl3-replanificacion.svg)
 
+
+## Entrega 4 — Arquitectura y cambios del dominio
+
+### Arquitectura
+
+```mermaid
+flowchart LR
+    subgraph Personas
+        N["Navegador<br/>(donante, entidad, admin, público)"]
+        R["App del repartidor"]
+    end
+
+    subgraph donaciones["Servicio donaciones (Javalin :7070)"]
+        MVC["Vistas MVC<br/>controllers web + Handlebars"]
+        API["API REST /api/v1"]
+        DOM["Dominio + repositorios"]
+        TAR["Tareas en segundo plano<br/>ubicación de entidades,<br/>importación CSV, ausencia de donantes"]
+        MVC --> DOM
+        API --> DOM
+        TAR --> DOM
+    end
+
+    subgraph logistica["Servicio logística (Javalin :9001)"]
+        GQL["GraphQL /logistica/graphql"]
+        CB["HTTP: login, logout,<br/>callback del planificador"]
+        SCH["PlanificacionScheduler<br/>todos los días, en baja carga"]
+    end
+
+    PG[("PostgreSQL<br/>esquemas donaciones y logistica")]
+    SUP["Supabase Storage<br/>(fotos, CDN)"]
+    NOM["Nominatim<br/>(geocodificación)"]
+    MSG["Resend / Twilio<br/>(correo, SMS, WhatsApp)"]
+    OSM["Teselas OpenStreetMap"]
+    PLA["Planificador externo"]
+
+    N -- "HTML + formularios<br/>(cookie de sesión)" --> MVC
+    N -- "JSON de mapas" --> MVC
+    N -- "teselas" --> OSM
+    N -- "fotos" --> SUP
+    R -- "GraphQL (Bearer)" --> GQL
+    R -- "login" --> CB
+    MVC -- "GraphQL: posiciones (clave interna)<br/>y flota (sesión del admin)" --> GQL
+    GQL -- "REST: cambio de estado<br/>de donaciones" --> API
+    SCH -- "lotes de hasta 100" --> PLA
+    PLA -- "callback" --> CB
+    DOM --> PG
+    logistica --> PG
+    MVC -- "sube fotos" --> SUP
+    TAR -- "1 pedido/s" --> NOM
+    DOM -- "avisos" --> MSG
+```
+
+* **Cliente liviano:** todas las vistas se renderizan en donaciones (MVC con Handlebars). El
+  navegador solo ejecuta JavaScript para los mapas (`mapas.js`, con Leaflet) y para tres secciones
+  de administración heredadas (`panel.js`).
+* **Logística por GraphQL:** donaciones la consulta para las posiciones de los camiones, con la
+  clave interna, y para administrar la flota, con la sesión de la persona administradora (ver
+  [Justificaciones 1.3 y 4.6](Justificaciones.md)).
+* **Servicios externos detrás de puertos**, con un doble para pruebas y desarrollo:
+  * `AlmacenFotos`: Supabase o disco local.
+  * `Geocodificador`: Nominatim.
+  * `Notificador`: Resend y Twilio, o el simulado si no hay credenciales.
+  * `PosicionesCamiones` y `FlotaLogistica`: logística por GraphQL.
+
+### Cambios del dominio
+
+El diagrama completo está en [`diagrama-clases-dominio.mermaid`](./diagrama-clases-dominio.mermaid)
+y el modelo relacional en [`DER-fisico.md`](./DER-fisico.md).
+
+| Cambio | Para qué vista |
+|---|---|
+| `Notificacion` conoce a su **titular** (`Notificable`). `BandejaNotificaciones` y `AvisoBandeja` guardan los avisos de cada donante y cada entidad. | Avisos de donante y entidad (#49, #54) |
+| `EntidadBeneficiaria` tiene `latitud` y `longitud`, que completa `UbicadorEntidades` con un `Geocodificador`. | Mapas (#43, #50, #55) |
+| `Donacion.fotos` guarda las URLs públicas de las fotos de recepción. | Confirmación con fotos (#53) |
+| `Usuario` admite una cuenta **pendiente de activación**, que crea la importación CSV y la persona activa con su documento. | Importación de donantes (#60) |
+| `PersonaHumana` ya no tiene `edad`. | Ver [Justificaciones 4.8](Justificaciones.md) |
+
+### Vistas
+
+El inventario de pantallas, con capturas y el sistema de diseño, está en
+[`SistemaDeDiseno.md`](./SistemaDeDiseno.md).

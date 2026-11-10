@@ -5,7 +5,6 @@ import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.donantes.TipoOrganizacion;
 import ar.edu.utn.donatrack.utilidades.TipoPersona;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -23,7 +22,6 @@ public final class DonanteDtos {
       Integer contactoPredeterminado,
       String nombre,
       String apellido,
-      @Min(0) Integer edad,
       Genero genero,
       String direccion,
       String razonSocial,
@@ -45,7 +43,6 @@ public final class DonanteDtos {
       List<MedioContactoResponse> mediosDeContacto,
       String nombre,
       String apellido,
-      Integer edad,
       Genero genero,
       String direccion,
       String razonSocial,

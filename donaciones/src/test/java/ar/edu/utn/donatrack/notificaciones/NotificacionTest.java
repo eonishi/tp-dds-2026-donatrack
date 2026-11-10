@@ -17,7 +17,6 @@ class NotificacionTest {
           new CorreoElectronico("donante@test.com"),
           "Ana",
           "Pérez",
-          30,
           "30111222",
           TipoDocumento.DNI,
           Genero.FEMENINO,

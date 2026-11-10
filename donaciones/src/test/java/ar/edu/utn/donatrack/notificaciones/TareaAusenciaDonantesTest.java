@@ -26,7 +26,6 @@ class TareaAusenciaDonantesTest {
             new CorreoElectronico("ausente@example.org"),
             "Ana",
             "Pérez",
-            30,
             "30111222",
             TipoDocumento.DNI,
             Genero.FEMENINO,

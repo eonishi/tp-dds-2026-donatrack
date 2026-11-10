@@ -1,0 +1,29 @@
+{{#partial "titulo"}}Avisos · DonaTrack{{/partial}}
+
+{{#partial "contenido"}}
+<section class="py-4">
+    <div class="encabezado text-start mx-0 mb-4">
+        <span class="chip mb-3">{{#if usuario.esEntidad}}Entidad beneficiaria{{else}}Persona donante{{/if}}</span>
+        <h1 class="fs-2 fw-semibold">Avisos</h1>
+        <p>Lo mismo que te mandamos por correo, SMS o WhatsApp, en un solo lugar.{{#if nuevos}} Tenés <strong>{{nuevos}}</strong> sin leer.{{/if}}</p>
+    </div>
+
+    {{#if avisos}}
+    <ul class="list-unstyled d-flex flex-column gap-3 mb-0">
+        {{#each avisos}}
+        <li class="tarjeta p-3 px-4 {{#if nuevo}}aviso-nuevo{{/if}}">
+            <div class="d-flex justify-content-between gap-3">
+                <p class="mb-1">{{mensaje}}</p>
+                {{#if nuevo}}<span class="badge rounded-pill text-bg-success align-self-start">Nuevo</span>{{/if}}
+            </div>
+            <span class="small text-body-secondary">{{fecha}}</span>
+        </li>
+        {{/each}}
+    </ul>
+    {{else}}
+    <div class="tarjeta p-4 text-center"><p class="mb-0">Todavía no tenés avisos.</p></div>
+    {{/if}}
+</section>
+{{/partial}}
+
+{{> layout}}

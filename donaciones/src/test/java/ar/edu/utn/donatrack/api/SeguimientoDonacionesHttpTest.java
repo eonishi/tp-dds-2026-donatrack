@@ -307,7 +307,7 @@ class SeguimientoDonacionesHttpTest implements WithSimplePersistenceUnit {
             + email
             + "\"}],\"contactoPredeterminado\":0,\"nombre\":\""
             + nombre
-            + "\",\"apellido\":\"Pérez\",\"edad\":30,\"genero\":\"FEMENINO\",\"direccion\":\"Calle 123\"}";
+            + "\",\"apellido\":\"Pérez\",\"genero\":\"FEMENINO\",\"direccion\":\"Calle 123\"}";
     HttpResponse<String> response = request("POST", "/api/v1/donantes", body, admin);
     assertEquals(201, response.statusCode(), response.body());
     return UUID.fromString(json(response).get("id").asText());

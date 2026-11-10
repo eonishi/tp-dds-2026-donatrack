@@ -5,14 +5,21 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 import io.javalin.http.Context;
 import io.javalin.http.ForbiddenResponse;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 public final class AuthController {
   private final AuthService authService;
+  private final boolean demoDataEnabled;
 
   public AuthController(AuthService authService) {
+    this(authService, "true".equalsIgnoreCase(System.getenv("DONATRACK_DEMO_DATA")));
+  }
+
+  public AuthController(AuthService authService, boolean demoDataEnabled) {
     this.authService = authService;
+    this.demoDataEnabled = demoDataEnabled;
   }
 
   public void routes() {
@@ -24,8 +31,8 @@ public final class AuthController {
     get("/donaciones", ctx -> panel(ctx, "donaciones", "Donaciones"));
     get("/necesidades", ctx -> panel(ctx, "necesidades", "Necesidades"));
     get("/logistica", ctx -> panel(ctx, "logistica", "Logística"));
+    get("/catalogo", ctx -> panel(ctx, "catalogo", "Catálogo"));
     get("/matchmaking", ctx -> panel(ctx, "matchmaking", "Asignación de donaciones"));
-    get("/catalogo", ctx -> panel(ctx, "catalogo", "Catálogo de subcategorías"));
   }
 
   private void loginPage(Context ctx) {
@@ -33,7 +40,7 @@ public final class AuthController {
       ctx.redirect("/dashboard");
       return;
     }
-    ctx.render("login", Map.of("error", ""));
+    ctx.render("login", Map.of("error", "", "demoDataEnabled", demoDataEnabled));
   }
 
   private void login(Context ctx) {
@@ -41,7 +48,16 @@ public final class AuthController {
     String password = ctx.formParam("password");
     Optional<Usuario> usuario = authService.login(ctx, email, password);
     if (usuario.isEmpty()) {
-      ctx.render("login", Map.of("error", "Credenciales inválidas."));
+      // Se conserva el correo para no tener que reescribirlo; la contraseña nunca vuelve.
+      ctx.render(
+          "login",
+          Map.of(
+              "error",
+              "Correo o contraseña incorrectos.",
+              "email",
+              email == null ? "" : email,
+              "demoDataEnabled",
+              demoDataEnabled));
       return;
     }
     ctx.redirect("/dashboard");
@@ -72,6 +88,14 @@ public final class AuthController {
         && !usuario.hasRole(Role.ADMIN)) {
       throw new ForbiddenResponse("Sólo administradores pueden acceder a esta sección.");
     }
-    ctx.render("panel", Map.of("usuario", usuario, "seccion", seccion, "titulo", titulo));
+    Map<String, Object> modelo = new HashMap<>();
+    modelo.put("usuario", usuario);
+    modelo.put("seccion", seccion);
+    modelo.put("titulo", titulo);
+    // Una entidad opera sobre sus propias necesidades: el formulario no le pide elegir entidad.
+    if (!usuario.hasRole(Role.ADMIN)) {
+      usuario.getEntidadId().ifPresent(id -> modelo.put("entidadId", id));
+    }
+    ctx.render("panel", modelo);
   }
 }
