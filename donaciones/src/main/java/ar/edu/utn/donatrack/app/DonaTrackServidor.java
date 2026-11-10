@@ -1,4 +1,4 @@
-package ar.edu.utn.donatrack.api;
+package ar.edu.utn.donatrack.app;
 
 import ar.edu.utn.donatrack.api.controller.DonacionController;
 import ar.edu.utn.donatrack.api.controller.DonanteController;
@@ -47,8 +47,8 @@ import io.javalin.http.staticfiles.Location;
 import java.time.Clock;
 import java.util.List;
 
-public final class DonacionesApi implements WithSimplePersistenceUnit {
-  private DonacionesApi() {}
+public final class DonaTrackServidor implements WithSimplePersistenceUnit {
+  private DonaTrackServidor() {}
 
   public static Javalin create() {
     return create(Clock.systemUTC());
@@ -75,7 +75,7 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
 
   public static Javalin create(
       Clock clock, ServicioNotificaciones notificaciones, ServiciosExternos externos) {
-    return new DonacionesApi().build(clock, notificaciones, externos);
+    return new DonaTrackServidor().build(clock, notificaciones, externos);
   }
 
   private static ServicioNotificaciones notificacionesDesdeEntorno() {
@@ -219,7 +219,7 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
           try {
             ubicador.ubicarPendientes();
           } catch (RuntimeException e) {
-            java.util.logging.Logger.getLogger(DonacionesApi.class.getName())
+            java.util.logging.Logger.getLogger(DonaTrackServidor.class.getName())
                 .log(java.util.logging.Level.WARNING, "Falló la ubicación de entidades", e);
           }
         },

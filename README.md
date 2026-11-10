@@ -18,8 +18,21 @@ El sistema se divide en dos microservicios (ver [enunciado 2](./docs/enunciado/e
 
 | Módulo | Responsabilidad | Paquetes de dominio |
 | --- | --- | --- |
-| [`donaciones`](./donaciones) | Donaciones, donantes, entidades beneficiarias, necesidades, matchmaking y notificaciones | `donaciones`, `donantes`, `beneficiarios`, `bienes`, `estados`, `notificaciones`, `utilidades` |
+| [`donaciones`](./donaciones) | Donaciones, donantes, entidades beneficiarias, necesidades, matchmaking y notificaciones | `donaciones`, `donantes`, `beneficiarios`, `bienes`, `propuestas` (incluye `matchmaking`), `notificaciones`, `importacion`, `ubicacion`, `seguimiento`, `flota`, `fotos` |
 | [`logistica`](./logistica) | Flota de camiones, rutas, destinos, monitoreo en tiempo real y planificación | `logistica` (incluye `monitoreo` y `planificacion`) |
+
+En `donaciones`, además de los paquetes de dominio:
+
+| Paquete | Qué contiene |
+| --- | --- |
+| `app` | Arranque del servidor: `DonaTrackApplication` (`main`), la configuración de la base, los servicios externos y `DonaTrackServidor`, que arma Javalin y registra la API y la web |
+| `api` | API REST JSON (`/api/v1`): controllers, DTOs, errores, mappers y validación |
+| `web` | Interfaz web MVC (ver abajo) |
+| `security` | Login, sesiones, roles y reglas de acceso |
+| `schedules` | Programas autónomos para un planificador externo (ver abajo) |
+| `demo` | Datos de prueba opcionales |
+
+Los tests de cada clase viven en el mismo paquete que la clase que prueban.
 
 Cada módulo es un proyecto Maven independiente; el `pom.xml` raíz solo los agrega (`mvn verify` en la raíz compila y testea ambos).
 

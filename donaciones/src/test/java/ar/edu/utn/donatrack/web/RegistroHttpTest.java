@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import ar.edu.utn.donatrack.api.DonacionesApi;
-import ar.edu.utn.donatrack.api.ServiciosExternos;
+import ar.edu.utn.donatrack.app.DonaTrackServidor;
+import ar.edu.utn.donatrack.app.ServiciosExternos;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
@@ -63,7 +63,7 @@ class RegistroHttpTest implements WithSimplePersistenceUnit {
     Clock clock = Clock.systemUTC();
     bandeja = new BandejaNotificacionesRepository(clock);
     app =
-        DonacionesApi.create(
+        DonaTrackServidor.create(
                 clock,
                 new ServicioNotificaciones(
                     new NotificadorPorCanal(

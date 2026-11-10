@@ -1,6 +1,7 @@
-package ar.edu.utn.donatrack.utilidades;
+package ar.edu.utn.donatrack.importacion;
 
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
+import ar.edu.utn.donatrack.donantes.TipoPersona;
 import com.opencsv.bean.CsvBindByName;
 
 public class DonanteCsv {

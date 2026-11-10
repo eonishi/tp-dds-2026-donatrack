@@ -1,4 +1,4 @@
-package ar.edu.utn.donatrack.api;
+package ar.edu.utn.donatrack.app;
 
 public final class DonaTrackApplication {
   private DonaTrackApplication() {}
@@ -13,6 +13,6 @@ public final class DonaTrackApplication {
               new ar.edu.utn.donatrack.security.AuthService(),
               java.time.Clock.systemDefaultZone());
     }
-    DonacionesApi.create().start(port);
+    DonaTrackServidor.create().start(port);
   }
 }

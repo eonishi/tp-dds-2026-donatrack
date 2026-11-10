@@ -1,9 +1,8 @@
-package ar.edu.utn.donatrack;
+package ar.edu.utn.donatrack.donantes;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import ar.edu.utn.donatrack.donantes.*;
-import ar.edu.utn.donatrack.utilidades.ImportadorDonantesCsv;
+import ar.edu.utn.donatrack.importacion.ImportadorDonantesCsv;
 import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.io.IOException;
 import java.util.List;
@@ -13,7 +12,7 @@ public class RepositoriosTest implements SimplePersistenceTest {
   @Test
   public void agregarDonantesDesdeCsv() throws IOException {
     DonantesRepository repo = new DonantesRepository();
-    String path = "src/test/java/ar/edu/utn/donatrack/csv/donantes.csv";
+    String path = "src/test/resources/csv/donantes.csv";
 
     List<Donante> donantesCsv = ImportadorDonantesCsv.importarDeCsv(path);
     repo.addMany(donantesCsv);

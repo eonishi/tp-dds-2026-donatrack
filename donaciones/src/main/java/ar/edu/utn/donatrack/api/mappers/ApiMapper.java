@@ -19,9 +19,9 @@ import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
+import ar.edu.utn.donatrack.donantes.TipoPersona;
 import ar.edu.utn.donatrack.donantes.Whatsapp;
 import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
-import ar.edu.utn.donatrack.utilidades.TipoPersona;
 import java.util.List;
 
 public final class ApiMapper {

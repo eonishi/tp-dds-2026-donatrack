@@ -1,4 +1,4 @@
-package ar.edu.utn.donatrack.api;
+package ar.edu.utn.donatrack.app;
 
 import ar.edu.utn.donatrack.flota.FlotaLogistica;
 import ar.edu.utn.donatrack.flota.FlotaLogisticaGraphql;

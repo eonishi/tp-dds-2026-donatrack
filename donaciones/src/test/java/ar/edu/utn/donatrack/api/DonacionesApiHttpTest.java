@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ar.edu.utn.donatrack.app.DonaTrackServidor;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.beneficiarios.Necesidad;
 import ar.edu.utn.donatrack.bienes.Bien;
@@ -63,7 +64,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
               return ResultadoEnvio.aceptado();
             });
     ServicioNotificaciones notificaciones = new ServicioNotificaciones(notificador);
-    app = DonacionesApi.create(clock, notificaciones).start(0);
+    app = DonaTrackServidor.create(clock, notificaciones).start(0);
     baseUrl = "http://localhost:" + app.port();
     sessionCookie = iniciarSesionComoAdmin();
   }
@@ -206,7 +207,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
             });
     ServicioNotificaciones notificaciones = new ServicioNotificaciones(notificador);
     Clock clock = Clock.fixed(Instant.parse("2026-09-11T12:00:00Z"), ZoneOffset.UTC);
-    app = DonacionesApi.create(clock, notificaciones).start(0);
+    app = DonaTrackServidor.create(clock, notificaciones).start(0);
     baseUrl = "http://localhost:" + app.port();
     // Las sesiones viven en memoria: la app nueva no conoce la cookie de la anterior.
     sessionCookie = iniciarSesionComoAdmin();

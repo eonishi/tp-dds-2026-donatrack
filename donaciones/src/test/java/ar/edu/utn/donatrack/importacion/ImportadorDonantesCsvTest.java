@@ -1,20 +1,19 @@
-package ar.edu.utn.donatrack;
+package ar.edu.utn.donatrack.importacion;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
-import ar.edu.utn.donatrack.utilidades.ImportadorDonantesCsv;
 import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-public class ImportDonantesCsvTest {
+public class ImportadorDonantesCsvTest {
 
   @Test
   public void importDonantesDesdeCsv() throws IOException {
-    String pathString = "src/test/java/ar/edu/utn/donatrack/csv/donantes.csv";
+    String pathString = "src/test/resources/csv/donantes.csv";
 
     List<Donante> donantes = ImportadorDonantesCsv.importarDeCsv(pathString);
 

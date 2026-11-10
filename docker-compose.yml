@@ -4,7 +4,7 @@ services:
       context: .
       args:
         MODULO: donaciones
-        MAIN_CLASS: ar.edu.utn.donatrack.api.DonaTrackApplication
+        MAIN_CLASS: ar.edu.utn.donatrack.app.DonaTrackApplication
     env_file: .env
     environment:
       PORT: "7070"

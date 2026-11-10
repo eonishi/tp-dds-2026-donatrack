@@ -1,7 +1,7 @@
 package ar.edu.utn.donatrack.testsupport;
 
-import ar.edu.utn.donatrack.api.DonacionesApi;
-import ar.edu.utn.donatrack.api.ServiciosExternos;
+import ar.edu.utn.donatrack.app.DonaTrackServidor;
+import ar.edu.utn.donatrack.app.ServiciosExternos;
 import ar.edu.utn.donatrack.notificaciones.BandejaNotificacionesRepository;
 import ar.edu.utn.donatrack.notificaciones.NotificadorPorCanal;
 import ar.edu.utn.donatrack.notificaciones.ResultadoEnvio;
@@ -37,7 +37,7 @@ public final class ApiDePrueba {
 
   public static Javalin crear(
       Clock clock, PosicionesCamiones posicionesCamiones, FlotaEnMemoria flota) {
-    return DonacionesApi.create(
+    return DonaTrackServidor.create(
         clock,
         notificacionesDescartadas(clock),
         new ServiciosExternos(posicionesCamiones, flota, direccion -> Optional.of(UBICACION)));

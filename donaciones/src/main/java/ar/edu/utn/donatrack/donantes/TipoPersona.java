@@ -1,4 +1,4 @@
-package ar.edu.utn.donatrack.utilidades;
+package ar.edu.utn.donatrack.donantes;
 
 public enum TipoPersona {
   HUMANA,

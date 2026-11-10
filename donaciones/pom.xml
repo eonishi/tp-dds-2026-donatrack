@@ -95,7 +95,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>ar.edu.utn.donatrack.api.DonaTrackApplication</mainClass>
+                            <mainClass>ar.edu.utn.donatrack.app.DonaTrackApplication</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

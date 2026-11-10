@@ -1,4 +1,4 @@
-package ar.edu.utn.donatrack.utilidades;
+package ar.edu.utn.donatrack.importacion;
 
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;

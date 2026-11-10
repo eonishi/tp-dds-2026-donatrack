@@ -1,4 +1,4 @@
-package ar.edu.utn.donatrack.api;
+package ar.edu.utn.donatrack.app;
 
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import java.sql.Connection;
