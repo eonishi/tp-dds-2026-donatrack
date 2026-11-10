@@ -29,7 +29,7 @@ import ar.edu.utn.donatrack.propuestas.matchmaking.AlgoritmoCompatibilidadSemant
 import ar.edu.utn.donatrack.propuestas.matchmaking.AlgoritmoPrioridadSubAtendidos;
 import ar.edu.utn.donatrack.security.AuthController;
 import ar.edu.utn.donatrack.security.AuthService;
-import ar.edu.utn.donatrack.security.SecurityRules;
+import ar.edu.utn.donatrack.security.ControlDeAcceso;
 import ar.edu.utn.donatrack.seguimiento.PosicionesCamiones;
 import ar.edu.utn.donatrack.seguimiento.PosicionesCamionesGraphql;
 import ar.edu.utn.donatrack.ubicacion.UbicadorEntidades;
@@ -128,12 +128,10 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
         new RegistroController(authService, donantes, entidades, notificaciones);
     AlmacenFotos almacenFotos = AlmacenFotosDesdeEntorno.crear();
     RecepcionesController recepciones =
-        new RecepcionesController(
-            authService, donaciones, new FotosRecepcion(almacenFotos), notificaciones);
+        new RecepcionesController(donaciones, new FotosRecepcion(almacenFotos), notificaciones);
     ImportadorDonantes importador = new ImportadorDonantes(authService, clock);
     VistasPorRol vistasPorRol =
         new VistasPorRol(
-            authService,
             donaciones,
             entidades,
             subcategorias,
@@ -187,26 +185,8 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
                   });
             });
 
-    app.before(
-        ctx -> {
-          String path = ctx.path();
-          if (path.startsWith("/api/v1")) {
-            SecurityRules.enforceApi(ctx, authService);
-            return;
-          }
-          if ("/dashboard".equals(path)
-              || path.startsWith("/entidad/")
-              || path.startsWith("/donante/")
-              || path.startsWith("/admin/")
-              || "/perfil".equals(path)
-              || "/donaciones".equals(path)
-              || "/necesidades".equals(path)
-              || "/logistica".equals(path)
-              || "/matchmaking".equals(path)
-              || "/catalogo".equals(path)) {
-            SecurityRules.enforceProtectedWeb(ctx, authService);
-          }
-        });
+    // Permisos: cada ruta declara sus roles al registrarse y este filtro los hace cumplir.
+    app.beforeMatched(ctx -> ControlDeAcceso.verificar(ctx, authService));
 
     java.util.concurrent.ScheduledExecutorService scheduler =
         java.util.concurrent.Executors.newSingleThreadScheduledExecutor();

@@ -18,8 +18,8 @@ import ar.edu.utn.donatrack.propuestas.EntidadFueraDeRankingException;
 import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
 import ar.edu.utn.donatrack.propuestas.PropuestaRepository;
 import ar.edu.utn.donatrack.propuestas.ServicioMatchmakingDonaciones;
-import ar.edu.utn.donatrack.security.AuthService;
 import ar.edu.utn.donatrack.security.Role;
+import ar.edu.utn.donatrack.security.Sesiones;
 import ar.edu.utn.donatrack.security.Usuario;
 import ar.edu.utn.donatrack.seguimiento.LogisticaNoDisponibleException;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
@@ -52,7 +52,6 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
           Map.entry("camion", "Guardamos el camión."),
           Map.entry("eliminado", "Eliminamos el camión."));
 
-  private final AuthService authService;
   private final DonacionesRepository donaciones;
   private final BeneficiariosRepository entidades;
   private final PropuestaRepository propuestas;
@@ -63,7 +62,6 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
   private final Clock clock;
 
   AdminVistasController(
-      AuthService authService,
       DonacionesRepository donaciones,
       BeneficiariosRepository entidades,
       PropuestaRepository propuestas,
@@ -72,7 +70,6 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
       FlotaLogistica flota,
       ImportadorDonantes importador,
       Clock clock) {
-    this.authService = authService;
     this.donaciones = donaciones;
     this.entidades = entidades;
     this.propuestas = propuestas;
@@ -84,23 +81,23 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
   }
 
   public void routes() {
-    get("/admin/vencidas", this::vencidas);
-    post("/admin/vencidas", this::marcarTodasVencidas);
-    post("/admin/vencidas/{id}", this::marcarVencida);
-    get("/admin/asignaciones", this::asignaciones);
-    post("/admin/asignaciones", this::generarPropuestas);
-    post("/admin/asignaciones/{id}", this::asignar);
-    get("/admin/camiones", this::camiones);
-    post("/admin/camiones", this::guardarCamion);
-    post("/admin/camiones/{patente}/eliminar", this::eliminarCamion);
-    get("/admin/importar", this::importaciones);
-    post("/admin/importar", this::importar);
+    get("/admin/vencidas", this::vencidas, Role.ADMIN);
+    post("/admin/vencidas", this::marcarTodasVencidas, Role.ADMIN);
+    post("/admin/vencidas/{id}", this::marcarVencida, Role.ADMIN);
+    get("/admin/asignaciones", this::asignaciones, Role.ADMIN);
+    post("/admin/asignaciones", this::generarPropuestas, Role.ADMIN);
+    post("/admin/asignaciones/{id}", this::asignar, Role.ADMIN);
+    get("/admin/camiones", this::camiones, Role.ADMIN);
+    post("/admin/camiones", this::guardarCamion, Role.ADMIN);
+    post("/admin/camiones/{patente}/eliminar", this::eliminarCamion, Role.ADMIN);
+    get("/admin/importar", this::importaciones, Role.ADMIN);
+    post("/admin/importar", this::importar, Role.ADMIN);
   }
 
   // --- Donaciones vencidas en depósito (#57) ---
 
   private void vencidas(Context ctx) {
-    Usuario usuario = Vistas.exigir(ctx, authService, Role.ADMIN);
+    Usuario usuario = Vistas.usuario(ctx);
     LocalDate hoy = LocalDate.now(clock);
     List<DepositoVista> enDeposito =
         donaciones.getDonacionesEnEstado(EstadoDonacion.EN_DEPOSITO).stream()
@@ -118,7 +115,7 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
   }
 
   private void marcarVencida(Context ctx) {
-    Vistas.exigir(ctx, authService, Role.ADMIN);
+    Vistas.usuario(ctx);
     Donacion donacion = donacion(ctx);
     if (donacion.getEstado() != EstadoDonacion.EN_DEPOSITO) {
       throw new IllegalStateException("La donación ya no está en el depósito.");
@@ -128,7 +125,7 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
   }
 
   private void marcarTodasVencidas(Context ctx) {
-    Vistas.exigir(ctx, authService, Role.ADMIN);
+    Vistas.usuario(ctx);
     LocalDate hoy = LocalDate.now(clock);
     vencer(
         donaciones.getDonacionesEnEstado(EstadoDonacion.EN_DEPOSITO).stream()
@@ -153,7 +150,7 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
   // --- Asignación de entidad final desde las propuestas (#58) ---
 
   private void asignaciones(Context ctx) {
-    Usuario usuario = Vistas.exigir(ctx, authService, Role.ADMIN);
+    Usuario usuario = Vistas.usuario(ctx);
     Map<String, Object> modelo = Vistas.modelo(usuario);
     modelo.put("propuestas", propuestasVista(null, null));
     modelo.put(
@@ -166,13 +163,13 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
   }
 
   private void generarPropuestas(Context ctx) {
-    Vistas.exigir(ctx, authService, Role.ADMIN);
+    Vistas.usuario(ctx);
     withTransaction(() -> matchmaking.ejecutarMatchmakingTotal(LocalDate.now(clock)));
     ctx.redirect("/admin/asignaciones?ok=propuestas");
   }
 
   private void asignar(Context ctx) {
-    Usuario usuario = Vistas.exigir(ctx, authService, Role.ADMIN);
+    Usuario usuario = Vistas.usuario(ctx);
     Donacion donacion = donacion(ctx);
     Optional<EntidadBeneficiaria> entidad =
         Optional.ofNullable(ctx.formParam("entidad"))
@@ -216,14 +213,14 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
   // --- Administración de camiones (#59), operada en logística por GraphQL ---
 
   private void camiones(Context ctx) {
-    Usuario usuario = Vistas.exigir(ctx, authService, Role.ADMIN);
+    Usuario usuario = Vistas.usuario(ctx);
     Map<String, Object> modelo = Vistas.modelo(usuario);
     aviso(ctx, modelo);
     renderCamiones(ctx, modelo);
   }
 
   private void guardarCamion(Context ctx) {
-    Usuario usuario = Vistas.exigir(ctx, authService, Role.ADMIN);
+    Usuario usuario = Vistas.usuario(ctx);
     String patente = Optional.ofNullable(ctx.formParam("patente")).orElse("").trim().toUpperCase();
     try {
       if (!patente.matches("[A-Z0-9]{6,7}")) {
@@ -252,7 +249,7 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
   }
 
   private void eliminarCamion(Context ctx) {
-    Usuario usuario = Vistas.exigir(ctx, authService, Role.ADMIN);
+    Usuario usuario = Vistas.usuario(ctx);
     try {
       flota.eliminar(sesion(ctx), ctx.pathParam("patente"));
     } catch (IllegalArgumentException | LogisticaNoDisponibleException e) {
@@ -280,13 +277,13 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
   }
 
   private static String sesion(Context ctx) {
-    return Optional.ofNullable(ctx.cookie("access_token")).orElse("");
+    return Sesiones.token(ctx);
   }
 
   // --- Importación de donantes desde CSV (#60) ---
 
   private void importaciones(Context ctx) {
-    Usuario usuario = Vistas.exigir(ctx, authService, Role.ADMIN);
+    Usuario usuario = Vistas.usuario(ctx);
     Map<String, Object> modelo = Vistas.modelo(usuario);
     List<Importacion> recientes = importador.recientes();
     modelo.put("importaciones", recientes);
@@ -295,7 +292,7 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
   }
 
   private void importar(Context ctx) {
-    Usuario usuario = Vistas.exigir(ctx, authService, Role.ADMIN);
+    Usuario usuario = Vistas.usuario(ctx);
     UploadedFile archivo = ctx.uploadedFile("archivo");
     if (archivo == null
         || archivo.size() == 0

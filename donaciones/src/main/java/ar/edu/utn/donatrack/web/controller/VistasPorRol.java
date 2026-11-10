@@ -9,7 +9,6 @@ import ar.edu.utn.donatrack.notificaciones.BandejaNotificacionesRepository;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.propuestas.PropuestaRepository;
 import ar.edu.utn.donatrack.propuestas.ServicioMatchmakingDonaciones;
-import ar.edu.utn.donatrack.security.AuthService;
 import ar.edu.utn.donatrack.seguimiento.PosicionesCamiones;
 import java.time.Clock;
 
@@ -20,7 +19,6 @@ public final class VistasPorRol {
   private final AdminVistasController admin;
 
   public VistasPorRol(
-      AuthService authService,
       DonacionesRepository donaciones,
       BeneficiariosRepository entidades,
       SubcategoriasRepository subcategorias,
@@ -33,14 +31,11 @@ public final class VistasPorRol {
       ImportadorDonantes importador,
       Clock clock) {
     Seguimiento seguimiento = new Seguimiento(posiciones);
-    this.donante =
-        new DonanteVistasController(authService, donaciones, subcategorias, bandeja, seguimiento);
+    this.donante = new DonanteVistasController(donaciones, subcategorias, bandeja, seguimiento);
     this.entidad =
-        new EntidadVistasController(
-            authService, entidades, subcategorias, donaciones, bandeja, seguimiento);
+        new EntidadVistasController(entidades, subcategorias, donaciones, bandeja, seguimiento);
     this.admin =
         new AdminVistasController(
-            authService,
             donaciones,
             entidades,
             propuestas,

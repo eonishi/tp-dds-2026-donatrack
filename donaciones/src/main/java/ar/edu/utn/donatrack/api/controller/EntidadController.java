@@ -15,8 +15,10 @@ import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
+import ar.edu.utn.donatrack.security.Role;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
+import io.javalin.security.RouteRole;
 import java.util.List;
 
 public final class EntidadController implements WithSimplePersistenceUnit {
@@ -28,18 +30,20 @@ public final class EntidadController implements WithSimplePersistenceUnit {
     this.donaciones = donaciones;
   }
 
+  private static final RouteRole[] ADMIN_O_ENTIDAD = {Role.ADMIN, Role.BENEFICIARIO};
+
   public void routes() {
     path(
         "/beneficiarias",
         () -> {
-          get(this::listar);
-          post(this::crear);
+          get(this::listar, ADMIN_O_ENTIDAD);
+          post(this::crear, ADMIN_O_ENTIDAD);
           path(
               "/{id}",
               () -> {
-                get(this::obtener);
-                put(this::actualizar);
-                delete(this::eliminar);
+                get(this::obtener, ADMIN_O_ENTIDAD);
+                put(this::actualizar, ADMIN_O_ENTIDAD);
+                delete(this::eliminar, ADMIN_O_ENTIDAD);
               });
         });
   }

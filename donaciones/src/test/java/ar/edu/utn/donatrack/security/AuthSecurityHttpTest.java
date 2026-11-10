@@ -77,8 +77,8 @@ class AuthSecurityHttpTest implements WithSimplePersistenceUnit {
             .build();
     HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
     assertEquals(401, response.statusCode(), response.body());
-    assertTrue(SecurityRules.isValidServiceKey("clave-configurada", "clave-configurada"));
-    assertTrue(!SecurityRules.isValidServiceKey("S2S_SECRET_KEY", ""));
+    assertTrue(ControlDeAcceso.claveValida("clave-configurada", "clave-configurada"));
+    assertTrue(!ControlDeAcceso.claveValida("S2S_SECRET_KEY", ""));
   }
 
   @Test

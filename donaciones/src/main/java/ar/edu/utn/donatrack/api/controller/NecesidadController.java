@@ -17,8 +17,10 @@ import ar.edu.utn.donatrack.beneficiarios.Necesidad;
 import ar.edu.utn.donatrack.beneficiarios.NecesidadRecurrente;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.SubcategoriasRepository;
+import ar.edu.utn.donatrack.security.Role;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
+import io.javalin.security.RouteRole;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -34,18 +36,20 @@ public final class NecesidadController implements WithSimplePersistenceUnit {
     this.subcategorias = subcategorias;
   }
 
+  private static final RouteRole[] ADMIN_O_ENTIDAD = {Role.ADMIN, Role.BENEFICIARIO};
+
   public void routes() {
     path(
         "/beneficiarias/{entidadId}/necesidades",
         () -> {
-          get(this::listar);
-          post(this::crear);
+          get(this::listar, ADMIN_O_ENTIDAD);
+          post(this::crear, ADMIN_O_ENTIDAD);
           path(
               "/{necesidadId}",
               () -> {
-                get(this::obtener);
-                put(this::actualizar);
-                delete(this::eliminar);
+                get(this::obtener, ADMIN_O_ENTIDAD);
+                put(this::actualizar, ADMIN_O_ENTIDAD);
+                delete(this::eliminar, ADMIN_O_ENTIDAD);
               });
         });
   }

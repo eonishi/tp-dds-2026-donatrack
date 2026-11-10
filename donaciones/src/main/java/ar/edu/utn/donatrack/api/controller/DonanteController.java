@@ -25,9 +25,11 @@ import ar.edu.utn.donatrack.donantes.Sms;
 import ar.edu.utn.donatrack.donantes.Whatsapp;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoBienvenida;
+import ar.edu.utn.donatrack.security.Role;
 import ar.edu.utn.donatrack.utilidades.TipoPersona;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
+import io.javalin.security.RouteRole;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -46,18 +48,20 @@ public final class DonanteController implements WithSimplePersistenceUnit {
     this.notificaciones = notificaciones;
   }
 
+  private static final RouteRole[] ADMIN_O_DONANTE = {Role.ADMIN, Role.DONANTE};
+
   public void routes() {
     path(
         "/donantes",
         () -> {
-          get(this::listar);
-          post(this::crear);
+          get(this::listar, Role.ADMIN);
+          post(this::crear, ADMIN_O_DONANTE);
           path(
               "/{id}",
               () -> {
-                get(this::obtener);
-                put(this::actualizar);
-                delete(this::eliminar);
+                get(this::obtener, ADMIN_O_DONANTE);
+                put(this::actualizar, ADMIN_O_DONANTE);
+                delete(this::eliminar, ADMIN_O_DONANTE);
               });
         });
   }

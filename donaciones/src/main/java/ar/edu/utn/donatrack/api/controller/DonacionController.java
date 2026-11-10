@@ -31,11 +31,14 @@ import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import ar.edu.utn.donatrack.notificaciones.Notificacion;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.propuestas.PropuestaRepository;
+import ar.edu.utn.donatrack.security.Role;
+import ar.edu.utn.donatrack.security.ServicioInterno;
 import ar.edu.utn.donatrack.seguimiento.LogisticaNoDisponibleException;
 import ar.edu.utn.donatrack.seguimiento.PosicionCamion;
 import ar.edu.utn.donatrack.seguimiento.PosicionesCamiones;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
+import io.javalin.security.RouteRole;
 import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -75,23 +78,37 @@ public final class DonacionController implements WithSimplePersistenceUnit {
     this.subcategorias = subcategorias;
   }
 
+  // Logística entra a todas con la clave interna: consulta las donaciones a planificar y les
+  // cambia el estado al iniciar una ruta.
+  // Consultas: el handler filtra para que cada persona vea solo sus donaciones (AccesoDonaciones).
+  private static final RouteRole[] CONSULTAN = {
+    Role.ADMIN, Role.DONANTE, Role.BENEFICIARIO, ServicioInterno.LOGISTICA
+  };
+  // La entidad confirma la recepción (o informa que no llegó) y carga las fotos de lo que le
+  // asignaron; el handler verifica que la donación sea suya.
+  private static final RouteRole[] RECIBEN = {
+    Role.ADMIN, Role.BENEFICIARIO, ServicioInterno.LOGISTICA
+  };
+  // Alta, edición y baja las hace la persona administradora en el depósito.
+  private static final RouteRole[] CARGAN = {Role.ADMIN, ServicioInterno.LOGISTICA};
+
   public void routes() {
     path(
         "/donaciones",
         () -> {
-          get(this::listar);
-          post(this::crear);
-          patch("/estado", this::transicionarMasivo);
+          get(this::listar, CONSULTAN);
+          post(this::crear, CARGAN);
+          patch("/estado", this::transicionarMasivo, RECIBEN);
           path(
               "/{id}",
               () -> {
-                get(this::obtener);
-                put(this::actualizar);
-                delete(this::eliminar);
-                patch("/estado", this::transicionar);
-                get("/historial-estados", this::historial);
-                get("/seguimiento", this::seguimiento);
-                post("/fotos", this::agregarFoto);
+                get(this::obtener, CONSULTAN);
+                put(this::actualizar, CARGAN);
+                delete(this::eliminar, CARGAN);
+                patch("/estado", this::transicionar, RECIBEN);
+                get("/historial-estados", this::historial, CONSULTAN);
+                get("/seguimiento", this::seguimiento, CONSULTAN);
+                post("/fotos", this::agregarFoto, RECIBEN);
               });
         });
   }

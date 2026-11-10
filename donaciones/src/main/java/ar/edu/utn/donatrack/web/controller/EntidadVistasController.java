@@ -15,7 +15,6 @@ import ar.edu.utn.donatrack.bienes.UnidadMedida;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.notificaciones.BandejaNotificacionesRepository;
-import ar.edu.utn.donatrack.security.AuthService;
 import ar.edu.utn.donatrack.security.Role;
 import ar.edu.utn.donatrack.security.Usuario;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
@@ -37,7 +36,6 @@ public class EntidadVistasController implements WithSimplePersistenceUnit {
           "agregada", "Agregamos la necesidad. La vamos a tener en cuenta al asignar donaciones.",
           "eliminada", "Eliminamos la necesidad.");
 
-  private final AuthService authService;
   private final BeneficiariosRepository entidades;
   private final SubcategoriasRepository subcategorias;
   private final DonacionesRepository donaciones;
@@ -45,13 +43,11 @@ public class EntidadVistasController implements WithSimplePersistenceUnit {
   private final Seguimiento seguimiento;
 
   EntidadVistasController(
-      AuthService authService,
       BeneficiariosRepository entidades,
       SubcategoriasRepository subcategorias,
       DonacionesRepository donaciones,
       BandejaNotificacionesRepository bandeja,
       Seguimiento seguimiento) {
-    this.authService = authService;
     this.entidades = entidades;
     this.subcategorias = subcategorias;
     this.donaciones = donaciones;
@@ -60,16 +56,16 @@ public class EntidadVistasController implements WithSimplePersistenceUnit {
   }
 
   public void routes() {
-    get("/entidad/necesidades", this::necesidades);
-    post("/entidad/necesidades", this::agregarNecesidad);
-    post("/entidad/necesidades/{id}/eliminar", this::eliminarNecesidad);
-    get("/entidad/seguimiento", this::seguimiento);
-    get("/entidad/seguimiento/posiciones", this::posiciones);
-    get("/entidad/notificaciones", this::notificaciones);
+    get("/entidad/necesidades", this::necesidades, Role.BENEFICIARIO);
+    post("/entidad/necesidades", this::agregarNecesidad, Role.BENEFICIARIO);
+    post("/entidad/necesidades/{id}/eliminar", this::eliminarNecesidad, Role.BENEFICIARIO);
+    get("/entidad/seguimiento", this::seguimiento, Role.BENEFICIARIO);
+    get("/entidad/seguimiento/posiciones", this::posiciones, Role.BENEFICIARIO);
+    get("/entidad/notificaciones", this::notificaciones, Role.BENEFICIARIO);
   }
 
   private void necesidades(Context ctx) {
-    Usuario usuario = Vistas.exigir(ctx, authService, Role.BENEFICIARIO);
+    Usuario usuario = Vistas.usuario(ctx);
     EntidadBeneficiaria entidad = propia(usuario);
     Map<String, Object> modelo = modeloNecesidades(usuario, entidad, Map.of());
     Optional.ofNullable(ctx.queryParam("ok"))
@@ -79,7 +75,7 @@ public class EntidadVistasController implements WithSimplePersistenceUnit {
   }
 
   private void agregarNecesidad(Context ctx) {
-    Usuario usuario = Vistas.exigir(ctx, authService, Role.BENEFICIARIO);
+    Usuario usuario = Vistas.usuario(ctx);
     EntidadBeneficiaria entidad = propia(usuario);
     Map<String, String> datos = new HashMap<>();
     for (String campo :
@@ -121,7 +117,7 @@ public class EntidadVistasController implements WithSimplePersistenceUnit {
   }
 
   private void eliminarNecesidad(Context ctx) {
-    Usuario usuario = Vistas.exigir(ctx, authService, Role.BENEFICIARIO);
+    Usuario usuario = Vistas.usuario(ctx);
     EntidadBeneficiaria entidad = propia(usuario);
     UUID id;
     try {
@@ -137,7 +133,7 @@ public class EntidadVistasController implements WithSimplePersistenceUnit {
   }
 
   private void seguimiento(Context ctx) {
-    Usuario usuario = Vistas.exigir(ctx, authService, Role.BENEFICIARIO);
+    Usuario usuario = Vistas.usuario(ctx);
     Map<String, Object> modelo = Vistas.modelo(usuario);
     modelo.put("entregas", seguimiento.entregas(asignadas(usuario)));
     modelo.put("posiciones", "/entidad/seguimiento/posiciones");
@@ -146,12 +142,12 @@ public class EntidadVistasController implements WithSimplePersistenceUnit {
   }
 
   private void posiciones(Context ctx) {
-    Usuario usuario = Vistas.exigir(ctx, authService, Role.BENEFICIARIO);
+    Usuario usuario = Vistas.usuario(ctx);
     ctx.json(seguimiento.entregas(asignadas(usuario)));
   }
 
   private void notificaciones(Context ctx) {
-    Usuario usuario = Vistas.exigir(ctx, authService, Role.BENEFICIARIO);
+    Usuario usuario = Vistas.usuario(ctx);
     Vistas.bandeja(
         ctx, usuario, usuario.getEntidadId().map(bandeja::deEntidad).orElse(List.of()), bandeja);
   }

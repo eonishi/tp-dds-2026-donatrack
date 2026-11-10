@@ -18,8 +18,11 @@ import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.propuestas.EntidadFueraDeRankingException;
 import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
 import ar.edu.utn.donatrack.propuestas.ServicioMatchmakingDonaciones;
+import ar.edu.utn.donatrack.security.Role;
+import ar.edu.utn.donatrack.security.ServicioInterno;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
+import io.javalin.security.RouteRole;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -44,14 +47,19 @@ public final class MatchmakingController implements WithSimplePersistenceUnit {
     this.clock = clock;
   }
 
+  // Como toda ruta bajo /donaciones, logística también entra con la clave interna.
+  private static final RouteRole[] SOBRE_DONACION = {
+    Role.ADMIN, Role.BENEFICIARIO, ServicioInterno.LOGISTICA
+  };
+
   public void routes() {
-    get("/propuestas-asignacion", this::listar);
+    get("/propuestas-asignacion", this::listar, Role.ADMIN, Role.BENEFICIARIO);
     path(
         "/donaciones/{donacionId}",
         () -> {
-          post("/propuesta-asignacion", this::ejecutar);
-          get("/propuesta-asignacion", this::ranking);
-          put("/propuesta-asignacion", this::seleccionar);
+          post("/propuesta-asignacion", this::ejecutar, SOBRE_DONACION);
+          get("/propuesta-asignacion", this::ranking, SOBRE_DONACION);
+          put("/propuesta-asignacion", this::seleccionar, SOBRE_DONACION);
         });
   }
 
