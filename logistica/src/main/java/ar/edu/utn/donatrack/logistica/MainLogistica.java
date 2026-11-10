@@ -86,8 +86,15 @@ public class MainLogistica implements WithSimplePersistenceUnit {
     // Este UUID es el id del lote que devuelve el planificador externo (stub), no la clave de una
     // entidad: el @GeneratedValue de las entidades no aplica acá.
     PlanificadorRutas planificadorRutas = lote -> UUID.randomUUID();
+    // URL que se le pasa al planificador externo para que avise el resultado de cada lote.
+    String urlCallback =
+        System.getenv()
+            .getOrDefault(
+                "PLANIFICADOR_CALLBACK_URL",
+                "http://localhost:9001/logistica/planificacion/callback");
     ServicioPlanificacionRutas servicioPlanificacion =
-        new ServicioPlanificacionRutas(donacionesRemotas, camionRepo, planificadorRutas, rutaRepo);
+        new ServicioPlanificacionRutas(
+            donacionesRemotas, camionRepo, planificadorRutas, rutaRepo, urlCallback);
     PlanificacionController planificacionController =
         new PlanificacionController(servicioPlanificacion, camionRepo);
 

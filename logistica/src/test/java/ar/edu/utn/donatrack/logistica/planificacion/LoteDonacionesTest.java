@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test;
 
 class LoteDonacionesTest {
 
+  private static final String URL_CALLBACK = "http://logistica.test/callback";
+
   private static Camion crearCamionDummy() {
     return new Camion("ABC123", 45.0, 2.5, 5000.0);
   }
@@ -27,7 +29,7 @@ class LoteDonacionesTest {
     List<DonacionPlanificable> donaciones = List.of();
     List<Camion> camiones = List.of(crearCamionDummy());
 
-    LoteDonaciones lote = new LoteDonaciones(donaciones, camiones);
+    LoteDonaciones lote = new LoteDonaciones(donaciones, camiones, URL_CALLBACK);
 
     assertSame(donaciones, lote.donaciones());
     assertSame(camiones, lote.camiones());
@@ -37,7 +39,8 @@ class LoteDonacionesTest {
   void crearLoteDonaciones_ConDonacionesNull_DebeLanzarNullPointerException() {
     List<Camion> camiones = List.of(crearCamionDummy());
 
-    assertThrows(NullPointerException.class, () -> new LoteDonaciones(null, camiones));
+    assertThrows(
+        NullPointerException.class, () -> new LoteDonaciones(null, camiones, URL_CALLBACK));
   }
 
   @Test
@@ -48,7 +51,9 @@ class LoteDonacionesTest {
     }
     List<Camion> camiones = List.of(crearCamionDummy());
 
-    assertThrows(IllegalArgumentException.class, () -> new LoteDonaciones(donaciones, camiones));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new LoteDonaciones(donaciones, camiones, URL_CALLBACK));
   }
 
   @Test
@@ -59,7 +64,7 @@ class LoteDonacionesTest {
     }
     List<Camion> camiones = List.of(crearCamionDummy());
 
-    LoteDonaciones lote = new LoteDonaciones(donaciones, camiones);
+    LoteDonaciones lote = new LoteDonaciones(donaciones, camiones, URL_CALLBACK);
 
     assertEquals(100, lote.donaciones().size());
   }
@@ -68,13 +73,25 @@ class LoteDonacionesTest {
   void crearLoteDonaciones_ConCamionesNull_DebeLanzarNullPointerException() {
     List<DonacionPlanificable> donaciones = List.of(crearPlanificable());
 
-    assertThrows(NullPointerException.class, () -> new LoteDonaciones(donaciones, null));
+    assertThrows(
+        NullPointerException.class, () -> new LoteDonaciones(donaciones, null, URL_CALLBACK));
   }
 
   @Test
   void crearLoteDonaciones_ConCamionesVacios_DebeLanzarIllegalArgumentException() {
     List<DonacionPlanificable> donaciones = List.of(crearPlanificable());
 
-    assertThrows(IllegalArgumentException.class, () -> new LoteDonaciones(donaciones, List.of()));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new LoteDonaciones(donaciones, List.of(), URL_CALLBACK));
+  }
+
+  @Test
+  void crearLoteDonaciones_ConUrlCallbackVacia_DebeLanzarIllegalArgumentException() {
+    List<DonacionPlanificable> donaciones = List.of(crearPlanificable());
+    List<Camion> camiones = List.of(crearCamionDummy());
+
+    assertThrows(
+        IllegalArgumentException.class, () -> new LoteDonaciones(donaciones, camiones, " "));
   }
 }

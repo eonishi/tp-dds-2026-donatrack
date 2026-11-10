@@ -2,7 +2,9 @@ package ar.edu.utn.donatrack.logistica.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -48,9 +50,16 @@ public class PlanificacionControllerTest implements SimplePersistenceTest {
     loteId = UUID.randomUUID();
     donacionId = UUID.randomUUID();
 
+    // El callback no depende de que este proceso haya enviado el lote: en producción lo envía el
+    // runner, que es otro proceso.
     PlanificadorRutas planificadorRutas = lote -> loteId;
     ServicioPlanificacionRutas servicio =
-        new ServicioPlanificacionRutas(donacionesRemotas, camionRepo, planificadorRutas, rutaRepo);
+        new ServicioPlanificacionRutas(
+            donacionesRemotas,
+            camionRepo,
+            planificadorRutas,
+            rutaRepo,
+            "http://logistica.test/logistica/planificacion/callback");
     controlador = new PlanificacionController(servicio, camionRepo);
 
     // El repositorio ya no abre ninguna transacción por su cuenta y acá no hay una previa, así
@@ -60,7 +69,6 @@ public class PlanificacionControllerTest implements SimplePersistenceTest {
     withTransaction(() -> camionRepo.agregar(camionPrueba));
 
     when(donacionesRemotas.listarEnAsignacionRealizada()).thenReturn(List.of(crearPlanificable()));
-    servicio.planificar();
 
     app =
         Javalin.create().post("/logistica/planificacion/callback", controlador::procesarResultado);
@@ -83,7 +91,7 @@ public class PlanificacionControllerTest implements SimplePersistenceTest {
   }
 
   @Test
-  public void testCallbackDeLotePendienteDevuelve200YCreaLaRuta() {
+  public void testCallbackSinLoteEnviadoPorEsteProcesoDevuelve200YCreaLaRuta() {
     JavalinTest.test(
         app,
         (server, client) -> {
@@ -97,32 +105,21 @@ public class PlanificacionControllerTest implements SimplePersistenceTest {
   }
 
   @Test
-  public void testCallbackDeLoteNoPendienteDevuelve404() {
+  public void testCallbackRepetidoDevuelve400YNoDuplicaLaRuta() {
     JavalinTest.test(
         app,
         (server, client) -> {
-          String json =
-              """
-              {
-                "loteId": "%s",
-                "rutas": {
-                  "%s": [
-                    {
-                      "entidadBeneficiariaId": %d,
-                      "direccion": "%s",
-                      "donaciones": ["%s"]
-                    }
-                  ]
-                }
-              }
-              """
-                  .formatted(UUID.randomUUID(), PATENTE, ENTIDAD_ID, DIRECCION, donacionId);
+          var primera = client.post("/logistica/planificacion/callback", json(PATENTE, donacionId));
+          assertEquals(200, primera.code());
 
-          var response = client.post("/logistica/planificacion/callback", json);
+          // Después del primer callback la donación ya no está en ASIGNACION_REALIZADA.
+          when(donacionesRemotas.listarEnAsignacionRealizada()).thenReturn(List.of());
+          var repetida =
+              client.post("/logistica/planificacion/callback", json(PATENTE, donacionId));
 
-          assertEquals(404, response.code());
-          assertEquals(0, rutaRepo.listarTodas().size(), "No debería crearse ninguna ruta");
-          verify(donacionesRemotas, never()).notificarListaParaEntregar(anyList());
+          assertEquals(400, repetida.code());
+          assertEquals(1, rutaRepo.listarTodas().size(), "No debería duplicarse la ruta");
+          verify(donacionesRemotas, times(1)).notificarListaParaEntregar(anyList());
         });
   }
 
@@ -141,7 +138,7 @@ public class PlanificacionControllerTest implements SimplePersistenceTest {
   }
 
   @Test
-  public void testCallbackConDonacionFueraDelLoteDevuelve400() {
+  public void testCallbackConDonacionQueNoEstaEnAsignacionRealizadaDevuelve400() {
     JavalinTest.test(
         app,
         (server, client) -> {
@@ -151,6 +148,22 @@ public class PlanificacionControllerTest implements SimplePersistenceTest {
           assertEquals(400, response.code());
           assertEquals(0, rutaRepo.listarTodas().size(), "No debería crearse ninguna ruta");
           verify(donacionesRemotas, never()).notificarListaParaEntregar(anyList());
+        });
+  }
+
+  @Test
+  public void testCallbackSiFallaElAvisoADonacionesNoCreaRutas() {
+    doThrow(new RuntimeException("Error HTTP 400"))
+        .when(donacionesRemotas)
+        .notificarListaParaEntregar(anyList());
+    JavalinTest.test(
+        app,
+        (server, client) -> {
+          var response =
+              client.post("/logistica/planificacion/callback", json(PATENTE, donacionId));
+
+          assertEquals(500, response.code());
+          assertEquals(0, rutaRepo.listarTodas().size(), "No debería crearse ninguna ruta");
         });
   }
 

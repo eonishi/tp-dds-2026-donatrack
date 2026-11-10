@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,13 +30,16 @@ class ServicioPlanificacionRutasTest {
   @Mock PlanificadorRutas planificadorRutas;
   @Mock RutaRepository rutaRepository;
 
+  private static final String URL_CALLBACK =
+      "http://logistica.test/logistica/planificacion/callback";
+
   private ServicioPlanificacionRutas servicio;
 
   @BeforeEach
   void setUp() {
     servicio =
         new ServicioPlanificacionRutas(
-            donacionesRemotas, camionRepository, planificadorRutas, rutaRepository);
+            donacionesRemotas, camionRepository, planificadorRutas, rutaRepository, URL_CALLBACK);
   }
 
   // ── Helpers ────────────────────────────────────────────────────────
@@ -67,10 +71,9 @@ class ServicioPlanificacionRutasTest {
     UUID loteIdEsperado = UUID.randomUUID();
     when(planificadorRutas.enviarLote(any())).thenReturn(loteIdEsperado);
 
-    List<UUID> resultado = servicio.planificar();
+    Optional<UUID> resultado = servicio.planificar();
 
-    assertEquals(1, resultado.size());
-    assertEquals(loteIdEsperado, resultado.get(0));
+    assertEquals(Optional.of(loteIdEsperado), resultado);
     ArgumentCaptor<LoteDonaciones> captor = ArgumentCaptor.forClass(LoteDonaciones.class);
     verify(planificadorRutas, times(1)).enviarLote(captor.capture());
     LoteDonaciones lote = captor.getValue();
@@ -80,22 +83,26 @@ class ServicioPlanificacionRutasTest {
   }
 
   @Test
-  void planificar_Con250Donaciones_ParticionaEn3Lotes() {
-    Camion camion = crearCamionDummy("ABC123");
-    Camion camion2 = crearCamionDummy("DEF456");
-    Camion camion3 = crearCamionDummy("GHI789");
+  void planificar_Con250Donaciones_EnviaUnSoloLoteConLasPrimeras100YTodosLosCamiones() {
+    List<Camion> camiones =
+        List.of(crearCamionDummy("ABC123"), crearCamionDummy("DEF456"), crearCamionDummy("GHI789"));
     List<DonacionPlanificable> donaciones = new ArrayList<>();
     for (int i = 0; i < 250; i++) {
       donaciones.add(crearPlanificable(1L, nuevoDonacionUuid()));
     }
     when(donacionesRemotas.listarEnAsignacionRealizada()).thenReturn(donaciones);
-    when(camionRepository.listarTodos()).thenReturn(List.of(camion, camion2, camion3));
-    when(planificadorRutas.enviarLote(any())).thenAnswer(invocacion -> UUID.randomUUID());
+    when(camionRepository.listarTodos()).thenReturn(camiones);
+    UUID loteIdEsperado = UUID.randomUUID();
+    when(planificadorRutas.enviarLote(any())).thenReturn(loteIdEsperado);
 
-    List<UUID> resultado = servicio.planificar();
+    Optional<UUID> resultado = servicio.planificar();
 
-    assertEquals(3, resultado.size());
-    verify(planificadorRutas, times(3)).enviarLote(any());
+    assertEquals(Optional.of(loteIdEsperado), resultado);
+    ArgumentCaptor<LoteDonaciones> captor = ArgumentCaptor.forClass(LoteDonaciones.class);
+    verify(planificadorRutas, times(1)).enviarLote(captor.capture());
+    LoteDonaciones lote = captor.getValue();
+    assertEquals(donaciones.subList(0, 100), lote.donaciones());
+    assertEquals(camiones, lote.camiones());
   }
 
   @Test
@@ -103,7 +110,7 @@ class ServicioPlanificacionRutasTest {
     when(donacionesRemotas.listarEnAsignacionRealizada()).thenReturn(List.of());
     when(camionRepository.listarTodos()).thenReturn(List.of(crearCamionDummy("ABC123")));
 
-    List<UUID> resultado = servicio.planificar();
+    Optional<UUID> resultado = servicio.planificar();
 
     assertTrue(resultado.isEmpty());
     verify(planificadorRutas, never()).enviarLote(any());
@@ -115,33 +122,10 @@ class ServicioPlanificacionRutasTest {
         .thenReturn(List.of(crearPlanificable(1L, nuevoDonacionUuid())));
     when(camionRepository.listarTodos()).thenReturn(List.of());
 
-    List<UUID> resultado = servicio.planificar();
+    Optional<UUID> resultado = servicio.planificar();
 
     assertTrue(resultado.isEmpty());
     verify(planificadorRutas, never()).enviarLote(any());
-  }
-
-  @Test
-  void planificar_Con250Donaciones_LosLotesNoExceden100Donaciones() {
-    Camion camion = crearCamionDummy("ABC123");
-    Camion camion2 = crearCamionDummy("DEF456");
-    Camion camion3 = crearCamionDummy("GHI789");
-    List<DonacionPlanificable> donaciones = new ArrayList<>();
-    for (int i = 0; i < 250; i++) {
-      donaciones.add(crearPlanificable(1L, nuevoDonacionUuid()));
-    }
-    when(donacionesRemotas.listarEnAsignacionRealizada()).thenReturn(donaciones);
-    when(camionRepository.listarTodos()).thenReturn(List.of(camion, camion2, camion3));
-    when(planificadorRutas.enviarLote(any())).thenAnswer(invocacion -> UUID.randomUUID());
-
-    servicio.planificar();
-
-    ArgumentCaptor<LoteDonaciones> captor = ArgumentCaptor.forClass(LoteDonaciones.class);
-    verify(planificadorRutas, times(3)).enviarLote(captor.capture());
-    for (LoteDonaciones lote : captor.getAllValues()) {
-      assertTrue(
-          lote.donaciones().size() <= 100, "cada lote debe tener como máximo 100 donaciones");
-    }
   }
 
   // ── procesarResultado() ────────────────────────────────────────────
@@ -168,11 +152,7 @@ class ServicioPlanificacionRutasTest {
             crearPlanificable(3L, dC1),
             crearPlanificable(3L, dC2));
     when(donacionesRemotas.listarEnAsignacionRealizada()).thenReturn(todas);
-    when(camionRepository.listarTodos()).thenReturn(List.of(camion));
     UUID loteId = UUID.randomUUID();
-    when(planificadorRutas.enviarLote(any())).thenReturn(loteId);
-
-    servicio.planificar();
 
     // El planificador devuelve el orden [B, A, C]
     ResultadoPlanificacion resultado =
@@ -218,11 +198,7 @@ class ServicioPlanificacionRutasTest {
     List<DonacionPlanificable> todas =
         List.of(crearPlanificable(1L, d1), crearPlanificable(2L, d2));
     when(donacionesRemotas.listarEnAsignacionRealizada()).thenReturn(todas);
-    when(camionRepository.listarTodos()).thenReturn(List.of(camion1, camion2));
     UUID loteId = UUID.randomUUID();
-    when(planificadorRutas.enviarLote(any())).thenReturn(loteId);
-
-    servicio.planificar();
 
     ResultadoPlanificacion resultado =
         new ResultadoPlanificacion(
@@ -235,7 +211,12 @@ class ServicioPlanificacionRutasTest {
     servicio.procesarResultado(resultado);
 
     verify(rutaRepository, times(2)).agregar(any(Ruta.class));
-    verify(donacionesRemotas, times(2)).notificarListaParaEntregar(any());
+    // Un solo aviso con todas las donaciones: donaciones aplica el cambio de forma atómica.
+    @SuppressWarnings("unchecked")
+    ArgumentCaptor<List<UUID>> notificadas = ArgumentCaptor.forClass(List.class);
+    verify(donacionesRemotas, times(1)).notificarListaParaEntregar(notificadas.capture());
+    assertEquals(2, notificadas.getValue().size());
+    assertTrue(notificadas.getValue().containsAll(List.of(d1, d2)));
   }
 
   @Test
@@ -248,11 +229,7 @@ class ServicioPlanificacionRutasTest {
     List<DonacionPlanificable> todas =
         List.of(crearPlanificable(1L, planificada), crearPlanificable(2L, noPlanificada));
     when(donacionesRemotas.listarEnAsignacionRealizada()).thenReturn(todas);
-    when(camionRepository.listarTodos()).thenReturn(List.of(camion));
     UUID loteId = UUID.randomUUID();
-    when(planificadorRutas.enviarLote(any())).thenReturn(loteId);
-
-    servicio.planificar();
 
     // El resultado solo incluye la donación de la entidad A
     ResultadoPlanificacion resultado =
@@ -271,28 +248,13 @@ class ServicioPlanificacionRutasTest {
 
   @Test
   void procesarResultado_ResultadoVacio_NoCreaRutas() {
-    Camion camion = crearCamionDummy("ABC123");
-    when(donacionesRemotas.listarEnAsignacionRealizada())
-        .thenReturn(List.of(crearPlanificable(1L, nuevoDonacionUuid())));
-    when(camionRepository.listarTodos()).thenReturn(List.of(camion));
     UUID loteId = UUID.randomUUID();
-    when(planificadorRutas.enviarLote(any())).thenReturn(loteId);
-
-    servicio.planificar();
 
     servicio.procesarResultado(
         new ResultadoPlanificacion(loteId, Map.of(), java.util.Collections.emptyList()));
 
     verify(rutaRepository, never()).agregar(any());
     verify(donacionesRemotas, never()).notificarListaParaEntregar(any());
-  }
-
-  @Test
-  void procesarResultado_LoteDesconocido_DebeLanzarIllegalStateException() {
-    ResultadoPlanificacion resultado =
-        new ResultadoPlanificacion(UUID.randomUUID(), Map.of(), java.util.Collections.emptyList());
-
-    assertThrows(IllegalStateException.class, () -> servicio.procesarResultado(resultado));
   }
 
   @Test
@@ -303,11 +265,7 @@ class ServicioPlanificacionRutasTest {
 
     when(donacionesRemotas.listarEnAsignacionRealizada())
         .thenReturn(List.of(crearPlanificable(1L, donacionId)));
-    when(camionRepository.listarTodos()).thenReturn(List.of(camion));
     UUID loteId = UUID.randomUUID();
-    when(planificadorRutas.enviarLote(any())).thenReturn(loteId);
-
-    servicio.planificar();
 
     ResultadoPlanificacion resultado =
         new ResultadoPlanificacion(
@@ -320,19 +278,16 @@ class ServicioPlanificacionRutasTest {
   }
 
   @Test
-  void procesarResultado_DonacionFueraDelLote_DebeLanzarIllegalArgumentException() {
+  void
+      procesarResultado_DonacionQueNoEstaEnAsignacionRealizada_DebeLanzarIllegalArgumentException() {
     Camion camion = crearCamionDummy("ABC123");
     Long entidad = 1L;
-    UUID enElLote = nuevoDonacionUuid();
+    UUID enAsignacionRealizada = nuevoDonacionUuid();
     UUID ajena = nuevoDonacionUuid();
 
     when(donacionesRemotas.listarEnAsignacionRealizada())
-        .thenReturn(List.of(crearPlanificable(1L, enElLote)));
-    when(camionRepository.listarTodos()).thenReturn(List.of(camion));
+        .thenReturn(List.of(crearPlanificable(1L, enAsignacionRealizada)));
     UUID loteId = UUID.randomUUID();
-    when(planificadorRutas.enviarLote(any())).thenReturn(loteId);
-
-    servicio.planificar();
 
     ResultadoPlanificacion resultado =
         new ResultadoPlanificacion(
@@ -355,11 +310,7 @@ class ServicioPlanificacionRutasTest {
 
     when(donacionesRemotas.listarEnAsignacionRealizada())
         .thenReturn(List.of(crearPlanificable(1L, deA), crearPlanificable(2L, deB)));
-    when(camionRepository.listarTodos()).thenReturn(List.of(camionValido, camionConError));
     UUID loteId = UUID.randomUUID();
-    when(planificadorRutas.enviarLote(any())).thenReturn(loteId);
-
-    servicio.planificar();
 
     // La primera entrada es válida y la segunda inválida (deA no pertenece a entB). El orden se
     // fija con LinkedHashMap para que la entrada inválida se itere última.
@@ -378,43 +329,129 @@ class ServicioPlanificacionRutasTest {
   }
 
   @Test
-  void procesarResultado_ConEntradaInvalida_ElLoteSiguePendiente() {
-    Camion camionValido = crearCamionDummy("ABC123");
-    Camion camionConError = crearCamionDummy("XYZ789");
-    Long entA = 1L;
-    Long entB = 2L;
-    UUID deA = nuevoDonacionUuid();
-    UUID deB = nuevoDonacionUuid();
-
+  void procesarResultado_DonacionRepetidaEnElResultado_DebeLanzarIllegalArgumentException() {
+    Camion camion1 = crearCamionDummy("ABC123");
+    Camion camion2 = crearCamionDummy("XYZ789");
+    UUID donacion = nuevoDonacionUuid();
     when(donacionesRemotas.listarEnAsignacionRealizada())
-        .thenReturn(List.of(crearPlanificable(1L, deA), crearPlanificable(2L, deB)));
-    when(camionRepository.listarTodos()).thenReturn(List.of(camionValido, camionConError));
-    UUID loteId = UUID.randomUUID();
-    when(planificadorRutas.enviarLote(any())).thenReturn(loteId);
+        .thenReturn(List.of(crearPlanificable(1L, donacion)));
 
-    servicio.planificar();
-
-    Map<Camion, List<Destino>> invalido = new LinkedHashMap<>();
-    invalido.put(camionValido, List.of(new Destino(entA, "Dir 1", List.of(deA))));
-    invalido.put(camionConError, List.of(new Destino(entB, "Dir 2", List.of(deB, deA))));
+    Map<Camion, List<Destino>> rutas = new LinkedHashMap<>();
+    rutas.put(camion1, List.of(new Destino(1L, "Dir 1", List.of(donacion))));
+    rutas.put(camion2, List.of(new Destino(1L, "Dir 1", List.of(donacion))));
 
     assertThrows(
         IllegalArgumentException.class,
         () ->
             servicio.procesarResultado(
-                new ResultadoPlanificacion(loteId, invalido, java.util.Collections.emptyList())));
+                new ResultadoPlanificacion(
+                    UUID.randomUUID(), rutas, java.util.Collections.emptyList())));
+    verify(rutaRepository, never()).agregar(any());
+    verify(donacionesRemotas, never()).notificarListaParaEntregar(any());
+  }
 
-    // El lote no se consumió: el mismo id de lote se puede reprocesar con un resultado válido.
-    ResultadoPlanificacion valido =
+  @Test
+  void procesarResultado_NotificaADonacionesAntesDeGuardarLasRutas() {
+    Camion camion = crearCamionDummy("ABC123");
+    UUID donacion = nuevoDonacionUuid();
+    when(donacionesRemotas.listarEnAsignacionRealizada())
+        .thenReturn(List.of(crearPlanificable(1L, donacion)));
+
+    servicio.procesarResultado(
         new ResultadoPlanificacion(
-            loteId,
-            Map.of(
-                camionValido, List.of(new Destino(entA, "Dir 1", List.of(deA))),
-                camionConError, List.of(new Destino(entB, "Dir 2", List.of(deB)))),
-            java.util.Collections.emptyList());
+            UUID.randomUUID(),
+            Map.of(camion, List.of(new Destino(1L, "Dir 1", List.of(donacion)))),
+            java.util.Collections.emptyList()));
 
-    servicio.procesarResultado(valido);
+    var orden = inOrder(donacionesRemotas, rutaRepository);
+    orden.verify(donacionesRemotas).notificarListaParaEntregar(List.of(donacion));
+    orden.verify(rutaRepository).agregar(any(Ruta.class));
+  }
 
-    verify(rutaRepository, times(2)).agregar(any(Ruta.class));
+  @Test
+  void procesarResultado_SiFallaElAvisoADonaciones_NoGuardaRutas() {
+    Camion camion = crearCamionDummy("ABC123");
+    UUID donacion = nuevoDonacionUuid();
+    when(donacionesRemotas.listarEnAsignacionRealizada())
+        .thenReturn(List.of(crearPlanificable(1L, donacion)));
+    doThrow(new RuntimeException("Error HTTP 400"))
+        .when(donacionesRemotas)
+        .notificarListaParaEntregar(any());
+
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            servicio.procesarResultado(
+                new ResultadoPlanificacion(
+                    UUID.randomUUID(),
+                    Map.of(camion, List.of(new Destino(1L, "Dir 1", List.of(donacion)))),
+                    java.util.Collections.emptyList())));
+    verify(rutaRepository, never()).agregar(any());
+  }
+
+  @Test
+  void planificar_ElLoteLlevaLaUrlDeCallback() {
+    when(donacionesRemotas.listarEnAsignacionRealizada())
+        .thenReturn(List.of(crearPlanificable(1L, nuevoDonacionUuid())));
+    when(camionRepository.listarTodos()).thenReturn(List.of(crearCamionDummy("ABC123")));
+    when(planificadorRutas.enviarLote(any())).thenReturn(UUID.randomUUID());
+
+    servicio.planificar();
+
+    ArgumentCaptor<LoteDonaciones> captor = ArgumentCaptor.forClass(LoteDonaciones.class);
+    verify(planificadorRutas).enviarLote(captor.capture());
+    assertEquals(URL_CALLBACK, captor.getValue().urlCallback());
+  }
+
+  @Test
+  void procesarResultado_DonacionesRemotasConIdRepetido_FallaSinAplicarNada() {
+    Camion camion = crearCamionDummy("ABC123");
+    UUID donacion = nuevoDonacionUuid();
+    when(donacionesRemotas.listarEnAsignacionRealizada())
+        .thenReturn(List.of(crearPlanificable(1L, donacion), crearPlanificable(1L, donacion)));
+
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            servicio.procesarResultado(
+                new ResultadoPlanificacion(
+                    UUID.randomUUID(),
+                    Map.of(camion, List.of(new Destino(1L, "Dir 1", List.of(donacion)))),
+                    java.util.Collections.emptyList())));
+    verify(donacionesRemotas, never()).notificarListaParaEntregar(any());
+    verify(rutaRepository, never()).agregar(any());
+  }
+
+  @Test
+  void procesarResultado_CamionSinDestinos_NoCreaRuta() {
+    Camion conDestinos = crearCamionDummy("ABC123");
+    Camion sinDestinos = crearCamionDummy("XYZ789");
+    UUID donacion = nuevoDonacionUuid();
+    when(donacionesRemotas.listarEnAsignacionRealizada())
+        .thenReturn(List.of(crearPlanificable(1L, donacion)));
+
+    Map<Camion, List<Destino>> rutas = new LinkedHashMap<>();
+    rutas.put(conDestinos, List.of(new Destino(1L, "Dir 1", List.of(donacion))));
+    rutas.put(sinDestinos, List.of());
+
+    servicio.procesarResultado(
+        new ResultadoPlanificacion(UUID.randomUUID(), rutas, java.util.Collections.emptyList()));
+
+    ArgumentCaptor<Ruta> rutaCaptor = ArgumentCaptor.forClass(Ruta.class);
+    verify(rutaRepository, times(1)).agregar(rutaCaptor.capture());
+    assertSame(conDestinos, rutaCaptor.getValue().getCamion());
+  }
+
+  @Test
+  void procesarResultado_TodosLosCamionesSinDestinos_NoHaceNada() {
+    servicio.procesarResultado(
+        new ResultadoPlanificacion(
+            UUID.randomUUID(),
+            Map.of(crearCamionDummy("ABC123"), List.of()),
+            java.util.Collections.emptyList()));
+
+    verify(rutaRepository, never()).agregar(any());
+    verify(donacionesRemotas, never()).listarEnAsignacionRealizada();
+    verify(donacionesRemotas, never()).notificarListaParaEntregar(any());
   }
 }

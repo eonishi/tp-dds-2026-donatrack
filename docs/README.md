@@ -126,7 +126,7 @@ Cada diagrama es el **fragmento mínimo del dominio** que cumple ese requerimien
 
 ### Impl 2 — Solicitudes al proveedor en lotes (máx. 100)
 
-**Decisión:** `ServicioPlanificacionRutas.partirEnLotes` arma lotes de hasta 100 donaciones y `LoteDonaciones` valida el tope como invariante en su constructor (record).
+**Decisión:** Cada corrida de `ServicioPlanificacionRutas.planificar` envía un único lote con las primeras 100 donaciones y todos los camiones; las restantes quedan en "Asignación realizada" y entran en la corrida siguiente. Un solo lote por corrida evita que un camión reciba dos rutas el mismo día. `LoteDonaciones` valida el tope como invariante en su constructor (record).
 
 ![Impl 2 — Solicitudes al proveedor en lotes (máx. 100)](assets/e2-impl2-lotes-100.svg)
 
@@ -180,7 +180,7 @@ flowchart LR
     R -- "login" --> CB
     MVC -- "GraphQL: posiciones (clave interna)<br/>y flota (sesión del admin)" --> GQL
     GQL -- "REST: cambio de estado<br/>de donaciones" --> API
-    SCH -- "lotes de hasta 100" --> PLA
+    SCH -- "un lote de hasta 100" --> PLA
     PLA -- "callback" --> CB
     DOM --> PG
     logistica --> PG

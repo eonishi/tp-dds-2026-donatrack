@@ -44,8 +44,6 @@ public class PlanificacionController implements WithSimplePersistenceUnit {
       // dueño de la unidad de trabajo. El servicio no abre transacciones por su cuenta.
       withTransaction(() -> servicio.procesarResultado(resultado));
       ctx.status(200);
-    } catch (IllegalStateException e) {
-      ctx.status(404).result(mensajeDe(e, "Lote no encontrado"));
     } catch (IllegalArgumentException e) {
       ctx.status(400).result(mensajeDe(e, "Resultado inválido"));
     }
