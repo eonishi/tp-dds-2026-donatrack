@@ -1,5 +1,6 @@
 package ar.edu.utn.donatrack.schedules;
 
+import ar.edu.utn.donatrack.app.ConfiguracionBase;
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.propuestas.PropuestaRepositoryImpl;
@@ -20,6 +21,7 @@ import java.util.List;
  */
 public final class MatchmakingRunner implements WithSimplePersistenceUnit {
   public static void main(String[] args) {
+    ConfiguracionBase.desdeEntorno();
     var servicioMatchmaking =
         new ServicioMatchmakingDonaciones(
             new DonacionesRepository(),
