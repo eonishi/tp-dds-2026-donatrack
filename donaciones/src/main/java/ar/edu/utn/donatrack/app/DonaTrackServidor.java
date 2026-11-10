@@ -207,11 +207,6 @@ public final class DonaTrackServidor implements WithSimplePersistenceUnit {
 
     java.util.concurrent.ScheduledExecutorService scheduler =
         java.util.concurrent.Executors.newSingleThreadScheduledExecutor();
-    scheduler.scheduleAtFixedRate(
-        new ar.edu.utn.donatrack.notificaciones.TareaAusenciaDonantes(donantes, notificaciones),
-        0,
-        1,
-        java.util.concurrent.TimeUnit.DAYS);
     // Ubica en el mapa las entidades nuevas o con dirección cambiada (un pedido por segundo).
     UbicadorEntidades ubicador = new UbicadorEntidades(externos.geocodificador(), 1100);
     scheduler.scheduleWithFixedDelay(

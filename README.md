@@ -134,6 +134,8 @@ frecuencia que se configure fuera del código.
 | Microservicio | Programa | Qué hace |
 | --- | --- | --- |
 | `donaciones` | `ar.edu.utn.donatrack.schedules.MatchmakingRunner` | Genera las propuestas de asignación del matchmaking para la fecha actual. |
+| `donaciones` | `ar.edu.utn.donatrack.schedules.AusenciaDonantesRunner` | Notifica a las personas donantes sin interacción en los últimos 20 días. |
+| `logistica` | `ar.edu.utn.donatrack.logistica.schedules.PlanificacionRutasRunner` | Envía al planificador de rutas las donaciones con asignación realizada (rutas del día siguiente). |
 
 Ejecución manual (arma el classpath del módulo):
 
@@ -143,14 +145,20 @@ java -cp "donaciones/target/classes:$(cat donaciones/target/cp.txt)" \
   ar.edu.utn.donatrack.schedules.MatchmakingRunner
 ```
 
-Ejemplo de cronjob diario a las 03:00, hora local:
+Para `logistica` es igual, cambiando `-pl donaciones` por `-pl logistica` y el classpath por
+`logistica/target/classes:$(cat logistica/target/cp.txt)`.
+
+Ejemplo de cronjobs diarios en horario de baja carga, hora local:
 
 ```cron
 0 3 * * * cd /ruta/a/tp-dds-2026-donatrack && java -cp "donaciones/target/classes:$(cat donaciones/target/cp.txt)" ar.edu.utn.donatrack.schedules.MatchmakingRunner
+0 4 * * * cd /ruta/a/tp-dds-2026-donatrack && java -cp "logistica/target/classes:$(cat logistica/target/cp.txt)" ar.edu.utn.donatrack.logistica.schedules.PlanificacionRutasRunner
+0 9 * * * cd /ruta/a/tp-dds-2026-donatrack && java -cp "donaciones/target/classes:$(cat donaciones/target/cp.txt)" ar.edu.utn.donatrack.schedules.AusenciaDonantesRunner
 ```
 
-El horario, la frecuencia y los reintentos pertenecen al planificador externo: no hay
-planificación interna dentro de los microservicios.
+El horario, la frecuencia y los reintentos pertenecen al planificador externo. La única tarea
+periódica que sigue dentro de un microservicio es la ubicación de entidades en el mapa
+(geocodificación), en el proceso HTTP de donaciones.
 
 ## Fotos de recepción (Supabase Storage)
 

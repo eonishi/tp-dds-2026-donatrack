@@ -190,10 +190,10 @@ reenvía su cookie, así que logística decide si tiene permiso, igual que si la
 No se usa la clave interna, que daría permisos de servicio a cualquier usuario de la web.
 
 ### 4.7 Planificación de rutas en horario de baja carga (#34)
-**Decisión:** logística arranca `PlanificacionScheduler` al iniciar. Corre todos los días a la hora
-de `PLANIFICACION_HORA` (por defecto, las 3), en hora de Argentina y no en la del servidor, que en
-el contenedor es UTC. Si una ejecución falla, se registra y la del día siguiente corre igual: una
-excepción sin atrapar cancelaría todas las ejecuciones siguientes del executor.
+**Decisión:** la planificación la corre `PlanificacionRutasRunner` (paquete `schedules` de
+logística), un programa autónomo que invoca un planificador externo (cronjob) en horario de baja
+carga. El horario, la zona horaria y los reintentos se configuran en el planificador externo, no en
+el código. Lo mismo vale para el aviso por ausencia de donantes (`AusenciaDonantesRunner`).
 
 ### 4.8 Sin edad en la persona humana
 El enunciado 1 pide la edad de la persona humana. El equipo decidió no pedirla: no la usa ningún

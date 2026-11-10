@@ -153,7 +153,7 @@ flowchart LR
         MVC["Vistas MVC<br/>controllers web + Handlebars"]
         API["API REST /api/v1"]
         DOM["Dominio + repositorios"]
-        TAR["Tareas en segundo plano<br/>ubicación de entidades,<br/>importación CSV, ausencia de donantes"]
+        TAR["Tareas en segundo plano<br/>ubicación de entidades,<br/>importación CSV"]
         MVC --> DOM
         API --> DOM
         TAR --> DOM
@@ -162,7 +162,7 @@ flowchart LR
     subgraph logistica["Servicio logística (Javalin :9001)"]
         GQL["GraphQL /logistica/graphql"]
         CB["HTTP: login, logout,<br/>callback del planificador"]
-        SCH["PlanificacionScheduler<br/>todos los días, en baja carga"]
+        SCH["PlanificacionRutasRunner<br/>invocado por cronjob externo"]
     end
 
     PG[("PostgreSQL<br/>esquemas donaciones y logistica")]
