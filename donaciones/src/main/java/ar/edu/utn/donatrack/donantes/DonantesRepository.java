@@ -1,5 +1,6 @@
 package ar.edu.utn.donatrack.donantes;
 
+import ar.edu.utn.donatrack.utilidades.Busqueda;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -134,6 +135,73 @@ public class DonantesRepository implements WithSimplePersistenceUnit {
     if (donante != null) {
       remove(donante);
     }
+  }
+
+  /**
+   * @return si ya hay un donante con ese tipo y número de documento
+   */
+  public boolean existeDocumento(TipoDocumento tipo, String numero) {
+    return !createQuery(
+            "select d.id from Donante d where d.documento = :tipo and d.numDocumento = :numero",
+            UUID.class)
+        .setParameter("tipo", tipo)
+        .setParameter("numero", numero)
+        .setMaxResults(1)
+        .getResultList()
+        .isEmpty();
+  }
+
+  /**
+   * @return si algún donante ya tiene ese correo electrónico como medio de contacto
+   */
+  public boolean existeCorreo(String correo) {
+    return !createQuery(
+            "select d.id from Donante d join d.mediosDeContacto m"
+                + " where type(m) = CorreoElectronico and lower(m.contacto) = :correo",
+            UUID.class)
+        .setParameter("correo", correo.trim().toLowerCase())
+        .setMaxResults(1)
+        .getResultList()
+        .isEmpty();
+  }
+
+  /**
+   * Una página de donantes, ordenada por documento, para listados con miles de filas (por ejemplo
+   * los que entraron por CSV): la base filtra y pagina, no se cargan todos en memoria.
+   *
+   * @param texto filtro opcional: parte del nombre, la razón social, el documento o un contacto
+   * @param desde cuántos donantes saltear
+   * @param cantidad cuántos devolver como máximo
+   */
+  public List<Donante> buscar(String texto, int desde, int cantidad) {
+    var consulta =
+        createQuery(
+            "select d from Donante d" + filtro(texto) + " order by d.numDocumento, d.id",
+            Donante.class);
+    Busqueda.patron(texto).ifPresent(p -> consulta.setParameter("patron", p));
+    return consulta.setFirstResult(desde).setMaxResults(cantidad).getResultList();
+  }
+
+  /**
+   * @return cuántos donantes cumplen el mismo filtro que {@link #buscar}
+   */
+  public long contar(String texto) {
+    var consulta = createQuery("select count(d) from Donante d" + filtro(texto), Long.class);
+    Busqueda.patron(texto).ifPresent(p -> consulta.setParameter("patron", p));
+    return consulta.getSingleResult();
+  }
+
+  private static String filtro(String texto) {
+    if (Busqueda.patron(texto).isEmpty()) {
+      return "";
+    }
+    return " where lower(d.numDocumento) like :patron"
+        + " or d.id in (select h.id from PersonaHumana h"
+        + "   where lower(concat(h.nombre, ' ', h.apellido)) like :patron)"
+        + " or d.id in (select j.id from PersonajeJuridica j"
+        + "   where lower(j.razonSocial) like :patron)"
+        + " or d.id in (select o.id from Donante o join o.mediosDeContacto m"
+        + "   where lower(m.contacto) like :patron)";
   }
 
   public List<Donante> getDonantesInactivos(java.time.LocalDate limite) {

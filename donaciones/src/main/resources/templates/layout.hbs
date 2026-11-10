@@ -57,7 +57,13 @@
                             <li><a class="dropdown-item" href="/logistica">Rutas</a></li>
                         </ul>
                     </li>
-                    <li class="nav-item"><a class="nav-link" href="/admin/importar">Importar donantes</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Donantes</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/admin/donantes">Listar y registrar</a></li>
+                            <li><a class="dropdown-item" href="/admin/importar">Importar CSV</a></li>
+                        </ul>
+                    </li>
                     <li class="nav-item"><a class="nav-link" href="/catalogo">Catálogo</a></li>
                     {{/if}}
                 </ul>

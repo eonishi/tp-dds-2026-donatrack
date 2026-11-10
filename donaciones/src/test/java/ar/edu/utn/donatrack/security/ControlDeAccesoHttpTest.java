@@ -3,7 +3,7 @@ package ar.edu.utn.donatrack.security;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import ar.edu.utn.donatrack.beneficiarios.Necesidad;
+import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.testsupport.ApiDePrueba;
 import ar.edu.utn.donatrack.testsupport.EscenarioHttp;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
@@ -44,8 +44,8 @@ class ControlDeAccesoHttpTest implements WithSimplePersistenceUnit {
         }) {
       assertEquals(403, escenario.get(ruta, admin).statusCode(), ruta);
     }
-    // Sus propias pantallas, sí.
-    assertEquals(200, escenario.get("/admin/vencidas", admin).statusCode());
+    // Sus propias pantallas, incluido el listado de donantes, sí.
+    assertEquals(200, escenario.get("/admin/donantes", admin).statusCode());
     assertEquals(200, escenario.get("/dashboard", admin).statusCode());
   }
 
@@ -67,27 +67,31 @@ class ControlDeAccesoHttpTest implements WithSimplePersistenceUnit {
 
     assertEquals(200, escenario.get("/donante/donaciones", donante).statusCode());
     assertEquals(403, escenario.get("/entidad/necesidades", donante).statusCode());
-    assertEquals(403, escenario.get("/admin/vencidas", donante).statusCode());
 
     assertEquals(200, escenario.get("/entidad/necesidades", entidad).statusCode());
     assertEquals(403, escenario.get("/donante/donaciones", entidad).statusCode());
-    assertEquals(403, escenario.get("/admin/vencidas", entidad).statusCode());
+    assertEquals(403, escenario.get("/admin/donantes", entidad).statusCode());
   }
 
   @Test
   void sinSesionLaWebRedirigeAlLoginYNoEjecutaLaAccion() throws Exception {
-    long comedor = escenario.crearEntidad("Comedor Norte");
     HttpResponse<String> alta =
         escenario.formulario(
-            "/entidad/necesidades",
-            Map.of("descripcion", "Arroz", "cantidad", "10", "entidadId", String.valueOf(comedor)),
+            "/admin/donantes",
+            Map.of(
+                "correo", "intruso@example.org",
+                "donanteTipoPersona", "JURIDICA",
+                "donanteCuit", "30-71234567-9",
+                "donanteRazonSocial", "Intrusa SA",
+                "donanteTipoOrganizacion", "EMPRESA",
+                "donanteRubro", "Varios",
+                "donanteMedioContacto", "CORREO"),
             "");
 
     assertEquals(302, alta.statusCode());
     assertEquals("/login", alta.headers().firstValue("Location").orElse(""));
-    entityManager().clear();
     assertTrue(
-        createQuery("select n from Necesidad n", Necesidad.class).getResultList().isEmpty(),
+        createQuery("select d from Donante d", Donante.class).getResultList().isEmpty(),
         "el handler no tiene que correr sin sesión");
   }
 

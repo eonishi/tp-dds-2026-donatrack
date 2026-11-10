@@ -1,0 +1,5 @@
+{{!-- Enlaces a la página anterior y a la siguiente (los arma Vistas.paginar). --}}
+<nav class="d-flex justify-content-between mt-3" aria-label="Páginas">
+    {{#if anterior}}<a class="btn btn-outline-primary rounded-pill" href="{{anterior}}">← Anterior</a>{{else}}<span></span>{{/if}}
+    {{#if siguiente}}<a class="btn btn-outline-primary rounded-pill" href="{{siguiente}}">Siguiente →</a>{{/if}}
+</nav>

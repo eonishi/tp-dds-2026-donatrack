@@ -73,6 +73,13 @@ public class BandejaNotificacionesRepository
         .getResultList();
   }
 
+  /** Dentro de la transacción del llamador, borra todos los avisos de una persona donante. */
+  public void borrarDeDonante(UUID donanteId) {
+    createQuery("delete from AvisoBandeja a where a.donanteId = :id")
+        .setParameter("id", donanteId)
+        .executeUpdate();
+  }
+
   public void marcarLeidos(List<AvisoBandeja> avisos) {
     if (avisos.stream().allMatch(AvisoBandeja::isLeido)) {
       return;

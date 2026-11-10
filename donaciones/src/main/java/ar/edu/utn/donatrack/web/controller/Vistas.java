@@ -10,6 +10,8 @@ import ar.edu.utn.donatrack.notificaciones.BandejaNotificacionesRepository;
 import ar.edu.utn.donatrack.security.ControlDeAcceso;
 import ar.edu.utn.donatrack.security.Usuario;
 import io.javalin.http.Context;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
@@ -31,6 +33,52 @@ final class Vistas {
    */
   static Usuario usuario(Context ctx) {
     return ControlDeAcceso.usuarioObligatorio(ctx);
+  }
+
+  /**
+   * Dirección absoluta de {@code ruta} para los enlaces que salen por correo o mensaje. Usa
+   * DONATRACK_WEB_ORIGIN si está definida (detrás de un proxy el host del pedido no sirve).
+   */
+  static String urlPublica(Context ctx, String ruta) {
+    String origen = System.getenv("DONATRACK_WEB_ORIGIN");
+    String base = origen == null || origen.isBlank() ? ctx.scheme() + "://" + ctx.host() : origen;
+    return base.replaceAll("/+$", "") + ruta;
+  }
+
+  /**
+   * Pagina un listado con búsqueda: deja en el modelo lo que muestra el partial {@code paginacion}
+   * (búsqueda, total, página actual y enlaces a la anterior y la siguiente) y devuelve desde qué
+   * fila traer. Una página pedida inválida o fuera de rango se corrige a la más cercana.
+   */
+  static int paginar(
+      Map<String, Object> modelo,
+      String ruta,
+      String busqueda,
+      long total,
+      String paginaPedida,
+      int porPagina) {
+    int paginas = (int) Math.max(1, (total + porPagina - 1) / porPagina);
+    int pagina = Math.min(paginas, Math.max(1, numero(paginaPedida)));
+    modelo.put("q", busqueda);
+    modelo.put("total", total);
+    modelo.put("pagina", pagina);
+    modelo.put("paginas", paginas);
+    String enlace = ruta + "?q=" + URLEncoder.encode(busqueda, StandardCharsets.UTF_8) + "&pagina=";
+    if (pagina > 1) {
+      modelo.put("anterior", enlace + (pagina - 1));
+    }
+    if (pagina < paginas) {
+      modelo.put("siguiente", enlace + (pagina + 1));
+    }
+    return (pagina - 1) * porPagina;
+  }
+
+  private static int numero(String valor) {
+    try {
+      return valor == null ? 1 : Integer.parseInt(valor.trim());
+    } catch (NumberFormatException e) {
+      return 1;
+    }
   }
 
   static Map<String, Object> modelo(Usuario usuario) {

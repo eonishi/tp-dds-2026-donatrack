@@ -1,6 +1,8 @@
 package ar.edu.utn.donatrack.security;
 
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,6 +31,16 @@ public class UsuariosRepository implements WithSimplePersistenceUnit {
 
   public boolean existeEmail(String email) {
     return buscarPorEmail(email).isPresent();
+  }
+
+  /** Los usuarios vinculados a esos donantes, en una sola consulta. */
+  public List<Usuario> buscarPorDonantes(Collection<UUID> donantes) {
+    if (donantes.isEmpty()) {
+      return List.of();
+    }
+    return createQuery("select u from Usuario u where u.donanteId in :ids", Usuario.class)
+        .setParameter("ids", donantes)
+        .getResultList();
   }
 
   public void agregar(Usuario usuario) {

@@ -103,8 +103,7 @@ public final class DonanteController implements WithSimplePersistenceUnit {
   private void eliminar(Context ctx) {
     UUID id = HttpSupport.id(ctx, "id");
     buscar(id);
-    if (donaciones.getDonaciones().stream()
-        .anyMatch(donacion -> donacion.getDonante().getId().equals(id))) {
+    if (donaciones.tieneDonacionesDe(id)) {
       throw ApiException.conflict("No se puede eliminar un donante con donaciones asociadas.");
     }
     withTransaction(() -> donantes.deleteById(id));

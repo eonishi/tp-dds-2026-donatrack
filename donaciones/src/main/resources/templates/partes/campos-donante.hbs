@@ -1,0 +1,79 @@
+{{!-- Campos de persona donante, compartidos por el alta y la edición de la administración.
+     Toma los valores de form.*; con editando=true no deja cambiar el tipo de persona. --}}
+<div class="panel-rol" data-rol="donante">
+    <fieldset class="registro-grupo">
+        <legend class="registro-leyenda">Tipo de donante <span class="campo-obligatorio" aria-hidden="true">*</span></legend>
+        <div class="btn-group" role="group" aria-label="Tipo de donante">
+            <input class="btn-check" type="radio" name="donanteTipoPersona" id="persona-humana" value="HUMANA"{{#if (eq form.donanteTipoPersona "JURIDICA")}}{{#if editando}} disabled{{/if}}{{else}} checked{{/if}} required>
+            <label class="btn btn-outline-primary" for="persona-humana">Persona humana</label>
+            <input class="btn-check" type="radio" name="donanteTipoPersona" id="persona-juridica" value="JURIDICA"{{#if (eq form.donanteTipoPersona "JURIDICA")}} checked{{else if editando}} disabled{{/if}} required>
+            <label class="btn btn-outline-primary" for="persona-juridica">Persona jurídica</label>
+        </div>
+    </fieldset>
+    <div class="row g-3 mb-3">
+        <div class="col-md-6">
+            <label class="form-label" for="correo">Correo electrónico <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+            <input class="form-control" type="email" id="correo" name="correo" value="{{form.correo}}" required>
+        </div>
+    </div>
+    <fieldset class="registro-grupo" data-persona="HUMANA">
+        <legend class="registro-leyenda">Datos personales</legend>
+        <div class="row g-3">
+            <div class="col-md-4"><label class="form-label" for="donante-nombre">Nombre <span class="campo-obligatorio" aria-hidden="true">*</span></label><input class="form-control" id="donante-nombre" name="donanteNombre" value="{{form.donanteNombre}}" required></div>
+            <div class="col-md-4"><label class="form-label" for="donante-apellido">Apellido <span class="campo-obligatorio" aria-hidden="true">*</span></label><input class="form-control" id="donante-apellido" name="donanteApellido" value="{{form.donanteApellido}}" required></div>
+            <div class="col-md-4"><label class="form-label" for="donante-edad">Edad <span class="campo-obligatorio" aria-hidden="true">*</span></label><input class="form-control" type="number" id="donante-edad" name="donanteEdad" min="0" max="130" step="1" value="{{form.donanteEdad}}" required></div>
+            <div class="col-md-4">
+                <label class="form-label" for="donante-tipo-documento">Tipo de documento <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+                <select class="form-select" id="donante-tipo-documento" name="donanteTipoDocumento" required>
+                    <option value="DNI"{{#if (eq form.donanteTipoDocumento "CUIT")}}{{else}} selected{{/if}}>DNI</option>
+                    <option value="CUIT"{{#if (eq form.donanteTipoDocumento "CUIT")}} selected{{/if}}>CUIT</option>
+                </select>
+            </div>
+            <div class="col-md-4"><label class="form-label" for="donante-numero-documento">Número de documento <span class="campo-obligatorio" aria-hidden="true">*</span></label><input class="form-control" id="donante-numero-documento" name="donanteNumeroDocumento" inputmode="numeric" value="{{form.donanteNumeroDocumento}}" required></div>
+            <div class="col-md-4">
+                <label class="form-label" for="donante-genero">Género <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+                <select class="form-select" id="donante-genero" name="donanteGenero" required>
+                    <option value="">Elegí una opción</option>
+                    <option value="FEMENINO"{{#if (eq form.donanteGenero "FEMENINO")}} selected{{/if}}>Femenino</option>
+                    <option value="MASCULINO"{{#if (eq form.donanteGenero "MASCULINO")}} selected{{/if}}>Masculino</option>
+                </select>
+            </div>
+            <div class="col-12"><label class="form-label" for="donante-direccion">Dirección <span class="campo-obligatorio" aria-hidden="true">*</span></label><input class="form-control" id="donante-direccion" name="donanteDireccion" placeholder="Calle, número, localidad" value="{{form.donanteDireccion}}" required></div>
+        </div>
+    </fieldset>
+    <fieldset class="registro-grupo" data-persona="JURIDICA" hidden disabled>
+        <legend class="registro-leyenda">Datos de la persona jurídica</legend>
+        <div class="row g-3">
+            <div class="col-md-6"><label class="form-label" for="donante-razon-social">Razón social <span class="campo-obligatorio" aria-hidden="true">*</span></label><input class="form-control" id="donante-razon-social" name="donanteRazonSocial" value="{{form.donanteRazonSocial}}" required></div>
+            <div class="col-md-6"><label class="form-label" for="donante-cuit">CUIT <span class="campo-obligatorio" aria-hidden="true">*</span></label><input class="form-control" id="donante-cuit" name="donanteCuit" inputmode="numeric" pattern="[0-9]{2}-?[0-9]{8}-?[0-9]" placeholder="30-12345678-9" value="{{form.donanteCuit}}" required></div>
+            <div class="col-md-6">
+                <label class="form-label" for="donante-tipo-organizacion">Tipo de organización <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+                <select class="form-select" id="donante-tipo-organizacion" name="donanteTipoOrganizacion" required>
+                    <option value="">Elegí una opción</option>
+                    <option value="GUBERNAMENTAL"{{#if (eq form.donanteTipoOrganizacion "GUBERNAMENTAL")}} selected{{/if}}>Gubernamental</option>
+                    <option value="ONG"{{#if (eq form.donanteTipoOrganizacion "ONG")}} selected{{/if}}>ONG</option>
+                    <option value="EMPRESA"{{#if (eq form.donanteTipoOrganizacion "EMPRESA")}} selected{{/if}}>Empresa</option>
+                    <option value="INSTITUCION"{{#if (eq form.donanteTipoOrganizacion "INSTITUCION")}} selected{{/if}}>Institución</option>
+                </select>
+            </div>
+            <div class="col-md-6"><label class="form-label" for="donante-rubro">Rubro <span class="campo-obligatorio" aria-hidden="true">*</span></label><input class="form-control" id="donante-rubro" name="donanteRubro" value="{{form.donanteRubro}}" required></div>
+        </div>
+    </fieldset>
+    <fieldset class="registro-grupo">
+        <legend class="registro-leyenda">Contacto</legend>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label" for="donante-telefono">Teléfono (opcional)</label>
+                <input class="form-control" type="tel" id="donante-telefono" name="donanteTelefono" pattern="\+[1-9][0-9]{1,14}" placeholder="Ej.: +5491155555555" value="{{form.donanteTelefono}}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="donante-medio-contacto">Medio de contacto predeterminado <span class="campo-obligatorio" aria-hidden="true">*</span></label>
+                <select class="form-select" id="donante-medio-contacto" name="donanteMedioContacto" required>
+                    <option value="CORREO"{{#if (eq form.donanteMedioContacto "SMS")}}{{else if (eq form.donanteMedioContacto "WHATSAPP")}}{{else}} selected{{/if}}>Correo electrónico</option>
+                    <option value="SMS"{{#if (eq form.donanteMedioContacto "SMS")}} selected{{/if}}>SMS</option>
+                    <option value="WHATSAPP"{{#if (eq form.donanteMedioContacto "WHATSAPP")}} selected{{/if}}>WhatsApp</option>
+                </select>
+            </div>
+        </div>
+    </fieldset>
+</div>

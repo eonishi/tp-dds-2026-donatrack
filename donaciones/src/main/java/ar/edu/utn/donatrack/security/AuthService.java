@@ -4,6 +4,10 @@ import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -55,11 +59,44 @@ public class AuthService implements WithSimplePersistenceUnit {
     return usuario;
   }
 
+  /**
+   * Dentro de la transacción del llamador, pasa la cuenta de la persona donante al correo nuevo:
+   * desde ese momento entra con él. Si no tiene cuenta, no hace nada.
+   *
+   * @throws IllegalArgumentException si otra cuenta ya usa ese correo
+   */
+  public void cambiarCorreoDeDonante(UUID donanteId, String correo) {
+    usuarios
+        .buscarPorDonantes(List.of(donanteId))
+        .forEach(
+            cuenta -> {
+              if (!cuenta.getEmail().equals(correo) && usuarios.existeEmail(correo)) {
+                throw new IllegalArgumentException("Ya existe un usuario con el email " + correo);
+              }
+              cuenta.cambiarEmail(correo);
+            });
+  }
+
+  /** Dentro de la transacción del llamador, borra la cuenta de la persona donante, si tiene. */
+  public void eliminarCuentaDeDonante(UUID donanteId) {
+    usuarios.buscarPorDonantes(List.of(donanteId)).forEach(this::remove);
+  }
+
   static final String MARCADOR_PENDIENTE = "!pendiente-de-activacion";
 
+  /** La cuenta de cada donante que tiene una, para mostrar su estado en los listados. */
+  public Map<UUID, Usuario> cuentasDeDonantes(Collection<UUID> donantes) {
+    Map<UUID, Usuario> cuentas = new HashMap<>();
+    usuarios
+        .buscarPorDonantes(donantes)
+        .forEach(u -> u.getDonanteId().ifPresent(id -> cuentas.putIfAbsent(id, u)));
+    return cuentas;
+  }
+
   /**
-   * Crea, dentro de la transacción del llamador, la cuenta de una persona donante importada. Queda
-   * pendiente de activación: sin contraseña, hasta que la persona la elija en {@code /activar}.
+   * Crea, dentro de la transacción del llamador, la cuenta de una persona donante importada o dada
+   * de alta por la administración. Queda pendiente de activación: sin contraseña, hasta que la
+   * persona la elija en {@code /activar}.
    *
    * @return {@code false} si el correo ya tenía usuario (no se toca)
    */

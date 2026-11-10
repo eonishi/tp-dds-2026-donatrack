@@ -1,0 +1,8 @@
+{{!-- Buscador y resumen de un listado paginado. Parámetros: ruta, placeholder y nombre (en plural). Los datos (q, total, pagina, paginas) los deja Vistas.paginar. --}}
+<form method="get" action="{{ruta}}" class="d-flex flex-wrap gap-2 mb-3" role="search">
+    <label class="visually-hidden" for="buscar">Buscar</label>
+    <input class="form-control flex-grow-1 w-auto" type="search" id="buscar" name="q" value="{{q}}" placeholder="{{placeholder}}">
+    <button class="btn btn-outline-primary rounded-pill px-4" type="submit">Buscar</button>
+    {{#if q}}<a class="btn btn-link" href="{{ruta}}">Limpiar</a>{{/if}}
+</form>
+<p class="small text-body-secondary">{{total}} {{nombre}}{{#if q}} para «{{q}}»{{/if}} · página {{pagina}} de {{paginas}}</p>

@@ -35,6 +35,7 @@ import ar.edu.utn.donatrack.seguimiento.PosicionesCamionesGraphql;
 import ar.edu.utn.donatrack.ubicacion.UbicadorEntidades;
 import ar.edu.utn.donatrack.web.HandlebarsRenderer;
 import ar.edu.utn.donatrack.web.controller.ActivacionController;
+import ar.edu.utn.donatrack.web.controller.AdminDonantesController;
 import ar.edu.utn.donatrack.web.controller.FotosLocalesController;
 import ar.edu.utn.donatrack.web.controller.PaginasDeError;
 import ar.edu.utn.donatrack.web.controller.PaginasPublicasController;
@@ -144,6 +145,13 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
             importador,
             clock);
     ActivacionController activacion = new ActivacionController(authService, donantes);
+    AdminDonantesController adminDonantes =
+        new AdminDonantesController(
+            authService,
+            donantes,
+            donaciones,
+            new BandejaNotificacionesRepository(clock),
+            notificaciones);
 
     Javalin app =
         Javalin.create(
@@ -179,6 +187,7 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
                     recepciones.routes();
                     vistasPorRol.routes();
                     activacion.routes();
+                    adminDonantes.routes();
                     if (almacenFotos instanceof AlmacenFotosLocal local) {
                       new FotosLocalesController(local).routes();
                     }

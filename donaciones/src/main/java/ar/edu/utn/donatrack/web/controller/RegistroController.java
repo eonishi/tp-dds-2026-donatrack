@@ -1,5 +1,6 @@
 package ar.edu.utn.donatrack.web.controller;
 
+import static ar.edu.utn.donatrack.web.controller.Formularios.obligatorio;
 import static io.javalin.apibuilder.ApiBuilder.post;
 
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
@@ -7,22 +8,14 @@ import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
-import ar.edu.utn.donatrack.donantes.Genero;
-import ar.edu.utn.donatrack.donantes.MedioDeContacto;
-import ar.edu.utn.donatrack.donantes.PersonaHumana;
-import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
-import ar.edu.utn.donatrack.donantes.Sms;
-import ar.edu.utn.donatrack.donantes.TipoDocumento;
-import ar.edu.utn.donatrack.donantes.TipoOrganizacion;
-import ar.edu.utn.donatrack.donantes.Whatsapp;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoBienvenida;
 import ar.edu.utn.donatrack.security.AuthService;
 import ar.edu.utn.donatrack.security.Role;
 import ar.edu.utn.donatrack.security.Usuario;
+import ar.edu.utn.donatrack.web.controller.Formularios.DatoInvalido;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,10 +53,7 @@ public final class RegistroController implements WithSimplePersistenceUnit {
 
   private void registrar(Context ctx) {
     try {
-      String correo = obligatorio(ctx, "correo", "el correo electrónico").trim().toLowerCase();
-      if (!correo.matches("[^\\s@]+@[^\\s@]+\\.[^\\s@]+")) {
-        throw new DatoInvalido("El correo electrónico no es válido.");
-      }
+      String correo = Formularios.correo(ctx, "correo");
       String contrasena = validarContrasena(ctx);
       if (ctx.formParam("terminos") == null) {
         throw new DatoInvalido("Tenés que aceptar los términos y la política de privacidad.");
@@ -98,79 +88,13 @@ public final class RegistroController implements WithSimplePersistenceUnit {
   }
 
   private Usuario registrarDonante(Context ctx, String correo, String contrasena) {
-    String tipoPersona = obligatorio(ctx, "donanteTipoPersona", "el tipo de persona");
-    if (!Set.of("HUMANA", "JURIDICA").contains(tipoPersona)) {
-      throw new DatoInvalido("Elegí el tipo de persona.");
-    }
-    boolean juridica = "JURIDICA".equals(tipoPersona);
-    TipoDocumento tipoDocumento =
-        juridica
-            ? TipoDocumento.CUIT
-            : enumerado(
-                TipoDocumento.class, ctx.formParam("donanteTipoDocumento"), "el tipo de documento");
-    String numeroDocumento =
-        obligatorio(
-                ctx,
-                juridica ? "donanteCuit" : "donanteNumeroDocumento",
-                juridica ? "el CUIT" : "el número de documento")
-            .trim();
-    if (juridica) {
-      numeroDocumento = numeroDocumento.replace("-", "");
-      if (!numeroDocumento.matches("[0-9]{11}")) {
-        throw new DatoInvalido("El CUIT debe tener 11 dígitos.");
-      }
-    }
-    final String documentoNormalizado = numeroDocumento;
-    boolean documentoUsado =
-        donantes.getDonantes().stream()
-            .anyMatch(
-                d ->
-                    d.getDocumento() == tipoDocumento
-                        && d.getNumDocumento().equals(documentoNormalizado));
-    if (documentoUsado) {
-      throw new DatoInvalido("Ya hay una persona donante registrada con ese documento.");
-    }
-
-    Donante persona;
-    if (juridica) {
-      persona =
-          new PersonajeJuridica(
-              new CorreoElectronico(correo),
-              numeroDocumento,
-              TipoDocumento.CUIT,
-              obligatorio(ctx, "donanteRazonSocial", "la razón social"),
-              enumerado(
-                  TipoOrganizacion.class,
-                  ctx.formParam("donanteTipoOrganizacion"),
-                  "el tipo de organización"),
-              obligatorio(ctx, "donanteRubro", "el rubro"));
-    } else {
-      PersonaHumana humana =
-          new PersonaHumana(
-              new CorreoElectronico(correo),
-              obligatorio(ctx, "donanteNombre", "el nombre"),
-              obligatorio(ctx, "donanteApellido", "el apellido"),
-              numeroDocumento,
-              tipoDocumento,
-              enumerado(Genero.class, ctx.formParam("donanteGenero"), "el género"),
-              obligatorio(ctx, "donanteDireccion", "la dirección"));
-      try {
-        humana.setEdad(Integer.parseInt(obligatorio(ctx, "donanteEdad", "la edad")));
-      } catch (IllegalArgumentException e) {
-        throw new DatoInvalido("La edad debe ser un número entero entre 0 y 130.");
-      }
-      persona = humana;
-    }
-    aplicarMediosDeContacto(persona, ctx, correo);
-
-    Usuario usuario =
-        withTransaction(
-            () -> {
-              var guardada = donantes.save(persona);
-              return authService.agregarUsuario(
-                  correo, contrasena, Set.of(Role.DONANTE), guardada.getId(), null);
-            });
-    return usuario;
+    Donante persona = FormularioDonante.armar(ctx, correo, donantes);
+    return withTransaction(
+        () -> {
+          var guardada = donantes.save(persona);
+          return authService.agregarUsuario(
+              correo, contrasena, Set.of(Role.DONANTE), guardada.getId(), null);
+        });
   }
 
   private Usuario registrarEntidad(Context ctx, String correo, String contrasena) {
@@ -196,35 +120,8 @@ public final class RegistroController implements WithSimplePersistenceUnit {
         });
   }
 
-  // El correo siempre es un medio de contacto; el teléfono, si lo cargó, va por SMS o WhatsApp.
-  private static void aplicarMediosDeContacto(Donante persona, Context ctx, String correo) {
-    String telefono = ctx.formParam("donanteTelefono");
-    String preferido = obligatorio(ctx, "donanteMedioContacto", "el medio de contacto preferido");
-    if (!Set.of("CORREO", "SMS", "WHATSAPP").contains(preferido)) {
-      throw new DatoInvalido("Elegí un medio de contacto válido.");
-    }
-    List<MedioDeContacto> medios = new ArrayList<>();
-    medios.add(new CorreoElectronico(correo));
-    boolean conTelefono = telefono != null && !telefono.isBlank();
-    if (conTelefono) {
-      telefono = telefono.trim();
-      if (!telefono.matches("\\+[1-9][0-9]{1,14}")) {
-        throw new DatoInvalido(
-            "El teléfono debe usar formato internacional E.164, por ejemplo +5491155555555.");
-      }
-      medios.add("WHATSAPP".equals(preferido) ? new Whatsapp(telefono) : new Sms(telefono));
-    } else if ("SMS".equals(preferido) || "WHATSAPP".equals(preferido)) {
-      throw new DatoInvalido("Para recibir avisos por SMS o WhatsApp cargá un teléfono.");
-    }
-    boolean prefiereTelefono = "SMS".equals(preferido) || "WHATSAPP".equals(preferido);
-    persona.reemplazarMediosDeContacto(medios, prefiereTelefono ? 1 : 0);
-  }
-
   private static String enlaceIngreso(Context ctx) {
-    String urlPublica = System.getenv("DONATRACK_WEB_ORIGIN");
-    String base =
-        urlPublica == null || urlPublica.isBlank() ? ctx.scheme() + "://" + ctx.host() : urlPublica;
-    return base.replaceAll("/+$", "") + "/login";
+    return Vistas.urlPublica(ctx, "/login");
   }
 
   private static String validarContrasena(Context ctx) {
@@ -239,33 +136,10 @@ public final class RegistroController implements WithSimplePersistenceUnit {
     return contrasena;
   }
 
-  private static String obligatorio(Context ctx, String campo, String nombre) {
-    String valor = ctx.formParam(campo);
-    if (valor == null || valor.isBlank()) {
-      throw new DatoInvalido("Falta completar " + nombre + ".");
-    }
-    return valor;
-  }
-
-  private static <E extends Enum<E>> E enumerado(Class<E> tipo, String valor, String nombre) {
-    try {
-      return Enum.valueOf(tipo, valor == null ? "" : valor.trim());
-    } catch (IllegalArgumentException e) {
-      throw new DatoInvalido("Elegí " + nombre + ".");
-    }
-  }
-
   private Map<String, Object> modeloConError(Context ctx, String error) {
     Map<String, Object> modelo = new HashMap<>();
     authService.currentUser(ctx).ifPresent(usuario -> modelo.put("usuario", usuario));
     modelo.put("error", error);
     return modelo;
-  }
-
-  /** Un dato del formulario que no se puede aceptar; se muestra en la misma página. */
-  private static final class DatoInvalido extends RuntimeException {
-    DatoInvalido(String mensaje) {
-      super(mensaje);
-    }
   }
 }
