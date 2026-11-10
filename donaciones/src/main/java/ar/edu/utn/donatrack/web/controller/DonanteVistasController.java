@@ -10,7 +10,6 @@ import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
 import ar.edu.utn.donatrack.notificaciones.BandejaNotificacionesRepository;
-import ar.edu.utn.donatrack.security.AuthService;
 import ar.edu.utn.donatrack.security.Role;
 import ar.edu.utn.donatrack.security.Usuario;
 import io.javalin.http.Context;
@@ -26,19 +25,16 @@ import java.util.stream.Collectors;
 
 /** Vistas de la persona donante: sus donaciones, su seguimiento y sus avisos. */
 public class DonanteVistasController {
-  private final AuthService authService;
   private final DonacionesRepository donaciones;
   private final SubcategoriasRepository subcategorias;
   private final BandejaNotificacionesRepository bandeja;
   private final Seguimiento seguimiento;
 
   DonanteVistasController(
-      AuthService authService,
       DonacionesRepository donaciones,
       SubcategoriasRepository subcategorias,
       BandejaNotificacionesRepository bandeja,
       Seguimiento seguimiento) {
-    this.authService = authService;
     this.donaciones = donaciones;
     this.subcategorias = subcategorias;
     this.bandeja = bandeja;
@@ -46,15 +42,15 @@ public class DonanteVistasController {
   }
 
   public void routes() {
-    get("/donante/donaciones", this::misDonaciones);
-    get("/donante/seguimiento", this::seguimiento);
-    get("/donante/seguimiento/posiciones", this::posiciones);
-    get("/donante/notificaciones", this::notificaciones);
+    get("/donante/donaciones", this::misDonaciones, Role.DONANTE);
+    get("/donante/seguimiento", this::seguimiento, Role.DONANTE);
+    get("/donante/seguimiento/posiciones", this::posiciones, Role.DONANTE);
+    get("/donante/notificaciones", this::notificaciones, Role.DONANTE);
   }
 
   /** Mis donaciones, filtradas por estado y por categoría o subcategorías de lo que se donó. */
   private void misDonaciones(Context ctx) {
-    Usuario usuario = Vistas.exigir(ctx, authService, Role.DONANTE);
+    Usuario usuario = Vistas.usuario(ctx);
     Optional<EstadoDonacion> estado = enumerado(EstadoDonacion.class, ctx.queryParam("estado"));
     Optional<Categoria> categoria = enumerado(Categoria.class, ctx.queryParam("categoria"));
     Set<String> elegidas =
@@ -105,7 +101,7 @@ public class DonanteVistasController {
   }
 
   private void seguimiento(Context ctx) {
-    Usuario usuario = Vistas.exigir(ctx, authService, Role.DONANTE);
+    Usuario usuario = Vistas.usuario(ctx);
     Map<String, Object> modelo = Vistas.modelo(usuario);
     modelo.put("entregas", seguimiento.entregas(propias(usuario)));
     modelo.put("posiciones", "/donante/seguimiento/posiciones");
@@ -114,12 +110,12 @@ public class DonanteVistasController {
   }
 
   private void posiciones(Context ctx) {
-    Usuario usuario = Vistas.exigir(ctx, authService, Role.DONANTE);
+    Usuario usuario = Vistas.usuario(ctx);
     ctx.json(seguimiento.entregas(propias(usuario)));
   }
 
   private void notificaciones(Context ctx) {
-    Usuario usuario = Vistas.exigir(ctx, authService, Role.DONANTE);
+    Usuario usuario = Vistas.usuario(ctx);
     Vistas.bandeja(
         ctx, usuario, usuario.getDonanteId().map(bandeja::deDonante).orElse(List.of()), bandeja);
   }

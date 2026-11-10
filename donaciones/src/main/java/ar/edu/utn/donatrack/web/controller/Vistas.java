@@ -7,12 +7,9 @@ import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
 import ar.edu.utn.donatrack.donaciones.HistorialEstado;
 import ar.edu.utn.donatrack.notificaciones.AvisoBandeja;
 import ar.edu.utn.donatrack.notificaciones.BandejaNotificacionesRepository;
-import ar.edu.utn.donatrack.security.AuthService;
-import ar.edu.utn.donatrack.security.Role;
+import ar.edu.utn.donatrack.security.ControlDeAcceso;
 import ar.edu.utn.donatrack.security.Usuario;
 import io.javalin.http.Context;
-import io.javalin.http.ForbiddenResponse;
-import io.javalin.http.UnauthorizedResponse;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
@@ -29,16 +26,11 @@ final class Vistas {
   private Vistas() {}
 
   /**
-   * La persona con sesión, si tiene el rol pedido (los administradores pasan siempre). El filtro de
-   * rutas protegidas ya redirige al login a quien no tiene sesión.
+   * La persona con sesión. Los permisos ya los verificó {@link ControlDeAcceso} con los roles que
+   * declara la ruta, así que acá solo se la toma del request.
    */
-  static Usuario exigir(Context ctx, AuthService authService, Role rol) {
-    Usuario usuario =
-        authService.currentUser(ctx).orElseThrow(() -> new UnauthorizedResponse("Sin sesión."));
-    if (!usuario.hasRole(rol) && !usuario.hasRole(Role.ADMIN)) {
-      throw new ForbiddenResponse("Sin permiso.");
-    }
-    return usuario;
+  static Usuario usuario(Context ctx) {
+    return ControlDeAcceso.usuarioObligatorio(ctx);
   }
 
   static Map<String, Object> modelo(Usuario usuario) {

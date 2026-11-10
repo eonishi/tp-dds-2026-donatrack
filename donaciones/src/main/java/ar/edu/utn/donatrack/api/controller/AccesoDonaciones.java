@@ -1,8 +1,8 @@
 package ar.edu.utn.donatrack.api.controller;
 
 import ar.edu.utn.donatrack.donaciones.Donacion;
+import ar.edu.utn.donatrack.security.ControlDeAcceso;
 import ar.edu.utn.donatrack.security.Role;
-import ar.edu.utn.donatrack.security.SecurityRules;
 import ar.edu.utn.donatrack.security.Usuario;
 import io.javalin.http.Context;
 import java.util.Optional;
@@ -17,7 +17,7 @@ final class AccesoDonaciones {
   private AccesoDonaciones() {}
 
   static Optional<Usuario> usuario(Context ctx) {
-    return Optional.ofNullable(ctx.attribute(SecurityRules.ATRIBUTO_USUARIO));
+    return ControlDeAcceso.usuario(ctx);
   }
 
   static boolean accesoCompleto(Context ctx) {
