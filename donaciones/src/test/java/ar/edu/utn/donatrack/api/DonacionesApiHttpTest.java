@@ -4,20 +4,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-import ar.edu.utn.donatrack.beneficiarios.Necesidad;
-import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.Categoria;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
-import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.notificaciones.Notificacion;
 import ar.edu.utn.donatrack.notificaciones.NotificacionesRepository;
 import ar.edu.utn.donatrack.notificaciones.Notificador;
 import ar.edu.utn.donatrack.notificaciones.NotificadorSimulado;
 import ar.edu.utn.donatrack.notificaciones.ResultadoEnvio;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
-import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
+import ar.edu.utn.donatrack.testsupport.BaseDePrueba;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -209,39 +205,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
 
   @AfterEach
   void limpiarPersistencia() {
-    // Cada escritura HTTP confirma su propia transacción en el controlador, a diferencia de las
-    // pruebas transaccionales que revierten: se borran las donaciones confirmadas, los bienes, las
-    // necesidades, los donantes, las entidades beneficiarias y las subcategorías del catálogo
-    // creadas por la API para que no contaminen los conteos, el chequeo de documentos o razones
-    // sociales duplicadas ni la restricción única del catálogo de las demás pruebas. El orden
-    // explícito va siempre del hijo al padre y no depende del orden en que Hibernate encola los
-    // borrados en cascada: bienes y necesidades primero porque referencian a las donaciones, a las
-    // entidades y a las subcategorías; donaciones, entidades y donantes después; y las
-    // subcategorías al final porque los bienes y las necesidades las referencian. Los bienes
-    // incluyen los que quedaron sueltos al reemplazar los de una donación. Acá no hay transacción
-    // previa, así que este método es el dueño legítimo de la transacción de limpieza.
-    withTransaction(
-        () -> {
-          createQuery("select p from PropuestaDeAsignacion p", PropuestaDeAsignacion.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select b from Bien b", Bien.class).getResultList().forEach(this::remove);
-          createQuery("select n from Necesidad n", Necesidad.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select d from Donacion d", Donacion.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select e from EntidadBeneficiaria e", EntidadBeneficiaria.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select d from Donante d", Donante.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select s from SubCategoria s", SubCategoria.class)
-              .getResultList()
-              .forEach(this::remove);
-        });
+    BaseDePrueba.vaciar();
   }
 
   @Test

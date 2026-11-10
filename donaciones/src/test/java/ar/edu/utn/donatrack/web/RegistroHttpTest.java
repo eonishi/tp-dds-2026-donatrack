@@ -7,10 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ar.edu.utn.donatrack.api.DonacionesApi;
 import ar.edu.utn.donatrack.api.ServiciosExternos;
-import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-import ar.edu.utn.donatrack.bienes.Bien;
-import ar.edu.utn.donatrack.bienes.SubCategoria;
-import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
@@ -26,6 +22,7 @@ import ar.edu.utn.donatrack.notificaciones.NotificadorSimulado;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.security.Usuario;
 import ar.edu.utn.donatrack.testsupport.ApiDePrueba;
+import ar.edu.utn.donatrack.testsupport.BaseDePrueba;
 import ar.edu.utn.donatrack.testsupport.FlotaEnMemoria;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -81,27 +78,7 @@ class RegistroHttpTest implements WithSimplePersistenceUnit {
 
   @AfterEach
   void limpiarPersistencia() {
-    withTransaction(
-        () -> {
-          createQuery("select b from Bien b", Bien.class).getResultList().forEach(this::remove);
-          createQuery("select d from Donacion d", Donacion.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select e from EntidadBeneficiaria e", EntidadBeneficiaria.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select d from Donante d", Donante.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select s from SubCategoria s", SubCategoria.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery(
-                  "select u from Usuario u where u.email not like '%@donatrack.local'",
-                  Usuario.class)
-              .getResultList()
-              .forEach(this::remove);
-        });
+    BaseDePrueba.vaciar();
   }
 
   @Test
