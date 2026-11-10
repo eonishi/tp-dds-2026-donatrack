@@ -33,6 +33,16 @@ public class UsuariosRepository implements WithSimplePersistenceUnit {
     return buscarPorEmail(email).isPresent();
   }
 
+  /** Los usuarios vinculados a esas entidades beneficiarias, en una sola consulta. */
+  public List<Usuario> buscarPorEntidades(Collection<Long> entidades) {
+    if (entidades.isEmpty()) {
+      return List.of();
+    }
+    return createQuery("select u from Usuario u where u.entidadId in :ids", Usuario.class)
+        .setParameter("ids", entidades)
+        .getResultList();
+  }
+
   /** Los usuarios vinculados a esos donantes, en una sola consulta. */
   public List<Usuario> buscarPorDonantes(Collection<UUID> donantes) {
     if (donantes.isEmpty()) {

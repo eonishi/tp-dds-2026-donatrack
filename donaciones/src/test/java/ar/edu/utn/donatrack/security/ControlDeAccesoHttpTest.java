@@ -44,8 +44,9 @@ class ControlDeAccesoHttpTest implements WithSimplePersistenceUnit {
         }) {
       assertEquals(403, escenario.get(ruta, admin).statusCode(), ruta);
     }
-    // Sus propias pantallas, incluido el listado de donantes, sí.
+    // Sus propias pantallas, incluidos los listados de donantes y entidades, sí.
     assertEquals(200, escenario.get("/admin/donantes", admin).statusCode());
+    assertEquals(200, escenario.get("/admin/entidades", admin).statusCode());
     assertEquals(200, escenario.get("/dashboard", admin).statusCode());
   }
 
@@ -67,6 +68,7 @@ class ControlDeAccesoHttpTest implements WithSimplePersistenceUnit {
 
     assertEquals(200, escenario.get("/donante/donaciones", donante).statusCode());
     assertEquals(403, escenario.get("/entidad/necesidades", donante).statusCode());
+    assertEquals(403, escenario.get("/admin/entidades", donante).statusCode());
 
     assertEquals(200, escenario.get("/entidad/necesidades", entidad).statusCode());
     assertEquals(403, escenario.get("/donante/donaciones", entidad).statusCode());

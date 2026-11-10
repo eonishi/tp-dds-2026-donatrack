@@ -1,0 +1,39 @@
+{{#partial "titulo"}}Entidades · DonaTrack{{/partial}}
+
+{{#partial "contenido"}}
+<section class="py-4">
+    <div class="encabezado text-start mx-0 mb-4">
+        <span class="chip mb-3">Administración</span>
+        <h1 class="fs-2 fw-semibold">Entidades beneficiarias</h1>
+        <p>Las entidades cargadas en el sistema, con su contacto, si ya aparecen en el mapa y si tienen una cuenta para operar.</p>
+    </div>
+
+    {{> partes/buscador ruta="/admin/entidades" nombre="entidades" placeholder="Razón social, dirección o correo"}}
+
+    {{#if entidades}}
+    <div class="tarjeta p-0 table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr><th scope="col">Razón social</th><th scope="col">Dirección</th><th scope="col">Contacto</th><th scope="col">Mapa</th><th scope="col">Cuenta</th></tr>
+            </thead>
+            <tbody>
+                {{#each entidades}}
+                <tr>
+                    <td class="fw-semibold">{{razonSocial}}</td>
+                    <td>{{direccion}}</td>
+                    <td class="small text-break">{{correos}}{{#if telefono}}<br><span class="text-body-secondary">{{telefono}}</span>{{/if}}</td>
+                    <td><span class="badge rounded-pill {{ubicacionClase}}">{{ubicacion}}</span></td>
+                    <td><span class="badge rounded-pill {{cuentaClase}}">{{cuenta}}</span></td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+    {{> partes/paginas}}
+    {{else}}
+    <div class="tarjeta p-4 text-center"><p class="mb-0">{{#if q}}No hay entidades que coincidan con la búsqueda.{{else}}Todavía no hay entidades registradas.{{/if}}</p></div>
+    {{/if}}
+</section>
+{{/partial}}
+
+{{> layout}}

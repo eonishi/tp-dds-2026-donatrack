@@ -1,6 +1,8 @@
 package ar.edu.utn.donatrack.beneficiarios;
 
+import ar.edu.utn.donatrack.utilidades.Busqueda;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -76,5 +78,53 @@ public class BeneficiariosRepository implements WithSimplePersistenceUnit {
     if (entidad != null) {
       remove(entidad);
     }
+  }
+
+  /**
+   * Una página de entidades, ordenada por razón social: la base filtra y pagina, no se cargan todas
+   * en memoria. Los correos de la página llegan en una segunda consulta, no uno por fila.
+   *
+   * @param texto filtro opcional: parte de la razón social, la dirección o un correo
+   * @param desde cuántas entidades saltear
+   * @param cantidad cuántas devolver como máximo
+   */
+  public List<EntidadBeneficiaria> buscar(String texto, int desde, int cantidad) {
+    var pagina =
+        createQuery(
+            "select e.id from EntidadBeneficiaria e"
+                + filtro(texto)
+                + " order by e.razonSocial, e.id",
+            Long.class);
+    Busqueda.patron(texto).ifPresent(p -> pagina.setParameter("patron", p));
+    List<Long> ids = pagina.setFirstResult(desde).setMaxResults(cantidad).getResultList();
+    if (ids.isEmpty()) {
+      return List.of();
+    }
+    return createQuery(
+            "select distinct e from EntidadBeneficiaria e left join fetch e.correos"
+                + " where e.id in :ids order by e.razonSocial, e.id",
+            EntidadBeneficiaria.class)
+        .setParameter("ids", ids)
+        .getResultList();
+  }
+
+  /**
+   * @return cuántas entidades cumplen el mismo filtro que {@link #buscar}
+   */
+  public long contar(String texto) {
+    var consulta =
+        createQuery("select count(e) from EntidadBeneficiaria e" + filtro(texto), Long.class);
+    Busqueda.patron(texto).ifPresent(p -> consulta.setParameter("patron", p));
+    return consulta.getSingleResult();
+  }
+
+  private static String filtro(String texto) {
+    if (Busqueda.patron(texto).isEmpty()) {
+      return "";
+    }
+    return " where lower(e.razonSocial) like :patron"
+        + " or lower(e.direccion) like :patron"
+        + " or e.id in (select o.id from EntidadBeneficiaria o join o.correos c"
+        + "   where lower(c.contacto) like :patron)";
   }
 }

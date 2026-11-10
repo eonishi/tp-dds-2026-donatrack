@@ -36,6 +36,7 @@ import ar.edu.utn.donatrack.ubicacion.UbicadorEntidades;
 import ar.edu.utn.donatrack.web.HandlebarsRenderer;
 import ar.edu.utn.donatrack.web.controller.ActivacionController;
 import ar.edu.utn.donatrack.web.controller.AdminDonantesController;
+import ar.edu.utn.donatrack.web.controller.AdminEntidadesController;
 import ar.edu.utn.donatrack.web.controller.FotosLocalesController;
 import ar.edu.utn.donatrack.web.controller.PaginasDeError;
 import ar.edu.utn.donatrack.web.controller.PaginasPublicasController;
@@ -145,6 +146,7 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
             importador,
             clock);
     ActivacionController activacion = new ActivacionController(authService, donantes);
+    AdminEntidadesController adminEntidades = new AdminEntidadesController(authService, entidades);
     AdminDonantesController adminDonantes =
         new AdminDonantesController(
             authService,
@@ -188,6 +190,7 @@ public final class DonacionesApi implements WithSimplePersistenceUnit {
                     vistasPorRol.routes();
                     activacion.routes();
                     adminDonantes.routes();
+                    adminEntidades.routes();
                     if (almacenFotos instanceof AlmacenFotosLocal local) {
                       new FotosLocalesController(local).routes();
                     }

@@ -6,6 +6,7 @@ import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -57,6 +58,13 @@ public class AuthService implements WithSimplePersistenceUnit {
     Usuario usuario = new Usuario(email, hashPassword(password), roles, donanteId, entidadId);
     usuarios.agregar(usuario);
     return usuario;
+  }
+
+  /** Las entidades beneficiarias que ya tienen cuenta, para mostrarlo en los listados. */
+  public Set<Long> entidadesConCuenta(Collection<Long> entidades) {
+    Set<Long> conCuenta = new HashSet<>();
+    usuarios.buscarPorEntidades(entidades).forEach(u -> u.getEntidadId().ifPresent(conCuenta::add));
+    return conCuenta;
   }
 
   /**
