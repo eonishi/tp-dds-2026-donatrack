@@ -28,12 +28,14 @@ public final class PlanificacionRutasRunner {
     PlanificadorRutas planificadorRutas = lote -> UUID.randomUUID();
     var servicioPlanificacion =
         new ServicioPlanificacionRutas(
-            new DonacionesRemotasImpl(apiUrl, apiKey, HttpClient.newHttpClient(), new ObjectMapper()),
+            new DonacionesRemotasImpl(
+                apiUrl, apiKey, HttpClient.newHttpClient(), new ObjectMapper()),
             new CamionRepository(),
             planificadorRutas,
             new RutaRepository());
 
     var lotes = servicioPlanificacion.planificar();
-    System.out.println("Planificación de rutas ejecutada: " + lotes.size() + " lote(s) enviado(s).");
+    System.out.println(
+        "Planificación de rutas ejecutada: " + lotes.size() + " lote(s) enviado(s).");
   }
 }
