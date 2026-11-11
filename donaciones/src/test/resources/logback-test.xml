@@ -1,0 +1,15 @@
+<!-- Tests only: Logback prefers this file over logback.xml, so the app logs just warnings and
+     errors and its output does not mix with the test output. -->
+<configuration>
+  <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>
+
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>[%thread] %-5level %logger - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <root level="WARN">
+    <appender-ref ref="CONSOLE"/>
+  </root>
+</configuration>
