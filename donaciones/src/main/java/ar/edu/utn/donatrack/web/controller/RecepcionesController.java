@@ -26,15 +26,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Vista de la entidad beneficiaria para confirmar la recepción de sus donaciones con fotos, o
  * avisar que llegó con problemas.
  */
 public class RecepcionesController implements WithSimplePersistenceUnit {
-  private static final Logger LOG = Logger.getLogger(RecepcionesController.class.getName());
+  private static final Logger LOGGER = LoggerFactory.getLogger(RecepcionesController.class);
   private static final Map<String, String> AVISOS =
       Map.of(
           "confirmada", "¡Listo! Registramos la recepción y avisamos a la persona donante.",
@@ -88,7 +88,7 @@ public class RecepcionesController implements WithSimplePersistenceUnit {
       conError(ctx, usuario, donacion, e.getMessage());
       return;
     } catch (IOException e) {
-      LOG.log(Level.WARNING, "No se pudieron guardar las fotos de " + donacion.getId(), e);
+      LOGGER.warn("No se pudieron guardar las fotos de {}", donacion.getId(), e);
       conError(ctx, usuario, donacion, "No pudimos guardar las fotos. Probá de nuevo en un rato.");
       return;
     }

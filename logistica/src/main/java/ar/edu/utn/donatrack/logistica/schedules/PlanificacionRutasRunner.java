@@ -9,6 +9,8 @@ import ar.edu.utn.donatrack.logistica.planificacion.ServicioPlanificacionRutas;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.http.HttpClient;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Punto de entrada de la planificación diaria de rutas para un planificador externo (enunciado 2,
@@ -21,6 +23,8 @@ import java.util.UUID;
  * ejemplo, un cronjob) lo invoca en un horario de baja carga.
  */
 public final class PlanificacionRutasRunner {
+  private static final Logger LOGGER = LoggerFactory.getLogger(PlanificacionRutasRunner.class);
+
   public static void main(String[] args) {
     ConfiguracionBase.desdeEntorno();
     String apiUrl = System.getenv().getOrDefault("DONACIONES_API_URL", "http://localhost:7070");
@@ -43,8 +47,8 @@ public final class PlanificacionRutasRunner {
             urlCallback);
 
     var lote = servicioPlanificacion.planificar();
-    System.out.println(
-        "Planificación de rutas ejecutada: "
-            + lote.map(id -> "lote " + id + " enviado.").orElse("no había nada para enviar."));
+    LOGGER.info(
+        "Planificación de rutas ejecutada: {}",
+        lote.map(id -> "lote " + id + " enviado.").orElse("no había nada para enviar."));
   }
 }

@@ -46,8 +46,12 @@ import io.javalin.config.SizeUnit;
 import io.javalin.http.staticfiles.Location;
 import java.time.Clock;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class DonaTrackServidor implements WithSimplePersistenceUnit {
+  private static final Logger LOGGER = LoggerFactory.getLogger(DonaTrackServidor.class);
+
   private DonaTrackServidor() {}
 
   public static Javalin create() {
@@ -214,8 +218,7 @@ public final class DonaTrackServidor implements WithSimplePersistenceUnit {
           try {
             ubicador.ubicarPendientes();
           } catch (RuntimeException e) {
-            java.util.logging.Logger.getLogger(DonaTrackServidor.class.getName())
-                .log(java.util.logging.Level.WARNING, "Falló la ubicación de entidades", e);
+            LOGGER.warn("Falló la ubicación de entidades", e);
           }
         },
         10,

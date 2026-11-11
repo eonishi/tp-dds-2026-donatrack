@@ -10,6 +10,8 @@ import ar.edu.utn.donatrack.propuestas.matchmaking.AlgoritmoPrioridadSubAtendido
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import java.time.LocalDate;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Punto de entrada del matchmaking diario para un planificador externo.
@@ -20,6 +22,8 @@ import java.util.List;
  * corresponda.
  */
 public final class MatchmakingRunner implements WithSimplePersistenceUnit {
+  private static final Logger LOGGER = LoggerFactory.getLogger(MatchmakingRunner.class);
+
   public static void main(String[] args) {
     ConfiguracionBase.desdeEntorno();
     var servicioMatchmaking =
@@ -31,6 +35,6 @@ public final class MatchmakingRunner implements WithSimplePersistenceUnit {
 
     new MatchmakingRunner()
         .withTransaction(() -> servicioMatchmaking.ejecutarMatchmakingDiario(LocalDate.now()));
-    System.out.println("Matchmaking diario ejecutado.");
+    LOGGER.info("Matchmaking diario ejecutado.");
   }
 }

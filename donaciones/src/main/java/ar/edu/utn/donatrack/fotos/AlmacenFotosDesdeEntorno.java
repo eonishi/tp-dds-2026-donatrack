@@ -3,11 +3,12 @@ package ar.edu.utn.donatrack.fotos;
 import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Elige el almacén de fotos según las variables de entorno. */
 public final class AlmacenFotosDesdeEntorno {
-  private static final Logger LOG = Logger.getLogger(AlmacenFotosDesdeEntorno.class.getName());
+  private static final Logger LOGGER = LoggerFactory.getLogger(AlmacenFotosDesdeEntorno.class);
   private static final String BUCKET_POR_DEFECTO = "recepciones";
 
   private AlmacenFotosDesdeEntorno() {}
@@ -34,9 +35,9 @@ public final class AlmacenFotosDesdeEntorno {
         presente(directorio)
             ? Path.of(directorio)
             : Path.of(System.getProperty("java.io.tmpdir"), "donatrack-fotos");
-    LOG.warning(
-        "Sin SUPABASE_URL/SUPABASE_SERVICE_KEY: las fotos se guardan en "
-            + destino.toAbsolutePath());
+    LOGGER.warn(
+        "Sin SUPABASE_URL/SUPABASE_SERVICE_KEY: las fotos se guardan en {}",
+        destino.toAbsolutePath());
     return new AlmacenFotosLocal(destino);
   }
 

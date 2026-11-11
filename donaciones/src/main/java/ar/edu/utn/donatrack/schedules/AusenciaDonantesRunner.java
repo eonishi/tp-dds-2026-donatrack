@@ -7,6 +7,8 @@ import ar.edu.utn.donatrack.notificaciones.NotificadorDesdeEntorno;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.notificaciones.TareaAusenciaDonantes;
 import java.time.Clock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Punto de entrada del aviso por ausencia de la plataforma para un planificador externo.
@@ -16,6 +18,8 @@ import java.time.Clock;
  * un planificador externo (por ejemplo, un cronjob) lo invoca con la frecuencia que corresponda.
  */
 public final class AusenciaDonantesRunner {
+  private static final Logger LOGGER = LoggerFactory.getLogger(AusenciaDonantesRunner.class);
+
   public static void main(String[] args) {
     ConfiguracionBase.desdeEntorno();
     var notificaciones =
@@ -24,6 +28,6 @@ public final class AusenciaDonantesRunner {
             new BandejaNotificacionesRepository(Clock.systemDefaultZone()));
 
     new TareaAusenciaDonantes(new DonantesRepository(), notificaciones).run();
-    System.out.println("Aviso por ausencia de donantes ejecutado.");
+    LOGGER.info("Aviso por ausencia de donantes ejecutado.");
   }
 }

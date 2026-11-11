@@ -27,8 +27,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Importa personas donantes desde un CSV (más de 10.000 filas) y les da una cuenta para activar.
@@ -39,7 +39,7 @@ import java.util.logging.Logger;
  * no hay que hashear 10.000 contraseñas ni mandarlas por correo.
  */
 public class ImportadorDonantes implements WithSimplePersistenceUnit {
-  private static final Logger LOG = Logger.getLogger(ImportadorDonantes.class.getName());
+  private static final Logger LOGGER = LoggerFactory.getLogger(ImportadorDonantes.class);
   static final int LOTE = 500;
 
   private final AuthService authService;
@@ -66,13 +66,13 @@ public class ImportadorDonantes implements WithSimplePersistenceUnit {
           try (InputStream contenido = Files.newInputStream(archivo)) {
             importar(contenido, importacion);
           } catch (IOException | RuntimeException e) {
-            LOG.log(Level.WARNING, "Falló la importación " + importacion.getId(), e);
+            LOGGER.warn("Falló la importación {}", importacion.getId(), e);
             importacion.fallar("No se pudo leer el archivo: revisá que sea un CSV válido.");
           } finally {
             try {
               Files.deleteIfExists(archivo);
             } catch (IOException e) {
-              LOG.log(Level.FINE, "No se pudo borrar el archivo temporal", e);
+              LOGGER.debug("No se pudo borrar el archivo temporal", e);
             }
           }
         });
