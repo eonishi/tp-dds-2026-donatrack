@@ -267,6 +267,19 @@ public class Donacion {
     return bienes.get(0).getFechaVencimiento();
   }
 
+  /**
+   * Indica si la donación ya venció a la fecha {@code hoy}.
+   *
+   * <p>La fecha de vencimiento es el último día en que la donación sirve: la que vence hoy sigue
+   * vigente. Una donación no perecedera nunca vence.
+   *
+   * @param hoy fecha de referencia
+   * @return {@code true} si es perecedera y su fecha de vencimiento es anterior a {@code hoy}
+   */
+  public boolean estaVencida(LocalDate hoy) {
+    return esPerecedera() && getFechaVencimiento().isBefore(hoy);
+  }
+
   public EntidadBeneficiaria getEntidadBeneficiaria() {
     return entidadBeneficiaria;
   }

@@ -193,7 +193,9 @@ No se usa la clave interna, que daría permisos de servicio a cualquier usuario 
 **Decisión:** la planificación la corre `PlanificacionRutasRunner` (paquete `schedules` de
 logística), un programa autónomo que invoca un planificador externo (cronjob) en horario de baja
 carga. El horario, la zona horaria y los reintentos se configuran en el planificador externo, no en
-el código. Lo mismo vale para el aviso por ausencia de donantes (`AusenciaDonantesRunner`).
+el código. Lo mismo vale para el aviso por ausencia de donantes (`AusenciaDonantesRunner`) y para
+el control de vencimiento (`VencimientoDonacionesRunner`), que pasa a `VENCIDA` las donaciones
+`EN_DEPOSITO` cuya fecha de vencimiento es anterior al día de ejecución.
 
 ### 4.8 Sin edad en la persona humana
 El enunciado 1 pide la edad de la persona humana. El equipo decidió no pedirla: no la usa ningún
