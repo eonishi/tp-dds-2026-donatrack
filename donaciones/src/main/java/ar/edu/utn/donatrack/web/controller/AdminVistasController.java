@@ -362,7 +362,7 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
     DepositoVista(Donacion donacion, LocalDate hoy) {
       this.donacion = donacion;
       this.vence = donacion.getBienes().isEmpty() ? null : donacion.getFechaVencimiento();
-      this.vencida = vence != null && vence.isBefore(hoy);
+      this.vencida = vence != null && donacion.estaVencida(hoy);
     }
 
     LocalDate orden() {
