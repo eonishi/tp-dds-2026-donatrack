@@ -1,7 +1,6 @@
 package ar.edu.utn.donatrack.donaciones;
 
 import ar.edu.utn.donatrack.bienes.Bien;
-import ar.edu.utn.donatrack.bienes.EstadoUso;
 import ar.edu.utn.donatrack.donantes.Donante;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -18,17 +17,7 @@ public class CargaDonacion {
 
   public List<Donacion> cargarDonacion(Donante donante, List<Bien> bienes) {
     return bienes.stream()
-        .collect(
-            Collectors.groupingBy(
-                bien ->
-                    new SegmentacionKey(
-                        bien.getSubcategoria(),
-                        bien.getFechaVencimiento(),
-                        bien.getEstadoDeUso() != null
-                            ? bien.getEstadoDeUso()
-                            : EstadoUso.NO_APLICA),
-                LinkedHashMap::new,
-                Collectors.toList()))
+        .collect(Collectors.groupingBy(Bien::segmento, LinkedHashMap::new, Collectors.toList()))
         .values()
         .stream()
         .map(

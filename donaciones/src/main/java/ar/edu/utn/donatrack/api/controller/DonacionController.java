@@ -291,7 +291,7 @@ public final class DonacionController implements WithSimplePersistenceUnit {
                   b.cantidad(),
                   b.unidad(),
                   b.fechaVencimiento(),
-                  b.estadoDeUso() == null ? EstadoUso.NO_APLICA : b.estadoDeUso(),
+                  b.estadoDeUso(),
                   subcategoria);
             })
         .toList();

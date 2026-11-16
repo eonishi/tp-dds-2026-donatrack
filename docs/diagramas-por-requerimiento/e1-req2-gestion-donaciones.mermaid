@@ -11,10 +11,11 @@ classDiagram
         -fechaRegistro: LocalDate
         +cargarDonacion(donante: Donante, bienes: List~Bien~)
     }
-    class SegmentacionKey {
-        -subcategoria: SubCategoria
-        -fechaVencimiento: LocalDate
-        -estadoUso: EstadoUso
+    class Segmento {
+        <<record>>
+        subcategoria: SubCategoria
+        fechaVencimiento: LocalDate
+        estadoDeUso: EstadoUso
     }
     class Donacion {
         -donante: Donante
@@ -32,6 +33,8 @@ classDiagram
         -estadoDeUso: EstadoUso
         -subcategoria: SubCategoria
         +esPerecedero() boolean
+        +segmento() Segmento
+        +mismoSegmentoQue(otro: Bien) boolean
     }
     class SubCategoria {
         -nombre: String
@@ -56,7 +59,8 @@ classDiagram
         LITROS
     }
 
-    CargaDonacion ..> SegmentacionKey : agrupa bienes por
+    CargaDonacion ..> Segmento : agrupa bienes por
+    Bien ..> Segmento : clasifica en
     CargaDonacion ..> Donacion : genera
     Donacion *-- "*" Bien : bienes
     Donacion --> Donante : donante

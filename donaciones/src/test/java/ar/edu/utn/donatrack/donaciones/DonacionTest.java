@@ -129,6 +129,39 @@ class DonacionTest {
   }
 
   @Test
+  void reemplazarBienes_SinEstadoDeUsoYConNoAplica_LosAceptaComoUnSoloSegmento() {
+    SubCategoria fideos = new SubCategoria("Fideos", Categoria.ALIMENTO);
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    Bien sinEstado = new Bien("Fideos", "", 1.0, UnidadMedida.KILOGRAMOS, null, null, fideos);
+    Bien noAplica =
+        new Bien("Fideos", "", 2.0, UnidadMedida.KILOGRAMOS, null, EstadoUso.NO_APLICA, fideos);
+
+    donacion.reemplazarBienes(List.of(sinEstado, noAplica));
+
+    assertEquals(List.of(sinEstado, noAplica), donacion.getBienes());
+  }
+
+  @Test
+  void reemplazarBienes_SegmentosDistintos_LanzaIllegalArgumentExceptionYConservaLosBienes() {
+    SubCategoria sillas = new SubCategoria("Sillas", Categoria.MOBILIARIO);
+    Bien original = crearBienDummy();
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(original));
+    List<Bien> mezclados =
+        List.of(
+            new Bien("Silla", "", 1.0, UnidadMedida.UNIDADES, null, EstadoUso.NUEVO, sillas),
+            new Bien("Silla", "", 1.0, UnidadMedida.UNIDADES, null, EstadoUso.USADO, sillas));
+
+    IllegalArgumentException error =
+        assertThrows(IllegalArgumentException.class, () -> donacion.reemplazarBienes(mezclados));
+
+    assertEquals(
+        "Una donación debe mantener una única subcategoría, fecha de vencimiento y estado de uso."
+            + " Para mezclar segmentos, registre una nueva carga.",
+        error.getMessage());
+    assertEquals(List.of(original), donacion.getBienes());
+  }
+
+  @Test
   void marcarVencida_FueraDeDeposito_LanzaIllegalStateExceptionYConservaElEstado() {
     Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
     donacion.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"), notificaciones);
