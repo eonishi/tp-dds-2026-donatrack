@@ -145,7 +145,7 @@ public final class DonacionController implements WithSimplePersistenceUnit {
    */
   private void seguimiento(Context ctx) {
     Donacion donacion = buscarVisible(ctx);
-    if (donacion.getEstado() != EstadoDonacion.EN_TRASLADO) {
+    if (!donacion.estaEnTraslado()) {
       throw ApiException.conflict("La donación no está en traslado.");
     }
     String patente =

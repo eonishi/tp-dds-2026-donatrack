@@ -29,6 +29,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class DonacionTest {
@@ -737,6 +738,54 @@ class DonacionTest {
         IllegalStateException.class,
         () -> donacion.confirmarEntidadBeneficiaria(nuevaEntidad("Otro"), notificaciones),
         "Llamar confirmarEntidadBeneficiaria desde AsignacionRealizada debe lanzar excepción");
+  }
+
+  // ── Preguntas sobre el estado actual ──────────────────────────────
+
+  @Test
+  void estaEnTraslado_DonacionEnTraslado_DevuelveTrue() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, null);
+
+    assertTrue(donacion.estaEnTraslado());
+    assertFalse(donacion.estaEntregada());
+  }
+
+  @Test
+  void estaEnTraslado_DonacionEnDeposito_DevuelveFalse() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+
+    assertFalse(donacion.estaEnTraslado());
+    assertFalse(donacion.estaEntregada());
+  }
+
+  @Test
+  void estaEntregada_DonacionEntregada_DevuelveTrue() {
+    Donacion donacion = entregadaA(new EntidadBeneficiaria(1L, "Hogar", "Dir", "Tel"));
+
+    assertTrue(donacion.estaEntregada());
+    assertFalse(donacion.estaEnTraslado());
+  }
+
+  @Test
+  void fechaDeEntrega_DonacionEntregada_DevuelveLaFechaDeLaTransicionAEntregada() {
+    Donacion donacion = entregadaA(new EntidadBeneficiaria(1L, "Hogar", "Dir", "Tel"));
+    LocalDateTime registrada =
+        donacion.getHistorialEstado().stream()
+            .filter(h -> h.getEstadoAlcanzado() == EstadoDonacion.ENTREGADA)
+            .findFirst()
+            .orElseThrow()
+            .getFecha();
+
+    assertEquals(Optional.of(registrada), donacion.fechaDeEntrega());
+  }
+
+  @Test
+  void fechaDeEntrega_DonacionNoEntregada_DevuelveVacio() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, null);
+
+    assertEquals(Optional.empty(), donacion.fechaDeEntrega());
   }
 
   private static Donacion entregadaA(EntidadBeneficiaria entidad) {

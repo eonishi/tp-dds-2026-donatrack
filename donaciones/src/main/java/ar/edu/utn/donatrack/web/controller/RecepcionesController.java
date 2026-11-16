@@ -116,7 +116,7 @@ public class RecepcionesController implements WithSimplePersistenceUnit {
   }
 
   private static void exigirEnCamino(Donacion donacion) {
-    if (donacion.getEstado() != EstadoDonacion.EN_TRASLADO) {
+    if (!donacion.estaEnTraslado()) {
       throw new IllegalStateException("Esta donación ya no está en camino.");
     }
   }
@@ -169,13 +169,13 @@ public class RecepcionesController implements WithSimplePersistenceUnit {
     modelo.put(
         "enCamino",
         propias.stream()
-            .filter(d -> d.getEstado() == EstadoDonacion.EN_TRASLADO)
+            .filter(Donacion::estaEnTraslado)
             .map(d -> new RecepcionVista(d, d.getId().equals(conError) ? error : null))
             .toList());
     modelo.put(
         "recibidas",
         propias.stream()
-            .filter(d -> d.getEstado() == EstadoDonacion.ENTREGADA)
+            .filter(Donacion::estaEntregada)
             .map(d -> new RecepcionVista(d, null))
             .toList());
     modelo.put("maximoFotos", FotosRecepcion.MAXIMO_FOTOS);
@@ -215,9 +215,7 @@ public class RecepcionesController implements WithSimplePersistenceUnit {
     }
 
     public String getRecibida() {
-      return Vistas.fechaDe(donacion, EstadoDonacion.ENTREGADA)
-          .map(Vistas.FECHA_HORA::format)
-          .orElse("");
+      return donacion.fechaDeEntrega().map(Vistas.FECHA_HORA::format).orElse("");
     }
 
     public List<String> getFotos() {

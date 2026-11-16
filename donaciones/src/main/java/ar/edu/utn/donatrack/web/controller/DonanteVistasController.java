@@ -176,7 +176,7 @@ public class DonanteVistasController {
     }
 
     public boolean isEnCamino() {
-      return donacion.getEstado() == EstadoDonacion.EN_TRASLADO;
+      return donacion.estaEnTraslado();
     }
 
     public List<String> getFotos() {

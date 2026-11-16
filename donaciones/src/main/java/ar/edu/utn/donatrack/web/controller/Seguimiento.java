@@ -2,7 +2,6 @@ package ar.edu.utn.donatrack.web.controller;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
-import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
 import ar.edu.utn.donatrack.seguimiento.LogisticaNoDisponibleException;
 import ar.edu.utn.donatrack.seguimiento.PosicionCamion;
 import ar.edu.utn.donatrack.seguimiento.PosicionesCamiones;
@@ -40,7 +39,7 @@ final class Seguimiento {
     Map<String, Optional<PosicionCamion>> porCamion = new HashMap<>();
     Map<String, String> fallas = new LinkedHashMap<>();
     return donaciones.stream()
-        .filter(d -> d.getEstado() == EstadoDonacion.EN_TRASLADO)
+        .filter(Donacion::estaEnTraslado)
         .map(
             d -> {
               String patente = d.getIdCamion().orElse(null);

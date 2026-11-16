@@ -197,7 +197,7 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
             p ->
                 donaciones
                     .findById(p.getDonacion().getId())
-                    .filter(d -> d.getEstado() == EstadoDonacion.EN_DEPOSITO)
+                    .filter(Donacion::esAsignable)
                     .map(d -> new PropuestaVista(d, p, d.getId().equals(conError) ? error : null)))
         .flatMap(Optional::stream)
         .toList();

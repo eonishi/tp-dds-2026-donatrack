@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -136,6 +137,37 @@ public class Donacion {
    */
   public boolean esAsignable() {
     return estado.admiteAsignacion();
+  }
+
+  /**
+   * Indica si la donación está viajando hacia la entidad beneficiaria.
+   *
+   * @return {@code true} si el estado actual es {@link EstadoDonacion#EN_TRASLADO}
+   */
+  public boolean estaEnTraslado() {
+    return estado == EstadoDonacion.EN_TRASLADO;
+  }
+
+  /**
+   * Indica si la entidad beneficiaria ya confirmó la recepción. Mira el estado actual; para saber
+   * si alguna vez se entregó a una entidad, ver {@link #fueEntregadaA}.
+   *
+   * @return {@code true} si el estado actual es {@link EstadoDonacion#ENTREGADA}
+   */
+  public boolean estaEntregada() {
+    return estado == EstadoDonacion.ENTREGADA;
+  }
+
+  /**
+   * Momento de la última transición a {@link EstadoDonacion#ENTREGADA} registrada en el historial.
+   *
+   * @return la fecha de entrega, o vacío si la donación nunca se entregó
+   */
+  public Optional<LocalDateTime> fechaDeEntrega() {
+    return historialEstado.stream()
+        .filter(entrada -> entrada.getEstadoAlcanzado() == EstadoDonacion.ENTREGADA)
+        .map(HistorialEstado::getFecha)
+        .max(Comparator.naturalOrder());
   }
 
   /**
@@ -282,11 +314,7 @@ public class Donacion {
     if (!entidad.equals(this.entidadBeneficiaria)) {
       return false;
     }
-    return historialEstado.stream()
-        .anyMatch(
-            entrada ->
-                entrada.getEstadoAlcanzado() == EstadoDonacion.ENTREGADA
-                    && !entrada.getFecha().isBefore(fechaDesde.atStartOfDay()));
+    return fechaDeEntrega().filter(fecha -> !fecha.isBefore(fechaDesde.atStartOfDay())).isPresent();
   }
 
   public boolean esPerecedera() {
