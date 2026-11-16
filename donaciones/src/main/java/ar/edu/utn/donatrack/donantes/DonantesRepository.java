@@ -1,6 +1,6 @@
 package ar.edu.utn.donatrack.donantes;
 
-import ar.edu.utn.donatrack.utilidades.Busqueda;
+import ar.edu.utn.donatrack.web.Busqueda;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import java.util.ArrayList;
 import java.util.List;

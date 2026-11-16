@@ -20,6 +20,7 @@ import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.donantes.TipoOrganizacion;
 import ar.edu.utn.donatrack.notificaciones.AvisoBandeja;
+import ar.edu.utn.donatrack.notificaciones.PublicadorDeEventos;
 import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
 import ar.edu.utn.donatrack.propuestas.matchmaking.MatchCandidato;
 import ar.edu.utn.donatrack.security.AuthService;
@@ -295,11 +296,13 @@ public final class DemoDataset implements WithSimplePersistenceUnit {
     if (target == EstadoDonacion.EN_DEPOSITO) {
       return;
     }
+    // Los datos de prueba recorren los estados sin avisar a nadie: no son hechos reales.
+    PublicadorDeEventos sinAvisos = evento -> {};
     if (target == EstadoDonacion.VENCIDA) {
       donation.marcarVencida();
       return;
     }
-    donation.confirmarEntidadBeneficiaria(entity);
+    donation.confirmarEntidadBeneficiaria(entity, sinAvisos);
     if (target == EstadoDonacion.ASIGNACION_REALIZADA) {
       return;
     }
@@ -307,12 +310,11 @@ public final class DemoDataset implements WithSimplePersistenceUnit {
     if (target == EstadoDonacion.LISTA_PARA_ENTREGAR) {
       return;
     }
-    donation.registrarCamion("DEMO-01");
-    donation.iniciarTraslado(null);
+    donation.iniciarTraslado("DEMO-01", sinAvisos);
     if (target == EstadoDonacion.ENTREGADA) {
-      donation.confirmarEntrega();
+      donation.confirmarEntrega(sinAvisos);
     } else if (target == EstadoDonacion.ENTREGA_FALLIDA) {
-      donation.reportarFalla("[DEMO] Entidad cerrada al llegar.");
+      donation.reportarFalla("[DEMO] Entidad cerrada al llegar.", sinAvisos);
     }
   }
 }

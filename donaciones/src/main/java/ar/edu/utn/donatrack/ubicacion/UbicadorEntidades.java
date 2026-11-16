@@ -4,8 +4,8 @@ import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Completa la ubicación de las entidades a partir de su dirección.
@@ -15,7 +15,7 @@ import java.util.logging.Logger;
  * mapas en la pasada siguiente.
  */
 public class UbicadorEntidades implements WithSimplePersistenceUnit {
-  private static final Logger LOG = Logger.getLogger(UbicadorEntidades.class.getName());
+  private static final Logger LOGGER = LoggerFactory.getLogger(UbicadorEntidades.class);
   private static final int POR_PASADA = 30;
 
   private final Geocodificador geocodificador;
@@ -50,7 +50,7 @@ public class UbicadorEntidades implements WithSimplePersistenceUnit {
       try {
         coordenadas = geocodificador.ubicar(entidad.getDireccion());
       } catch (GeocodificacionNoDisponibleException e) {
-        LOG.log(Level.WARNING, "Geocodificación no disponible; se reintenta en la próxima", e);
+        LOGGER.warn("Geocodificación no disponible; se reintenta en la próxima", e);
         return ubicadas;
       }
       withTransaction(

@@ -12,7 +12,7 @@ import ar.edu.utn.donatrack.flota.Camion;
 import ar.edu.utn.donatrack.flota.FlotaLogistica;
 import ar.edu.utn.donatrack.importacion.Importacion;
 import ar.edu.utn.donatrack.importacion.ImportadorDonantes;
-import ar.edu.utn.donatrack.notificaciones.Notificacion;
+import ar.edu.utn.donatrack.notificaciones.PublicadorDiferido;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.propuestas.EntidadFueraDeRankingException;
 import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
@@ -135,16 +135,14 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
   }
 
   private void vencer(List<Donacion> vencidas) {
-    List<Notificacion> generadas = new ArrayList<>();
     withTransaction(
         () ->
             vencidas.forEach(
                 d -> {
-                  generadas.addAll(d.marcarVencida());
+                  d.marcarVencida();
                   propuestas.remove(d);
                   donaciones.save(d);
                 }));
-    notificaciones.enviar(generadas);
   }
 
   // --- Asignación de entidad final desde las propuestas (#58) ---
@@ -175,15 +173,14 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
         Optional.ofNullable(ctx.formParam("entidad"))
             .flatMap(AdminVistasController::numero)
             .flatMap(entidades::findById);
-    List<Notificacion> generadas = new ArrayList<>();
+    PublicadorDiferido publicador = notificaciones.publicadorDiferido();
     try {
       EntidadBeneficiaria elegida =
           entidad.orElseThrow(() -> new IllegalArgumentException("Elegí una entidad."));
       withTransaction(
           () ->
-              generadas.addAll(
-                  matchmaking.confirmarAsignacionAdministrativa(
-                      donacion, elegida, LocalDate.now(clock))));
+              matchmaking.confirmarAsignacionAdministrativa(
+                  donacion, elegida, LocalDate.now(clock), publicador));
     } catch (IllegalArgumentException | IllegalStateException e) {
       String mensaje =
           e instanceof EntidadFueraDeRankingException
@@ -194,7 +191,7 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
       ctx.status(400).render("admin-asignaciones", modelo);
       return;
     }
-    notificaciones.enviar(generadas);
+    publicador.enviarPendientes();
     ctx.redirect("/admin/asignaciones?ok=asignada");
   }
 
@@ -362,7 +359,7 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
     DepositoVista(Donacion donacion, LocalDate hoy) {
       this.donacion = donacion;
       this.vence = donacion.getBienes().isEmpty() ? null : donacion.getFechaVencimiento();
-      this.vencida = vence != null && vence.isBefore(hoy);
+      this.vencida = vence != null && donacion.estaVencida(hoy);
     }
 
     LocalDate orden() {

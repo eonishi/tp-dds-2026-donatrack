@@ -7,7 +7,6 @@ import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
-import ar.edu.utn.donatrack.donantes.Sms;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoAsignacion;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoAusenciaDonante;
@@ -15,17 +14,13 @@ import ar.edu.utn.donatrack.notificaciones.eventos.EventoBienvenida;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoEntregaExitosa;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoEntregaNoSatisfactoria;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoInicioRuta;
-import ar.edu.utn.donatrack.notificaciones.payloads.ComprobanteEntrega;
-import ar.edu.utn.donatrack.notificaciones.payloads.InfoMapa;
-import ar.edu.utn.donatrack.notificaciones.payloads.NotificacionPayload;
-import ar.edu.utn.donatrack.notificaciones.payloads.SinPayload;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
  * Verifies that each {@code EventoNotificable} subclass generates notifications with the correct
- * payload type and recipients.
+ * messages and recipients.
  */
 class EventoNotificableTest {
 
@@ -42,17 +37,14 @@ class EventoNotificableTest {
   private final EntidadBeneficiaria entidad = nuevaEntidad("Fundación Test");
 
   @Test
-  void eventoBienvenida_generaNotificaciones_conSinPayload() {
+  void eventoBienvenida_generaNotificacion_paraElDonante() {
     entidad.agregarCorreo(new CorreoElectronico("entidad@test.com"));
     EventoBienvenida evento = new EventoBienvenida(donante);
 
     List<Notificacion> notificaciones = evento.generarNotificaciones();
 
-    assertFalse(notificaciones.isEmpty());
-    for (Notificacion n : notificaciones) {
-      assertInstanceOf(SinPayload.class, n.getPayload());
-      assertEquals(EstadoNotificacion.PENDIENTE, n.getEstado());
-    }
+    assertEquals(1, notificaciones.size());
+    assertSame(donante, notificaciones.get(0).destinatario());
   }
 
   @Test
@@ -66,13 +58,8 @@ class EventoNotificableTest {
 
     assertFalse(notificaciones.isEmpty());
     for (Notificacion n : notificaciones) {
-      NotificacionPayload payload = n.getPayload();
-      assertInstanceOf(ComprobanteEntrega.class, payload);
-      ComprobanteEntrega comprobante = (ComprobanteEntrega) payload;
-      assertEquals(fecha, comprobante.fechaEntrega());
-      assertEquals("ABC123", comprobante.idCamion());
-      assertTrue(n.getMensaje().contains("2026-07-10T15:00:00"));
-      assertTrue(n.getMensaje().contains("ABC123"));
+      assertTrue(n.mensaje().contains("2026-07-10T15:00:00"));
+      assertTrue(n.mensaje().contains("ABC123"));
     }
   }
 
@@ -86,8 +73,8 @@ class EventoNotificableTest {
 
     assertEquals(2, notificaciones.size());
     for (Notificacion notificacion : notificaciones) {
-      assertTrue(notificacion.getMensaje().contains("2026-07-10T15:04:05"));
-      assertFalse(notificacion.getMensaje().contains("987654321"));
+      assertTrue(notificacion.mensaje().contains("2026-07-10T15:04:05"));
+      assertFalse(notificacion.mensaje().contains("987654321"));
     }
   }
 
@@ -100,37 +87,38 @@ class EventoNotificableTest {
   }
 
   @Test
-  void comprobanteEntrega_SinCamion_DebeLanzarNullPointerException() {
-    LocalDateTime fecha = LocalDateTime.of(2026, 7, 10, 15, 0);
-
-    assertThrows(NullPointerException.class, () -> new ComprobanteEntrega(fecha, null));
-  }
-
-  @Test
-  void eventoAsignacion_generaNotificaciones_paraDonanteYEntidad() {
+  void eventoAsignacion_generaNotificaciones_conLaRazonSocialParaElDonante() {
     entidad.agregarCorreo(new CorreoElectronico("entidad@test.com"));
     EventoAsignacion evento = new EventoAsignacion(donante, entidad);
 
     List<Notificacion> notificaciones = evento.generarNotificaciones();
 
     assertEquals(2, notificaciones.size());
-    for (Notificacion n : notificaciones) {
-      assertInstanceOf(SinPayload.class, n.getPayload());
-      assertEquals(EstadoNotificacion.PENDIENTE, n.getEstado());
-    }
   }
 
   @Test
-  void eventoAsignacion_usaSoloElContactoPredeterminadoDelDonante() {
-    donante.addMedioDeContacto(new Sms("+541112345678"));
-    donante.setContactoPredeterminado(new Sms("+541112345678"));
+  void eventoAsignacion_tieneComoDestinatariosAlDonanteYALaEntidad() {
     entidad.agregarCorreo(new CorreoElectronico("entidad@test.com"));
 
     List<Notificacion> notificaciones =
         new EventoAsignacion(donante, entidad).generarNotificaciones();
 
     assertEquals(2, notificaciones.size());
-    assertInstanceOf(Sms.class, notificaciones.get(0).getDestinatario());
+    assertSame(donante, notificaciones.get(0).destinatario());
+    assertSame(entidad, notificaciones.get(1).destinatario());
+  }
+
+  @Test
+  void eventoEntregaExitosa_entidadConVariosCorreos_generaUnaNotificacionPorDestinatario() {
+    entidad.agregarCorreo(new CorreoElectronico("entidad@test.com"));
+    entidad.agregarCorreo(new CorreoElectronico("otro@test.com"));
+    LocalDateTime fecha = LocalDateTime.of(2026, 7, 10, 15, 0);
+
+    List<Notificacion> notificaciones =
+        new EventoEntregaExitosa(donante, entidad, fecha, "ABC123").generarNotificaciones();
+
+    assertEquals(2, notificaciones.size());
+    assertSame(entidad, notificaciones.get(1).destinatario());
   }
 
   @Test
@@ -141,9 +129,7 @@ class EventoNotificableTest {
 
     assertFalse(notificaciones.isEmpty());
     for (Notificacion n : notificaciones) {
-      assertInstanceOf(SinPayload.class, n.getPayload());
-      assertEquals(EstadoNotificacion.PENDIENTE, n.getEstado());
-      assertTrue(n.getMensaje().contains("20 días"));
+      assertTrue(n.mensaje().contains("20 días"));
     }
   }
 
@@ -157,28 +143,64 @@ class EventoNotificableTest {
 
     assertEquals(2, notificaciones.size());
     for (Notificacion n : notificaciones) {
-      assertInstanceOf(SinPayload.class, n.getPayload());
-      assertEquals(EstadoNotificacion.PENDIENTE, n.getEstado());
-      assertTrue(n.getMensaje().contains("Destino cerrado"));
+      assertTrue(n.mensaje().contains("Destino cerrado"));
     }
   }
 
   @Test
-  void eventoInicioRuta_generaNotificaciones_conInfoMapa() {
-    entidad.agregarCorreo(new CorreoElectronico("entidad@test.com"));
-    List<Notificable> destinatarios = List.of(donante, entidad);
-    EventoInicioRuta evento =
-        new EventoInicioRuta(destinatarios, "https://maps.example.com/ruta/1");
+  void eventoInicioRuta_sinBaseConfigurada_usaElMapaPorDefecto() {
+    String anterior = System.clearProperty(PROPIEDAD_TRACKING);
+    try {
+      assertCadaNotificacionContieneUnaVez(
+          new EventoInicioRuta(List.of(donante, entidad), "AB123CD"),
+          "https://mapa.donatrack.org/tracking/AB123CD");
+    } finally {
+      restaurarPropiedad(anterior);
+    }
+  }
 
+  @Test
+  void eventoInicioRuta_conBaseConfigurada_normalizaLaBarraFinal() {
+    String anterior = System.setProperty(PROPIEDAD_TRACKING, "https://otro.mapa/t/");
+    try {
+      assertCadaNotificacionContieneUnaVez(
+          new EventoInicioRuta(List.of(donante, entidad), "AB123CD"),
+          "https://otro.mapa/t/AB123CD");
+    } finally {
+      restaurarPropiedad(anterior);
+    }
+  }
+
+  @Test
+  void eventoInicioRuta_conBaseSinBarraFinal_agregaLaBarra() {
+    String anterior = System.setProperty(PROPIEDAD_TRACKING, "https://otro.mapa/t");
+    try {
+      assertCadaNotificacionContieneUnaVez(
+          new EventoInicioRuta(List.of(donante, entidad), "AB123CD"),
+          "https://otro.mapa/t/AB123CD");
+    } finally {
+      restaurarPropiedad(anterior);
+    }
+  }
+
+  private static final String PROPIEDAD_TRACKING = "donatrack.tracking.url";
+
+  private static void restaurarPropiedad(String anterior) {
+    if (anterior == null) {
+      System.clearProperty(PROPIEDAD_TRACKING);
+    } else {
+      System.setProperty(PROPIEDAD_TRACKING, anterior);
+    }
+  }
+
+  private void assertCadaNotificacionContieneUnaVez(EventoInicioRuta evento, String url) {
     List<Notificacion> notificaciones = evento.generarNotificaciones();
 
     assertEquals(2, notificaciones.size());
     for (Notificacion n : notificaciones) {
-      assertInstanceOf(InfoMapa.class, n.getPayload());
-      assertEquals(EstadoNotificacion.PENDIENTE, n.getEstado());
-      InfoMapa mapa = (InfoMapa) n.getPayload();
-      assertEquals("https://maps.example.com/ruta/1", mapa.url());
-      assertEquals(1, apariciones(n.getMensaje(), "https://maps.example.com/ruta/1"));
+      assertEquals(
+          "La ruta de entrega ha comenzado. Seguí el recorrido en el mapa: " + url, n.mensaje());
+      assertEquals(1, apariciones(n.mensaje(), url));
     }
   }
 

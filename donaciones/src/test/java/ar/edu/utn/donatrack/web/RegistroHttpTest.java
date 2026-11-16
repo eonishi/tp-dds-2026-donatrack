@@ -2,13 +2,11 @@ package ar.edu.utn.donatrack.web;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import ar.edu.utn.donatrack.api.DonacionesApi;
-import ar.edu.utn.donatrack.api.ServiciosExternos;
+import ar.edu.utn.donatrack.app.DonaTrackServidor;
+import ar.edu.utn.donatrack.app.ServiciosExternos;
 import ar.edu.utn.donatrack.donantes.CorreoElectronico;
-import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
 import ar.edu.utn.donatrack.donantes.Sms;
@@ -16,9 +14,8 @@ import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.donantes.TipoOrganizacion;
 import ar.edu.utn.donatrack.donantes.Whatsapp;
 import ar.edu.utn.donatrack.notificaciones.BandejaNotificacionesRepository;
-import ar.edu.utn.donatrack.notificaciones.EstadoNotificacion;
-import ar.edu.utn.donatrack.notificaciones.NotificacionesRepository;
-import ar.edu.utn.donatrack.notificaciones.NotificadorSimulado;
+import ar.edu.utn.donatrack.notificaciones.NotificadorPorCanal;
+import ar.edu.utn.donatrack.notificaciones.ResultadoEnvio;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.security.Usuario;
 import ar.edu.utn.donatrack.testsupport.ApiDePrueba;
@@ -35,7 +32,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -49,20 +48,27 @@ class RegistroHttpTest implements WithSimplePersistenceUnit {
   private final HttpClient client = HttpClient.newHttpClient();
   private Javalin app;
   private String baseUrl;
-  private NotificacionesRepository notificaciones;
+  private final List<Envio> notificaciones = new ArrayList<>();
+  private BandejaNotificacionesRepository bandeja;
+
+  /** Un envío que llegó a un gateway: por qué canal, a qué contacto y con qué texto. */
+  private record Envio(Class<?> canal, String contacto, String mensaje) {}
 
   @BeforeEach
   void start() {
-    notificaciones = new NotificacionesRepository();
     Clock clock = Clock.systemUTC();
+    bandeja = new BandejaNotificacionesRepository(clock);
     app =
-        DonacionesApi.create(
+        DonaTrackServidor.create(
                 clock,
                 new ServicioNotificaciones(
-                    new NotificadorSimulado(),
-                    notificaciones,
-                    1,
-                    new BandejaNotificacionesRepository(clock)),
+                    new NotificadorPorCanal(
+                        (destinatario, asunto, mensaje) ->
+                            registrar(CorreoElectronico.class, destinatario, mensaje),
+                        (destinatario, mensaje) -> registrar(Sms.class, destinatario, mensaje),
+                        (destinatario, mensaje) ->
+                            registrar(Whatsapp.class, destinatario, mensaje)),
+                    bandeja),
                 new ServiciosExternos(
                     patente -> Optional.empty(),
                     new FlotaEnMemoria(),
@@ -74,6 +80,11 @@ class RegistroHttpTest implements WithSimplePersistenceUnit {
   @AfterEach
   void stop() {
     app.stop();
+  }
+
+  private ResultadoEnvio registrar(Class<?> canal, String contacto, String mensaje) {
+    notificaciones.add(new Envio(canal, contacto, mensaje));
+    return ResultadoEnvio.aceptado();
   }
 
   @AfterEach
@@ -154,13 +165,12 @@ class RegistroHttpTest implements WithSimplePersistenceUnit {
                       .findFirst()
                       .orElseThrow();
       assertEquals(35, human.getEdad());
-      var welcome = notificaciones.getNotificaciones().get(i);
-      assertInstanceOf(contacts[i], welcome.getDestinatario());
-      assertEquals(i == 0 ? email : "+5491155555555", welcome.getDestinatario().getContacto());
-      assertEquals(EstadoNotificacion.ENVIADA, welcome.getEstado());
-      assertTrue(welcome.getMensaje().contains("Gracias por formar parte del proyecto"));
-      assertTrue(welcome.getMensaje().contains(baseUrl + "/login"));
-      assertEquals(human.getId(), ((Donante) welcome.getTitular().orElseThrow()).getId());
+      Envio welcome = notificaciones.get(i);
+      assertEquals(contacts[i], welcome.canal());
+      assertEquals(i == 0 ? email : "+5491155555555", welcome.contacto());
+      assertTrue(welcome.mensaje().contains("Gracias por formar parte del proyecto"));
+      assertTrue(welcome.mensaje().contains(baseUrl + "/login"));
+      assertEquals(welcome.mensaje(), bandeja.deDonante(human.getId()).get(0).getMensaje());
     }
   }
 
@@ -186,8 +196,7 @@ class RegistroHttpTest implements WithSimplePersistenceUnit {
       assertEquals(type, legal.getTipoOrganizacion());
       assertEquals(TipoDocumento.CUIT, legal.getDocumento());
       assertEquals(fields.get("donanteCuit").replace("-", ""), legal.getNumDocumento());
-      assertInstanceOf(
-          Whatsapp.class, notificaciones.getNotificaciones().get(type.ordinal()).getDestinatario());
+      assertEquals(Whatsapp.class, notificaciones.get(type.ordinal()).canal());
     }
   }
 
@@ -210,7 +219,7 @@ class RegistroHttpTest implements WithSimplePersistenceUnit {
       fields.remove(field);
       assertEquals(400, registrar(fields).statusCode(), field);
     }
-    assertTrue(notificaciones.getNotificaciones().isEmpty());
+    assertTrue(notificaciones.isEmpty());
     assertTrue(
         createQuery("select u from Usuario u where u.email = 'missing@example.org'", Usuario.class)
             .getResultList()
@@ -237,7 +246,7 @@ class RegistroHttpTest implements WithSimplePersistenceUnit {
       fields.put("donanteEdad", age);
       assertEquals(400, registrar(fields).statusCode());
     }
-    assertTrue(notificaciones.getNotificaciones().isEmpty());
+    assertTrue(notificaciones.isEmpty());
   }
 
   @Test
@@ -250,7 +259,7 @@ class RegistroHttpTest implements WithSimplePersistenceUnit {
       fields.remove("correo");
       assertEquals(400, registrar(fields).statusCode());
     }
-    assertTrue(notificaciones.getNotificaciones().isEmpty());
+    assertTrue(notificaciones.isEmpty());
   }
 
   @Test
@@ -264,7 +273,7 @@ class RegistroHttpTest implements WithSimplePersistenceUnit {
         assertEquals(400, registrar(fields).statusCode(), phone);
       }
     }
-    assertTrue(notificaciones.getNotificaciones().isEmpty());
+    assertTrue(notificaciones.isEmpty());
     assertTrue(
         createQuery("select u from Usuario u where u.email = 'badphone@example.org'", Usuario.class)
             .getResultList()

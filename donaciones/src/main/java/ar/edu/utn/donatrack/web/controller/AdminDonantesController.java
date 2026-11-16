@@ -108,7 +108,7 @@ public final class AdminDonantesController implements WithSimplePersistenceUnit 
       String enlace =
           Vistas.urlPublica(
               ctx, "/activar?correo=" + URLEncoder.encode(correo, StandardCharsets.UTF_8));
-      notificaciones.enviar(new EventoBienvenida(guardado, enlace).generarNotificaciones());
+      notificaciones.publicar(new EventoBienvenida(guardado, enlace));
       volverAlListado(ctx, "creado", donante.getNumDocumento());
     } catch (DatoInvalido e) {
       Map<String, Object> modelo = Vistas.modelo(usuario);

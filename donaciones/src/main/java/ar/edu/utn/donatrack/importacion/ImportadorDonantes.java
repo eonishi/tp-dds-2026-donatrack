@@ -3,9 +3,6 @@ package ar.edu.utn.donatrack.importacion;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.security.AuthService;
 import ar.edu.utn.donatrack.security.Usuario;
-import ar.edu.utn.donatrack.utilidades.DonanteCsv;
-import ar.edu.utn.donatrack.utilidades.ImportadorDonantesCsv;
-import ar.edu.utn.donatrack.utilidades.LectorCsv;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
@@ -29,8 +26,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Importa personas donantes desde un CSV (más de 10.000 filas) y les da una cuenta para activar.
@@ -41,7 +38,7 @@ import java.util.logging.Logger;
  * no hay que hashear 10.000 contraseñas ni mandarlas por correo.
  */
 public class ImportadorDonantes implements WithSimplePersistenceUnit {
-  private static final Logger LOG = Logger.getLogger(ImportadorDonantes.class.getName());
+  private static final Logger LOGGER = LoggerFactory.getLogger(ImportadorDonantes.class);
   static final int LOTE = 500;
 
   private final AuthService authService;
@@ -68,13 +65,13 @@ public class ImportadorDonantes implements WithSimplePersistenceUnit {
           try (InputStream contenido = Files.newInputStream(archivo)) {
             importar(contenido, importacion);
           } catch (IOException | RuntimeException e) {
-            LOG.log(Level.WARNING, "Falló la importación " + importacion.getId(), e);
+            LOGGER.warn("Falló la importación {}", importacion.getId(), e);
             importacion.fallar("No se pudo leer el archivo: revisá que sea un CSV válido.");
           } finally {
             try {
               Files.deleteIfExists(archivo);
             } catch (IOException e) {
-              LOG.log(Level.FINE, "No se pudo borrar el archivo temporal", e);
+              LOGGER.debug("No se pudo borrar el archivo temporal", e);
             }
           }
         });
@@ -172,9 +169,8 @@ public class ImportadorDonantes implements WithSimplePersistenceUnit {
   private record ErrorDeFila(long fila, String motivo) {}
 
   /**
-   * Valida la fila y la suma al lote. No toca la base: si el donante es nuevo le reserva el id
-   * para poder crearle la cuenta enseguida, y lo deja junto con la cuenta para el guardado del
-   * lote.
+   * Valida la fila y la suma al lote. No toca la base: si el donante es nuevo le reserva el id para
+   * poder crearle la cuenta enseguida, y lo deja junto con la cuenta para el guardado del lote.
    */
   private void importarFila(
       DonanteCsv csv,

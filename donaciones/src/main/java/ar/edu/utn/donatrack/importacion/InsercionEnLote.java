@@ -45,7 +45,8 @@ import org.hibernate.type.Type;
  * <p>Corre dentro de la transacción del llamador y deja el contexto de persistencia sin tocar.
  */
 final class InsercionEnLote {
-  // La misma sesión vista de dos formas: Session para doWork, la interna para los generadores y tipos.
+  // La misma sesión vista de dos formas: Session para doWork, la interna para los generadores y
+  // tipos.
   private final Session session;
   private final SharedSessionContractImplementor sesion;
   private final AbstractEntityPersister donantes;
@@ -73,7 +74,8 @@ final class InsercionEnLote {
             modelo.collectionPersister(Donante.class.getName() + ".mediosDeContacto");
     this.usuarios = (AbstractEntityPersister) modelo.entityPersister(Usuario.class);
     this.roles =
-        (AbstractCollectionPersister) modelo.collectionPersister(Usuario.class.getName() + ".roles");
+        (AbstractCollectionPersister)
+            modelo.collectionPersister(Usuario.class.getName() + ".roles");
   }
 
   /** Un id nuevo para el donante, del mismo generador que usaría {@code persist()}. */
@@ -131,7 +133,8 @@ final class InsercionEnLote {
     Actualizacion contactoPredeterminado =
         new Actualizacion(
             donantes.getTableName(),
-            columna(donantes.getPropertyColumnNames("contactoPredeterminado"),
+            columna(
+                donantes.getPropertyColumnNames("contactoPredeterminado"),
                 medios.getIdentifierType()),
             columna(donantes.getIdentifierColumnNames(), donantes.getIdentifierType()));
     Insercion usuario =
@@ -151,8 +154,8 @@ final class InsercionEnLote {
         (id, d) -> {
           donante.fila(id, d.getDocumento(), d.getNumDocumento());
           if (d instanceof PersonaHumana h) {
-            humana.fila(id, h.getNombre(), h.getApellido(), h.getEdad(), h.getGenero(),
-                h.getDireccion());
+            humana.fila(
+                id, h.getNombre(), h.getApellido(), h.getEdad(), h.getGenero(), h.getDireccion());
           } else if (d instanceof PersonajeJuridica j) {
             juridica.fila(id, j.getRazonSocial(), j.getTipoOrganizacion(), j.getRubro());
           }
@@ -177,15 +180,15 @@ final class InsercionEnLote {
 
     // El orden respeta las claves foráneas: primero a quien se apunta, después quien apunta.
     session.doWork(
-            conexion -> {
-              donante.ejecutar(conexion);
-              humana.ejecutar(conexion);
-              juridica.ejecutar(conexion);
-              medio.ejecutar(conexion);
-              contactoPredeterminado.ejecutar(conexion);
-              usuario.ejecutar(conexion);
-              rol.ejecutar(conexion);
-            });
+        conexion -> {
+          donante.ejecutar(conexion);
+          humana.ejecutar(conexion);
+          juridica.ejecutar(conexion);
+          medio.ejecutar(conexion);
+          contactoPredeterminado.ejecutar(conexion);
+          usuario.ejecutar(conexion);
+          rol.ejecutar(conexion);
+        });
   }
 
   private Object discriminador(MedioDeContacto medio) {
@@ -194,7 +197,8 @@ final class InsercionEnLote {
   }
 
   private static Columna columna(AbstractEntityPersister persister, String propiedad) {
-    return columna(persister.getPropertyColumnNames(propiedad), persister.getPropertyType(propiedad));
+    return columna(
+        persister.getPropertyColumnNames(propiedad), persister.getPropertyType(propiedad));
   }
 
   private static Columna columna(String[] nombres, Type tipo) {
@@ -242,7 +246,9 @@ final class InsercionEnLote {
   private final class Insercion extends Sentencia {
     Insercion(String tabla, Columna... columnas) {
       super(
-          "insert into " + tabla + " ("
+          "insert into "
+              + tabla
+              + " ("
               + List.of(columnas).stream().map(Columna::nombre).collect(Collectors.joining(", "))
               + ") values ("
               + List.of(columnas).stream().map(c -> "?").collect(Collectors.joining(", "))

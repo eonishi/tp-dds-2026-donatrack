@@ -70,15 +70,13 @@ public final class RegistroController implements WithSimplePersistenceUnit {
           .flatMap(donantes::findById)
           .ifPresent(
               donante ->
-                  notificaciones.enviar(
-                      new EventoBienvenida(donante, enlaceIngreso(ctx)).generarNotificaciones()));
+                  notificaciones.publicar(new EventoBienvenida(donante, enlaceIngreso(ctx))));
       usuario
           .getEntidadId()
           .flatMap(entidades::findById)
           .ifPresent(
               entidad ->
-                  notificaciones.enviar(
-                      new EventoBienvenida(entidad, enlaceIngreso(ctx)).generarNotificaciones()));
+                  notificaciones.publicar(new EventoBienvenida(entidad, enlaceIngreso(ctx))));
       authService.abrirSesion(ctx, usuario);
       ctx.redirect("/dashboard");
     } catch (DatoInvalido e) {

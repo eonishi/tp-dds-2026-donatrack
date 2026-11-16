@@ -3,7 +3,7 @@ package ar.edu.utn.donatrack.api.dto;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.donantes.TipoOrganizacion;
-import ar.edu.utn.donatrack.utilidades.TipoPersona;
+import ar.edu.utn.donatrack.donantes.TipoPersona;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;

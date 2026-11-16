@@ -17,12 +17,17 @@ import org.junit.jupiter.api.Test;
 
 class UbicadorEntidadesTest implements WithSimplePersistenceUnit {
 
+  // Solo las entidades de este test: la base es compartida y otros tests dejan necesidades que
+  // referencian a las suyas.
+  private final List<Long> creadas = new ArrayList<>();
+
   @AfterEach
   void limpiar() {
     withTransaction(
         () ->
-            createQuery("select e from EntidadBeneficiaria e", EntidadBeneficiaria.class)
-                .getResultList()
+            creadas.stream()
+                .map(id -> find(EntidadBeneficiaria.class, id))
+                .filter(entidad -> entidad != null)
                 .forEach(this::remove));
   }
 
@@ -122,6 +127,7 @@ class UbicadorEntidadesTest implements WithSimplePersistenceUnit {
   private Long guardar(String nombre, String direccion) {
     EntidadBeneficiaria entidad = new EntidadBeneficiaria(nombre, direccion, "1111111111");
     withTransaction(() -> persist(entidad));
+    creadas.add(entidad.getId());
     return entidad.getId();
   }
 }

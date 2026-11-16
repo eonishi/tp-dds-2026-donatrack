@@ -1,7 +1,6 @@
 package ar.edu.utn.donatrack.donantes;
 
-import ar.edu.utn.donatrack.notificaciones.Notificador;
-import ar.edu.utn.donatrack.notificaciones.ResultadoEnvio;
+import ar.edu.utn.donatrack.notificaciones.NotificadorPorCanal;
 import javax.persistence.Entity;
 
 @Entity
@@ -13,7 +12,7 @@ public class CorreoElectronico extends MedioDeContacto {
   }
 
   @Override
-  public ResultadoEnvio aceptar(Notificador notificador, String mensaje) {
-    return notificador.enviar(this, mensaje);
+  public void enviar(String mensaje, NotificadorPorCanal canales) {
+    canales.enviarPorCorreo(getContacto(), mensaje);
   }
 }

@@ -9,7 +9,6 @@ import ar.edu.utn.donatrack.logistica.graphql.ResolversLogistica;
 import ar.edu.utn.donatrack.logistica.monitoreo.MonitorRutas;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotasImpl;
-import ar.edu.utn.donatrack.logistica.planificacion.PlanificacionScheduler;
 import ar.edu.utn.donatrack.logistica.planificacion.PlanificadorRutas;
 import ar.edu.utn.donatrack.logistica.planificacion.ServicioPlanificacionRutas;
 import ar.edu.utn.donatrack.logistica.security.LogisticaSecurity;
@@ -19,23 +18,24 @@ import io.javalin.Javalin;
 import java.net.http.HttpClient;
 import java.time.Clock;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MainLogistica implements WithSimplePersistenceUnit {
+  private static final Logger LOGGER = LoggerFactory.getLogger(MainLogistica.class);
+
   public static void main(String[] args) {
     ConfiguracionBase.desdeEntorno();
     new MainLogistica().iniciar();
   }
 
-  private ServicioPlanificacionRutas servicioPlanificacion;
   private MonitorRutas monitorRutas;
 
   private void iniciar() {
     Javalin app = crearApp();
     new LogisticsDemoDataset().initialize(System.getenv(), monitorRutas, Clock.systemUTC());
     app.start(9001);
-    // Solo en el proceso real: las pruebas arman la app con crearApp() sin programar tareas.
-    PlanificacionScheduler.desdeEntorno(servicioPlanificacion).iniciar();
-    System.out.println("Microservicio de Logística corriendo en http://localhost:9001");
+    LOGGER.info("Microservicio de Logística corriendo en http://localhost:9001");
   }
 
   public Javalin crearApp() {
@@ -90,8 +90,15 @@ public class MainLogistica implements WithSimplePersistenceUnit {
     // Este UUID es el id del lote que devuelve el planificador externo (stub), no la clave de una
     // entidad: el @GeneratedValue de las entidades no aplica acá.
     PlanificadorRutas planificadorRutas = lote -> UUID.randomUUID();
-    servicioPlanificacion =
-        new ServicioPlanificacionRutas(donacionesRemotas, camionRepo, planificadorRutas, rutaRepo);
+    // URL que se le pasa al planificador externo para que avise el resultado de cada lote.
+    String urlCallback =
+        System.getenv()
+            .getOrDefault(
+                "PLANIFICADOR_CALLBACK_URL",
+                "http://localhost:9001/logistica/planificacion/callback");
+    ServicioPlanificacionRutas servicioPlanificacion =
+        new ServicioPlanificacionRutas(
+            donacionesRemotas, camionRepo, planificadorRutas, rutaRepo, urlCallback);
     PlanificacionController planificacionController =
         new PlanificacionController(servicioPlanificacion, camionRepo);
 

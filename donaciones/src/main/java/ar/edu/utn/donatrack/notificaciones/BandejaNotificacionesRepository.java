@@ -10,7 +10,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/** Bandeja web persistida: un aviso por titular y mensaje, aunque haya salido por varios medios. */
+/**
+ * Bandeja web persistida: un aviso por destinatario y mensaje, aunque haya salido por varios
+ * medios. Solo se guardan los avisos a donantes y entidades; los demás destinatarios (por ejemplo,
+ * los correos de la administración) no tienen bandeja.
+ */
 public class BandejaNotificacionesRepository
     implements BandejaNotificaciones, WithSimplePersistenceUnit {
   private static final int LIMITE = 100;
@@ -25,21 +29,17 @@ public class BandejaNotificacionesRepository
     Map<String, AvisoBandeja> avisos = new LinkedHashMap<>();
     LocalDateTime ahora = LocalDateTime.now(clock);
     for (Notificacion notificacion : notificaciones) {
-      notificacion
-          .getTitular()
-          .ifPresent(
-              titular -> {
-                if (titular instanceof Donante donante && donante.getId() != null) {
-                  avisos.putIfAbsent(
-                      "d" + donante.getId() + notificacion.getMensaje(),
-                      AvisoBandeja.paraDonante(donante.getId(), notificacion.getMensaje(), ahora));
-                } else if (titular instanceof EntidadBeneficiaria entidad
-                    && entidad.getId() != null) {
-                  avisos.putIfAbsent(
-                      "e" + entidad.getId() + notificacion.getMensaje(),
-                      AvisoBandeja.paraEntidad(entidad.getId(), notificacion.getMensaje(), ahora));
-                }
-              });
+      String mensaje = notificacion.mensaje();
+      if (notificacion.destinatario() instanceof Donante donante && donante.getId() != null) {
+        avisos.putIfAbsent(
+            "d" + donante.getId() + mensaje,
+            AvisoBandeja.paraDonante(donante.getId(), mensaje, ahora));
+      } else if (notificacion.destinatario() instanceof EntidadBeneficiaria entidad
+          && entidad.getId() != null) {
+        avisos.putIfAbsent(
+            "e" + entidad.getId() + mensaje,
+            AvisoBandeja.paraEntidad(entidad.getId(), mensaje, ahora));
+      }
     }
     if (avisos.isEmpty()) {
       return;

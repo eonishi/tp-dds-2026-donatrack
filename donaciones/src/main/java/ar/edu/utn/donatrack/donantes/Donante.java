@@ -1,6 +1,7 @@
 package ar.edu.utn.donatrack.donantes;
 
 import ar.edu.utn.donatrack.notificaciones.Notificable;
+import ar.edu.utn.donatrack.notificaciones.NotificadorPorCanal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -75,6 +76,12 @@ public abstract class Donante implements Notificable {
 
   public MedioDeContacto getMedioContactoPredeterminado() {
     return this.contactoPredeterminado;
+  }
+
+  /** El donante se notifica solo por su medio de contacto predeterminado. */
+  @Override
+  public void notificar(String mensaje, NotificadorPorCanal canales) {
+    contactoPredeterminado.enviar(mensaje, canales);
   }
 
   public List<MedioDeContacto> getMediosDeContacto() {

@@ -10,8 +10,8 @@ import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
 import ar.edu.utn.donatrack.donantes.Sms;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
-import ar.edu.utn.donatrack.security.Role;
 import ar.edu.utn.donatrack.security.AuthService;
+import ar.edu.utn.donatrack.security.Role;
 import ar.edu.utn.donatrack.security.Usuario;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import java.io.ByteArrayInputStream;
@@ -91,7 +91,8 @@ class ImportadorDonantesTest implements WithSimplePersistenceUnit {
     assertEquals(0, importacion.getFilasConError(), importacion.getErrores().toString());
     assertEquals(1, importacion.getDonantesNuevos());
     PersonaHumana donante =
-        createQuery("select h from PersonaHumana h where h.numDocumento = '41000001'",
+        createQuery(
+                "select h from PersonaHumana h where h.numDocumento = '41000001'",
                 PersonaHumana.class)
             .getSingleResult();
     assertEquals("Benjamín", donante.getNombre());

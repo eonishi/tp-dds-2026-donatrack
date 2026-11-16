@@ -4,6 +4,9 @@ import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donantes.Donante;
+import ar.edu.utn.donatrack.notificaciones.NotificadorPorCanal;
+import ar.edu.utn.donatrack.notificaciones.ResultadoEnvio;
+import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import java.util.List;
 
 /**
@@ -49,5 +52,20 @@ public final class FabricaDePrueba {
    */
   public static Donacion nuevaDonacion(Donante donante, List<Bien> bienes) {
     return new Donacion(donante, bienes);
+  }
+
+  /**
+   * Crea un servicio de notificaciones cuyos gateways aceptan todo y no envían nada.
+   *
+   * <p>Para los tests que transicionan donaciones sin observar las notificaciones.
+   *
+   * @return el servicio creado
+   */
+  public static ServicioNotificaciones notificacionesDescartadas() {
+    return new ServicioNotificaciones(
+        new NotificadorPorCanal(
+            (destinatario, asunto, mensaje) -> ResultadoEnvio.aceptado(),
+            (destinatario, mensaje) -> ResultadoEnvio.aceptado(),
+            (destinatario, mensaje) -> ResultadoEnvio.aceptado()));
   }
 }

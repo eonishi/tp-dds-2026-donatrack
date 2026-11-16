@@ -1,5 +1,6 @@
 package ar.edu.utn.donatrack.donaciones;
 
+import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.notificacionesDescartadas;
 import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaDonacion;
 import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaEntidad;
 import static org.junit.jupiter.api.Assertions.*;
@@ -64,11 +65,11 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
       return donacion; // default state
     }
     if (estado == EstadoDonacion.ASIGNACION_REALIZADA) {
-      donacion.confirmarEntidadBeneficiaria(entidadBeneficiaria);
+      donacion.confirmarEntidadBeneficiaria(entidadBeneficiaria, notificacionesDescartadas());
       return donacion;
     }
     if (estado == EstadoDonacion.ENTREGADA) {
-      donacion.confirmarEntidadBeneficiaria(entidadBeneficiaria);
+      donacion.confirmarEntidadBeneficiaria(entidadBeneficiaria, notificacionesDescartadas());
       donacion.cambiarEstado(EstadoDonacion.ENTREGADA, null);
       return donacion;
     }

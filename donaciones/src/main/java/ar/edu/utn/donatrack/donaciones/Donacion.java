@@ -6,7 +6,7 @@ import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
 import ar.edu.utn.donatrack.donantes.Donante;
-import ar.edu.utn.donatrack.notificaciones.Notificacion;
+import ar.edu.utn.donatrack.notificaciones.PublicadorDeEventos;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -267,6 +267,19 @@ public class Donacion {
     return bienes.get(0).getFechaVencimiento();
   }
 
+  /**
+   * Indica si la donación ya venció a la fecha {@code hoy}.
+   *
+   * <p>La fecha de vencimiento es el último día en que la donación sirve: la que vence hoy sigue
+   * vigente. Una donación no perecedera nunca vence.
+   *
+   * @param hoy fecha de referencia
+   * @return {@code true} si es perecedera y su fecha de vencimiento es anterior a {@code hoy}
+   */
+  public boolean estaVencida(LocalDate hoy) {
+    return esPerecedera() && getFechaVencimiento().isBefore(hoy);
+  }
+
   public EntidadBeneficiaria getEntidadBeneficiaria() {
     return entidadBeneficiaria;
   }
@@ -283,13 +296,13 @@ public class Donacion {
    * Registra la patente del camión que retira la donación.
    *
    * <p>La patente llega como referencia de valor desde el microservicio de logística (la flota es
-   * de logística); se registra al iniciar el traslado y no se vuelve a pedir al confirmar la
-   * entrega.
+   * de logística); solo la registra {@link EstadoDonacion} al iniciar el traslado y no se vuelve a
+   * pedir al confirmar la entrega.
    *
    * @param patente patente del camión (no nula)
    * @throws NullPointerException si {@code patente} es {@code null}
    */
-  public void registrarCamion(String patente) {
+  void registrarCamion(String patente) {
     this.idCamion = Objects.requireNonNull(patente, "idCamion no debe ser null");
   }
 
@@ -310,41 +323,59 @@ public class Donacion {
     this.entidadBeneficiaria = entidadBeneficiaria;
   }
 
-  public List<ar.edu.utn.donatrack.notificaciones.Notificacion> confirmarEntidadBeneficiaria(
-      EntidadBeneficiaria entidadBeneficiaria) {
+  /**
+   * Asigna la entidad beneficiaria y publica el aviso de asignación.
+   *
+   * @param entidadBeneficiaria entidad que recibe la donación (no nula)
+   * @param publicador destino del evento de la transición
+   * @throws IllegalStateException si la donación no está en depósito
+   */
+  public void confirmarEntidadBeneficiaria(
+      EntidadBeneficiaria entidadBeneficiaria, PublicadorDeEventos publicador) {
     Objects.requireNonNull(entidadBeneficiaria, "entidadBeneficiaria no puede ser null");
     this.setEntidadBeneficiaria(entidadBeneficiaria);
-    return this.asignar();
+    this.asignar(publicador);
   }
 
-  public List<Notificacion> asignar() {
-    return this.estado.asignar(this);
+  public void asignar(PublicadorDeEventos publicador) {
+    this.estado.asignar(this, publicador);
   }
 
-  public List<Notificacion> planificarRuta() {
-    return this.estado.planificarRuta(this);
+  public void planificarRuta() {
+    this.estado.planificarRuta(this);
   }
 
-  public List<Notificacion> iniciarTraslado(String urlMapa) {
-    return this.estado.iniciarTraslado(this, urlMapa);
+  /**
+   * Inicia el traslado con el camión indicado y publica el aviso de inicio de ruta.
+   *
+   * <p>Toda donación en {@link EstadoDonacion#EN_TRASLADO} tiene camión: la patente se valida y se
+   * registra junto con la transición, y si la transición no está permitida el camión no se toca.
+   *
+   * @param idCamion patente del camión que retira la donación
+   * @param publicador destino del evento de la transición
+   * @throws IllegalArgumentException si {@code idCamion} es {@code null} o está en blanco
+   * @throws IllegalStateException si la donación no está lista para entregar
+   */
+  public void iniciarTraslado(String idCamion, PublicadorDeEventos publicador) {
+    this.estado.iniciarTraslado(this, idCamion, publicador);
   }
 
-  public List<Notificacion> confirmarEntrega() {
-    return this.estado.confirmarEntrega(this);
+  public void confirmarEntrega(PublicadorDeEventos publicador) {
+    this.estado.confirmarEntrega(this, publicador);
   }
 
-  public List<Notificacion> reportarFalla(String justificacion) {
+  public void reportarFalla(String justificacion, PublicadorDeEventos publicador) {
     if (justificacion == null || justificacion.isBlank()) {
       throw new IllegalArgumentException("La justificación es obligatoria.");
     }
-    return this.estado.reportarFalla(this, justificacion);
+    this.estado.reportarFalla(this, justificacion, publicador);
   }
 
-  public List<Notificacion> marcarVencida() {
-    return this.estado.marcarVencida(this);
+  public void marcarVencida() {
+    this.estado.marcarVencida(this);
   }
 
-  public List<Notificacion> retornarAlDeposito() {
-    return this.estado.retornarAlDeposito(this);
+  public void retornarAlDeposito() {
+    this.estado.retornarAlDeposito(this);
   }
 }

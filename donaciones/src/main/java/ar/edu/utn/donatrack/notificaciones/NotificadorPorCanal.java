@@ -1,44 +1,50 @@
 package ar.edu.utn.donatrack.notificaciones;
 
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
-import ar.edu.utn.donatrack.donantes.MedioDeContacto;
-import ar.edu.utn.donatrack.donantes.Sms;
-import ar.edu.utn.donatrack.donantes.Whatsapp;
 import java.util.Objects;
+import java.util.function.Supplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class NotificadorPorCanal implements Notificador {
+/**
+ * Gateways de envío por canal. Cada medio de contacto elige su canal y pasa su propio contacto;
+ * este notificador no conoce los medios ni los destinatarios.
+ *
+ * <p>Un fallo de envío se registra en el log y no se propaga: el aviso es de mejor esfuerzo.
+ */
+public class NotificadorPorCanal {
+  private static final Logger LOGGER = LoggerFactory.getLogger(NotificadorPorCanal.class);
   private static final String ASUNTO_POR_DEFECTO = "Novedad de DonaTrack";
 
   private final GatewayCorreo correo;
-  private final GatewaySms sms;
-  private final GatewayWhatsapp whatsapp;
+  private final GatewayMensajes sms;
+  private final GatewayMensajes whatsapp;
 
-  public NotificadorPorCanal(GatewayCorreo correo, GatewaySms sms, GatewayWhatsapp whatsapp) {
+  public NotificadorPorCanal(GatewayCorreo correo, GatewayMensajes sms, GatewayMensajes whatsapp) {
     this.correo = Objects.requireNonNull(correo);
     this.sms = Objects.requireNonNull(sms);
     this.whatsapp = Objects.requireNonNull(whatsapp);
   }
 
-  @Override
-  public ResultadoEnvio enviarNotificacion(MedioDeContacto destinatario, String mensaje) {
-    if (destinatario == null) {
-      return ResultadoEnvio.fallido("El destinatario es obligatorio.");
+  public void enviarPorCorreo(String direccion, String mensaje) {
+    enviar("CORREO", () -> correo.enviar(direccion, ASUNTO_POR_DEFECTO, mensaje));
+  }
+
+  public void enviarPorSms(String numero, String mensaje) {
+    enviar("SMS", () -> sms.enviar(numero, mensaje));
+  }
+
+  public void enviarPorWhatsapp(String numero, String mensaje) {
+    enviar("WHATSAPP", () -> whatsapp.enviar(numero, mensaje));
+  }
+
+  private void enviar(String canal, Supplier<ResultadoEnvio> envio) {
+    try {
+      ResultadoEnvio resultado = envio.get();
+      if (!resultado.exitoso()) {
+        LOGGER.warn("Fallo de notificación canal={} detalle={}", canal, resultado.detalle());
+      }
+    } catch (RuntimeException error) {
+      LOGGER.warn("Fallo de notificación canal={} detalle={}", canal, error.getMessage());
     }
-    return destinatario.aceptar(this, mensaje);
-  }
-
-  @Override
-  public ResultadoEnvio enviar(CorreoElectronico destinatario, String mensaje) {
-    return correo.enviar(destinatario.getContacto(), ASUNTO_POR_DEFECTO, mensaje);
-  }
-
-  @Override
-  public ResultadoEnvio enviar(Whatsapp destinatario, String mensaje) {
-    return whatsapp.enviar(destinatario.getContacto(), mensaje);
-  }
-
-  @Override
-  public ResultadoEnvio enviar(Sms destinatario, String mensaje) {
-    return sms.enviar(destinatario.getContacto(), mensaje);
   }
 }

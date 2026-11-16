@@ -1,46 +1,66 @@
 package ar.edu.utn.donatrack.notificaciones;
 
+import ar.edu.utn.donatrack.notificaciones.eventos.EventoNotificable;
 import java.util.List;
 import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ServicioNotificaciones {
+public class ServicioNotificaciones implements PublicadorDeEventos {
   private static final Logger LOGGER = LoggerFactory.getLogger(ServicioNotificaciones.class);
-  private final Notificador notificador;
-  private final NotificacionesRepository repository;
-  private final int maxIntentos;
+
+  private final NotificadorPorCanal notificador;
   private final BandejaNotificaciones bandeja;
 
-  public ServicioNotificaciones(
-      Notificador notificador, NotificacionesRepository repository, int maxIntentos) {
-    this(notificador, repository, maxIntentos, BandejaNotificaciones.NINGUNA);
+  public ServicioNotificaciones(NotificadorPorCanal notificador) {
+    this(notificador, BandejaNotificaciones.NINGUNA);
   }
 
-  public ServicioNotificaciones(
-      Notificador notificador,
-      NotificacionesRepository repository,
-      int maxIntentos,
-      BandejaNotificaciones bandeja) {
-    this.bandeja = Objects.requireNonNull(bandeja);
+  public ServicioNotificaciones(NotificadorPorCanal notificador, BandejaNotificaciones bandeja) {
     this.notificador = Objects.requireNonNull(notificador);
-    this.repository = Objects.requireNonNull(repository);
-    if (maxIntentos < 1) {
-      throw new IllegalArgumentException("Debe configurarse al menos un intento.");
-    }
-    this.maxIntentos = maxIntentos;
+    this.bandeja = Objects.requireNonNull(bandeja);
   }
 
-  public List<Notificacion> enviar(List<Notificacion> notificaciones) {
-    notificaciones.forEach(this::entregar);
+  /**
+   * Publica un evento en el momento en que ocurre: envía cada notificación que genera y la deja en
+   * la bandeja web de su destinatario.
+   *
+   * <p>Es el único punto por el que salen las notificaciones de un evento; un fallo de envío se
+   * registra y no interrumpe al que publica.
+   *
+   * @param evento hecho ocurrido
+   */
+  @Override
+  public void publicar(EventoNotificable evento) {
+    List<Notificacion> notificaciones = evento.generarNotificaciones();
+    notificaciones.forEach(this::enviar);
     registrarEnBandeja(notificaciones);
-    return List.copyOf(notificaciones);
   }
 
-  public Notificacion enviar(Notificacion notificacion) {
-    entregar(notificacion);
-    registrarEnBandeja(List.of(notificacion));
-    return notificacion;
+  /**
+   * Crea un publicador que retiene los eventos hasta que el caso de uso se confirma.
+   *
+   * @return un publicador nuevo, sin eventos pendientes
+   */
+  public PublicadorDiferido publicadorDiferido() {
+    return new PublicadorDiferido(this);
+  }
+
+  /**
+   * Envía una notificación. Los fallos de los gateways ya los registra el notificador; acá se
+   * contienen los errores del destinatario (por ejemplo, datos de contacto incompletos).
+   *
+   * @param notificacion aviso a enviar
+   */
+  public void enviar(Notificacion notificacion) {
+    try {
+      notificacion.enviarCon(notificador);
+    } catch (RuntimeException error) {
+      LOGGER.warn(
+          "Fallo de notificación destinatario={} detalle={}",
+          notificacion.destinatario().getClass().getSimpleName(),
+          error.getMessage());
+    }
   }
 
   // La bandeja web no debe impedir el envío: si falla, queda en el log.
@@ -50,46 +70,5 @@ public class ServicioNotificaciones {
     } catch (RuntimeException error) {
       LOGGER.warn("No se pudieron guardar los avisos en la bandeja web", error);
     }
-  }
-
-  private Notificacion entregar(Notificacion notificacion) {
-    repository.save(notificacion);
-    for (int intento = 0; intento < maxIntentos; intento++) {
-      notificacion.registrarIntento();
-      ResultadoEnvio resultado = intentarEnvio(notificacion);
-      if (resultado.exitoso()) {
-        notificacion.marcarEnviada();
-        return notificacion;
-      }
-      notificacion.marcarFallida(resultado.detalle());
-    }
-    LOGGER.warn(
-        "Fallo de notificación canal={} destinatario={} intentos={} ultimoError={}",
-        notificacion.getDestinatario().getClass().getSimpleName(),
-        enmascarar(notificacion.getDestinatario().getContacto()),
-        notificacion.getIntentos(),
-        notificacion.getUltimoError());
-    return notificacion;
-  }
-
-  private ResultadoEnvio intentarEnvio(Notificacion notificacion) {
-    try {
-      return notificador.enviarNotificacion(
-          notificacion.getDestinatario(), notificacion.getMensaje());
-    } catch (RuntimeException error) {
-      return ResultadoEnvio.fallido(
-          error.getMessage() == null ? "Error inesperado." : error.getMessage());
-    }
-  }
-
-  private String enmascarar(String destinatario) {
-    if (destinatario == null || destinatario.length() < 3) {
-      return "***";
-    }
-    int arroba = destinatario.indexOf('@');
-    if (arroba > 0) {
-      return destinatario.substring(0, 1) + "***" + destinatario.substring(arroba);
-    }
-    return "***" + destinatario.substring(destinatario.length() - 2);
   }
 }
