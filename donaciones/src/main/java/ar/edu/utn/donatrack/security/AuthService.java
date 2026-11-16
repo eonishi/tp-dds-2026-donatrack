@@ -112,8 +112,18 @@ public class AuthService implements WithSimplePersistenceUnit {
     if (usuarios.existeEmail(email)) {
       return false;
     }
-    usuarios.agregar(new Usuario(email, MARCADOR_PENDIENTE, Set.of(Role.DONANTE), donanteId, null));
+    usuarios.agregar(cuentaPendiente(email, donanteId));
     return true;
+  }
+
+  /**
+   * La cuenta pendiente de activación de un donante, sin guardar. La usa la importación masiva,
+   * que ya sabe qué correos tienen cuenta (los carga una sola vez al empezar) y guarda las cuentas
+   * en lote. Si igual llegara un duplicado, la restricción única de {@code Usuario.email} lo
+   * rechaza.
+   */
+  public Usuario cuentaPendiente(String email, UUID donanteId) {
+    return new Usuario(email, MARCADOR_PENDIENTE, Set.of(Role.DONANTE), donanteId, null);
   }
 
   /**
