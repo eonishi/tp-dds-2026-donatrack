@@ -10,6 +10,7 @@ import ar.edu.utn.donatrack.logistica.monitoreo.MonitorRutas;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotasImpl;
 import ar.edu.utn.donatrack.logistica.planificacion.PlanificadorRutas;
+import ar.edu.utn.donatrack.logistica.planificacion.PlanificadorRutasHttp;
 import ar.edu.utn.donatrack.logistica.planificacion.ServicioPlanificacionRutas;
 import ar.edu.utn.donatrack.logistica.security.LogisticaSecurity;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,7 +18,6 @@ import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.Javalin;
 import java.net.http.HttpClient;
 import java.time.Clock;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -87,9 +87,12 @@ public class MainLogistica implements WithSimplePersistenceUnit {
                 new ResolversLogistica(
                     camionRepo, rutaRepo, repartidorRepo, monitorRutas, donacionesRemotas)));
 
-    // Este UUID es el id del lote que devuelve el planificador externo (stub), no la clave de una
-    // entidad: el @GeneratedValue de las entidades no aplica acá.
-    PlanificadorRutas planificadorRutas = lote -> UUID.randomUUID();
+    String planificadorUrl =
+        System.getenv().getOrDefault("PLANIFICADOR_RUTAS_URL", "http://localhost:9002");
+    String planificadorApiKey =
+        System.getenv().getOrDefault("PLANIFICADOR_RUTAS_API_KEY", "PLANIFICADOR_SECRET_KEY");
+    PlanificadorRutas planificadorRutas =
+        new PlanificadorRutasHttp(planificadorUrl, planificadorApiKey, httpClient, objectMapper);
     // URL que se le pasa al planificador externo para que avise el resultado de cada lote.
     String urlCallback =
         System.getenv()
