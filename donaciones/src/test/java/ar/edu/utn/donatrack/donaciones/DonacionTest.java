@@ -781,6 +781,29 @@ class DonacionTest {
   }
 
   @Test
+  void fechaDeEntrega_EntregaTrasUnIntentoFallido_DevuelveLaFechaDeLaEntregaYNoLaDelIntento() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, null);
+    donacion.cambiarEstado(EstadoDonacion.ENTREGA_FALLIDA, "No había nadie");
+    donacion.cambiarEstado(EstadoDonacion.EN_DEPOSITO, null);
+    donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, null);
+    donacion.cambiarEstado(EstadoDonacion.ENTREGADA, null);
+    List<HistorialEstado> historial = donacion.getHistorialEstado();
+    LocalDateTime entrega = historial.get(historial.size() - 1).getFecha();
+
+    assertEquals(Optional.of(entrega), donacion.fechaDeEntrega());
+  }
+
+  @Test
+  void fechaDeEntrega_IntentoFallidoSinEntrega_DevuelveVacio() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, null);
+    donacion.cambiarEstado(EstadoDonacion.ENTREGA_FALLIDA, "No había nadie");
+
+    assertEquals(Optional.empty(), donacion.fechaDeEntrega());
+  }
+
+  @Test
   void fechaDeEntrega_DonacionNoEntregada_DevuelveVacio() {
     Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
     donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, null);
