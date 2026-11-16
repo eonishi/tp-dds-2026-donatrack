@@ -16,7 +16,7 @@
 
             <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
             <property name="hibernate.show_sql" value="false"/>
-            <property name="hibernate.hbm2ddl.auto" value="update"/>
+            <property name="hibernate.hbm2ddl.auto" value="validate"/>
 
             <!-- Batching: Hibernate junta hasta 500 INSERT/UPDATE iguales y los manda en un solo viaje a la base, en vez de uno por fila. Ordenarlos por tabla hace que los lotes queden enteros. -->
             <property name="hibernate.jdbc.batch_size" value="500"/>

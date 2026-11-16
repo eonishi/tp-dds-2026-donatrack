@@ -15,10 +15,8 @@
             <property name="javax.persistence.validation.mode" value="none"/>
 
             <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
-            <property name="hibernate.show_sql" value="true"/>
-            <property name="hibernate.hbm2ddl.auto" value="update"/>
-            <!-- Ruta y Destino declaran @Table(schema = "logistica") y no hay script de init: esta propiedad hace que Hibernate cree el esquema en el primer arranque. -->
-            <property name="hibernate.hbm2ddl.create_namespaces" value="true"/>
+            <property name="hibernate.show_sql" value="false"/>
+            <property name="hibernate.hbm2ddl.auto" value="validate"/>
         </properties>
     </persistence-unit>
 </persistence>
