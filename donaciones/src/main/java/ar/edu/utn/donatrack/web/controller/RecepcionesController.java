@@ -5,7 +5,6 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
-import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
 import ar.edu.utn.donatrack.fotos.FotosRecepcion;
 import ar.edu.utn.donatrack.fotos.FotosRecepcion.FotoSubida;
 import ar.edu.utn.donatrack.notificaciones.PublicadorDiferido;
@@ -209,9 +208,7 @@ public class RecepcionesController implements WithSimplePersistenceUnit {
     }
 
     public String getSalio() {
-      return Vistas.fechaDe(donacion, EstadoDonacion.EN_TRASLADO)
-          .map(Vistas.FECHA_HORA::format)
-          .orElse("");
+      return donacion.fechaDeTraslado().map(Vistas.FECHA_HORA::format).orElse("");
     }
 
     public String getRecibida() {

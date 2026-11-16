@@ -159,13 +159,27 @@ public class Donacion {
   }
 
   /**
+   * Momento de la última salida a traslado registrada en el historial. Si hubo un reintento
+   * (entrega fallida, vuelta al depósito y nuevo traslado), es la salida más reciente.
+   *
+   * @return la fecha de salida, o vacío si la donación nunca salió a traslado
+   */
+  public Optional<LocalDateTime> fechaDeTraslado() {
+    return ultimaFechaEn(EstadoDonacion.EN_TRASLADO);
+  }
+
+  /**
    * Momento de la última transición a {@link EstadoDonacion#ENTREGADA} registrada en el historial.
    *
    * @return la fecha de entrega, o vacío si la donación nunca se entregó
    */
   public Optional<LocalDateTime> fechaDeEntrega() {
+    return ultimaFechaEn(EstadoDonacion.ENTREGADA);
+  }
+
+  private Optional<LocalDateTime> ultimaFechaEn(EstadoDonacion estadoBuscado) {
     return historialEstado.stream()
-        .filter(entrada -> entrada.getEstadoAlcanzado() == EstadoDonacion.ENTREGADA)
+        .filter(entrada -> entrada.getEstadoAlcanzado() == estadoBuscado)
         .map(HistorialEstado::getFecha)
         .max(Comparator.naturalOrder());
   }

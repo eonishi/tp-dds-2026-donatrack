@@ -27,6 +27,7 @@ import ar.edu.utn.donatrack.notificaciones.eventos.EventoNotificable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -809,6 +810,36 @@ class DonacionTest {
     donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, null);
 
     assertEquals(Optional.empty(), donacion.fechaDeEntrega());
+  }
+
+  @Test
+  void fechaDeTraslado_ReintentoTrasEntregaFallida_DevuelveLaUltimaSalida() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, null);
+    donacion.cambiarEstado(EstadoDonacion.ENTREGA_FALLIDA, "No había nadie");
+    donacion.cambiarEstado(EstadoDonacion.EN_DEPOSITO, null);
+    LocalDateTime primeraSalida = donacion.getHistorialEstado().get(0).getFecha();
+    esperarQueAvanceElReloj(primeraSalida);
+    donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, null);
+    List<HistorialEstado> historial = donacion.getHistorialEstado();
+    LocalDateTime segundaSalida = historial.get(historial.size() - 1).getFecha();
+
+    assertTrue(segundaSalida.isAfter(primeraSalida), "Las dos salidas deben distinguirse");
+    assertEquals(Optional.of(segundaSalida), donacion.fechaDeTraslado());
+  }
+
+  @Test
+  void fechaDeTraslado_SinTraslado_DevuelveVacio() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+
+    assertEquals(Optional.empty(), donacion.fechaDeTraslado());
+  }
+
+  /** El historial registra en microsegundos: espera a que el reloj supere {@code instante}. */
+  private static void esperarQueAvanceElReloj(LocalDateTime instante) {
+    while (!LocalDateTime.now().truncatedTo(ChronoUnit.MICROS).isAfter(instante)) {
+      Thread.onSpinWait();
+    }
   }
 
   private static Donacion entregadaA(EntidadBeneficiaria entidad) {
