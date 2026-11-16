@@ -188,7 +188,7 @@ public final class DonacionController implements WithSimplePersistenceUnit {
 
   private void actualizar(Context ctx) {
     Donacion donacion = buscar(HttpSupport.id(ctx, "id"));
-    if (donacion.getEstado() != EstadoDonacion.EN_DEPOSITO) {
+    if (!donacion.esModificable()) {
       throw ApiException.conflict("Sólo se puede modificar una donación en depósito.");
     }
     DonacionUpdateRequest request =
@@ -205,7 +205,7 @@ public final class DonacionController implements WithSimplePersistenceUnit {
 
   private void eliminar(Context ctx) {
     Donacion donacion = buscar(HttpSupport.id(ctx, "id"));
-    if (donacion.getEstado() != EstadoDonacion.EN_DEPOSITO) {
+    if (!donacion.esModificable()) {
       throw ApiException.conflict("Sólo se puede eliminar una donación en depósito.");
     }
     withTransaction(

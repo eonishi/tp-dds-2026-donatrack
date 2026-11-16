@@ -97,6 +97,47 @@ class DonacionTest {
   }
 
   @Test
+  void donacionEnDeposito_EsModificableYAsignable() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+
+    assertTrue(donacion.esModificable());
+    assertTrue(donacion.esAsignable());
+  }
+
+  @Test
+  void donacionAsignada_NoEsModificableNiAsignable() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"), notificaciones);
+
+    assertFalse(donacion.esModificable());
+    assertFalse(donacion.esAsignable());
+  }
+
+  @Test
+  void reemplazarBienes_FueraDeDeposito_LanzaIllegalStateExceptionYConservaLosBienes() {
+    Bien original = crearBienDummy();
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(original));
+    donacion.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"), notificaciones);
+
+    IllegalStateException error =
+        assertThrows(
+            IllegalStateException.class,
+            () -> donacion.reemplazarBienes(List.of(crearBienDummy())));
+
+    assertEquals("Sólo se puede modificar una donación en depósito.", error.getMessage());
+    assertEquals(List.of(original), donacion.getBienes());
+  }
+
+  @Test
+  void marcarVencida_FueraDeDeposito_LanzaIllegalStateExceptionYConservaElEstado() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"), notificaciones);
+
+    assertThrows(IllegalStateException.class, donacion::marcarVencida);
+    assertEquals(EstadoDonacion.ASIGNACION_REALIZADA, donacion.getEstado());
+  }
+
+  @Test
   void confirmarEntrega_EnTraslado_SatisfaceNecesidad() {
     SubCategoria subcatFideos = new SubCategoria("Fideos Secos", Categoria.ALIMENTO);
     Necesidad necesidad = new Necesidad(subcatFideos, 5.0, UnidadMedida.KILOGRAMOS, "Fideos");

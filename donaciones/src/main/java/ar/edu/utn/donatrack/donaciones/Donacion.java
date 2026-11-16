@@ -121,12 +121,34 @@ public class Donacion {
   }
 
   /**
+   * Indica si la donación admite modificar o eliminar sus bienes; lo decide su estado.
+   *
+   * @return {@code true} si el estado actual admite la modificación
+   */
+  public boolean esModificable() {
+    return estado.admiteModificacion();
+  }
+
+  /**
+   * Indica si la donación puede entrar al matchmaking para ser asignada; lo decide su estado.
+   *
+   * @return {@code true} si el estado actual admite la asignación
+   */
+  public boolean esAsignable() {
+    return estado.admiteAsignacion();
+  }
+
+  /**
    * Reemplaza los bienes de la donación conservando una copia defensiva de la lista recibida.
    *
    * @param nuevosBienes bienes que pasan a componer la donación (no vacíos ni nulos)
+   * @throws IllegalStateException si el estado actual no admite modificar la donación
    * @throws IllegalArgumentException si la lista es nula, está vacía o contiene un bien nulo
    */
   public void reemplazarBienes(List<Bien> nuevosBienes) {
+    if (!esModificable()) {
+      throw new IllegalStateException("Sólo se puede modificar una donación en depósito.");
+    }
     if (nuevosBienes == null
         || nuevosBienes.isEmpty()
         || nuevosBienes.stream().anyMatch(Objects::isNull)) {

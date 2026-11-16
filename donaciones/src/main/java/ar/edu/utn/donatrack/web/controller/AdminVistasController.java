@@ -116,11 +116,7 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
 
   private void marcarVencida(Context ctx) {
     Vistas.usuario(ctx);
-    Donacion donacion = donacion(ctx);
-    if (donacion.getEstado() != EstadoDonacion.EN_DEPOSITO) {
-      throw new IllegalStateException("La donación ya no está en el depósito.");
-    }
-    vencer(List.of(donacion));
+    vencer(List.of(donacion(ctx)));
     ctx.redirect("/admin/vencidas?ok=vencida");
   }
 

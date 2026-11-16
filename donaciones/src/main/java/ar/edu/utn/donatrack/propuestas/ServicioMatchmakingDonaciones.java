@@ -4,7 +4,6 @@ import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
-import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
 import ar.edu.utn.donatrack.notificaciones.PublicadorDeEventos;
 import ar.edu.utn.donatrack.propuestas.matchmaking.AlgoritmoMatchmaking;
 import ar.edu.utn.donatrack.propuestas.matchmaking.MatchCandidato;
@@ -143,7 +142,7 @@ public class ServicioMatchmakingDonaciones {
    * @throws IllegalStateException si la donación no está en depósito
    */
   private void validarEnDeposito(Donacion donacion) {
-    if (donacion.getEstado() != EstadoDonacion.EN_DEPOSITO) {
+    if (!donacion.esAsignable()) {
       throw new IllegalStateException(
           "El matchmaking sólo puede ejecutarse para donaciones en depósito.");
     }
