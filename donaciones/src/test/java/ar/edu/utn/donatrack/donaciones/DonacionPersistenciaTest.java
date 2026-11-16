@@ -221,6 +221,31 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
     assertEquals("USADO", estadoDeUso, "La columna debe guardar el nombre del enum, no su índice");
   }
 
+  @Test
+  void unBienConEstadoDeUsoNuloEnLaBaseSeRecargaComoNoAplica() {
+    SubCategoria alimentos = new SubCategoria(nombreUnicoAlimentos(), Categoria.ALIMENTO);
+    Donante donante = crearDonante();
+    Donacion donacion = new Donacion(donante, List.of(crearBien(alimentos, "Arroz", 2.0)));
+    persist(alimentos);
+    persist(donante);
+    persist(donacion);
+    entityManager().flush();
+    // Simula una fila previa a la normalización: la columna admite NULL y Hibernate, al recargar,
+    // asigna el campo sin pasar por el constructor de Bien.
+    entityManager()
+        .createNativeQuery("UPDATE Bien SET estadoDeUso = NULL WHERE donacion_id = :id")
+        .setParameter("id", donacion.getId())
+        .executeUpdate();
+    entityManager().clear();
+
+    Bien recargado = find(Donacion.class, donacion.getId()).getBienes().get(0);
+
+    assertEquals(
+        EstadoUso.NO_APLICA,
+        recargado.getEstadoDeUso(),
+        "Un estado de uso nulo en la base debe leerse como NO_APLICA");
+  }
+
   private static String nombreUnicoAlimentos() {
     return "Alimentos no perecederos " + UUID.randomUUID();
   }
