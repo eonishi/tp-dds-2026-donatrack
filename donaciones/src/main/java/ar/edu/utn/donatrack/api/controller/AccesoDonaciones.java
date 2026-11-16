@@ -44,10 +44,6 @@ final class AccesoDonaciones {
 
   private static boolean esBeneficiaria(Usuario usuario, Donacion donacion) {
     return usuario.hasRole(Role.BENEFICIARIO)
-        && donacion.getEntidadBeneficiaria() != null
-        && usuario
-            .getEntidadId()
-            .map(donacion.getEntidadBeneficiaria().getId()::equals)
-            .orElse(false);
+        && usuario.getEntidadId().map(donacion::estaAsignadaA).orElse(false);
   }
 }

@@ -257,6 +257,21 @@ public class Donacion {
   }
 
   /**
+   * Indica si esta donación está asignada a la entidad beneficiaria indicada.
+   *
+   * <p>Solo mira la asignación actual; no exige que la donación se haya entregado (para eso está
+   * {@link #fueEntregadaA(EntidadBeneficiaria, LocalDate)}).
+   *
+   * @param entidadId identificador de la entidad beneficiaria (no nulo)
+   * @return {@code true} si la donación tiene asignada la entidad con ese identificador
+   * @throws NullPointerException si {@code entidadId} es {@code null}
+   */
+  public boolean estaAsignadaA(Long entidadId) {
+    Objects.requireNonNull(entidadId, "entidadId no puede ser null");
+    return entidadBeneficiaria != null && entidadId.equals(entidadBeneficiaria.getId());
+  }
+
+  /**
    * Indica si esta donación fue entregada a la entidad indicada dentro de la ventana pedida.
    *
    * <p>La entrega se evalúa sobre el estado propio de la donación: cuenta toda transición a {@link

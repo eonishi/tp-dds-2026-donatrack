@@ -643,6 +643,44 @@ class DonacionTest {
   }
 
   @Test
+  void estaAsignadaA_SinEntidad_RetornaFalse() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+
+    assertFalse(donacion.estaAsignadaA(7L));
+  }
+
+  @Test
+  void estaAsignadaA_MismaEntidad_RetornaTrue() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.setEntidadBeneficiaria(new EntidadBeneficiaria(7L, "Hogar", "Dir", "Tel"));
+
+    assertTrue(donacion.estaAsignadaA(7L));
+  }
+
+  @Test
+  void estaAsignadaA_OtraEntidad_RetornaFalse() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.setEntidadBeneficiaria(new EntidadBeneficiaria(7L, "Hogar", "Dir", "Tel"));
+
+    assertFalse(donacion.estaAsignadaA(8L));
+  }
+
+  @Test
+  void estaAsignadaA_EntidadSinPersistir_RetornaFalse() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.setEntidadBeneficiaria(nuevaEntidad("Hogar"));
+
+    assertFalse(donacion.estaAsignadaA(7L));
+  }
+
+  @Test
+  void estaAsignadaA_IdNulo_LanzaNullPointerException() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+
+    assertThrows(NullPointerException.class, () -> donacion.estaAsignadaA(null));
+  }
+
+  @Test
   void confirmarEntidadBeneficiaria_SinInstanceOf_TransicionaCorrectamente() {
     Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
     EntidadBeneficiaria entidad = nuevaEntidad("Hogar");

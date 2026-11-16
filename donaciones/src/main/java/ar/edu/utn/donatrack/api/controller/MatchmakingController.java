@@ -112,10 +112,10 @@ public final class MatchmakingController implements WithSimplePersistenceUnit {
         entidades
             .findById(entidadId)
             .orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", entidadId));
+    if (donacion.estaAsignadaA(entidadId)) {
+      return donacion;
+    }
     if (donacion.getEntidadBeneficiaria() != null) {
-      if (donacion.getEntidadBeneficiaria().getId().equals(entidadId)) {
-        return donacion;
-      }
       throw ApiException.conflict("La donación ya tiene una entidad beneficiaria asignada.");
     }
     try {

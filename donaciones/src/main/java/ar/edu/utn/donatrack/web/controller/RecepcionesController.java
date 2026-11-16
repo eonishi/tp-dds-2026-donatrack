@@ -129,11 +129,10 @@ public class RecepcionesController implements WithSimplePersistenceUnit {
     } catch (IllegalArgumentException e) {
       throw new NotFoundResponse();
     }
-    Long entidadId = usuario.getEntidadId().orElse(null);
+    Long entidadId = usuario.getEntidadId().orElseThrow(NotFoundResponse::new);
     return donaciones
         .findById(id)
-        .filter(d -> d.getEntidadBeneficiaria() != null)
-        .filter(d -> d.getEntidadBeneficiaria().getId().equals(entidadId))
+        .filter(d -> d.estaAsignadaA(entidadId))
         .orElseThrow(NotFoundResponse::new);
   }
 
