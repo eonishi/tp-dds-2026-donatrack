@@ -451,8 +451,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
   }
 
   @Test
-  void seleccionDeOtraEntidadSobreDonacionAsignadaDevuelveConflictYNoReasigna()
-      throws Exception {
+  void seleccionDeOtraEntidadSobreDonacionAsignadaDevuelveConflictYNoReasigna() throws Exception {
     UUID donanteId = crearDonante();
     long entidadId = crearEntidad("Comedor Asignado");
     long otraEntidadId = crearEntidad("Comedor Otro");
