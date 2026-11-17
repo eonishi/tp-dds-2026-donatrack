@@ -39,7 +39,7 @@ public enum EstadoDonacion {
     @Override
     public void asignar(Donacion donacion, PublicadorDeEventos publicador) {
       transicionar(donacion, ASIGNACION_REALIZADA, null);
-      if (donacion.getDonante() != null && donacion.getEntidadBeneficiaria() != null) {
+      if (donacion.getEntidadBeneficiaria() != null) {
         publicador.publicar(
             new EventoAsignacion(donacion.getDonante(), donacion.getEntidadBeneficiaria()));
       }
@@ -65,7 +65,7 @@ public enum EstadoDonacion {
       }
       donacion.registrarCamion(idCamion);
       transicionar(donacion, EN_TRASLADO, null);
-      if (donacion.getDonante() != null && donacion.getEntidadBeneficiaria() != null) {
+      if (donacion.getEntidadBeneficiaria() != null) {
         publicador.publicar(
             new EventoInicioRuta(
                 List.of(donacion.getDonante(), donacion.getEntidadBeneficiaria()), idCamion));
@@ -81,7 +81,7 @@ public enum EstadoDonacion {
       }
       transicionar(donacion, ENTREGADA, null);
       donacion.getEntidadBeneficiaria().aplicarDonacionRecibida(donacion);
-      if (donacion.getDonante() != null && donacion.getIdCamion().isPresent()) {
+      if (donacion.getIdCamion().isPresent()) {
         publicador.publicar(
             new EventoEntregaExitosa(
                 donacion.getDonante(),
@@ -95,7 +95,7 @@ public enum EstadoDonacion {
     public void reportarFalla(
         Donacion donacion, String justificacion, PublicadorDeEventos publicador) {
       transicionar(donacion, ENTREGA_FALLIDA, justificacion);
-      if (donacion.getDonante() != null && donacion.getEntidadBeneficiaria() != null) {
+      if (donacion.getEntidadBeneficiaria() != null) {
         publicador.publicar(
             new EventoEntregaNoSatisfactoria(
                 donacion.getDonante(), donacion.getEntidadBeneficiaria(), justificacion));

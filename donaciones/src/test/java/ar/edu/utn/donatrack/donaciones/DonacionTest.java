@@ -695,13 +695,6 @@ class DonacionTest {
   }
 
   @Test
-  void fueDonadaPor_SinDonante_RetornaFalse() {
-    Donacion donacion = new Donacion();
-
-    assertFalse(donacion.fueDonadaPor(UUID.randomUUID()));
-  }
-
-  @Test
   void fueDonadaPor_IdNulo_LanzaNullPointerException() {
     Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
 

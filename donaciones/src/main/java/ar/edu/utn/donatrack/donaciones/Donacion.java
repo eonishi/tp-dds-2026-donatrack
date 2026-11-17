@@ -66,8 +66,8 @@ public class Donacion {
 
   private String idCamion;
 
-  @ManyToOne
-  @JoinColumn(name = "donante_id")
+  @ManyToOne(optional = false)
+  @JoinColumn(name = "donante_id", nullable = false)
   private Donante donante;
 
   protected Donacion() {}
@@ -313,16 +313,13 @@ public class Donacion {
   /**
    * Indica si esta donación la hizo la persona donante indicada.
    *
-   * <p>Una donación sin donante (solo posible con datos cargados por fuera del dominio) no pertenece
-   * a nadie.
-   *
    * @param donanteId identificador de la persona donante (no nulo)
    * @return {@code true} si la donación la hizo el donante con ese identificador
    * @throws NullPointerException si {@code donanteId} es {@code null}
    */
   public boolean fueDonadaPor(UUID donanteId) {
     Objects.requireNonNull(donanteId, "donanteId no puede ser null");
-    return donante != null && donanteId.equals(donante.getId());
+    return donanteId.equals(donante.getId());
   }
 
   /**
