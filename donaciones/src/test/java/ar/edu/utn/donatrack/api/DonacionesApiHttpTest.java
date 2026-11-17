@@ -484,6 +484,23 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
   }
 
   @Test
+  void donanteConDonacionesNoSePuedeEliminar() throws Exception {
+    UUID donanteId = crearDonante();
+    UUID donacionId = crearDonacion(donanteId, "Arroz");
+
+    HttpResponse<String> borrado = request("DELETE", "/api/v1/donantes/" + donanteId, null);
+
+    assertEquals(409, borrado.statusCode());
+    assertEquals(
+        "No se puede eliminar un donante con donaciones asociadas.",
+        json(borrado).get("message").asText());
+    assertEquals(200, request("GET", "/api/v1/donantes/" + donanteId, null).statusCode());
+
+    assertEquals(204, request("DELETE", "/api/v1/donaciones/" + donacionId, null).statusCode());
+    assertEquals(204, request("DELETE", "/api/v1/donantes/" + donanteId, null).statusCode());
+  }
+
+  @Test
   void entidadConDonacionAsignadaNoSePuedeEliminar() throws Exception {
     UUID donanteId = crearDonante();
     long entidadId = crearEntidad("Comedor Con Donaciones");

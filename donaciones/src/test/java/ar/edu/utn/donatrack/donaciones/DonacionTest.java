@@ -31,6 +31,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class DonacionTest {
@@ -678,6 +679,36 @@ class DonacionTest {
   }
 
   @Test
+  void fueDonadaPor_MismoDonante_RetornaTrue() {
+    UUID donanteId = UUID.randomUUID();
+    Donacion donacion = nuevaDonacion(crearDonanteConId(donanteId), List.of(crearBienDummy()));
+
+    assertTrue(donacion.fueDonadaPor(donanteId));
+  }
+
+  @Test
+  void fueDonadaPor_OtroDonante_RetornaFalse() {
+    Donacion donacion =
+        nuevaDonacion(crearDonanteConId(UUID.randomUUID()), List.of(crearBienDummy()));
+
+    assertFalse(donacion.fueDonadaPor(UUID.randomUUID()));
+  }
+
+  @Test
+  void fueDonadaPor_SinDonante_RetornaFalse() {
+    Donacion donacion = new Donacion();
+
+    assertFalse(donacion.fueDonadaPor(UUID.randomUUID()));
+  }
+
+  @Test
+  void fueDonadaPor_IdNulo_LanzaNullPointerException() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+
+    assertThrows(NullPointerException.class, () -> donacion.fueDonadaPor(null));
+  }
+
+  @Test
   void estaAsignadaA_SinEntidad_RetornaFalse() {
     Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
 
@@ -862,6 +893,18 @@ class DonacionTest {
         null,
         EstadoUso.NO_APLICA,
         new SubCategoria("X", Categoria.ALIMENTO));
+  }
+
+  private static Donante crearDonanteConId(UUID id) {
+    return new PersonaHumana(
+        id,
+        MedioDeContacto.correo("test@test.com"),
+        "Juan",
+        "Perez",
+        "12345678",
+        TipoDocumento.DNI,
+        Genero.MASCULINO,
+        "Calle Falsa 123");
   }
 
   private static Donante crearDonanteDummy() {
