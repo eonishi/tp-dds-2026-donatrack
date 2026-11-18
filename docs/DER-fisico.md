@@ -17,7 +17,8 @@ erDiagram
         uuid id PK
         varchar documento "DNI, CUIT, ..."
         varchar numdocumento
-        bigint contacto_predeterminado_id FK
+        varchar predeterminado_canal "CORREO, SMS, WHATSAPP"
+        varchar predeterminado_contacto
     }
     personahumana {
         uuid id PK, FK
@@ -38,20 +39,17 @@ erDiagram
         varchar nombre
         varchar apellido
     }
-    mediodecontacto {
-        bigint id PK
-        uuid donante_id FK
+    donante_medio_de_contacto {
+        uuid donante_id PK, FK
+        int orden PK
+        varchar canal "CORREO, SMS, WHATSAPP"
         varchar contacto
     }
-    correoelectronico {
-        bigint id PK, FK
-        bigint entidad_id FK "correos de una entidad"
-    }
-    sms {
-        bigint id PK, FK
-    }
-    whatsapp {
-        bigint id PK, FK
+    entidad_correo {
+        bigint entidad_id PK, FK
+        int orden PK
+        varchar canal "siempre CORREO"
+        varchar contacto
     }
 
     entidadbeneficiaria {
@@ -147,12 +145,8 @@ erDiagram
     donante ||--o| personahumana : "es"
     donante ||--o| personajejuridica : "es"
     personajejuridica ||--o{ representante : "tiene"
-    donante ||--o{ mediodecontacto : "se contacta por"
-    donante }o--o| mediodecontacto : "prefiere"
-    mediodecontacto ||--o| correoelectronico : "es"
-    mediodecontacto ||--o| sms : "es"
-    mediodecontacto ||--o| whatsapp : "es"
-    entidadbeneficiaria ||--o{ correoelectronico : "recibe avisos en"
+    donante ||--o{ donante_medio_de_contacto : "se contacta por"
+    entidadbeneficiaria ||--o{ entidad_correo : "recibe avisos en"
 
     entidadbeneficiaria ||--o{ necesidad : "declara"
     subcategoria ||--o{ necesidad : "clasifica"

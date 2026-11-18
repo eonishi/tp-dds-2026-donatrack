@@ -5,8 +5,6 @@ import static io.javalin.apibuilder.ApiBuilder.get;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
-import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
-import ar.edu.utn.donatrack.donaciones.HistorialEstado;
 import ar.edu.utn.donatrack.security.AuthService;
 import io.javalin.http.Context;
 import java.time.LocalDateTime;
@@ -61,7 +59,7 @@ public final class PaginasPublicasController {
   private void entregas(Context ctx) {
     List<EntregaPublica> entregas =
         donaciones.getDonaciones().stream()
-            .filter(d -> d.getEstado() == EstadoDonacion.ENTREGADA)
+            .filter(Donacion::estaEntregada)
             .filter(d -> d.getEntidadBeneficiaria() != null)
             .map(PaginasPublicasController::entregaPublica)
             .sorted(Comparator.comparing(EntregaPublica::orden).reversed())
@@ -110,12 +108,7 @@ public final class PaginasPublicasController {
   record DetalleEntrega(String fecha, List<String> bienes, List<String> fotos) {}
 
   private static EntregaPublica entregaPublica(Donacion donacion) {
-    LocalDateTime fecha =
-        donacion.getHistorialEstado().stream()
-            .filter(h -> h.getEstadoAlcanzado() == EstadoDonacion.ENTREGADA)
-            .map(HistorialEstado::getFecha)
-            .max(Comparator.naturalOrder())
-            .orElse(LocalDateTime.MIN);
+    LocalDateTime fecha = donacion.fechaDeEntrega().orElse(LocalDateTime.MIN);
     return new EntregaPublica(
         donacion.getEntidadBeneficiaria().getRazonSocial(),
         fecha.equals(LocalDateTime.MIN) ? "" : fecha.format(FORMATO_FECHA),

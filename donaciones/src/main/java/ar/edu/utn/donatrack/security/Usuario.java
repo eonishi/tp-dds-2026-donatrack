@@ -90,6 +90,10 @@ public class Usuario {
     return Optional.ofNullable(entidadId);
   }
 
+  void cambiarEmail(String nuevo) {
+    this.email = Objects.requireNonNull(nuevo).trim().toLowerCase();
+  }
+
   void vincularEntidad(Long entidadId) {
     this.entidadId = Objects.requireNonNull(entidadId);
   }

@@ -1,13 +1,19 @@
 package ar.edu.utn.donatrack.donantes;
 
 import ar.edu.utn.donatrack.notificaciones.Notificable;
+import ar.edu.utn.donatrack.notificaciones.NotificadorPorCanal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import javax.persistence.CascadeType;
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
+import javax.persistence.CollectionTable;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -17,8 +23,7 @@ import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
+import javax.persistence.OrderColumn;
 
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
@@ -32,12 +37,20 @@ public abstract class Donante implements Notificable {
   @Enumerated(EnumType.STRING)
   protected TipoDocumento documento;
 
-  @OneToMany(cascade = CascadeType.ALL)
-  @JoinColumn(name = "donante_id")
+  @ElementCollection
+  @CollectionTable(
+      name = "donante_medio_de_contacto",
+      joinColumns = @JoinColumn(name = "donante_id"))
+  @OrderColumn(name = "orden")
   protected List<MedioDeContacto> mediosDeContacto = new ArrayList<>();
 
-  @ManyToOne(cascade = CascadeType.PERSIST)
-  @JoinColumn(name = "contacto_predeterminado_id")
+  // Es un valor, no una referencia a una fila de la lista: se guarda la copia. Sigue siendo "uno de
+  // los medios" porque los medios se comparan por canal y contacto.
+  @Embedded
+  @AttributeOverrides({
+    @AttributeOverride(name = "canal", column = @Column(name = "predeterminado_canal")),
+    @AttributeOverride(name = "contacto", column = @Column(name = "predeterminado_contacto"))
+  })
   protected MedioDeContacto contactoPredeterminado;
 
   protected Donante() {}
@@ -77,6 +90,12 @@ public abstract class Donante implements Notificable {
     return this.contactoPredeterminado;
   }
 
+  /** El donante se notifica solo por su medio de contacto predeterminado. */
+  @Override
+  public void notificar(String mensaje, NotificadorPorCanal canales) {
+    contactoPredeterminado.enviar(mensaje, canales);
+  }
+
   public List<MedioDeContacto> getMediosDeContacto() {
     return Collections.unmodifiableList(mediosDeContacto);
   }
@@ -91,7 +110,7 @@ public abstract class Donante implements Notificable {
 
   public Optional<String> extraerEmail() {
     return mediosDeContacto.stream()
-        .filter(CorreoElectronico.class::isInstance)
+        .filter(MedioDeContacto::esCorreo)
         .map(MedioDeContacto::getContacto)
         .findFirst();
   }

@@ -2,41 +2,55 @@ package ar.edu.utn.donatrack.notificaciones;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
+import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.MedioDeContacto;
-import ar.edu.utn.donatrack.notificaciones.payloads.SinPayload;
+import ar.edu.utn.donatrack.donantes.PersonaHumana;
+import ar.edu.utn.donatrack.donantes.TipoDocumento;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
-/** Verifies {@link Notificacion} state transitions: PENDIENTE → ENVIADA, PENDIENTE → FALLIDA. */
+/** Verifies {@link Notificacion} construction, invariants and delegation to its recipient. */
 class NotificacionTest {
-
-  private final MedioDeContacto medio = new CorreoElectronico("test@test.com");
+  private final PersonaHumana donante =
+      new PersonaHumana(
+          MedioDeContacto.correo("donante@test.com"),
+          "Ana",
+          "Pérez",
+          "30111222",
+          TipoDocumento.DNI,
+          Genero.FEMENINO,
+          "Calle 123");
 
   @Test
-  void notificacionNueva_estadoInicialPendiente() {
-    Notificacion notif =
-        new Notificacion(medio, "msg", SinPayload.INSTANCE, EstadoNotificacion.PENDIENTE);
+  void notificacionNueva_conservaDestinatarioYMensaje() {
+    Notificacion notif = new Notificacion(donante, "msg");
 
-    assertEquals(EstadoNotificacion.PENDIENTE, notif.getEstado());
+    assertSame(donante, notif.destinatario());
+    assertEquals("msg", notif.mensaje());
   }
 
   @Test
-  void marcarEnviada_cambiaEstadoAEnviada() {
-    Notificacion notif =
-        new Notificacion(medio, "msg", SinPayload.INSTANCE, EstadoNotificacion.PENDIENTE);
+  void enviarCon_delegaEnElDestinatario() {
+    List<String> correos = new ArrayList<>();
+    NotificadorPorCanal canales =
+        new NotificadorPorCanal(
+            (destinatario, asunto, mensaje) -> {
+              correos.add(destinatario + "|" + mensaje);
+              return ResultadoEnvio.aceptado();
+            },
+            (destinatario, mensaje) -> ResultadoEnvio.fallido("No corresponde"),
+            (destinatario, mensaje) -> ResultadoEnvio.fallido("No corresponde"));
+    Notificacion notif = new Notificacion(donante, "Hola");
 
-    notif.marcarEnviada();
+    notif.enviarCon(canales);
 
-    assertEquals(EstadoNotificacion.ENVIADA, notif.getEstado());
+    assertEquals(List.of("donante@test.com|Hola"), correos);
   }
 
   @Test
-  void marcarFallida_cambiaEstadoAFallida() {
-    Notificacion notif =
-        new Notificacion(medio, "msg", SinPayload.INSTANCE, EstadoNotificacion.PENDIENTE);
-
-    notif.marcarFallida("El proveedor rechazó el envío.");
-
-    assertEquals(EstadoNotificacion.FALLIDA, notif.getEstado());
+  void constructor_rechazaArgumentosNulos() {
+    assertThrows(NullPointerException.class, () -> new Notificacion(null, "msg"));
+    assertThrows(NullPointerException.class, () -> new Notificacion(donante, null));
   }
 }

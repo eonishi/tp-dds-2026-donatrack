@@ -1,6 +1,6 @@
 package ar.edu.utn.donatrack.notificaciones.infraestructura;
 
-import ar.edu.utn.donatrack.notificaciones.GatewaySms;
+import ar.edu.utn.donatrack.notificaciones.GatewayMensajes;
 import ar.edu.utn.donatrack.notificaciones.ResultadoEnvio;
 import java.io.IOException;
 import java.net.URI;
@@ -13,15 +13,23 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.Objects;
 
-public class GatewayTwilio implements GatewaySms {
+/** Envía SMS o WhatsApp por la API de mensajes de Twilio; solo cambian remitente y prefijo. */
+public class GatewayTwilio implements GatewayMensajes {
+  private static final String PREFIJO_WHATSAPP = "whatsapp:";
+
   private final HttpClient client;
   private final String accountSid;
-  private final String authorization;
   private final String authToken;
-  private final String smsRemitente;
+  private final String authorization;
+  private final String remitente;
+  private final String prefijoDestinatario;
 
-  public GatewayTwilio(
-      HttpClient client, String accountSid, String authToken, String smsRemitente) {
+  private GatewayTwilio(
+      HttpClient client,
+      String accountSid,
+      String authToken,
+      String remitente,
+      String prefijoDestinatario) {
     this.client = Objects.requireNonNull(client);
     this.accountSid = Objects.requireNonNull(accountSid);
     this.authToken = Objects.requireNonNull(authToken);
@@ -29,17 +37,25 @@ public class GatewayTwilio implements GatewaySms {
         "Basic "
             + Base64.getEncoder()
                 .encodeToString((accountSid + ":" + authToken).getBytes(StandardCharsets.UTF_8));
-    this.smsRemitente = Objects.requireNonNull(smsRemitente);
+    this.remitente = Objects.requireNonNull(remitente);
+    this.prefijoDestinatario = prefijoDestinatario;
+  }
+
+  public static GatewayTwilio sms(
+      HttpClient client, String accountSid, String authToken, String remitente) {
+    return new GatewayTwilio(client, accountSid, authToken, remitente, "");
+  }
+
+  public static GatewayTwilio whatsapp(
+      HttpClient client, String accountSid, String authToken, String remitente) {
+    return new GatewayTwilio(client, accountSid, authToken, remitente, PREFIJO_WHATSAPP);
   }
 
   @Override
   public ResultadoEnvio enviar(String destinatario, String mensaje) {
-    return enviarMensaje(smsRemitente, destinatario, mensaje);
-  }
-
-  private ResultadoEnvio enviarMensaje(String remitente, String destinatario, String mensaje) {
     String form =
-        "To=%s&From=%s&Body=%s".formatted(valor(destinatario), valor(remitente), valor(mensaje));
+        "To=%s&From=%s&Body=%s"
+            .formatted(valor(conPrefijo(destinatario)), valor(remitente), valor(mensaje));
     HttpRequest request =
         HttpRequest.newBuilder(
                 URI.create(
@@ -63,6 +79,10 @@ public class GatewayTwilio implements GatewaySms {
       Thread.currentThread().interrupt();
       return ResultadoEnvio.fallido("El envío por Twilio fue interrumpido.");
     }
+  }
+
+  private String conPrefijo(String numero) {
+    return numero.startsWith(prefijoDestinatario) ? numero : prefijoDestinatario + numero;
   }
 
   private String valor(String texto) {

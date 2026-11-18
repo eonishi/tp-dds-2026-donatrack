@@ -4,7 +4,7 @@
 %%  ante: inactividad de una persona donante, asignación de donaciones a la
 %%  entidad beneficiaria, inicio de rutas de las entregas y estado de las
 %%  entregas."
-%% Patrón Template Method (EventoNotificable.generarNotificaciones) + payloads.
+%% Patrón Template Method (EventoNotificable.generarNotificaciones).
 %% Fragmento mínimo del dominio involucrado.
 %% ============================================================================
 classDiagram
@@ -21,41 +21,25 @@ classDiagram
     class EventoEntregaNoSatisfactoria
     class EventoAusenciaDonante
     class Notificacion {
-        -destinatario: MedioDeContacto
+        -destinatario: Notificable
         -mensaje: String
-        -payload: NotificacionPayload
-        -fechaCreacion: LocalDateTime
-        -estado: EstadoNotificacion
-        +marcarEnviada()
-        +marcarFallida()
-    }
-    class NotificacionPayload {
-        <<interface>>
-    }
-    class ComprobanteEntrega
-    class InfoMapa
-    class SinPayload
-    class EstadoNotificacion {
-        <<enumeration>>
-        PENDIENTE
-        ENVIADA
-        FALLIDA
+        +enviarCon(canales: NotificadorPorCanal)
     }
     class Notificable {
         <<interface>>
-        +getMediosDeContacto() List~MedioDeContacto~
+        +notificar(mensaje: String, canales: NotificadorPorCanal)
     }
-    class Notificador {
-        <<interface>>
-        +enviar(destinatario: MedioDeContacto, mensaje: String)
+    class NotificadorPorCanal {
+        +enviarPorCorreo(direccion: String, mensaje: String)
+        +enviarPorSms(numero: String, mensaje: String)
+        +enviarPorWhatsapp(numero: String, mensaje: String)
     }
-    class NotificadorSimulado
     class Donante
     class EntidadBeneficiaria
     class MedioDeContacto {
         <<abstract>>
         -contacto: String
-        +aceptar(notificador: Notificador, mensaje: String)
+        +enviar(mensaje: String, canales: NotificadorPorCanal)
     }
     class CorreoElectronico
     class Whatsapp
@@ -68,20 +52,14 @@ classDiagram
     EventoNotificable <|-- EventoEntregaNoSatisfactoria
     EventoNotificable <|-- EventoAusenciaDonante
     EventoNotificable ..> Notificacion : genera
-    Notificacion *-- MedioDeContacto : destinatario
-    Notificacion o-- NotificacionPayload : payload
-    Notificacion --> EstadoNotificacion : estado
-    NotificacionPayload <|.. ComprobanteEntrega
-    NotificacionPayload <|.. InfoMapa
-    NotificacionPayload <|.. SinPayload
+    Notificacion --> Notificable : destinatario
     Donante ..|> Notificable
     EntidadBeneficiaria ..|> Notificable
-    Notificador <|.. NotificadorSimulado
     MedioDeContacto <|-- CorreoElectronico
     MedioDeContacto <|-- Whatsapp
     MedioDeContacto <|-- Sms
-    MedioDeContacto ..> Notificador : aceptar
-    EventoInicioRuta ..> InfoMapa : enlace al mapa
-    EventoEntregaExitosa ..> ComprobanteEntrega : comprobante
+    Donante ..> MedioDeContacto : notifica por el predeterminado
+    EntidadBeneficiaria ..> MedioDeContacto : notifica a todos sus correos
+    MedioDeContacto ..> NotificadorPorCanal : enviar
     EventoAusenciaDonante --> Donante : donante inactivo >20 días
     EventoEntregaNoSatisfactoria --> EntidadBeneficiaria : entrega fallida

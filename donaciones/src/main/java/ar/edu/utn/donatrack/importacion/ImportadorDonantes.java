@@ -2,17 +2,12 @@ package ar.edu.utn.donatrack.importacion;
 
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.security.AuthService;
-import ar.edu.utn.donatrack.utilidades.DonanteCsv;
-import ar.edu.utn.donatrack.utilidades.ImportadorDonantesCsv;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -29,8 +24,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Importa personas donantes desde un CSV (más de 10.000 filas) y les da una cuenta para activar.
@@ -41,7 +36,7 @@ import java.util.logging.Logger;
  * no hay que hashear 10.000 contraseñas ni mandarlas por correo.
  */
 public class ImportadorDonantes implements WithSimplePersistenceUnit {
-  private static final Logger LOG = Logger.getLogger(ImportadorDonantes.class.getName());
+  private static final Logger LOGGER = LoggerFactory.getLogger(ImportadorDonantes.class);
   static final int LOTE = 500;
 
   private final AuthService authService;
@@ -68,13 +63,13 @@ public class ImportadorDonantes implements WithSimplePersistenceUnit {
           try (InputStream contenido = Files.newInputStream(archivo)) {
             importar(contenido, importacion);
           } catch (IOException | RuntimeException e) {
-            LOG.log(Level.WARNING, "Falló la importación " + importacion.getId(), e);
+            LOGGER.warn("Falló la importación {}", importacion.getId(), e);
             importacion.fallar("No se pudo leer el archivo: revisá que sea un CSV válido.");
           } finally {
             try {
               Files.deleteIfExists(archivo);
             } catch (IOException e) {
-              LOG.log(Level.FINE, "No se pudo borrar el archivo temporal", e);
+              LOGGER.debug("No se pudo borrar el archivo temporal", e);
             }
           }
         });
@@ -103,7 +98,7 @@ public class ImportadorDonantes implements WithSimplePersistenceUnit {
     Map<String, UUID> porDocumento = donantesPorDocumento();
     Set<String> correosConCuenta = correosConCuenta();
 
-    try (Reader lector = sinBom(contenido)) {
+    try (Reader lector = LectorCsv.abrir(contenido)) {
       CsvToBean<DonanteCsv> filas =
           new CsvToBeanBuilder<DonanteCsv>(lector)
               .withType(DonanteCsv.class)
@@ -140,25 +135,40 @@ public class ImportadorDonantes implements WithSimplePersistenceUnit {
     if (lote.isEmpty()) {
       return;
     }
+    Lote resultado = new Lote();
     withTransaction(
         () -> {
           for (Fila fila : lote) {
-            importacion.procesada();
             try {
-              importarFila(fila.datos(), importacion, porCorreo, porDocumento, correosConCuenta);
+              importarFila(fila.datos(), resultado, porCorreo, porDocumento, correosConCuenta);
             } catch (RuntimeException e) {
-              importacion.error(fila.numero(), motivo(e));
+              resultado.errores.add(new ErrorDeFila(fila.numero(), motivo(e)));
             }
           }
         });
-    // Cada lote se suelta del contexto de persistencia: si no, 10.000 donantes quedarían en
-    // memoria y cada flush revisaría todos.
+    // Cada lote se suelta del contexto de persistencia: si no, 10.000 donantes quedarían en memoria
+    // y cada flush revisaría todos.
     entityManager().clear();
+    // Recién acá el lote quedó guardado: la vista no muestra filas que todavía no están en la base.
+    importacion.loteGuardado(
+        lote.size(), resultado.donantesNuevos, resultado.existentes, resultado.cuentas);
+    resultado.errores.forEach(e -> importacion.error(e.fila(), e.motivo()));
   }
 
+  /** Lo que pasó con un lote: se cuenta después del commit. */
+  private static final class Lote {
+    private final List<ErrorDeFila> errores = new ArrayList<>();
+    private int donantesNuevos;
+    private int existentes;
+    private int cuentas;
+  }
+
+  private record ErrorDeFila(long fila, String motivo) {}
+
+  /** Valida la fila y persiste el donante (si es nuevo) y su cuenta pendiente de activación. */
   private void importarFila(
       DonanteCsv csv,
-      Importacion importacion,
+      Lote lote,
       Map<String, UUID> porCorreo,
       Map<String, UUID> porDocumento,
       Set<String> correosConCuenta) {
@@ -173,16 +183,19 @@ public class ImportadorDonantes implements WithSimplePersistenceUnit {
       Donante donante = ImportadorDonantesCsv.mapearDonante(csv);
       persist(donante);
       donanteId = donante.getId();
+      lote.donantesNuevos++;
+      // Se anota ya, así una fila repetida más abajo en el mismo archivo cuenta como existente.
       porCorreo.put(correo, donanteId);
       porDocumento.put(documento, donanteId);
-      importacion.donanteNuevo();
     } else {
-      importacion.donanteExistente();
+      lote.existentes++;
     }
-    if (!correosConCuenta.contains(correo) && authService.agregarPendiente(correo, donanteId)) {
-      importacion.cuentaCreada();
+    // El conjunto se cargó entero al empezar y se actualiza acá, así que no hace falta preguntarle
+    // a la base fila por fila.
+    if (correosConCuenta.add(correo)) {
+      persist(authService.cuentaPendiente(correo, donanteId));
+      lote.cuentas++;
     }
-    correosConCuenta.add(correo);
   }
 
   private static String obligatorio(String valor, String motivo) {
@@ -207,7 +220,7 @@ public class ImportadorDonantes implements WithSimplePersistenceUnit {
     for (Object[] fila :
         createQuery(
                 "select lower(c.contacto), d.id from Donante d join d.mediosDeContacto c"
-                    + " where type(c) = CorreoElectronico",
+                    + " where c.canal = ar.edu.utn.donatrack.donantes.Canal.CORREO",
                 Object[].class)
             .getResultList()) {
       mapa.putIfAbsent((String) fila[0], (UUID) fila[1]);
@@ -228,19 +241,5 @@ public class ImportadorDonantes implements WithSimplePersistenceUnit {
   private Set<String> correosConCuenta() {
     return new HashSet<>(
         createQuery("select u.email from Usuario u", String.class).getResultList());
-  }
-
-  /** Saltea el BOM de UTF-8 que agrega Excel al guardar como CSV. */
-  private static Reader sinBom(InputStream contenido) throws IOException {
-    BufferedInputStream entrada = new BufferedInputStream(contenido);
-    entrada.mark(3);
-    byte[] inicio = entrada.readNBytes(3);
-    if (inicio.length < 3
-        || (inicio[0] & 0xFF) != 0xEF
-        || (inicio[1] & 0xFF) != 0xBB
-        || (inicio[2] & 0xFF) != 0xBF) {
-      entrada.reset();
-    }
-    return new InputStreamReader(entrada, StandardCharsets.UTF_8);
   }
 }

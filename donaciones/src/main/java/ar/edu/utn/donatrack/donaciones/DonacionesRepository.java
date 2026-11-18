@@ -45,6 +45,15 @@ public class DonacionesRepository implements WithSimplePersistenceUnit {
     return donacionesConEstado(EstadoDonacion.ENTREGADA);
   }
 
+  /** Si la persona donante tiene alguna donación, en cualquier estado. */
+  public boolean tieneDonacionesDe(UUID donanteId) {
+    return !createQuery("SELECT d.id FROM Donacion d WHERE d.donante.id = :donante", UUID.class)
+        .setParameter("donante", donanteId)
+        .setMaxResults(1)
+        .getResultList()
+        .isEmpty();
+  }
+
   /** Donaciones de una persona donante, en cualquier estado. */
   public List<Donacion> getDonacionesDeDonante(UUID donanteId) {
     return List.copyOf(

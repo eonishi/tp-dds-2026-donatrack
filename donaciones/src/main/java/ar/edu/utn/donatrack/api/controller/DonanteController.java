@@ -14,20 +14,20 @@ import ar.edu.utn.donatrack.api.error.ApiException;
 import ar.edu.utn.donatrack.api.mappers.ApiMapper;
 import ar.edu.utn.donatrack.api.validation.DtoValidator;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
 import ar.edu.utn.donatrack.donantes.Representante;
-import ar.edu.utn.donatrack.donantes.Sms;
-import ar.edu.utn.donatrack.donantes.Whatsapp;
+import ar.edu.utn.donatrack.donantes.TipoPersona;
+import ar.edu.utn.donatrack.notificaciones.PublicadorDiferido;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoBienvenida;
-import ar.edu.utn.donatrack.utilidades.TipoPersona;
+import ar.edu.utn.donatrack.security.Role;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
+import io.javalin.security.RouteRole;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -46,18 +46,20 @@ public final class DonanteController implements WithSimplePersistenceUnit {
     this.notificaciones = notificaciones;
   }
 
+  private static final RouteRole[] ADMIN_O_DONANTE = {Role.ADMIN, Role.DONANTE};
+
   public void routes() {
     path(
         "/donantes",
         () -> {
-          get(this::listar);
-          post(this::crear);
+          get(this::listar, Role.ADMIN);
+          post(this::crear, ADMIN_O_DONANTE);
           path(
               "/{id}",
               () -> {
-                get(this::obtener);
-                put(this::actualizar);
-                delete(this::eliminar);
+                get(this::obtener, ADMIN_O_DONANTE);
+                put(this::actualizar, ADMIN_O_DONANTE);
+                delete(this::eliminar, ADMIN_O_DONANTE);
               });
         });
   }
@@ -73,13 +75,15 @@ public final class DonanteController implements WithSimplePersistenceUnit {
   private void crear(Context ctx) {
     DonanteRequest request = DtoValidator.validate(ctx.bodyAsClass(DonanteRequest.class));
     validar(request, null);
+    PublicadorDiferido publicador = notificaciones.publicadorDiferido();
     DonanteResponse creado =
         withTransaction(
             () -> {
               Donante donante = donantes.save(construirDonante(request));
-              notificaciones.enviar(new EventoBienvenida(donante).generarNotificaciones());
+              publicador.publicar(new EventoBienvenida(donante));
               return donante(donante);
             });
+    publicador.enviarPendientes();
     ctx.status(201).json(creado);
   }
 
@@ -99,8 +103,7 @@ public final class DonanteController implements WithSimplePersistenceUnit {
   private void eliminar(Context ctx) {
     UUID id = HttpSupport.id(ctx, "id");
     buscar(id);
-    if (donaciones.getDonaciones().stream()
-        .anyMatch(donacion -> donacion.getDonante().getId().equals(id))) {
+    if (donaciones.tieneDonacionesDe(id)) {
       throw ApiException.conflict("No se puede eliminar un donante con donaciones asociadas.");
     }
     withTransaction(() -> donantes.deleteById(id));
@@ -112,10 +115,9 @@ public final class DonanteController implements WithSimplePersistenceUnit {
   }
 
   private Donante construirDonante(DonanteRequest request) {
-    CorreoElectronico email =
+    MedioDeContacto email =
         medios(request).stream()
-            .filter(CorreoElectronico.class::isInstance)
-            .map(CorreoElectronico.class::cast)
+            .filter(MedioDeContacto::esCorreo)
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Debe incluir un medio EMAIL."));
     if (request.tipoPersona() == TipoPersona.HUMANA) {
@@ -215,9 +217,9 @@ public final class DonanteController implements WithSimplePersistenceUnit {
 
   private MedioDeContacto medio(MedioContactoRequest contacto) {
     return switch (contacto.tipo().toUpperCase(Locale.ROOT)) {
-      case "EMAIL" -> new CorreoElectronico(contacto.contacto());
-      case "WHATSAPP" -> new Whatsapp(contacto.contacto());
-      case "SMS" -> new Sms(contacto.contacto());
+      case "EMAIL" -> MedioDeContacto.correo(contacto.contacto());
+      case "WHATSAPP" -> MedioDeContacto.whatsapp(contacto.contacto());
+      case "SMS" -> MedioDeContacto.sms(contacto.contacto());
       default ->
           throw new IllegalArgumentException("tipo de contacto inválido: " + contacto.tipo());
     };

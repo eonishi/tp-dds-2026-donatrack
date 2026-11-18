@@ -29,7 +29,7 @@ jobs:
       matrix:
         include:
           - modulo: donaciones
-            main_class: ar.edu.utn.donatrack.api.DonaTrackApplication
+            main_class: ar.edu.utn.donatrack.app.DonaTrackApplication
           - modulo: logistica
             main_class: ar.edu.utn.donatrack.logistica.MainLogistica
 

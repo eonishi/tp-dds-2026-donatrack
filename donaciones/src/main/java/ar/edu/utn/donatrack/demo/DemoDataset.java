@@ -12,14 +12,15 @@ import ar.edu.utn.donatrack.bienes.SubcategoriasRepository;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.donantes.TipoOrganizacion;
 import ar.edu.utn.donatrack.notificaciones.AvisoBandeja;
+import ar.edu.utn.donatrack.notificaciones.PublicadorDeEventos;
 import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
 import ar.edu.utn.donatrack.propuestas.matchmaking.MatchCandidato;
 import ar.edu.utn.donatrack.security.AuthService;
@@ -83,7 +84,7 @@ public final class DemoDataset implements WithSimplePersistenceUnit {
     final SubCategoria clothing = category("[DEMO] Abrigos", Categoria.VESTIMENTA);
     PersonaHumana human =
         new PersonaHumana(
-            new CorreoElectronico(EMAILS.get(1)),
+            MedioDeContacto.correo(EMAILS.get(1)),
             "Ana",
             "Ejemplo",
             "99000001",
@@ -93,7 +94,7 @@ public final class DemoDataset implements WithSimplePersistenceUnit {
     human.setEdad(32);
     PersonajeJuridica legal =
         new PersonajeJuridica(
-            new CorreoElectronico(EMAILS.get(2)),
+            MedioDeContacto.correo(EMAILS.get(2)),
             "30999999991",
             TipoDocumento.CUIT,
             "[DEMO] Cooperativa Solidaria",
@@ -105,7 +106,7 @@ public final class DemoDataset implements WithSimplePersistenceUnit {
         new EntidadBeneficiaria(
             "[DEMO] Comedor Encuentro", "Av. Medrano 951, Buenos Aires", "+5491100000000");
     entity.ubicar(-34.5985, -58.4201);
-    entity.agregarCorreo(new CorreoElectronico(EMAILS.get(3)));
+    entity.agregarCorreo(MedioDeContacto.correo(EMAILS.get(3)));
     Necesidad pending =
         new Necesidad(chairs, 10, UnidadMedida.UNIDADES, "[DEMO] Sillas pendientes");
     Necesidad partial =
@@ -295,11 +296,13 @@ public final class DemoDataset implements WithSimplePersistenceUnit {
     if (target == EstadoDonacion.EN_DEPOSITO) {
       return;
     }
+    // Los datos de prueba recorren los estados sin avisar a nadie: no son hechos reales.
+    PublicadorDeEventos sinAvisos = evento -> {};
     if (target == EstadoDonacion.VENCIDA) {
       donation.marcarVencida();
       return;
     }
-    donation.confirmarEntidadBeneficiaria(entity);
+    donation.confirmarEntidadBeneficiaria(entity, sinAvisos);
     if (target == EstadoDonacion.ASIGNACION_REALIZADA) {
       return;
     }
@@ -307,12 +310,11 @@ public final class DemoDataset implements WithSimplePersistenceUnit {
     if (target == EstadoDonacion.LISTA_PARA_ENTREGAR) {
       return;
     }
-    donation.registrarCamion("DEMO-01");
-    donation.iniciarTraslado(null);
+    donation.iniciarTraslado("DEMO-01", sinAvisos);
     if (target == EstadoDonacion.ENTREGADA) {
-      donation.confirmarEntrega();
+      donation.confirmarEntrega(sinAvisos);
     } else if (target == EstadoDonacion.ENTREGA_FALLIDA) {
-      donation.reportarFalla("[DEMO] Entidad cerrada al llegar.");
+      donation.reportarFalla("[DEMO] Entidad cerrada al llegar.", sinAvisos);
     }
   }
 }

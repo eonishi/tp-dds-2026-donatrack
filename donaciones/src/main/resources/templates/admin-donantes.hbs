@@ -1,0 +1,52 @@
+{{#partial "titulo"}}Donantes · DonaTrack{{/partial}}
+
+{{#partial "contenido"}}
+<section class="py-4">
+    <div class="encabezado text-start mx-0 mb-4">
+        <span class="chip mb-3">Administración</span>
+        <h1 class="fs-2 fw-semibold">Personas donantes</h1>
+        <p>Las personas donantes registradas, incluidas las que entraron por <a href="/admin/importar">CSV</a>. Quien se carga desde acá recibe un correo de bienvenida con el enlace para activar su cuenta con su documento.</p>
+    </div>
+
+    <details class="tarjeta p-4 mb-4" {{#if formAbierto}}open{{/if}}>
+        <summary class="h5 mb-0">Registrar persona donante</summary>
+        <form method="post" action="/admin/donantes" class="registro-form mt-3">
+            {{#if error}}<div class="alert alert-danger py-2 small" role="alert">{{error}}</div>{{/if}}
+            <input type="hidden" name="rol" value="donante">
+            {{> partes/campos-donante}}
+            <button class="btn btn-primary rounded-pill px-4" type="submit">Registrar</button>
+        </form>
+    </details>
+
+    {{> partes/buscador ruta="/admin/donantes" nombre="donantes" placeholder="Nombre, razón social, documento, correo o teléfono"}}
+
+    {{#if donantes}}
+    <div class="tarjeta p-0 table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr><th scope="col">Nombre o razón social</th><th scope="col">Tipo</th><th scope="col">Documento</th><th scope="col">Contacto</th><th scope="col">Cuenta</th><th scope="col"><span class="visually-hidden">Acciones</span></th></tr>
+            </thead>
+            <tbody>
+                {{#each donantes}}
+                <tr>
+                    <td class="fw-semibold">{{nombre}}</td>
+                    <td>{{tipo}}</td>
+                    <td class="text-nowrap">{{documento}}</td>
+                    <td class="small text-break">{{correo}}{{#if telefono}}<br><span class="text-body-secondary">{{telefono}}</span>{{/if}}</td>
+                    <td><span class="badge rounded-pill {{cuentaClase}}">{{cuenta}}</span></td>
+                    <td class="text-end"><a class="btn btn-sm btn-outline-primary rounded-pill" href="{{editar}}">Editar<span class="visually-hidden"> a {{nombre}}</span></a></td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
+    {{> partes/paginas}}
+    {{else}}
+    <div class="tarjeta p-4 text-center"><p class="mb-0">{{#if q}}No hay donantes que coincidan con la búsqueda.{{else}}Todavía no hay donantes registrados.{{/if}}</p></div>
+    {{/if}}
+</section>
+{{/partial}}
+
+{{#partial "scripts"}}<script src="/registro.js" defer></script>{{/partial}}
+
+{{> layout}}

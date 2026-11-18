@@ -69,7 +69,7 @@ class DemoDatasetTest implements WithSimplePersistenceUnit {
           EnumSet.allOf(EstadoDonacion.class),
           EnumSet.copyOf(
               donations.stream()
-                  .filter(d -> donor.getDonanteId().orElseThrow().equals(d.getDonante().getId()))
+                  .filter(d -> d.fueDonadaPor(donor.getDonanteId().orElseThrow()))
                   .map(Donacion::getEstado)
                   .toList()));
       assertTrue(
@@ -79,8 +79,7 @@ class DemoDatasetTest implements WithSimplePersistenceUnit {
               >= 4);
     }
     assertTrue(
-        donations.stream()
-            .anyMatch(d -> human.getDonanteId().orElseThrow().equals(d.getDonante().getId())));
+        donations.stream().anyMatch(d -> d.fueDonadaPor(human.getDonanteId().orElseThrow())));
     EntidadBeneficiaria entity =
         find(EntidadBeneficiaria.class, beneficiary.getEntidadId().orElseThrow());
     assertEquals(7, entity.necesidades().size());

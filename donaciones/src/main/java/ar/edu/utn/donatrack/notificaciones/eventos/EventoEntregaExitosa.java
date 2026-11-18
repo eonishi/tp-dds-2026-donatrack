@@ -2,10 +2,7 @@ package ar.edu.utn.donatrack.notificaciones.eventos;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donantes.Donante;
-import ar.edu.utn.donatrack.notificaciones.DestinatariosNotificacion;
-import ar.edu.utn.donatrack.notificaciones.EstadoNotificacion;
 import ar.edu.utn.donatrack.notificaciones.Notificacion;
-import ar.edu.utn.donatrack.notificaciones.payloads.ComprobanteEntrega;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -13,10 +10,10 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Evento de entrega exitosa: notifica al donante y a la entidad beneficiaria con un {@link
- * ComprobanteEntrega} que incluye la fecha de entrega y la patente del camión.
+ * Evento de entrega exitosa: notifica al donante y a la entidad beneficiaria con un comprobante en
+ * el mensaje que incluye la fecha de entrega y la patente del camión.
  */
-public class EventoEntregaExitosa extends EventoNotificable {
+public class EventoEntregaExitosa implements EventoNotificable {
   private static final DateTimeFormatter FORMATO_FECHA_ENTREGA =
       DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
@@ -48,7 +45,6 @@ public class EventoEntregaExitosa extends EventoNotificable {
 
   @Override
   public List<Notificacion> generarNotificaciones() {
-    ComprobanteEntrega comprobante = new ComprobanteEntrega(fechaEntrega, idCamion);
     List<Notificacion> notificaciones = new ArrayList<>();
     String detalleEntrega =
         " Fecha y hora: "
@@ -61,17 +57,9 @@ public class EventoEntregaExitosa extends EventoNotificable {
             + entidad.getRazonSocial()
             + "."
             + detalleEntrega;
-    for (var medio : DestinatariosNotificacion.predeterminado(donante)) {
-      notificaciones.add(
-          new Notificacion(
-              donante, medio, mensajeDonante, comprobante, EstadoNotificacion.PENDIENTE));
-    }
+    notificaciones.add(new Notificacion(donante, mensajeDonante));
     String mensajeEntidad = "Has recibido una donación exitosamente." + detalleEntrega;
-    for (var medio : DestinatariosNotificacion.predeterminado(entidad)) {
-      notificaciones.add(
-          new Notificacion(
-              entidad, medio, mensajeEntidad, comprobante, EstadoNotificacion.PENDIENTE));
-    }
+    notificaciones.add(new Notificacion(entidad, mensajeEntidad));
     return notificaciones;
   }
 }

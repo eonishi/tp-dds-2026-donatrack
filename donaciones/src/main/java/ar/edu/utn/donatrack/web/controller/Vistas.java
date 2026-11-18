@@ -7,19 +7,17 @@ import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
 import ar.edu.utn.donatrack.donaciones.HistorialEstado;
 import ar.edu.utn.donatrack.notificaciones.AvisoBandeja;
 import ar.edu.utn.donatrack.notificaciones.BandejaNotificacionesRepository;
-import ar.edu.utn.donatrack.security.AuthService;
-import ar.edu.utn.donatrack.security.Role;
+import ar.edu.utn.donatrack.security.ControlDeAcceso;
 import ar.edu.utn.donatrack.security.Usuario;
 import io.javalin.http.Context;
-import io.javalin.http.ForbiddenResponse;
-import io.javalin.http.UnauthorizedResponse;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /** Ayudas comunes de los controllers de vistas: sesión, modelo base y formatos para mostrar. */
 final class Vistas {
@@ -29,16 +27,57 @@ final class Vistas {
   private Vistas() {}
 
   /**
-   * La persona con sesión, si tiene el rol pedido (los administradores pasan siempre). El filtro de
-   * rutas protegidas ya redirige al login a quien no tiene sesión.
+   * La persona con sesión. Los permisos ya los verificó {@link ControlDeAcceso} con los roles que
+   * declara la ruta, así que acá solo se la toma del request.
    */
-  static Usuario exigir(Context ctx, AuthService authService, Role rol) {
-    Usuario usuario =
-        authService.currentUser(ctx).orElseThrow(() -> new UnauthorizedResponse("Sin sesión."));
-    if (!usuario.hasRole(rol) && !usuario.hasRole(Role.ADMIN)) {
-      throw new ForbiddenResponse("Sin permiso.");
+  static Usuario usuario(Context ctx) {
+    return ControlDeAcceso.usuarioObligatorio(ctx);
+  }
+
+  /**
+   * Dirección absoluta de {@code ruta} para los enlaces que salen por correo o mensaje. Usa
+   * DONATRACK_WEB_ORIGIN si está definida (detrás de un proxy el host del pedido no sirve).
+   */
+  static String urlPublica(Context ctx, String ruta) {
+    String origen = System.getenv("DONATRACK_WEB_ORIGIN");
+    String base = origen == null || origen.isBlank() ? ctx.scheme() + "://" + ctx.host() : origen;
+    return base.replaceAll("/+$", "") + ruta;
+  }
+
+  /**
+   * Pagina un listado con búsqueda: deja en el modelo lo que muestra el partial {@code paginacion}
+   * (búsqueda, total, página actual y enlaces a la anterior y la siguiente) y devuelve desde qué
+   * fila traer. Una página pedida inválida o fuera de rango se corrige a la más cercana.
+   */
+  static int paginar(
+      Map<String, Object> modelo,
+      String ruta,
+      String busqueda,
+      long total,
+      String paginaPedida,
+      int porPagina) {
+    int paginas = (int) Math.max(1, (total + porPagina - 1) / porPagina);
+    int pagina = Math.min(paginas, Math.max(1, numero(paginaPedida)));
+    modelo.put("q", busqueda);
+    modelo.put("total", total);
+    modelo.put("pagina", pagina);
+    modelo.put("paginas", paginas);
+    String enlace = ruta + "?q=" + URLEncoder.encode(busqueda, StandardCharsets.UTF_8) + "&pagina=";
+    if (pagina > 1) {
+      modelo.put("anterior", enlace + (pagina - 1));
     }
-    return usuario;
+    if (pagina < paginas) {
+      modelo.put("siguiente", enlace + (pagina + 1));
+    }
+    return (pagina - 1) * porPagina;
+  }
+
+  private static int numero(String valor) {
+    try {
+      return valor == null ? 1 : Integer.parseInt(valor.trim());
+    } catch (NumberFormatException e) {
+      return 1;
+    }
   }
 
   static Map<String, Object> modelo(Usuario usuario) {
@@ -63,14 +102,6 @@ final class Vistas {
 
   static List<String> bienes(Donacion donacion) {
     return donacion.getBienes().stream().map(Vistas::describir).toList();
-  }
-
-  /** Cuándo llegó la donación a {@code estado} por última vez. */
-  static Optional<LocalDateTime> fechaDe(Donacion donacion, EstadoDonacion estado) {
-    return donacion.getHistorialEstado().stream()
-        .filter(h -> h.getEstadoAlcanzado() == estado)
-        .map(HistorialEstado::getFecha)
-        .max(Comparator.naturalOrder());
   }
 
   /** Último cambio de estado, para ordenar de lo más reciente a lo más viejo. */

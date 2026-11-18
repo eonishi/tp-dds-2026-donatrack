@@ -3,7 +3,7 @@
 ## *Objetivos de la entrega*
 
 * Incorporar nociones de Diseño UI/UX.  
-* Incorporar nociones de maquetado Web a través de los lenguajes HTML y CSS.  
+* Incorporar nociones de maquetado web a través de los lenguajes HTML y CSS.  
 * Incorporar patrones de arquitectura MVC a través de la implementación de un Cliente Liviano.  
 * Familiarizarse con técnicas y proveedores de despliegue en la nube.  
 * Familiarizarse con diferentes estrategias de integración. 
@@ -45,25 +45,23 @@ A continuación se detallan las pantallas que se deben soportar como mínimo.
 
 5. La persona donante debe poder filtrar sus donaciones realizadas por estado y categoría o subcategoría/s de bienes entregados.  
 6. La persona donante debe poder navegar por las entidades beneficiarias registradas.  
-7. La persona humana donante debe poder acceder a una sección de Incentivos y consultar misiones a realizar e insignias obtenidas.   ??????????
-8. La persona donante debe recibir notificaciones cuando una donación realizada por ella es asignada, cuando cumplió una misión, cuando sube de categoría o cuando la entidad beneficiaria asignada recibe la donación realizada.   
-9. La persona donante debe poder seguir en un mapa las entregas activas de las donaciones que realizó, visualizando el/los camiones asociados con ubicación y última actualización.
+7. La persona donante debe poder seguir en un mapa las entregas activas de las donaciones que realizó, visualizando el/los camiones asociados con ubicación y última actualización.
 
 **Entidad beneficiaria**
 
-10. La entidad beneficiaria debe poder registrar necesidades materiales concretas.   
-11. La entidad beneficiaria debe poder ver el estado de las donaciones asignadas a ella.  
-12. La entidad beneficiaria debe poder confirmar la recepción de una donación, cargando fotos de la misma.   
-13. La entidad beneficiaria debe recibir notificaciones en base a la asignación de donaciones y confirmación de recepción de entrega.   
-14. La entidad beneficiaria debe poder seguir en un mapa las entregas activas de las donaciones que debe recibir, visualizando el/los camiones asociados con ubicación y última actualización.
+8. La entidad beneficiaria debe poder registrar necesidades materiales concretas.   
+9. La entidad beneficiaria debe poder ver el estado de las donaciones asignadas a ella.  
+10. La entidad beneficiaria debe poder confirmar la recepción de una donación, cargando fotos de la misma.   
+11. La entidad beneficiaria debe recibir notificaciones en base a la asignación de donaciones y confirmación de recepción de entrega.   
+12. La entidad beneficiaria debe poder seguir en un mapa las entregas activas de las donaciones que debe recibir, visualizando el/los camiones asociados con ubicación y última actualización.
 
 **Persona administradora**
 
-15. La persona administradora debe registrar personas donantes y donaciones que haya recibido en el depósito, asociándolas a la persona donante correspondiente.   
-16. La persona administradora debe poder actualizar el estado de las donaciones disponibles en el depósito, en caso de que estén vencidas.   
-17. La persona administradora debe poder seleccionar la entidad beneficiaria final de una donación pendiente de asignación, a partir del resultado de ejecución de los algoritmos de selección.   
-18. La persona administradora debe poder administrar los camiones disponibles.   
-19. La persona administradora debe poder importar personas donantes ya registradas para otorgarles un usuario desde archivos CSV con más de 10.000 filas.
+13. La persona administradora debe registrar personas donantes y donaciones que haya recibido en el depósito, asociándolas a la persona donante correspondiente.   
+14. La persona administradora debe poder actualizar el estado de las donaciones disponibles en el depósito, en caso de que estén vencidas.   
+15. La persona administradora debe poder seleccionar la entidad beneficiaria final de una donación pendiente de asignación, a partir del resultado de ejecución de los algoritmos de selección.   
+16. La persona administradora debe poder administrar los camiones disponibles.   
+17. La persona administradora debe poder importar personas donantes ya registradas para otorgarles un usuario desde archivos CSV con más de 10.000 filas.
 
 ### Manejo de sesión y autenticación
 

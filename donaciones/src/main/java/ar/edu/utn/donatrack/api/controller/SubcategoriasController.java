@@ -9,6 +9,7 @@ import ar.edu.utn.donatrack.api.validation.DtoValidator;
 import ar.edu.utn.donatrack.bienes.Categoria;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.SubcategoriasRepository;
+import ar.edu.utn.donatrack.security.Role;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
 import jakarta.validation.constraints.NotBlank;
@@ -39,8 +40,8 @@ public final class SubcategoriasController implements WithSimplePersistenceUnit 
     path(
         "/subcategorias",
         () -> {
-          get(this::listar);
-          post(this::crear);
+          get(this::listar, Role.ADMIN, Role.DONANTE, Role.BENEFICIARIO);
+          post(this::crear, Role.ADMIN);
         });
   }
 

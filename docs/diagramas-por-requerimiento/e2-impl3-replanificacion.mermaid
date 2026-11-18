@@ -12,7 +12,7 @@ classDiagram
 
     class ServicioPlanificacionRutas {
         <<infraestructura>>
-        +planificar() List~LoteId~
+        +planificar() Optional~LoteId~
         +procesarResultado(resultado: ResultadoPlanificacion)
     }
     class PlanificadorRutas {

@@ -10,13 +10,13 @@ classDiagram
 
     class ServicioPlanificacionRutas {
         <<infraestructura>>
-        +planificar() List~LoteId~
-        +partirEnLotes(donaciones: List~Donacion~, tamanioMaximo: int) List~List~Donacion~~
+        +planificar() Optional~LoteId~
     }
     class LoteDonaciones {
         <<record>>
         -donaciones: List~DonacionPlanificable~
         -camiones: List~Camion~
+        -urlCallback: String
         +valida: máx 100 donaciones por lote
     }
     class LoteId {
@@ -30,7 +30,7 @@ classDiagram
         +enviarLote(lote: LoteDonaciones) LoteId
     }
 
-    ServicioPlanificacionRutas ..> LoteDonaciones : arma lotes (<= 100)
+    ServicioPlanificacionRutas ..> LoteDonaciones : arma un lote por corrida (<= 100)
     LoteDonaciones ..> Donacion : donaciones (API)
     LoteDonaciones o-- "*" Camion : camiones
     PlanificadorRutas ..> LoteDonaciones : recibe por ejecución

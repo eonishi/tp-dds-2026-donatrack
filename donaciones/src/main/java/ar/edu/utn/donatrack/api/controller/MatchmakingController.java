@@ -14,12 +14,17 @@ import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
+import ar.edu.utn.donatrack.notificaciones.PublicadorDeEventos;
+import ar.edu.utn.donatrack.notificaciones.PublicadorDiferido;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.propuestas.EntidadFueraDeRankingException;
 import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
 import ar.edu.utn.donatrack.propuestas.ServicioMatchmakingDonaciones;
+import ar.edu.utn.donatrack.security.Role;
+import ar.edu.utn.donatrack.security.ServicioInterno;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
+import io.javalin.security.RouteRole;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -44,14 +49,19 @@ public final class MatchmakingController implements WithSimplePersistenceUnit {
     this.clock = clock;
   }
 
+  // Como toda ruta bajo /donaciones, logística también entra con la clave interna.
+  private static final RouteRole[] SOBRE_DONACION = {
+    Role.ADMIN, Role.BENEFICIARIO, ServicioInterno.LOGISTICA
+  };
+
   public void routes() {
-    get("/propuestas-asignacion", this::listar);
+    get("/propuestas-asignacion", this::listar, Role.ADMIN, Role.BENEFICIARIO);
     path(
         "/donaciones/{donacionId}",
         () -> {
-          post("/propuesta-asignacion", this::ejecutar);
-          get("/propuesta-asignacion", this::ranking);
-          put("/propuesta-asignacion", this::seleccionar);
+          post("/propuesta-asignacion", this::ejecutar, SOBRE_DONACION);
+          get("/propuesta-asignacion", this::ranking, SOBRE_DONACION);
+          put("/propuesta-asignacion", this::seleccionar, SOBRE_DONACION);
         });
   }
 
@@ -84,29 +94,33 @@ public final class MatchmakingController implements WithSimplePersistenceUnit {
   private void seleccionar(Context ctx) {
     SeleccionEntidadRequest request = ctx.bodyAsClass(SeleccionEntidadRequest.class);
     Long entidadBeneficiariaId = DtoValidator.validate(request).entidadBeneficiariaId();
+    PublicadorDiferido publicador = notificaciones.publicadorDiferido();
     DonacionResponse seleccionada =
         withTransaction(
             () ->
                 ApiMapper.donacion(
-                    confirmarSeleccion(HttpSupport.id(ctx, "donacionId"), entidadBeneficiariaId)));
+                    confirmarSeleccion(
+                        HttpSupport.id(ctx, "donacionId"), entidadBeneficiariaId, publicador)));
+    publicador.enviarPendientes();
     ctx.json(seleccionada);
   }
 
-  private Donacion confirmarSeleccion(UUID donacionId, Long entidadId) {
+  private Donacion confirmarSeleccion(
+      UUID donacionId, Long entidadId, PublicadorDeEventos publicador) {
     Donacion donacion = donacion(donacionId);
     EntidadBeneficiaria entidad =
         entidades
             .findById(entidadId)
             .orElseThrow(() -> ApiException.notFound("Entidad beneficiaria", entidadId));
+    if (donacion.estaAsignadaA(entidadId)) {
+      return donacion;
+    }
     if (donacion.getEntidadBeneficiaria() != null) {
-      if (donacion.getEntidadBeneficiaria().getId().equals(entidadId)) {
-        return donacion;
-      }
       throw ApiException.conflict("La donación ya tiene una entidad beneficiaria asignada.");
     }
     try {
-      notificaciones.enviar(
-          matchmaking.confirmarAsignacionAdministrativa(donacion, entidad, LocalDate.now(clock)));
+      matchmaking.confirmarAsignacionAdministrativa(
+          donacion, entidad, LocalDate.now(clock), publicador);
     } catch (EntidadFueraDeRankingException error) {
       throw ApiException.conflict(error.getMessage());
     }

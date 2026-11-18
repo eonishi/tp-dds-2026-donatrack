@@ -13,7 +13,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Alta de usuarios por parte de la persona administradora (solo ADMIN, ver SecurityRules).
+ * Alta de usuarios por parte de la persona administradora (solo ADMIN: lo declara la ruta).
  *
  * <p>Le da acceso a una persona donante o a una entidad beneficiaria que ya está registrada, y deja
  * el usuario vinculado a ese registro para que vea solo sus donaciones.
@@ -31,7 +31,7 @@ public final class UsuarioController {
   }
 
   public void routes() {
-    post("/usuarios", this::crear);
+    post("/usuarios", this::crear, Role.ADMIN);
   }
 
   private void crear(Context ctx) {
