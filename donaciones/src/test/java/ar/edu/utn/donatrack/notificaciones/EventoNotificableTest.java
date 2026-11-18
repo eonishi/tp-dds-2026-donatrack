@@ -4,8 +4,8 @@ import static ar.edu.utn.donatrack.testsupport.FabricaDePrueba.nuevaEntidad;
 import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Genero;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoAsignacion;
@@ -26,7 +26,7 @@ class EventoNotificableTest {
 
   private final PersonaHumana donante =
       new PersonaHumana(
-          new CorreoElectronico("donante@test.com"),
+          MedioDeContacto.correo("donante@test.com"),
           "Juan",
           "Perez",
           "12345678",
@@ -38,7 +38,7 @@ class EventoNotificableTest {
 
   @Test
   void eventoBienvenida_generaNotificacion_paraElDonante() {
-    entidad.agregarCorreo(new CorreoElectronico("entidad@test.com"));
+    entidad.agregarCorreo(MedioDeContacto.correo("entidad@test.com"));
     EventoBienvenida evento = new EventoBienvenida(donante);
 
     List<Notificacion> notificaciones = evento.generarNotificaciones();
@@ -49,8 +49,8 @@ class EventoNotificableTest {
 
   @Test
   void eventoEntregaExitosa_generaNotificaciones_conComprobante() {
-    entidad.agregarCorreo(new CorreoElectronico("entidad@test.com"));
-    entidad.agregarCorreo(new CorreoElectronico("otro@test.com"));
+    entidad.agregarCorreo(MedioDeContacto.correo("entidad@test.com"));
+    entidad.agregarCorreo(MedioDeContacto.correo("otro@test.com"));
     LocalDateTime fecha = LocalDateTime.of(2026, 7, 10, 15, 0);
     EventoEntregaExitosa evento = new EventoEntregaExitosa(donante, entidad, fecha, "ABC123");
 
@@ -65,7 +65,7 @@ class EventoNotificableTest {
 
   @Test
   void eventoEntregaExitosa_formateaFechaConPrecisionDeterminista() {
-    entidad.agregarCorreo(new CorreoElectronico("entidad@test.com"));
+    entidad.agregarCorreo(MedioDeContacto.correo("entidad@test.com"));
     LocalDateTime fecha = LocalDateTime.of(2026, 7, 10, 15, 4, 5, 987_654_321);
 
     List<Notificacion> notificaciones =
@@ -88,7 +88,7 @@ class EventoNotificableTest {
 
   @Test
   void eventoAsignacion_generaNotificaciones_conLaRazonSocialParaElDonante() {
-    entidad.agregarCorreo(new CorreoElectronico("entidad@test.com"));
+    entidad.agregarCorreo(MedioDeContacto.correo("entidad@test.com"));
     EventoAsignacion evento = new EventoAsignacion(donante, entidad);
 
     List<Notificacion> notificaciones = evento.generarNotificaciones();
@@ -98,7 +98,7 @@ class EventoNotificableTest {
 
   @Test
   void eventoAsignacion_tieneComoDestinatariosAlDonanteYALaEntidad() {
-    entidad.agregarCorreo(new CorreoElectronico("entidad@test.com"));
+    entidad.agregarCorreo(MedioDeContacto.correo("entidad@test.com"));
 
     List<Notificacion> notificaciones =
         new EventoAsignacion(donante, entidad).generarNotificaciones();
@@ -110,8 +110,8 @@ class EventoNotificableTest {
 
   @Test
   void eventoEntregaExitosa_entidadConVariosCorreos_generaUnaNotificacionPorDestinatario() {
-    entidad.agregarCorreo(new CorreoElectronico("entidad@test.com"));
-    entidad.agregarCorreo(new CorreoElectronico("otro@test.com"));
+    entidad.agregarCorreo(MedioDeContacto.correo("entidad@test.com"));
+    entidad.agregarCorreo(MedioDeContacto.correo("otro@test.com"));
     LocalDateTime fecha = LocalDateTime.of(2026, 7, 10, 15, 0);
 
     List<Notificacion> notificaciones =
@@ -135,7 +135,7 @@ class EventoNotificableTest {
 
   @Test
   void eventoEntregaNoSatisfactoria_generaNotificaciones_paraDonanteYEntidad() {
-    entidad.agregarCorreo(new CorreoElectronico("entidad@test.com"));
+    entidad.agregarCorreo(MedioDeContacto.correo("entidad@test.com"));
     EventoEntregaNoSatisfactoria evento =
         new EventoEntregaNoSatisfactoria(donante, entidad, "Destino cerrado");
 

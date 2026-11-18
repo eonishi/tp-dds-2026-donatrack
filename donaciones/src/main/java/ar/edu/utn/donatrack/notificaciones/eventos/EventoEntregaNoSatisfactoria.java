@@ -1,8 +1,8 @@
 package ar.edu.utn.donatrack.notificaciones.eventos;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.notificaciones.Notificable;
 import ar.edu.utn.donatrack.notificaciones.Notificacion;
 import java.util.ArrayList;
@@ -46,7 +46,7 @@ public class EventoEntregaNoSatisfactoria implements EventoNotificable {
 
   // Los administradores todavía no son parte del dominio: solo se conoce su correo de config.
   private static Notificable administrador(String email) {
-    CorreoElectronico correo = new CorreoElectronico(email);
+    MedioDeContacto correo = MedioDeContacto.correo(email);
     return (mensaje, canales) -> correo.enviar(mensaje, canales);
   }
 }

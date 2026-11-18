@@ -2,8 +2,8 @@ package ar.edu.utn.donatrack.notificaciones;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Genero;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 class NotificacionTest {
   private final PersonaHumana donante =
       new PersonaHumana(
-          new CorreoElectronico("donante@test.com"),
+          MedioDeContacto.correo("donante@test.com"),
           "Ana",
           "Pérez",
           "30111222",

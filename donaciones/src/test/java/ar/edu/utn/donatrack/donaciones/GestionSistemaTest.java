@@ -7,9 +7,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import ar.edu.utn.donatrack.beneficiarios.*;
 import ar.edu.utn.donatrack.bienes.*;
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
@@ -33,7 +33,7 @@ class GestionSistemaTest implements SimplePersistenceTest {
     hoy = LocalDate.now();
     donanteDummy =
         new PersonaHumana(
-            new CorreoElectronico("test@test.com"),
+            MedioDeContacto.correo("test@test.com"),
             "Juan",
             "Perez",
             "12345678",

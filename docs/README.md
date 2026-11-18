@@ -12,7 +12,7 @@ Cada diagrama es el **fragmento mínimo del dominio** que cumple ese requerimien
 
 ### R1 — Gestión de personas donantes
 
-**Decisión:** `Donante` es una clase abstracta con dos especializaciones (`PersonaHumana` y `PersonajeJuridica`) porque cada tipo registra datos distintos. Los medios de contacto forman una jerarquía (`MedioDeContacto` con email, WhatsApp y SMS) que permite sumar canales sin tocar `Donante`.
+**Decisión:** `Donante` es una clase abstracta con dos especializaciones (`PersonaHumana` y `PersonajeJuridica`) porque cada tipo registra datos distintos. `MedioDeContacto` es un value object (canal + contacto, embebido en la tabla de su dueño); el envío por cada canal vive en el enum `Canal` (correo, SMS, WhatsApp), así que sumar un canal no toca `Donante`.
 
 ![R1 — Gestión de personas donantes](assets/e1-req1-gestion-donantes.svg)
 

@@ -12,9 +12,9 @@ import ar.edu.utn.donatrack.bienes.EstadoUso;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
 import ar.edu.utn.donatrack.donaciones.Donacion;
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import java.time.LocalDate;
@@ -25,7 +25,7 @@ class AlgoritmoCompatibilidadSemanticaTest {
 
   private static Donante crearDonanteDummy() {
     return new PersonaHumana(
-        new CorreoElectronico("test@test.com"),
+        MedioDeContacto.correo("test@test.com"),
         "Juan",
         "Perez",
         "12345678",

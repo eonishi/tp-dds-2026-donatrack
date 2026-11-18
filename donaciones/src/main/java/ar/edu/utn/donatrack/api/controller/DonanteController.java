@@ -14,16 +14,13 @@ import ar.edu.utn.donatrack.api.error.ApiException;
 import ar.edu.utn.donatrack.api.mappers.ApiMapper;
 import ar.edu.utn.donatrack.api.validation.DtoValidator;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
 import ar.edu.utn.donatrack.donantes.Representante;
-import ar.edu.utn.donatrack.donantes.Sms;
 import ar.edu.utn.donatrack.donantes.TipoPersona;
-import ar.edu.utn.donatrack.donantes.Whatsapp;
 import ar.edu.utn.donatrack.notificaciones.PublicadorDiferido;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoBienvenida;
@@ -106,8 +103,7 @@ public final class DonanteController implements WithSimplePersistenceUnit {
   private void eliminar(Context ctx) {
     UUID id = HttpSupport.id(ctx, "id");
     buscar(id);
-    if (donaciones.getDonaciones().stream()
-        .anyMatch(donacion -> donacion.getDonante().getId().equals(id))) {
+    if (donaciones.tieneDonacionesDe(id)) {
       throw ApiException.conflict("No se puede eliminar un donante con donaciones asociadas.");
     }
     withTransaction(() -> donantes.deleteById(id));
@@ -119,10 +115,9 @@ public final class DonanteController implements WithSimplePersistenceUnit {
   }
 
   private Donante construirDonante(DonanteRequest request) {
-    CorreoElectronico email =
+    MedioDeContacto email =
         medios(request).stream()
-            .filter(CorreoElectronico.class::isInstance)
-            .map(CorreoElectronico.class::cast)
+            .filter(MedioDeContacto::esCorreo)
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Debe incluir un medio EMAIL."));
     if (request.tipoPersona() == TipoPersona.HUMANA) {
@@ -222,9 +217,9 @@ public final class DonanteController implements WithSimplePersistenceUnit {
 
   private MedioDeContacto medio(MedioContactoRequest contacto) {
     return switch (contacto.tipo().toUpperCase(Locale.ROOT)) {
-      case "EMAIL" -> new CorreoElectronico(contacto.contacto());
-      case "WHATSAPP" -> new Whatsapp(contacto.contacto());
-      case "SMS" -> new Sms(contacto.contacto());
+      case "EMAIL" -> MedioDeContacto.correo(contacto.contacto());
+      case "WHATSAPP" -> MedioDeContacto.whatsapp(contacto.contacto());
+      case "SMS" -> MedioDeContacto.sms(contacto.contacto());
       default ->
           throw new IllegalArgumentException("tipo de contacto inválido: " + contacto.tipo());
     };

@@ -13,8 +13,8 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Activación de las cuentas que creó la importación de donantes: la persona prueba quién es con su
- * correo y su número de documento, y elige su contraseña.
+ * Activación de las cuentas que crea la administración (alta en el depósito o importación CSV): la
+ * persona prueba quién es con su correo y su número de documento, y elige su contraseña.
  */
 public class ActivacionController {
   private static final int LARGO_MINIMO = 8;
@@ -28,7 +28,12 @@ public class ActivacionController {
   }
 
   public void routes() {
-    get("/activar", ctx -> ctx.render("activar", modelo("", null)));
+    get(
+        "/activar",
+        ctx ->
+            ctx.render(
+                "activar",
+                modelo(Optional.ofNullable(ctx.queryParam("correo")).orElse("").trim(), null)));
     post("/activar", this::activar);
   }
 

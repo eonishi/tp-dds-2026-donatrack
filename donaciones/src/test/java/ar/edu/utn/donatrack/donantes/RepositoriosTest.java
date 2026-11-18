@@ -29,7 +29,7 @@ public class RepositoriosTest implements SimplePersistenceTest {
     DonantesRepository repo = new DonantesRepository();
 
     // Persona humana
-    CorreoElectronico correoElsa = new CorreoElectronico("ElsaPato@hotmail.com");
+    MedioDeContacto correoElsa = MedioDeContacto.correo("ElsaPato@hotmail.com");
     PersonaHumana elsa =
         new PersonaHumana(
             correoElsa,
@@ -39,11 +39,11 @@ public class RepositoriosTest implements SimplePersistenceTest {
             TipoDocumento.DNI,
             Genero.FEMENINO,
             "Calle siempre morida 1234");
-    elsa.addMedioDeContacto(new Sms("115558833"));
-    elsa.addMedioDeContacto(new Whatsapp("null"));
+    elsa.addMedioDeContacto(MedioDeContacto.sms("115558833"));
+    elsa.addMedioDeContacto(MedioDeContacto.whatsapp("null"));
 
     // Persona Juridica
-    CorreoElectronico emailFundacion = new CorreoElectronico("fundidos@hotmail.com");
+    MedioDeContacto emailFundacion = MedioDeContacto.correo("fundidos@hotmail.com");
     PersonajeJuridica fundacion =
         new PersonajeJuridica(
             emailFundacion,
@@ -52,7 +52,7 @@ public class RepositoriosTest implements SimplePersistenceTest {
             "Fundacion fundidos",
             TipoOrganizacion.ONG,
             "Lo que venga");
-    fundacion.addMedioDeContacto(new Whatsapp("222555588899"));
+    fundacion.addMedioDeContacto(MedioDeContacto.whatsapp("222555588899"));
     fundacion.agregarRepresentante(new Representante("elrre", "presentate"));
 
     repo.addMany(List.of(elsa, fundacion));
@@ -70,7 +70,7 @@ public class RepositoriosTest implements SimplePersistenceTest {
 
   @Test
   public void constructorExigeCorreoElectronico() {
-    CorreoElectronico email = new CorreoElectronico("info@fundacion.org");
+    MedioDeContacto email = MedioDeContacto.correo("info@fundacion.org");
     PersonajeJuridica pj =
         new PersonajeJuridica(
             email,
@@ -96,7 +96,7 @@ public class RepositoriosTest implements SimplePersistenceTest {
   public void upsertActualizaPorEmail() {
     DonantesRepository repo = new DonantesRepository();
 
-    CorreoElectronico email = new CorreoElectronico("existente@mail.com");
+    MedioDeContacto email = MedioDeContacto.correo("existente@mail.com");
     PersonajeJuridica original =
         new PersonajeJuridica(
             email,
@@ -107,7 +107,7 @@ public class RepositoriosTest implements SimplePersistenceTest {
             "Comercio");
     repo.addMany(List.of(original));
 
-    CorreoElectronico mismoEmail = new CorreoElectronico("existente@mail.com");
+    MedioDeContacto mismoEmail = MedioDeContacto.correo("existente@mail.com");
     PersonajeJuridica actualizada =
         new PersonajeJuridica(
             mismoEmail,
@@ -131,7 +131,7 @@ public class RepositoriosTest implements SimplePersistenceTest {
   public void upsertInsertaSiNoExiste() {
     DonantesRepository repo = new DonantesRepository();
 
-    CorreoElectronico email = new CorreoElectronico("nuevo@mail.com");
+    MedioDeContacto email = MedioDeContacto.correo("nuevo@mail.com");
     PersonajeJuridica nuevo =
         new PersonajeJuridica(
             email,
@@ -150,8 +150,8 @@ public class RepositoriosTest implements SimplePersistenceTest {
   public void upsertNoAfectaAddMany() {
     DonantesRepository repo = new DonantesRepository();
 
-    CorreoElectronico emailA = new CorreoElectronico("a@mail.com");
-    CorreoElectronico emailB = new CorreoElectronico("b@mail.com");
+    MedioDeContacto emailA = MedioDeContacto.correo("a@mail.com");
+    MedioDeContacto emailB = MedioDeContacto.correo("b@mail.com");
 
     PersonajeJuridica a =
         new PersonajeJuridica(

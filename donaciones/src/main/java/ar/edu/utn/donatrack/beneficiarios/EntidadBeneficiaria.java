@@ -1,7 +1,6 @@
 package ar.edu.utn.donatrack.beneficiarios;
 
 import ar.edu.utn.donatrack.donaciones.Donacion;
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.notificaciones.Notificable;
 import ar.edu.utn.donatrack.notificaciones.NotificadorPorCanal;
@@ -13,12 +12,15 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderColumn;
 
 @Entity
 public class EntidadBeneficiaria implements Notificable {
@@ -48,9 +50,10 @@ public class EntidadBeneficiaria implements Notificable {
   @JoinColumn(name = "entidad_recurrente_id")
   private List<NecesidadRecurrente> necesidadesRecurrentes = new ArrayList<>();
 
-  @OneToMany(cascade = CascadeType.ALL)
-  @JoinColumn(name = "entidad_id")
-  private List<CorreoElectronico> correos = new ArrayList<>();
+  @ElementCollection
+  @CollectionTable(name = "entidad_correo", joinColumns = @JoinColumn(name = "entidad_id"))
+  @OrderColumn(name = "orden")
+  private List<MedioDeContacto> correos = new ArrayList<>();
 
   protected EntidadBeneficiaria() {}
 
@@ -139,7 +142,7 @@ public class EntidadBeneficiaria implements Notificable {
     return Collections.unmodifiableList(necesidadesRecurrentes);
   }
 
-  public List<CorreoElectronico> getCorreos() {
+  public List<MedioDeContacto> getCorreos() {
     return Collections.unmodifiableList(correos);
   }
 
@@ -176,12 +179,12 @@ public class EntidadBeneficiaria implements Notificable {
     necesidadesRecurrentes.removeIf(n -> n.getId().equals(necesidadId));
   }
 
-  public void agregarCorreo(CorreoElectronico correo) {
-    this.correos.add(correo);
+  public void agregarCorreo(MedioDeContacto correo) {
+    this.correos.add(MedioDeContacto.exigirCorreo(correo));
   }
 
   public void actualizarDatos(
-      String razonSocial, String direccion, String telefono, List<CorreoElectronico> correos) {
+      String razonSocial, String direccion, String telefono, List<MedioDeContacto> correos) {
     this.razonSocial = razonSocial;
     if (!Objects.equals(this.direccion, direccion)) {
       // Otra dirección, otra ubicación: se vuelve a geocodificar.

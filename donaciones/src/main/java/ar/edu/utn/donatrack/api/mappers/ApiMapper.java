@@ -15,12 +15,12 @@ import ar.edu.utn.donatrack.beneficiarios.Necesidad;
 import ar.edu.utn.donatrack.beneficiarios.NecesidadRecurrente;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.HistorialEstado;
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
+import ar.edu.utn.donatrack.donantes.Canal;
 import ar.edu.utn.donatrack.donantes.Donante;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
 import ar.edu.utn.donatrack.donantes.TipoPersona;
-import ar.edu.utn.donatrack.donantes.Whatsapp;
 import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
 import java.util.List;
 
@@ -35,9 +35,9 @@ public final class ApiMapper {
             .map(
                 medio ->
                     new MedioContactoResponse(
-                        medio instanceof CorreoElectronico
+                        medio.esCorreo()
                             ? "EMAIL"
-                            : medio instanceof Whatsapp ? "WHATSAPP" : "SMS",
+                            : medio.getCanal() == Canal.WHATSAPP ? "WHATSAPP" : "SMS",
                         medio.getContacto(),
                         medio.equals(donante.getMedioContactoPredeterminado())))
             .toList();
@@ -69,7 +69,7 @@ public final class ApiMapper {
         entidad.getRazonSocial(),
         entidad.getDireccion(),
         entidad.getTelefono(),
-        entidad.getCorreos().stream().map(CorreoElectronico::getContacto).toList(),
+        entidad.getCorreos().stream().map(MedioDeContacto::getContacto).toList(),
         necesidades(entidad).stream().map(NecesidadResponse::id).toList());
   }
 

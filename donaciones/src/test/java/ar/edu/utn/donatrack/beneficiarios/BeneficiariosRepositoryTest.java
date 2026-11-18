@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ar.edu.utn.donatrack.bienes.Categoria;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -31,7 +31,7 @@ class BeneficiariosRepositoryTest implements SimplePersistenceTest {
         new NecesidadRecurrente(alimentos, 20.0, UnidadMedida.KILOGRAMOS, "Fideos recurrentes");
     recurrente.setPeriodo(TipoPeriodo.MENSUAL);
     entidad.agregarNecesidadRecurrente(recurrente);
-    entidad.agregarCorreo(new CorreoElectronico("contacto@hogar.org"));
+    entidad.agregarCorreo(MedioDeContacto.correo("contacto@hogar.org"));
 
     BeneficiariosRepository repositorio = new BeneficiariosRepository();
     // La resolución del catálogo pertenece al caso de uso: acá la subcategoría se siembra antes
@@ -64,7 +64,7 @@ class BeneficiariosRepositoryTest implements SimplePersistenceTest {
   @Test
   void saveActualizaUnaEntidadExistente() {
     EntidadBeneficiaria entidad = crearEntidad("Hogar Test");
-    entidad.agregarCorreo(new CorreoElectronico("viejo@hogar.org"));
+    entidad.agregarCorreo(MedioDeContacto.correo("viejo@hogar.org"));
     BeneficiariosRepository repositorio = new BeneficiariosRepository();
     EntidadBeneficiaria guardada = repositorio.save(entidad);
     entityManager().flush();
@@ -75,7 +75,7 @@ class BeneficiariosRepositoryTest implements SimplePersistenceTest {
         "Hogar Renombrado",
         "Calle Nueva 456",
         "1199998888",
-        List.of(new CorreoElectronico("nuevo@hogar.org")));
+        List.of(MedioDeContacto.correo("nuevo@hogar.org")));
     repositorio.save(recargada);
     entityManager().flush();
     entityManager().clear();

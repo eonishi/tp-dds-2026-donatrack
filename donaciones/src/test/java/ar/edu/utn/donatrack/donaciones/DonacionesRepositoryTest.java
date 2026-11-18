@@ -11,9 +11,9 @@ import ar.edu.utn.donatrack.bienes.Categoria;
 import ar.edu.utn.donatrack.bienes.EstadoUso;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
@@ -43,7 +43,7 @@ class DonacionesRepositoryTest implements SimplePersistenceTest {
 
   private static Donante crearDonanteDummy() {
     return new PersonaHumana(
-        new CorreoElectronico("test@test.com"),
+        MedioDeContacto.correo("test@test.com"),
         "Juan",
         "Perez",
         "12345678",

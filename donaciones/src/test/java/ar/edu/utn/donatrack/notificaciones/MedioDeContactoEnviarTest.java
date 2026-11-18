@@ -2,9 +2,7 @@ package ar.edu.utn.donatrack.notificaciones;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
-import ar.edu.utn.donatrack.donantes.Sms;
-import ar.edu.utn.donatrack.donantes.Whatsapp;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -20,21 +18,21 @@ class MedioDeContactoEnviarTest {
 
   @Test
   void correoElectronico_enviaPorElGatewayDeCorreo() {
-    new CorreoElectronico("test@example.com").enviar("Mensaje", canales);
+    MedioDeContacto.correo("test@example.com").enviar("Mensaje", canales);
 
     assertEquals(List.of("correo|test@example.com|Mensaje"), invocaciones);
   }
 
   @Test
   void sms_enviaPorElGatewayDeSms() {
-    new Sms("+541112345679").enviar("Mensaje", canales);
+    MedioDeContacto.sms("+541112345679").enviar("Mensaje", canales);
 
     assertEquals(List.of("sms|+541112345679|Mensaje"), invocaciones);
   }
 
   @Test
   void whatsapp_enviaPorElGatewayDeWhatsapp() {
-    new Whatsapp("+541112345678").enviar("Mensaje", canales);
+    MedioDeContacto.whatsapp("+541112345678").enviar("Mensaje", canales);
 
     assertEquals(List.of("whatsapp|+541112345678|Mensaje"), invocaciones);
   }

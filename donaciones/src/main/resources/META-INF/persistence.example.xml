@@ -15,8 +15,15 @@
             <property name="javax.persistence.validation.mode" value="none"/>
 
             <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
-            <property name="hibernate.show_sql" value="true"/>
+            <property name="hibernate.show_sql" value="false"/>
             <property name="hibernate.hbm2ddl.auto" value="update"/>
+
+            <!-- Batching: Hibernate junta hasta 500 INSERT/UPDATE iguales y los manda en un solo viaje a la base, en vez de uno por fila. Ordenarlos por tabla hace que los lotes queden enteros. -->
+            <property name="hibernate.jdbc.batch_size" value="500"/>
+            <property name="hibernate.order_inserts" value="true"/>
+            <property name="hibernate.order_updates" value="true"/>
+            <!-- Se le pasa al driver de Postgres: reescribe cada lote como un único INSERT ... VALUES (...), (...). -->
+            <property name="hibernate.connection.reWriteBatchedInserts" value="true"/>
         </properties>
     </persistence-unit>
 </persistence>

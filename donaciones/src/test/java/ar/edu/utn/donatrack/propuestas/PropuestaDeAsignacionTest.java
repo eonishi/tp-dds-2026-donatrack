@@ -11,9 +11,9 @@ import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.propuestas.matchmaking.MatchCandidato;
@@ -195,7 +195,7 @@ class PropuestaDeAsignacionTest {
 
   private static Donante crearDonanteDummy() {
     return new PersonaHumana(
-        new CorreoElectronico("test@test.com"),
+        MedioDeContacto.correo("test@test.com"),
         "Juan",
         "Perez",
         "12345678",
