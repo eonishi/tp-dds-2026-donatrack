@@ -27,9 +27,17 @@
              puede ejecutar Maven sin declarar JDKs en un archivo local de configuracion. -->
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- Ultima version de la linea 6: Javalin 7 cambia la API de rutas y handlers. -->
+        <javalin.version>6.7.0</javalin.version>
     </properties>
 
     <dependencies>
+        <!-- Javalin Bundle (Core + Jackson + Logback + TestTools), compartido por los dos microservicios. -->
+        <dependency>
+            <groupId>io.javalin</groupId>
+            <artifactId>javalin-bundle</artifactId>
+            <version>${javalin.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>

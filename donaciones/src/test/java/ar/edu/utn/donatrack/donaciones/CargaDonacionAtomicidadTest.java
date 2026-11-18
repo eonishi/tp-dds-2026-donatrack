@@ -9,9 +9,9 @@ import ar.edu.utn.donatrack.bienes.Categoria;
 import ar.edu.utn.donatrack.bienes.EstadoUso;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
@@ -70,7 +70,7 @@ class CargaDonacionAtomicidadTest implements WithSimplePersistenceUnit {
   private void sembrarDatosBase() {
     donante =
         new PersonaHumana(
-            new CorreoElectronico("atomicidad@test.com"),
+            MedioDeContacto.correo("atomicidad@test.com"),
             "Ana",
             "Atómica",
             "10000001",

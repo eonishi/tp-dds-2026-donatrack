@@ -13,9 +13,9 @@ import ar.edu.utn.donatrack.bienes.EstadoUso;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
 import ar.edu.utn.donatrack.donaciones.Donacion;
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.Genero;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import java.util.HashSet;
@@ -71,7 +71,7 @@ class EntidadBeneficiariaTest {
   @Test
   void agregaCorreoElectronico_YLoRecupera() {
     EntidadBeneficiaria eb = nuevaEntidad("Test");
-    CorreoElectronico correo = new CorreoElectronico("test@example.com");
+    MedioDeContacto correo = MedioDeContacto.correo("test@example.com");
     eb.agregarCorreo(correo);
 
     assertEquals(1, eb.getCorreos().size());
@@ -81,9 +81,9 @@ class EntidadBeneficiariaTest {
   @Test
   void agregaMultiplesCorreos_YLoSRecuperaTodos() {
     EntidadBeneficiaria eb = nuevaEntidad("Test");
-    eb.agregarCorreo(new CorreoElectronico("a@example.com"));
-    eb.agregarCorreo(new CorreoElectronico("b@example.com"));
-    eb.agregarCorreo(new CorreoElectronico("c@example.com"));
+    eb.agregarCorreo(MedioDeContacto.correo("a@example.com"));
+    eb.agregarCorreo(MedioDeContacto.correo("b@example.com"));
+    eb.agregarCorreo(MedioDeContacto.correo("c@example.com"));
 
     assertEquals(3, eb.getCorreos().size());
     assertEquals("a@example.com", eb.getCorreos().get(0).getContacto());
@@ -207,7 +207,7 @@ class EntidadBeneficiariaTest {
 
   private static Donante donanteDummy() {
     return new PersonaHumana(
-        new CorreoElectronico("test@test.com"),
+        MedioDeContacto.correo("test@test.com"),
         "Juan",
         "Perez",
         "12345678",

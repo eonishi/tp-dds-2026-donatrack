@@ -1,0 +1,49 @@
+name: Reiniciar base de la demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmacion:
+        description: "Se van a borrar todos los datos de donaciones y logística. Escribí BORRAR para confirmar."
+        required: true
+        type: string
+
+jobs:
+  reiniciar:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-prod
+      cancel-in-progress: false
+    permissions:
+      contents: read
+
+    steps:
+      - name: Confirmación
+        if: ${{ inputs.confirmacion != 'BORRAR' }}
+        run: |
+          echo "::error::No se reinició nada: para confirmar hay que escribir BORRAR."
+          exit 1
+
+      - uses: actions/checkout@v4
+
+      - name: Copiar el script a EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: db/reiniciar-esquemas.sh
+          target: ~/donatrack
+
+      - name: Borrar los esquemas y reiniciar
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            cd ~/donatrack
+            docker compose -f docker-compose.prod.yml stop donaciones logistica
+            sh db/reiniciar-esquemas.sh .env
+            docker compose -f docker-compose.prod.yml up -d

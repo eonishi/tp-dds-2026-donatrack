@@ -33,15 +33,15 @@ class DonantesRepositoryTest implements SimplePersistenceTest {
   void saveRecargaYEliminaUnaPersonaHumana() {
     PersonaHumana donante =
         new PersonaHumana(
-            new CorreoElectronico("ana@test.com"),
+            MedioDeContacto.correo("ana@test.com"),
             "Ana",
             "Gomez",
             "30111222",
             TipoDocumento.DNI,
             Genero.FEMENINO,
             "Av. Siempreviva 742");
-    donante.addMedioDeContacto(new Sms("1145558888"));
-    donante.addMedioDeContacto(new Whatsapp("1145559999"));
+    donante.addMedioDeContacto(MedioDeContacto.sms("1145558888"));
+    donante.addMedioDeContacto(MedioDeContacto.whatsapp("1145559999"));
     assertNull(
         donante.getId(),
         "Una persona recién construida no tiene id: lo asigna el proveedor al guardarla");
@@ -86,9 +86,10 @@ class DonantesRepositoryTest implements SimplePersistenceTest {
         porListado.getMediosDeContacto().size(),
         "Los tres canales de contacto deben persistirse");
     assertTrue(
-        porListado.getMediosDeContacto().stream().anyMatch(Sms.class::isInstance), "Falta el SMS");
+        porListado.getMediosDeContacto().stream().anyMatch(m -> m.getCanal() == Canal.SMS),
+        "Falta el SMS");
     assertTrue(
-        porListado.getMediosDeContacto().stream().anyMatch(Whatsapp.class::isInstance),
+        porListado.getMediosDeContacto().stream().anyMatch(m -> m.getCanal() == Canal.WHATSAPP),
         "Falta el WhatsApp");
 
     repositorio.deleteById(id);
@@ -108,13 +109,13 @@ class DonantesRepositoryTest implements SimplePersistenceTest {
   void saveRecargaYEliminaUnaPersonaJuridica() {
     PersonajeJuridica organizacion =
         new PersonajeJuridica(
-            new CorreoElectronico("ong@test.com"),
+            MedioDeContacto.correo("ong@test.com"),
             "30111222333",
             TipoDocumento.CUIT,
             "Fundación Test",
             TipoOrganizacion.ONG,
             "Alimentos");
-    organizacion.addMedioDeContacto(new Whatsapp("1145550000"));
+    organizacion.addMedioDeContacto(MedioDeContacto.whatsapp("1145550000"));
     organizacion.agregarRepresentante(new Representante("Maria", "Perez"));
     assertNull(
         organizacion.getId(),
@@ -184,7 +185,7 @@ class DonantesRepositoryTest implements SimplePersistenceTest {
   void lasColumnasDeDocumentoGeneroYTipoDeOrganizacionGuardanElNombreDeLaConstanteYNoElIndice() {
     PersonaHumana persona =
         new PersonaHumana(
-            new CorreoElectronico("ana@test.com"),
+            MedioDeContacto.correo("ana@test.com"),
             "Ana",
             "Gomez",
             "30111222",
@@ -193,7 +194,7 @@ class DonantesRepositoryTest implements SimplePersistenceTest {
             "Av. Siempreviva 742");
     PersonajeJuridica organizacion =
         new PersonajeJuridica(
-            new CorreoElectronico("ong@test.com"),
+            MedioDeContacto.correo("ong@test.com"),
             "30111222333",
             TipoDocumento.CUIT,
             "Fundación Test",
@@ -287,7 +288,7 @@ class DonantesRepositoryTest implements SimplePersistenceTest {
 
   private static PersonaHumana crearDonante(String documento) {
     return new PersonaHumana(
-        new CorreoElectronico("donante" + documento + "@test.com"),
+        MedioDeContacto.correo("donante" + documento + "@test.com"),
         "Ana",
         "Gomez",
         documento,

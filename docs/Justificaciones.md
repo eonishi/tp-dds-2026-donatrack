@@ -65,6 +65,10 @@ Así la interfaz usa el mismo dominio que la API, sin duplicar reglas, y la sesi
 * GraphQL usa un solo endpoint, así que el filtro HTTP ya no puede decidir permisos por URL: solo valida que haya credenciales, y cada resolver decide quién puede usar su operación (ver `logistica.graphql.Acceso`).
 * Los errores de negocio vuelven con código 200 dentro de `errors`, con `extensions.codigo` (`NO_ENCONTRADO`, `DATOS_INVALIDOS`, `PROHIBIDO`). Las credenciales faltantes o inválidas siguen siendo 401 y 403.
 
+### 1.4 Envío Inmediato de Notificaciones (Sin Estado ni Cola en Memoria)
+**Decisión:** Se eliminó el atributo `estado` (`EstadoNotificacion`: `PENDIENTE`, `ENVIADA`, `FALLIDA`), el contador de reintentos y el repositorio en memoria (`NotificacionesRepository`), así como el doble `NotificadorSimulado` del árbol de producción (`src/main`) y la interfaz intermedia `Notificador`.
+**Justificación:** Las notificaciones se despachan en el acto al ocurrir el evento mediante `ServicioNotificaciones` y `NotificadorPorCanal` hacia los gateways reales (Resend y Twilio). Mantener una lista en memoria y un estado de ciclo de vida en `Notificacion` respondía a un procesamiento diferido o en lote no requerido que ningún caso de uso leía; los dobles de prueba pertenecen exclusivamente a `src/test`.
+
 ## 2. Consideraciones de Diseño Relacional (ORM y JPA)
 
 ### 2.1 Aislamiento de Bases de Datos (Schemas Independientes)
@@ -186,10 +190,12 @@ reenvía su cookie, así que logística decide si tiene permiso, igual que si la
 No se usa la clave interna, que daría permisos de servicio a cualquier usuario de la web.
 
 ### 4.7 Planificación de rutas en horario de baja carga (#34)
-**Decisión:** logística arranca `PlanificacionScheduler` al iniciar. Corre todos los días a la hora
-de `PLANIFICACION_HORA` (por defecto, las 3), en hora de Argentina y no en la del servidor, que en
-el contenedor es UTC. Si una ejecución falla, se registra y la del día siguiente corre igual: una
-excepción sin atrapar cancelaría todas las ejecuciones siguientes del executor.
+**Decisión:** la planificación la corre `PlanificacionRutasRunner` (paquete `schedules` de
+logística), un programa autónomo que invoca un planificador externo (cronjob) en horario de baja
+carga. El horario, la zona horaria y los reintentos se configuran en el planificador externo, no en
+el código. Lo mismo vale para el aviso por ausencia de donantes (`AusenciaDonantesRunner`) y para
+el control de vencimiento (`VencimientoDonacionesRunner`), que pasa a `VENCIDA` las donaciones
+`EN_DEPOSITO` cuya fecha de vencimiento es anterior al día de ejecución.
 
 ### 4.8 Sin edad en la persona humana
 El enunciado 1 pide la edad de la persona humana. El equipo decidió no pedirla: no la usa ningún

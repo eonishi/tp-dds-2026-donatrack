@@ -8,9 +8,8 @@ import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
 import ar.edu.utn.donatrack.fotos.FotosRecepcion;
 import ar.edu.utn.donatrack.fotos.FotosRecepcion.FotoSubida;
-import ar.edu.utn.donatrack.notificaciones.Notificacion;
+import ar.edu.utn.donatrack.notificaciones.PublicadorDiferido;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
-import ar.edu.utn.donatrack.security.AuthService;
 import ar.edu.utn.donatrack.security.Role;
 import ar.edu.utn.donatrack.security.Usuario;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
@@ -26,44 +25,41 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Vista de la entidad beneficiaria para confirmar la recepción de sus donaciones con fotos, o
  * avisar que llegó con problemas.
  */
 public class RecepcionesController implements WithSimplePersistenceUnit {
-  private static final Logger LOG = Logger.getLogger(RecepcionesController.class.getName());
+  private static final Logger LOGGER = LoggerFactory.getLogger(RecepcionesController.class);
   private static final Map<String, String> AVISOS =
       Map.of(
           "confirmada", "¡Listo! Registramos la recepción y avisamos a la persona donante.",
           "reportada", "Registramos el problema con la entrega. El equipo de DonaTrack lo revisa.");
 
-  private final AuthService authService;
   private final DonacionesRepository donaciones;
   private final FotosRecepcion fotos;
   private final ServicioNotificaciones notificaciones;
 
   public RecepcionesController(
-      AuthService authService,
       DonacionesRepository donaciones,
       FotosRecepcion fotos,
       ServicioNotificaciones notificaciones) {
-    this.authService = authService;
     this.donaciones = donaciones;
     this.fotos = fotos;
     this.notificaciones = notificaciones;
   }
 
   public void routes() {
-    get("/entidad/recepciones", this::listar);
-    post("/entidad/recepciones/{id}/confirmar", this::confirmar);
-    post("/entidad/recepciones/{id}/reportar", this::reportar);
+    get("/entidad/recepciones", this::listar, Role.BENEFICIARIO);
+    post("/entidad/recepciones/{id}/confirmar", this::confirmar, Role.BENEFICIARIO);
+    post("/entidad/recepciones/{id}/reportar", this::reportar, Role.BENEFICIARIO);
   }
 
   private void listar(Context ctx) {
-    Usuario usuario = Vistas.exigir(ctx, authService, Role.BENEFICIARIO);
+    Usuario usuario = Vistas.usuario(ctx);
     Map<String, Object> modelo = modelo(usuario, null, null);
     Optional.ofNullable(ctx.queryParam("ok"))
         .map(AVISOS::get)
@@ -72,35 +68,35 @@ public class RecepcionesController implements WithSimplePersistenceUnit {
   }
 
   private void confirmar(Context ctx) {
-    Usuario usuario = Vistas.exigir(ctx, authService, Role.BENEFICIARIO);
+    Usuario usuario = Vistas.usuario(ctx);
     Donacion donacion = donacionPropia(ctx, usuario);
-    List<Notificacion> generadas = new ArrayList<>();
+    PublicadorDiferido publicador = notificaciones.publicadorDiferido();
     try {
       exigirEnCamino(donacion);
       List<String> urls = fotos.guardar(donacion.getId(), fotosSubidas(ctx));
       withTransaction(
           () -> {
             urls.forEach(donacion::agregarFoto);
-            generadas.addAll(donacion.confirmarEntrega());
+            donacion.confirmarEntrega(publicador);
             donaciones.save(donacion);
           });
     } catch (IllegalArgumentException | IllegalStateException e) {
       conError(ctx, usuario, donacion, e.getMessage());
       return;
     } catch (IOException e) {
-      LOG.log(Level.WARNING, "No se pudieron guardar las fotos de " + donacion.getId(), e);
+      LOGGER.warn("No se pudieron guardar las fotos de {}", donacion.getId(), e);
       conError(ctx, usuario, donacion, "No pudimos guardar las fotos. Probá de nuevo en un rato.");
       return;
     }
-    notificaciones.enviar(generadas);
+    publicador.enviarPendientes();
     ctx.redirect("/entidad/recepciones?ok=confirmada");
   }
 
   private void reportar(Context ctx) {
-    Usuario usuario = Vistas.exigir(ctx, authService, Role.BENEFICIARIO);
+    Usuario usuario = Vistas.usuario(ctx);
     Donacion donacion = donacionPropia(ctx, usuario);
     String motivo = Optional.ofNullable(ctx.formParam("motivo")).map(String::trim).orElse("");
-    List<Notificacion> generadas = new ArrayList<>();
+    PublicadorDiferido publicador = notificaciones.publicadorDiferido();
     try {
       exigirEnCamino(donacion);
       if (motivo.isEmpty()) {
@@ -108,14 +104,14 @@ public class RecepcionesController implements WithSimplePersistenceUnit {
       }
       withTransaction(
           () -> {
-            generadas.addAll(donacion.reportarFalla(motivo));
+            donacion.reportarFalla(motivo, publicador);
             donaciones.save(donacion);
           });
     } catch (IllegalArgumentException | IllegalStateException e) {
       conError(ctx, usuario, donacion, e.getMessage());
       return;
     }
-    notificaciones.enviar(generadas);
+    publicador.enviarPendientes();
     ctx.redirect("/entidad/recepciones?ok=reportada");
   }
 

@@ -27,20 +27,16 @@ public final class Importacion {
     this.inicio = inicio;
   }
 
-  void procesada() {
-    procesadas++;
-  }
-
-  void donanteNuevo() {
-    donantesNuevos++;
-  }
-
-  void donanteExistente() {
-    donantesExistentes++;
-  }
-
-  void cuentaCreada() {
-    cuentasCreadas++;
+  /**
+   * Suma un lote recién confirmado en la base. Los contadores avanzan después del commit y no
+   * mientras se arma el lote, así la vista nunca muestra filas que todavía no se guardaron.
+   */
+  void loteGuardado(int filas, int nuevos, int existentes, int cuentas) {
+    // Un solo hilo escribe (el del importador); la vista solo lee. Por eso alcanza con volatile.
+    procesadas += filas;
+    donantesNuevos += nuevos;
+    donantesExistentes += existentes;
+    cuentasCreadas += cuentas;
   }
 
   void error(long fila, String motivo) {

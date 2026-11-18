@@ -19,14 +19,14 @@ public class PersonaHumana extends Donante {
   protected PersonaHumana() {}
 
   public PersonaHumana(
-      CorreoElectronico medioDeContacto,
+      MedioDeContacto medioDeContacto,
       String nombre,
       String apellido,
       String numDocumento,
       TipoDocumento documento,
       Genero genero,
       String direccion) {
-    super(medioDeContacto, numDocumento, documento);
+    super(MedioDeContacto.exigirCorreo(medioDeContacto), numDocumento, documento);
     this.nombre = nombre;
     this.apellido = apellido;
     this.genero = genero;
@@ -35,14 +35,14 @@ public class PersonaHumana extends Donante {
 
   public PersonaHumana(
       UUID id,
-      CorreoElectronico medioDeContacto,
+      MedioDeContacto medioDeContacto,
       String nombre,
       String apellido,
       String numDocumento,
       TipoDocumento documento,
       Genero genero,
       String direccion) {
-    super(id, medioDeContacto, numDocumento, documento);
+    super(id, MedioDeContacto.exigirCorreo(medioDeContacto), numDocumento, documento);
     this.nombre = nombre;
     this.apellido = apellido;
     this.genero = genero;

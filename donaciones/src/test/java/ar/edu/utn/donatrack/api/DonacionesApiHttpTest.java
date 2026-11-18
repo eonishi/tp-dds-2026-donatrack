@@ -4,20 +4,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-import ar.edu.utn.donatrack.beneficiarios.Necesidad;
-import ar.edu.utn.donatrack.bienes.Bien;
+import ar.edu.utn.donatrack.app.DonaTrackServidor;
 import ar.edu.utn.donatrack.bienes.Categoria;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.donaciones.Donacion;
-import ar.edu.utn.donatrack.donantes.Donante;
-import ar.edu.utn.donatrack.notificaciones.Notificacion;
-import ar.edu.utn.donatrack.notificaciones.NotificacionesRepository;
-import ar.edu.utn.donatrack.notificaciones.Notificador;
-import ar.edu.utn.donatrack.notificaciones.NotificadorSimulado;
+import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
+import ar.edu.utn.donatrack.notificaciones.NotificadorPorCanal;
 import ar.edu.utn.donatrack.notificaciones.ResultadoEnvio;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
-import ar.edu.utn.donatrack.propuestas.PropuestaDeAsignacion;
+import ar.edu.utn.donatrack.testsupport.BaseDePrueba;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -33,6 +28,8 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,15 +40,28 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
   private Javalin app;
   private String baseUrl;
   private String sessionCookie;
-  private NotificacionesRepository notificacionesRepository;
+  private List<String> mensajesEnviados;
 
   @BeforeEach
   void start() throws Exception {
     Clock clock = Clock.fixed(Instant.parse("2026-09-11T12:00:00Z"), ZoneOffset.UTC);
-    notificacionesRepository = new NotificacionesRepository();
-    ServicioNotificaciones notificaciones =
-        new ServicioNotificaciones(new NotificadorSimulado(), notificacionesRepository, 1);
-    app = DonacionesApi.create(clock, notificaciones).start(0);
+    mensajesEnviados = new CopyOnWriteArrayList<>();
+    NotificadorPorCanal notificador =
+        new NotificadorPorCanal(
+            (destinatario, asunto, mensaje) -> {
+              mensajesEnviados.add(mensaje);
+              return ResultadoEnvio.aceptado();
+            },
+            (destinatario, mensaje) -> {
+              mensajesEnviados.add(mensaje);
+              return ResultadoEnvio.aceptado();
+            },
+            (destinatario, mensaje) -> {
+              mensajesEnviados.add(mensaje);
+              return ResultadoEnvio.aceptado();
+            });
+    ServicioNotificaciones notificaciones = new ServicioNotificaciones(notificador);
+    app = DonaTrackServidor.create(clock, notificaciones).start(0);
     baseUrl = "http://localhost:" + app.port();
     sessionCookie = iniciarSesionComoAdmin();
   }
@@ -167,29 +177,34 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
   void altaDeDonanteEnviaUnaBienvenidaUnaSolaVez() throws Exception {
     UUID donanteId = crearDonante();
 
-    long bienvenidas =
-        notificacionesRepository.getNotificaciones().stream()
-            .filter(n -> n.getMensaje().contains("DonaTrack"))
-            .count();
+    long bienvenidas = mensajesEnviados.stream().filter(m -> m.contains("DonaTrack")).count();
 
     assertEquals(1, bienvenidas);
     assertEquals(200, request("GET", "/api/v1/donantes/" + donanteId, null).statusCode());
-    assertEquals(1, notificacionesRepository.getNotificaciones().size());
+    assertEquals(1, mensajesEnviados.size());
   }
 
   @Test
   void falloDeBienvenidaNoRevierteElAlta() throws Exception {
     app.stop();
-    notificacionesRepository = new NotificacionesRepository();
-    Notificador notificador = org.mockito.Mockito.mock(Notificador.class);
-    org.mockito.Mockito.when(
-            notificador.enviarNotificacion(
-                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
-        .thenReturn(ResultadoEnvio.fallido("proveedor caído"));
-    ServicioNotificaciones notificaciones =
-        new ServicioNotificaciones(notificador, notificacionesRepository, 1);
+    AtomicInteger intentos = new AtomicInteger();
+    NotificadorPorCanal notificador =
+        new NotificadorPorCanal(
+            (destinatario, asunto, mensaje) -> {
+              intentos.incrementAndGet();
+              return ResultadoEnvio.fallido("proveedor caído");
+            },
+            (destinatario, mensaje) -> {
+              intentos.incrementAndGet();
+              return ResultadoEnvio.fallido("proveedor caído");
+            },
+            (destinatario, mensaje) -> {
+              intentos.incrementAndGet();
+              return ResultadoEnvio.fallido("proveedor caído");
+            });
+    ServicioNotificaciones notificaciones = new ServicioNotificaciones(notificador);
     Clock clock = Clock.fixed(Instant.parse("2026-09-11T12:00:00Z"), ZoneOffset.UTC);
-    app = DonacionesApi.create(clock, notificaciones).start(0);
+    app = DonaTrackServidor.create(clock, notificaciones).start(0);
     baseUrl = "http://localhost:" + app.port();
     // Las sesiones viven en memoria: la app nueva no conoce la cookie de la anterior.
     sessionCookie = iniciarSesionComoAdmin();
@@ -198,8 +213,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
         request("POST", "/api/v1/donantes", donanteJson("Sofía", "Pérez", "sofia@example.org"));
 
     assertEquals(201, response.statusCode(), response.body());
-    assertEquals(1, notificacionesRepository.getNotificaciones().size());
-    assertEquals("FALLIDA", notificacionesRepository.getNotificaciones().get(0).getEstado().name());
+    assertEquals(1, intentos.get());
   }
 
   @AfterEach
@@ -209,39 +223,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
 
   @AfterEach
   void limpiarPersistencia() {
-    // Cada escritura HTTP confirma su propia transacción en el controlador, a diferencia de las
-    // pruebas transaccionales que revierten: se borran las donaciones confirmadas, los bienes, las
-    // necesidades, los donantes, las entidades beneficiarias y las subcategorías del catálogo
-    // creadas por la API para que no contaminen los conteos, el chequeo de documentos o razones
-    // sociales duplicadas ni la restricción única del catálogo de las demás pruebas. El orden
-    // explícito va siempre del hijo al padre y no depende del orden en que Hibernate encola los
-    // borrados en cascada: bienes y necesidades primero porque referencian a las donaciones, a las
-    // entidades y a las subcategorías; donaciones, entidades y donantes después; y las
-    // subcategorías al final porque los bienes y las necesidades las referencian. Los bienes
-    // incluyen los que quedaron sueltos al reemplazar los de una donación. Acá no hay transacción
-    // previa, así que este método es el dueño legítimo de la transacción de limpieza.
-    withTransaction(
-        () -> {
-          createQuery("select p from PropuestaDeAsignacion p", PropuestaDeAsignacion.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select b from Bien b", Bien.class).getResultList().forEach(this::remove);
-          createQuery("select n from Necesidad n", Necesidad.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select d from Donacion d", Donacion.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select e from EntidadBeneficiaria e", EntidadBeneficiaria.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select d from Donante d", Donante.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select s from SubCategoria s", SubCategoria.class)
-              .getResultList()
-              .forEach(this::remove);
-        });
+    BaseDePrueba.vaciar();
   }
 
   @Test
@@ -440,9 +422,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
     assertEquals("ASIGNACION_REALIZADA", json(seleccion).get("estado").asText());
     assertEquals(entidadId, json(seleccion).get("entidadBeneficiariaId").asLong());
     long asignacionesAntesDeRepetir =
-        notificacionesRepository.getNotificaciones().stream()
-            .filter(n -> n.getMensaje().contains("asignad"))
-            .count();
+        mensajesEnviados.stream().filter(m -> m.contains("asignad")).count();
     assertEquals(
         200,
         request(
@@ -452,9 +432,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
             .statusCode());
     assertEquals(
         asignacionesAntesDeRepetir,
-        notificacionesRepository.getNotificaciones().stream()
-            .filter(n -> n.getMensaje().contains("asignad"))
-            .count());
+        mensajesEnviados.stream().filter(m -> m.contains("asignad")).count());
     HttpResponse<String> pendientes = request("GET", "/api/v1/propuestas-asignacion", null);
     assertEquals(200, pendientes.statusCode());
     assertEquals(1, json(pendientes).size());
@@ -727,7 +705,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
                 "{\"estado\":\"LISTA_PARA_ENTREGAR\"}")
             .statusCode());
 
-    int antes = notificacionesRepository.getNotificaciones().size();
+    int antes = mensajesEnviados.size();
     HttpResponse<String> response =
         request(
             "PATCH",
@@ -742,12 +720,79 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
             .setParameter("id", donacionId)
             .getSingleResult();
     assertEquals("AB123CD", donacion.getIdCamion().orElseThrow());
-    var nuevas = notificacionesRepository.getNotificaciones().subList(antes, antes + 2);
+    var nuevas = mensajesEnviados.subList(antes, antes + 2);
     assertEquals(2, nuevas.size());
-    for (Notificacion notificacion : nuevas) {
-      assertEquals(
-          1, apariciones(notificacion.getMensaje(), "https://mapa.donatrack.org/tracking/AB123CD"));
+    for (String mensaje : nuevas) {
+      assertEquals(1, apariciones(mensaje, "https://mapa.donatrack.org/tracking/AB123CD"));
     }
+  }
+
+  @Test
+  void transicionMasivaRevertidaNoEnviaAvisos() throws Exception {
+    UUID donanteId = crearDonante();
+    long entidadId = crearEntidad("Hogar Lote");
+    crearNecesidad(entidadId, "Fideos");
+    UUID enTraslado = crearDonacion(donanteId, "Fideos");
+    llevarATraslado(enTraslado, entidadId);
+    UUID enDeposito = crearDonacion(donanteId, "Fideos");
+
+    int antes = mensajesEnviados.size();
+    HttpResponse<String> response =
+        request(
+            "PATCH",
+            "/api/v1/donaciones/estado",
+            "[{\"idDonacion\":\""
+                + enTraslado
+                + "\",\"nuevoEstado\":\"ENTREGADA\"},"
+                + "{\"idDonacion\":\""
+                + enDeposito
+                + "\",\"nuevoEstado\":\"ENTREGADA\"}]");
+
+    assertEquals(409, response.statusCode(), response.body());
+    assertEquals(List.of(), mensajesEnviados.subList(antes, mensajesEnviados.size()));
+  }
+
+  @Test
+  void transicionMasivaConCamionInvalidoNoPersisteNingunItem() throws Exception {
+    UUID donanteId = crearDonante();
+    long entidadId = crearEntidad("Hogar Lote Camion");
+    crearNecesidad(entidadId, "Harina");
+    UUID valida = crearDonacion(donanteId, "Harina");
+    UUID sinCamion = crearDonacion(donanteId, "Harina");
+    for (UUID donacionId : List.of(valida, sinCamion)) {
+      asignarDesdePropuesta(donacionId, entidadId);
+      assertEquals(
+          200,
+          request(
+                  "PATCH",
+                  "/api/v1/donaciones/" + donacionId + "/estado",
+                  "{\"estado\":\"LISTA_PARA_ENTREGAR\"}")
+              .statusCode());
+    }
+
+    int antes = mensajesEnviados.size();
+    HttpResponse<String> response =
+        request(
+            "PATCH",
+            "/api/v1/donaciones/estado",
+            "[{\"idDonacion\":\""
+                + valida
+                + "\",\"nuevoEstado\":\"EN_TRASLADO\",\"idCamion\":\"AD789EF\"},"
+                + "{\"idDonacion\":\""
+                + sinCamion
+                + "\",\"nuevoEstado\":\"EN_TRASLADO\",\"idCamion\":\" \"}]");
+
+    assertEquals(400, response.statusCode(), response.body());
+    assertEquals("INVALID_ARGUMENT", json(response).get("code").asText(), response.body());
+    for (UUID donacionId : List.of(valida, sinCamion)) {
+      Donacion donacion =
+          createQuery("select d from Donacion d where d.id = :id", Donacion.class)
+              .setParameter("id", donacionId)
+              .getSingleResult();
+      assertEquals(EstadoDonacion.LISTA_PARA_ENTREGAR, donacion.getEstado());
+      assertTrue(donacion.getIdCamion().isEmpty());
+    }
+    assertEquals(List.of(), mensajesEnviados.subList(antes, mensajesEnviados.size()));
   }
 
   @Test
@@ -772,7 +817,7 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
             "{\"estado\":\"EN_TRASLADO\"}");
     assertEquals(400, sinCamion.statusCode(), sinCamion.body());
 
-    int antes = notificacionesRepository.getNotificaciones().size();
+    int antes = mensajesEnviados.size();
     HttpResponse<String> response =
         request(
             "PATCH",
@@ -785,11 +830,10 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
             .setParameter("id", donacionId)
             .getSingleResult();
     assertEquals("AC456DE", donacion.getIdCamion().orElseThrow());
-    var nuevas = notificacionesRepository.getNotificaciones().subList(antes, antes + 2);
+    var nuevas = mensajesEnviados.subList(antes, antes + 2);
     assertEquals(2, nuevas.size());
-    for (Notificacion notificacion : nuevas) {
-      assertEquals(
-          1, apariciones(notificacion.getMensaje(), "https://mapa.donatrack.org/tracking/AC456DE"));
+    for (String mensaje : nuevas) {
+      assertEquals(1, apariciones(mensaje, "https://mapa.donatrack.org/tracking/AC456DE"));
     }
   }
 

@@ -50,7 +50,8 @@ public class PlanificadorRutasHttp implements PlanificadorRutas {
   public record CamionDto(
       String patente, double volumenM3, double alturaM, double capacidadCargaKg) {}
 
-  public record LoteRequestDto(List<DonacionDto> donaciones, List<CamionDto> camiones) {}
+  public record LoteRequestDto(
+      List<DonacionDto> donaciones, List<CamionDto> camiones, String urlCallback) {}
 
   public record LoteIdResponseDto(UUID loteId) {}
 
@@ -59,7 +60,8 @@ public class PlanificadorRutasHttp implements PlanificadorRutas {
     LoteRequestDto request =
         new LoteRequestDto(
             lote.donaciones().stream().map(this::mapearDonacion).toList(),
-            lote.camiones().stream().map(this::mapearCamion).toList());
+            lote.camiones().stream().map(this::mapearCamion).toList(),
+            lote.urlCallback());
 
     try {
       HttpRequest httpRequest =

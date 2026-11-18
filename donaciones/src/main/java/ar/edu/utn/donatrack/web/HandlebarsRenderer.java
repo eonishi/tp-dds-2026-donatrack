@@ -1,6 +1,7 @@
 package ar.edu.utn.donatrack.web;
 
 import com.github.jknack.handlebars.Handlebars;
+import com.github.jknack.handlebars.helper.ConditionalHelpers;
 import com.github.jknack.handlebars.io.ClassPathTemplateLoader;
 import io.javalin.http.Context;
 import io.javalin.rendering.FileRenderer;
@@ -17,7 +18,9 @@ import java.util.Map;
  */
 public final class HandlebarsRenderer implements FileRenderer {
   private final Handlebars handlebars =
-      new Handlebars(new ClassPathTemplateLoader("/templates", ".hbs"));
+      new Handlebars(new ClassPathTemplateLoader("/templates", ".hbs"))
+          // eq, neq, and, or, not: para marcar la opción elegida de un select ({{#if (eq a b)}}).
+          .registerHelpers(ConditionalHelpers.class);
 
   @Override
   public String render(String vista, Map<String, ?> modelo, Context ctx) {

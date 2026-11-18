@@ -18,8 +18,21 @@ El sistema se divide en dos microservicios (ver [enunciado 2](./docs/enunciado/e
 
 | Módulo | Responsabilidad | Paquetes de dominio |
 | --- | --- | --- |
-| [`donaciones`](./donaciones) | Donaciones, donantes, entidades beneficiarias, necesidades, matchmaking y notificaciones | `donaciones`, `donantes`, `beneficiarios`, `bienes`, `estados`, `notificaciones`, `utilidades` |
+| [`donaciones`](./donaciones) | Donaciones, donantes, entidades beneficiarias, necesidades, matchmaking y notificaciones | `donaciones`, `donantes`, `beneficiarios`, `bienes`, `propuestas` (incluye `matchmaking`), `notificaciones`, `importacion`, `ubicacion`, `seguimiento`, `flota`, `fotos` |
 | [`logistica`](./logistica) | Flota de camiones, rutas, destinos, monitoreo en tiempo real y planificación | `logistica` (incluye `monitoreo` y `planificacion`) |
+
+En `donaciones`, además de los paquetes de dominio:
+
+| Paquete | Qué contiene |
+| --- | --- |
+| `app` | Arranque del servidor: `DonaTrackApplication` (`main`), la configuración de la base, los servicios externos y `DonaTrackServidor`, que arma Javalin y registra la API y la web |
+| `api` | API REST JSON (`/api/v1`): controllers, DTOs, errores, mappers y validación |
+| `web` | Interfaz web MVC (ver abajo) |
+| `security` | Login, sesiones, roles y reglas de acceso |
+| `schedules` | Programas autónomos para un planificador externo (ver abajo) |
+| `demo` | Datos de prueba opcionales |
+
+Los tests de cada clase viven en el mismo paquete que la clase que prueban.
 
 Cada módulo es un proyecto Maven independiente; el `pom.xml` raíz solo los agrega (`mvn verify` en la raíz compila y testea ambos).
 
@@ -121,6 +134,8 @@ frecuencia que se configure fuera del código.
 | Microservicio | Programa | Qué hace |
 | --- | --- | --- |
 | `donaciones` | `ar.edu.utn.donatrack.schedules.MatchmakingRunner` | Genera las propuestas de asignación del matchmaking para la fecha actual. |
+| `donaciones` | `ar.edu.utn.donatrack.schedules.AusenciaDonantesRunner` | Notifica a las personas donantes sin interacción en los últimos 20 días. |
+| `logistica` | `ar.edu.utn.donatrack.logistica.schedules.PlanificacionRutasRunner` | Envía al planificador de rutas las donaciones con asignación realizada (rutas del día siguiente). |
 
 Ejecución manual (arma el classpath del módulo):
 
@@ -130,14 +145,20 @@ java -cp "donaciones/target/classes:$(cat donaciones/target/cp.txt)" \
   ar.edu.utn.donatrack.schedules.MatchmakingRunner
 ```
 
-Ejemplo de cronjob diario a las 03:00, hora local:
+Para `logistica` es igual, cambiando `-pl donaciones` por `-pl logistica` y el classpath por
+`logistica/target/classes:$(cat logistica/target/cp.txt)`.
+
+Ejemplo de cronjobs diarios en horario de baja carga, hora local:
 
 ```cron
 0 3 * * * cd /ruta/a/tp-dds-2026-donatrack && java -cp "donaciones/target/classes:$(cat donaciones/target/cp.txt)" ar.edu.utn.donatrack.schedules.MatchmakingRunner
+0 4 * * * cd /ruta/a/tp-dds-2026-donatrack && java -cp "logistica/target/classes:$(cat logistica/target/cp.txt)" ar.edu.utn.donatrack.logistica.schedules.PlanificacionRutasRunner
+0 9 * * * cd /ruta/a/tp-dds-2026-donatrack && java -cp "donaciones/target/classes:$(cat donaciones/target/cp.txt)" ar.edu.utn.donatrack.schedules.AusenciaDonantesRunner
 ```
 
-El horario, la frecuencia y los reintentos pertenecen al planificador externo: no hay
-planificación interna dentro de los microservicios.
+El horario, la frecuencia y los reintentos pertenecen al planificador externo. La única tarea
+periódica que sigue dentro de un microservicio es la ubicación de entidades en el mapa
+(geocodificación), en el proceso HTTP de donaciones.
 
 ## Fotos de recepción (Supabase Storage)
 
@@ -175,13 +196,21 @@ export TWILIO_SMS_FROM="+1..."
 export TWILIO_WHATSAPP_FROM="whatsapp:+14155238886"
 ```
 
+Las variables son opcionales y cada canal se configura por separado: correo necesita `RESEND_*`,
+SMS necesita `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` y `TWILIO_SMS_FROM`, y WhatsApp necesita
+`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` y `TWILIO_WHATSAPP_FROM`. Si a un canal le falta alguna,
+la aplicación igual arranca, ese canal queda deshabilitado y cada envío por él se registra en el
+log como fallido indicando qué variables faltan (nunca sus valores).
+
 En Twilio Trial, cada destinatario telefónico debe estar verificado y el trial dura 30 días. Para
 WhatsApp, las personas destinatarias primero deben unirse al sandbox de Twilio. Los números se
 guardan en formato E.164, por ejemplo `+541112345678`.
 
-Si falta la configuración de un canal, sus notificaciones quedan registradas como `FALLIDA` y se
-reintentan hasta tres veces. Las pruebas usan dobles de gateway, por lo que no invocan proveedores
-externos.
+Las notificaciones se envían de forma inmediata al ocurrir el evento del dominio, sin encolarlas
+en memoria ni conservar un atributo `estado` (`PENDIENTE`/`ENVIADA`/`FALLIDA`) o contador de
+reintentos en `Notificacion`. Si un proveedor rechaza el envío, el fallo se registra en el log sin
+interrumpir el caso de uso principal. Las pruebas usan dobles de gateway en `src/test`, por lo que
+no invocan proveedores externos ni requieren dobles en `src/main`.
 
 ## Datos de prueba
 

@@ -25,6 +25,7 @@ classDiagram
             +addMedioDeContacto(medio: MedioDeContacto)
             +setContactoPredeterminado(medio: MedioDeContacto)
             +getMediosDeContacto() List~MedioDeContacto~
+            +notificar(mensaje: String, canales: NotificadorPorCanal)
             +extraerEmail() Optional~String~
         }
         class PersonaHumana {
@@ -48,7 +49,7 @@ classDiagram
         class MedioDeContacto {
             <<abstract>>
             -contacto: String
-            +aceptar(notificador: Notificador, mensaje: String)
+            +enviar(mensaje: String, canales: NotificadorPorCanal)
         }
         class CorreoElectronico
         class Whatsapp
@@ -281,38 +282,18 @@ classDiagram
     namespace notificaciones {
         class Notificable {
             <<interface>>
-            +getMediosDeContacto() List~MedioDeContacto~
+            +notificar(mensaje: String, canales: NotificadorPorCanal)
         }
-        class Notificador {
-            <<interface>>
-            +enviarNotificacion(destinatario: MedioDeContacto, mensaje: String)
-            +enviar(destinatario: CorreoElectronico, mensaje: String)
-            +enviar(destinatario: Whatsapp, mensaje: String)
-            +enviar(destinatario: Sms, mensaje: String)
+        class NotificadorPorCanal {
+            +enviarPorCorreo(direccion: String, mensaje: String)
+            +enviarPorSms(numero: String, mensaje: String)
+            +enviarPorWhatsapp(numero: String, mensaje: String)
         }
-        class NotificadorSimulado
         class Notificacion {
-            -titular: Notificable
-            -destinatario: MedioDeContacto
+            -destinatario: Notificable
             -mensaje: String
-            -payload: NotificacionPayload
-            -fechaCreacion: LocalDateTime
-            -estado: EstadoNotificacion
-            +marcarEnviada()
-            +marcarFallida()
+            +enviarCon(canales: NotificadorPorCanal)
         }
-        class EstadoNotificacion {
-            <<enumeration>>
-            PENDIENTE
-            ENVIADA
-            FALLIDA
-        }
-        class NotificacionPayload {
-            <<interface>>
-        }
-        class ComprobanteEntrega
-        class InfoMapa
-        class SinPayload
         class EventoNotificable {
             <<abstract>>
             +generarNotificaciones() List~Notificacion~
@@ -382,7 +363,7 @@ classDiagram
     MedioDeContacto <|-- CorreoElectronico
     MedioDeContacto <|-- Whatsapp
     MedioDeContacto <|-- Sms
-    MedioDeContacto ..> Notificador : aceptar(notificador)
+    MedioDeContacto ..> NotificadorPorCanal : enviar(mensaje, canales)
 
     %% bienes
     Bien *-- SubCategoria : subcategoria
@@ -439,13 +420,7 @@ classDiagram
     %% notificaciones
     Donante ..|> Notificable
     EntidadBeneficiaria ..|> Notificable
-    Notificador <|.. NotificadorSimulado
-    Notificacion *-- MedioDeContacto : destinatario
-    Notificacion o-- NotificacionPayload : payload
-    Notificacion --> EstadoNotificacion : estado
-    NotificacionPayload <|.. ComprobanteEntrega
-    NotificacionPayload <|.. InfoMapa
-    NotificacionPayload <|.. SinPayload
+    Notificacion --> Notificable : destinatario
     EventoNotificable <|-- EventoBienvenida
     EventoNotificable <|-- EventoAsignacion
     EventoNotificable <|-- EventoInicioRuta
@@ -453,9 +428,8 @@ classDiagram
     EventoNotificable <|-- EventoEntregaNoSatisfactoria
     EventoNotificable <|-- EventoAusenciaDonante
     EventoNotificable ..> Notificacion : genera
-    Notificacion --> "0..1" Notificable : titular
     BandejaNotificaciones ..> Notificacion : registra
-    BandejaNotificaciones ..> AvisoBandeja : guarda uno por titular y mensaje
+    BandejaNotificaciones ..> AvisoBandeja : guarda uno por destinatario y mensaje
     AvisoBandeja ..> Donante : donanteId
     AvisoBandeja ..> EntidadBeneficiaria : entidadId
 

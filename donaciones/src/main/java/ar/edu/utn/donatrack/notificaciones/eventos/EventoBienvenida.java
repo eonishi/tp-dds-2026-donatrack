@@ -1,14 +1,11 @@
 package ar.edu.utn.donatrack.notificaciones.eventos;
 
-import ar.edu.utn.donatrack.notificaciones.DestinatariosNotificacion;
-import ar.edu.utn.donatrack.notificaciones.EstadoNotificacion;
 import ar.edu.utn.donatrack.notificaciones.Notificable;
 import ar.edu.utn.donatrack.notificaciones.Notificacion;
-import ar.edu.utn.donatrack.notificaciones.payloads.SinPayload;
 import java.util.List;
 import java.util.Objects;
 
-public class EventoBienvenida extends EventoNotificable {
+public class EventoBienvenida implements EventoNotificable {
   private final Notificable titular;
   private final String enlaceIngreso;
 
@@ -23,16 +20,9 @@ public class EventoBienvenida extends EventoNotificable {
 
   @Override
   public List<Notificacion> generarNotificaciones() {
-    return DestinatariosNotificacion.predeterminado(titular).stream()
-        .map(
-            medio ->
-                new Notificacion(
-                    titular,
-                    medio,
-                    "¡Bienvenido a DonaTrack! Gracias por formar parte del proyecto. "
-                        + enlaceIngreso,
-                    SinPayload.INSTANCE,
-                    EstadoNotificacion.PENDIENTE))
-        .toList();
+    return List.of(
+        new Notificacion(
+            titular,
+            "¡Bienvenido a DonaTrack! Gracias por formar parte del proyecto. " + enlaceIngreso));
   }
 }

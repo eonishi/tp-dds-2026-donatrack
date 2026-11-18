@@ -1,0 +1,30 @@
+{{#partial "titulo"}}{{nombre}} · Donantes · DonaTrack{{/partial}}
+
+{{#partial "contenido"}}
+<section class="py-4">
+    <div class="encabezado text-start mx-0 mb-4">
+        <a class="small" href="/admin/donantes">← Volver a personas donantes</a>
+        <h1 class="fs-2 fw-semibold mt-2">{{nombre}}</h1>
+        <p>Si cambiás el correo, también cambia el usuario con el que la persona entra.</p>
+    </div>
+
+    <form method="post" action="/admin/donantes/{{id}}" class="registro-form tarjeta p-4 mb-4">
+        {{#if error}}<div class="alert alert-danger py-2 small" role="alert">{{error}}</div>{{/if}}
+        <input type="hidden" name="rol" value="donante">
+        {{> partes/campos-donante}}
+        <button class="btn btn-primary rounded-pill px-4" type="submit">Guardar cambios</button>
+    </form>
+
+    <details class="tarjeta p-4 border-danger-subtle">
+        <summary class="h6 mb-0 text-danger">Eliminar persona donante</summary>
+        <p class="small mt-3">Se borran la persona donante, su cuenta y sus avisos. No se puede deshacer. Si ya tiene donaciones registradas no se puede eliminar, para no perder su historial.</p>
+        <form method="post" action="/admin/donantes/{{id}}/eliminar">
+            <button class="btn btn-outline-danger rounded-pill px-4" type="submit">Eliminar definitivamente</button>
+        </form>
+    </details>
+</section>
+{{/partial}}
+
+{{#partial "scripts"}}<script src="/registro.js" defer></script>{{/partial}}
+
+{{> layout}}

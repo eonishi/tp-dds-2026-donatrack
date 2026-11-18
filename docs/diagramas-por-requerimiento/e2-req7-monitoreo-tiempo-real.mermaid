@@ -50,7 +50,6 @@ classDiagram
         +buscarPorCamion(camion: Camion) Optional~Ruta~
     }
     class EventoInicioRuta
-    class InfoMapa
 
     MonitorRutas ..> LecturaPosicion : procesar()
     LecturaPosicion o-- Camion : camion
@@ -61,4 +60,4 @@ classDiagram
     Destino ..> Donacion : donacionId (API)
     Donacion --> Donante : donante
     Donacion --> EntidadBeneficiaria : entidad
-    EventoInicioRuta ..> InfoMapa : enlace al mapa (seguimiento en vivo)
+    EventoInicioRuta ..> Donante : mensaje con enlace al mapa (seguimiento en vivo)

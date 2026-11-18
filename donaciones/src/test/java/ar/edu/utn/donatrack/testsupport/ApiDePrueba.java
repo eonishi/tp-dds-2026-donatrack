@@ -1,10 +1,10 @@
 package ar.edu.utn.donatrack.testsupport;
 
-import ar.edu.utn.donatrack.api.DonacionesApi;
-import ar.edu.utn.donatrack.api.ServiciosExternos;
+import ar.edu.utn.donatrack.app.DonaTrackServidor;
+import ar.edu.utn.donatrack.app.ServiciosExternos;
 import ar.edu.utn.donatrack.notificaciones.BandejaNotificacionesRepository;
-import ar.edu.utn.donatrack.notificaciones.NotificacionesRepository;
-import ar.edu.utn.donatrack.notificaciones.NotificadorSimulado;
+import ar.edu.utn.donatrack.notificaciones.NotificadorPorCanal;
+import ar.edu.utn.donatrack.notificaciones.ResultadoEnvio;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.seguimiento.PosicionesCamiones;
 import ar.edu.utn.donatrack.ubicacion.Coordenadas;
@@ -14,8 +14,8 @@ import java.util.Optional;
 
 /**
  * Arranca la API de donaciones para las pruebas HTTP sin servicios externos: notificaciones
- * simuladas (el notificador real exige credenciales de Resend y Twilio), una flota en memoria en
- * lugar de logística y una geocodificación fija en lugar de Nominatim.
+ * descartadas (las pruebas no deben contactar a Resend ni a Twilio), una flota en memoria en lugar
+ * de logística y una geocodificación fija en lugar de Nominatim.
  */
 public final class ApiDePrueba {
   /** Donde la geocodificación de prueba ubica cualquier dirección. */
@@ -37,17 +37,18 @@ public final class ApiDePrueba {
 
   public static Javalin crear(
       Clock clock, PosicionesCamiones posicionesCamiones, FlotaEnMemoria flota) {
-    return DonacionesApi.create(
+    return DonaTrackServidor.create(
         clock,
-        notificacionesSimuladas(clock),
+        notificacionesDescartadas(clock),
         new ServiciosExternos(posicionesCamiones, flota, direccion -> Optional.of(UBICACION)));
   }
 
-  private static ServicioNotificaciones notificacionesSimuladas(Clock clock) {
+  private static ServicioNotificaciones notificacionesDescartadas(Clock clock) {
     return new ServicioNotificaciones(
-        new NotificadorSimulado(),
-        new NotificacionesRepository(),
-        1,
+        new NotificadorPorCanal(
+            (destinatario, asunto, mensaje) -> ResultadoEnvio.aceptado(),
+            (destinatario, mensaje) -> ResultadoEnvio.aceptado(),
+            (destinatario, mensaje) -> ResultadoEnvio.aceptado()),
         new BandejaNotificacionesRepository(clock));
   }
 }

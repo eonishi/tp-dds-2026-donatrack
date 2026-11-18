@@ -5,8 +5,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,10 +20,10 @@ public class EventoEntregaNoSastifactoriaTest {
   void setUp() {
     donanteMock = mock(Donante.class);
     when(donanteMock.getMedioContactoPredeterminado())
-        .thenReturn(new CorreoElectronico("donante@test.com"));
+        .thenReturn(MedioDeContacto.correo("donante@test.com"));
     entidadMock = mock(EntidadBeneficiaria.class);
     when(entidadMock.getMediosDeContacto())
-        .thenReturn(List.of(new CorreoElectronico("entidad@test.com")));
+        .thenReturn(List.of(MedioDeContacto.correo("entidad@test.com")));
     when(entidadMock.getRazonSocial()).thenReturn("Razon Test");
   }
 

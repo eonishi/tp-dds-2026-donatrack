@@ -12,7 +12,7 @@ Cada diagrama es el **fragmento mínimo del dominio** que cumple ese requerimien
 
 ### R1 — Gestión de personas donantes
 
-**Decisión:** `Donante` es una clase abstracta con dos especializaciones (`PersonaHumana` y `PersonajeJuridica`) porque cada tipo registra datos distintos. Los medios de contacto forman una jerarquía (`MedioDeContacto` con email, WhatsApp y SMS) que permite sumar canales sin tocar `Donante`.
+**Decisión:** `Donante` es una clase abstracta con dos especializaciones (`PersonaHumana` y `PersonajeJuridica`) porque cada tipo registra datos distintos. `MedioDeContacto` es un value object (canal + contacto, embebido en la tabla de su dueño); el envío por cada canal vive en el enum `Canal` (correo, SMS, WhatsApp), así que sumar un canal no toca `Donante`.
 
 ![R1 — Gestión de personas donantes](assets/e1-req1-gestion-donantes.svg)
 
@@ -67,7 +67,7 @@ Cada diagrama es el **fragmento mínimo del dominio** que cumple ese requerimien
 
 ### R2 — Notificaciones por distintos medios ante eventos
 
-**Decisión:** Template Method: cada evento (`EventoNotificable` + 6 subclases) genera sus `Notificacion` en `generarNotificaciones()`. Los payloads (`ComprobanteEntrega`, `InfoMapa`, `SinPayload`) forman una interfaz con los diferentes tipos de payloads posibles. `Donante` y `EntidadBeneficiaria` implementan `Notificable`.
+**Decisión:** cada evento implementa la interfaz `EventoNotificable` (6 implementaciones) y genera sus `Notificacion` en `generarNotificaciones()`. Las transiciones de `EstadoDonacion` publican su evento al ocurrir en un `PublicadorDeEventos`; quien transiciona entrega el publicador y no arma notificaciones a mano. Los casos de uso transaccionales usan un `PublicadorDiferido`, que retiene los eventos y los envía con `ServicioNotificaciones` recién después del commit: si la transacción se revierte, no sale ningún aviso. Es interfaz y no clase abstracta porque no hay comportamiento compartido: `publicar` solo necesita tratar a todos los eventos por igual. La `Notificacion` es solo destinatario y mensaje: el comprobante de entrega (fecha y patente) y el enlace al mapa viajan en el texto, porque nadie consume un payload estructurado. Los envíos no se guardan; `NotificadorPorCanal` registra en el log los que fallan. `Donante` y `EntidadBeneficiaria` implementan `Notificable`.
 
 ![R2 — Notificaciones por distintos medios ante eventos](assets/e2-req2-notificaciones-eventos.svg)
 
@@ -102,7 +102,7 @@ Cada diagrama es el **fragmento mínimo del dominio** que cumple ese requerimien
 
 ### R7 — Monitoreo en tiempo real de los camiones
 
-**Decisión:** `MonitorRutas` procesa `LecturaPosicion` (camión, coordenada, velocidad, timestamp), descarta lecturas futuras y correlaciona con la ruta activa. El inicio de ruta notifica con enlace al mapa (`InfoMapa`).
+**Decisión:** `MonitorRutas` procesa `LecturaPosicion` (camión, coordenada, velocidad, timestamp), descarta lecturas futuras y correlaciona con la ruta activa. El inicio de ruta notifica con el enlace al mapa en el mensaje.
 
 ![R7 — Monitoreo en tiempo real de los camiones](assets/e2-req7-monitoreo-tiempo-real.svg)
 
@@ -126,7 +126,7 @@ Cada diagrama es el **fragmento mínimo del dominio** que cumple ese requerimien
 
 ### Impl 2 — Solicitudes al proveedor en lotes (máx. 100)
 
-**Decisión:** `ServicioPlanificacionRutas.partirEnLotes` arma lotes de hasta 100 donaciones y `LoteDonaciones` valida el tope como invariante en su constructor (record).
+**Decisión:** Cada corrida de `ServicioPlanificacionRutas.planificar` envía un único lote con las primeras 100 donaciones y todos los camiones; las restantes quedan en "Asignación realizada" y entran en la corrida siguiente. Un solo lote por corrida evita que un camión reciba dos rutas el mismo día. `LoteDonaciones` valida el tope como invariante en su constructor (record).
 
 ![Impl 2 — Solicitudes al proveedor en lotes (máx. 100)](assets/e2-impl2-lotes-100.svg)
 
@@ -153,7 +153,7 @@ flowchart LR
         MVC["Vistas MVC<br/>controllers web + Handlebars"]
         API["API REST /api/v1"]
         DOM["Dominio + repositorios"]
-        TAR["Tareas en segundo plano<br/>ubicación de entidades,<br/>importación CSV, ausencia de donantes"]
+        TAR["Tareas en segundo plano<br/>ubicación de entidades,<br/>importación CSV"]
         MVC --> DOM
         API --> DOM
         TAR --> DOM
@@ -162,7 +162,7 @@ flowchart LR
     subgraph logistica["Servicio logística (Javalin :9001)"]
         GQL["GraphQL /logistica/graphql"]
         CB["HTTP: login, logout,<br/>callback del planificador"]
-        SCH["PlanificacionScheduler<br/>todos los días, en baja carga"]
+        SCH["PlanificacionRutasRunner<br/>invocado por cronjob externo"]
     end
 
     PG[("PostgreSQL<br/>esquemas donaciones y logistica")]
@@ -180,7 +180,7 @@ flowchart LR
     R -- "login" --> CB
     MVC -- "GraphQL: posiciones (clave interna)<br/>y flota (sesión del admin)" --> GQL
     GQL -- "REST: cambio de estado<br/>de donaciones" --> API
-    SCH -- "lotes de hasta 100" --> PLA
+    SCH -- "un lote de hasta 100" --> PLA
     PLA -- "callback" --> CB
     DOM --> PG
     logistica --> PG
