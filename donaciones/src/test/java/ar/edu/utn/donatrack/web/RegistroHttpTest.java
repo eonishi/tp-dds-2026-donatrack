@@ -6,13 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ar.edu.utn.donatrack.app.DonaTrackServidor;
 import ar.edu.utn.donatrack.app.ServiciosExternos;
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
+import ar.edu.utn.donatrack.donantes.Canal;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
-import ar.edu.utn.donatrack.donantes.Sms;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.donantes.TipoOrganizacion;
-import ar.edu.utn.donatrack.donantes.Whatsapp;
 import ar.edu.utn.donatrack.notificaciones.BandejaNotificacionesRepository;
 import ar.edu.utn.donatrack.notificaciones.NotificadorPorCanal;
 import ar.edu.utn.donatrack.notificaciones.ResultadoEnvio;
@@ -52,7 +50,7 @@ class RegistroHttpTest implements WithSimplePersistenceUnit {
   private BandejaNotificacionesRepository bandeja;
 
   /** Un envío que llegó a un gateway: por qué canal, a qué contacto y con qué texto. */
-  private record Envio(Class<?> canal, String contacto, String mensaje) {}
+  private record Envio(Canal canal, String contacto, String mensaje) {}
 
   @BeforeEach
   void start() {
@@ -64,10 +62,10 @@ class RegistroHttpTest implements WithSimplePersistenceUnit {
                 new ServicioNotificaciones(
                     new NotificadorPorCanal(
                         (destinatario, asunto, mensaje) ->
-                            registrar(CorreoElectronico.class, destinatario, mensaje),
-                        (destinatario, mensaje) -> registrar(Sms.class, destinatario, mensaje),
+                            registrar(Canal.CORREO, destinatario, mensaje),
+                        (destinatario, mensaje) -> registrar(Canal.SMS, destinatario, mensaje),
                         (destinatario, mensaje) ->
-                            registrar(Whatsapp.class, destinatario, mensaje)),
+                            registrar(Canal.WHATSAPP, destinatario, mensaje)),
                     bandeja),
                 new ServiciosExternos(
                     patente -> Optional.empty(),
@@ -82,7 +80,7 @@ class RegistroHttpTest implements WithSimplePersistenceUnit {
     app.stop();
   }
 
-  private ResultadoEnvio registrar(Class<?> canal, String contacto, String mensaje) {
+  private ResultadoEnvio registrar(Canal canal, String contacto, String mensaje) {
     notificaciones.add(new Envio(canal, contacto, mensaje));
     return ResultadoEnvio.aceptado();
   }
@@ -149,7 +147,7 @@ class RegistroHttpTest implements WithSimplePersistenceUnit {
   @Test
   void persistsHumanAgeAndSendsWelcomeToPreferredContact() throws Exception {
     String[] channels = {"CORREO", "SMS", "WHATSAPP"};
-    Class<?>[] contacts = {CorreoElectronico.class, Sms.class, Whatsapp.class};
+    Canal[] contacts = {Canal.CORREO, Canal.SMS, Canal.WHATSAPP};
     for (int i = 0; i < channels.length; i++) {
       String email = "human" + i + "@example.org";
       Map<String, String> fields = donante(email, "4011122" + i);
@@ -196,7 +194,7 @@ class RegistroHttpTest implements WithSimplePersistenceUnit {
       assertEquals(type, legal.getTipoOrganizacion());
       assertEquals(TipoDocumento.CUIT, legal.getDocumento());
       assertEquals(fields.get("donanteCuit").replace("-", ""), legal.getNumDocumento());
-      assertEquals(Whatsapp.class, notificaciones.get(type.ordinal()).canal());
+      assertEquals(Canal.WHATSAPP, notificaciones.get(type.ordinal()).canal());
     }
   }
 

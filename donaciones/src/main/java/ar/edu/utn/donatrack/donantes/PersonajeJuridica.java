@@ -27,13 +27,13 @@ public class PersonajeJuridica extends Donante {
   protected PersonajeJuridica() {}
 
   public PersonajeJuridica(
-      CorreoElectronico email,
+      MedioDeContacto email,
       String numDocumento,
       TipoDocumento documento,
       String razonSocial,
       TipoOrganizacion tipoOrganizacion,
       String rubro) {
-    super(email, numDocumento, documento);
+    super(MedioDeContacto.exigirCorreo(email), numDocumento, documento);
     this.razonSocial = razonSocial;
     this.tipoOrganizacion = tipoOrganizacion;
     this.rubro = rubro;
@@ -41,13 +41,13 @@ public class PersonajeJuridica extends Donante {
 
   public PersonajeJuridica(
       UUID id,
-      CorreoElectronico email,
+      MedioDeContacto email,
       String numDocumento,
       TipoDocumento documento,
       String razonSocial,
       TipoOrganizacion tipoOrganizacion,
       String rubro) {
-    super(id, email, numDocumento, documento);
+    super(id, MedioDeContacto.exigirCorreo(email), numDocumento, documento);
     this.razonSocial = razonSocial;
     this.tipoOrganizacion = tipoOrganizacion;
     this.rubro = rubro;

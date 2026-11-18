@@ -5,9 +5,9 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoBienvenida;
 import ar.edu.utn.donatrack.security.AuthService;
@@ -108,7 +108,7 @@ public final class RegistroController implements WithSimplePersistenceUnit {
 
     EntidadBeneficiaria entidad = new EntidadBeneficiaria(razonSocial, direccion, telefono);
     entidad.actualizarDatos(
-        razonSocial, direccion, telefono, List.of(new CorreoElectronico(correo)));
+        razonSocial, direccion, telefono, List.of(MedioDeContacto.correo(correo)));
 
     return withTransaction(
         () -> {

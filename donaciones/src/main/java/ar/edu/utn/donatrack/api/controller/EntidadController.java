@@ -14,7 +14,7 @@ import ar.edu.utn.donatrack.api.validation.DtoValidator;
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.security.Role;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
@@ -114,9 +114,9 @@ public final class EntidadController implements WithSimplePersistenceUnit {
     }
   }
 
-  private List<CorreoElectronico> correos(EntidadRequest request) {
+  private List<MedioDeContacto> correos(EntidadRequest request) {
     return request.correos() == null
         ? List.of()
-        : request.correos().stream().map(CorreoElectronico::new).toList();
+        : request.correos().stream().map(MedioDeContacto::correo).toList();
   }
 }

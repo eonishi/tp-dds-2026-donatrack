@@ -18,15 +18,15 @@ class DonantePersistenciaTest implements SimplePersistenceTest {
   void unDonanteHumanoSobreviveAlViajeDeIdaYVuelta() {
     PersonaHumana donante =
         new PersonaHumana(
-            new CorreoElectronico("ana@test.com"),
+            MedioDeContacto.correo("ana@test.com"),
             "Ana",
             "Gomez",
             "30111222",
             TipoDocumento.DNI,
             Genero.FEMENINO,
             "Av. Siempreviva 742");
-    donante.addMedioDeContacto(new Sms("1145558888"));
-    donante.addMedioDeContacto(new Whatsapp("1145559999"));
+    donante.addMedioDeContacto(MedioDeContacto.sms("1145558888"));
+    donante.addMedioDeContacto(MedioDeContacto.whatsapp("1145559999"));
     assertNull(
         donante.getId(),
         "Un donante recién construido no tiene id: lo asigna el proveedor al persistirlo");
@@ -55,13 +55,13 @@ class DonantePersistenciaTest implements SimplePersistenceTest {
 
     List<MedioDeContacto> medios = recargado.getMediosDeContacto();
     assertEquals(3, medios.size(), "Los tres canales de contacto deben persistirse");
-    assertTrue(medios.stream().anyMatch(CorreoElectronico.class::isInstance), "Falta el correo");
-    assertTrue(medios.stream().anyMatch(Sms.class::isInstance), "Falta el SMS");
-    assertTrue(medios.stream().anyMatch(Whatsapp.class::isInstance), "Falta el WhatsApp");
+    assertTrue(medios.stream().anyMatch(MedioDeContacto::esCorreo), "Falta el correo");
+    assertTrue(medios.stream().anyMatch(m -> m.getCanal() == Canal.SMS), "Falta el SMS");
+    assertTrue(medios.stream().anyMatch(m -> m.getCanal() == Canal.WHATSAPP), "Falta el WhatsApp");
     assertEquals(
         "1145558888",
         medios.stream()
-            .filter(Sms.class::isInstance)
+            .filter(m -> m.getCanal() == Canal.SMS)
             .map(MedioDeContacto::getContacto)
             .findFirst()
             .orElseThrow(),
@@ -72,7 +72,7 @@ class DonantePersistenciaTest implements SimplePersistenceTest {
   void unaOrganizacionConRepresentantesSobreviveAlViajeDeIdaYVuelta() {
     PersonajeJuridica organizacion =
         new PersonajeJuridica(
-            new CorreoElectronico("ong@test.com"),
+            MedioDeContacto.correo("ong@test.com"),
             "30111222333",
             TipoDocumento.CUIT,
             "Fundación Test",

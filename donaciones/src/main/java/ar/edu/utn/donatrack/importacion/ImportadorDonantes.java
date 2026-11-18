@@ -2,7 +2,6 @@ package ar.edu.utn.donatrack.importacion;
 
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.security.AuthService;
-import ar.edu.utn.donatrack.security.Usuario;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
@@ -17,7 +16,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -140,41 +138,36 @@ public class ImportadorDonantes implements WithSimplePersistenceUnit {
     Lote resultado = new Lote();
     withTransaction(
         () -> {
-          InsercionEnLote insercion = new InsercionEnLote(entityManager());
           for (Fila fila : lote) {
             try {
-              importarFila(
-                  fila.datos(), insercion, resultado, porCorreo, porDocumento, correosConCuenta);
+              importarFila(fila.datos(), resultado, porCorreo, porDocumento, correosConCuenta);
             } catch (RuntimeException e) {
               resultado.errores.add(new ErrorDeFila(fila.numero(), motivo(e)));
             }
           }
-          // Todo el lote junto: un viaje a la base por tabla (ver InsercionEnLote).
-          insercion.insertar(resultado.donantes, resultado.cuentas);
         });
+    // Cada lote se suelta del contexto de persistencia: si no, 10.000 donantes quedarían en memoria
+    // y cada flush revisaría todos.
+    entityManager().clear();
     // Recién acá el lote quedó guardado: la vista no muestra filas que todavía no están en la base.
     importacion.loteGuardado(
-        lote.size(), resultado.donantes.size(), resultado.existentes, resultado.cuentas.size());
+        lote.size(), resultado.donantesNuevos, resultado.existentes, resultado.cuentas);
     resultado.errores.forEach(e -> importacion.error(e.fila(), e.motivo()));
   }
 
-  /** Lo que se juntó de un lote: se guarda todo junto y se cuenta después del commit. */
+  /** Lo que pasó con un lote: se cuenta después del commit. */
   private static final class Lote {
-    private final Map<UUID, Donante> donantes = new LinkedHashMap<>();
-    private final Map<UUID, Usuario> cuentas = new LinkedHashMap<>();
     private final List<ErrorDeFila> errores = new ArrayList<>();
+    private int donantesNuevos;
     private int existentes;
+    private int cuentas;
   }
 
   private record ErrorDeFila(long fila, String motivo) {}
 
-  /**
-   * Valida la fila y la suma al lote. No toca la base: si el donante es nuevo le reserva el id para
-   * poder crearle la cuenta enseguida, y lo deja junto con la cuenta para el guardado del lote.
-   */
+  /** Valida la fila y persiste el donante (si es nuevo) y su cuenta pendiente de activación. */
   private void importarFila(
       DonanteCsv csv,
-      InsercionEnLote insercion,
       Lote lote,
       Map<String, UUID> porCorreo,
       Map<String, UUID> porDocumento,
@@ -188,8 +181,9 @@ public class ImportadorDonantes implements WithSimplePersistenceUnit {
     UUID donanteId = porCorreo.getOrDefault(correo, porDocumento.get(documento));
     if (donanteId == null) {
       Donante donante = ImportadorDonantesCsv.mapearDonante(csv);
-      donanteId = insercion.idPara(donante);
-      lote.donantes.put(donanteId, donante);
+      persist(donante);
+      donanteId = donante.getId();
+      lote.donantesNuevos++;
       // Se anota ya, así una fila repetida más abajo en el mismo archivo cuenta como existente.
       porCorreo.put(correo, donanteId);
       porDocumento.put(documento, donanteId);
@@ -199,8 +193,8 @@ public class ImportadorDonantes implements WithSimplePersistenceUnit {
     // El conjunto se cargó entero al empezar y se actualiza acá, así que no hace falta preguntarle
     // a la base fila por fila.
     if (correosConCuenta.add(correo)) {
-      Usuario cuenta = authService.cuentaPendiente(correo, donanteId);
-      lote.cuentas.put(insercion.idPara(cuenta), cuenta);
+      persist(authService.cuentaPendiente(correo, donanteId));
+      lote.cuentas++;
     }
   }
 
@@ -226,7 +220,7 @@ public class ImportadorDonantes implements WithSimplePersistenceUnit {
     for (Object[] fila :
         createQuery(
                 "select lower(c.contacto), d.id from Donante d join d.mediosDeContacto c"
-                    + " where type(c) = CorreoElectronico",
+                    + " where c.canal = ar.edu.utn.donatrack.donantes.Canal.CORREO",
                 Object[].class)
             .getResultList()) {
       mapa.putIfAbsent((String) fila[0], (UUID) fila[1]);

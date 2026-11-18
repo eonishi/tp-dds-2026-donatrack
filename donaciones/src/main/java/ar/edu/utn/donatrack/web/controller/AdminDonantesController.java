@@ -4,13 +4,12 @@ import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.post;
 
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
+import ar.edu.utn.donatrack.donantes.Canal;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
-import ar.edu.utn.donatrack.donantes.Sms;
-import ar.edu.utn.donatrack.donantes.Whatsapp;
 import ar.edu.utn.donatrack.notificaciones.BandejaNotificacionesRepository;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoBienvenida;
@@ -250,7 +249,7 @@ public final class AdminDonantesController implements WithSimplePersistenceUnit 
     String telefono =
         donante.getMediosDeContacto().stream()
             .filter(AdminDonantesController::esTelefono)
-            .map(m -> (m instanceof Whatsapp ? "WhatsApp " : "SMS ") + m.getContacto())
+            .map(m -> (m.getCanal() == Canal.WHATSAPP ? "WhatsApp " : "SMS ") + m.getContacto())
             .findFirst()
             .orElse("");
     String estado;
@@ -289,6 +288,6 @@ public final class AdminDonantesController implements WithSimplePersistenceUnit 
   }
 
   private static boolean esTelefono(MedioDeContacto medio) {
-    return medio instanceof Sms || medio instanceof Whatsapp;
+    return medio.esTelefono();
   }
 }

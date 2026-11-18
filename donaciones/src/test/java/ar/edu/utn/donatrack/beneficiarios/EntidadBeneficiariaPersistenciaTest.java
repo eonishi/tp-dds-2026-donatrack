@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ar.edu.utn.donatrack.bienes.Categoria;
 import ar.edu.utn.donatrack.bienes.SubCategoria;
 import ar.edu.utn.donatrack.bienes.UnidadMedida;
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import io.github.flbulgarelli.jpa.extras.test.SimplePersistenceTest;
 import java.util.List;
 import java.util.UUID;
@@ -47,7 +47,7 @@ class EntidadBeneficiariaPersistenciaTest implements SimplePersistenceTest {
         new NecesidadRecurrente(alimentos, 20.0, UnidadMedida.KILOGRAMOS, "Fideos recurrentes");
     recurrente.setPeriodo(TipoPeriodo.MENSUAL);
     entidad.agregarNecesidadRecurrente(recurrente);
-    entidad.agregarCorreo(new CorreoElectronico("contacto@hogar.org"));
+    entidad.agregarCorreo(MedioDeContacto.correo("contacto@hogar.org"));
 
     persist(alimentos);
     persist(entidad);

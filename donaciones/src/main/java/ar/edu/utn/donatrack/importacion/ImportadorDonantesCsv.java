@@ -1,10 +1,9 @@
 package ar.edu.utn.donatrack.importacion;
 
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
-import ar.edu.utn.donatrack.donantes.Sms;
 import com.opencsv.bean.CsvToBeanBuilder;
 import java.io.IOException;
 import java.io.Reader;
@@ -38,7 +37,7 @@ public class ImportadorDonantesCsv {
         var nombreApellido = csv.getNombreRazonSocial().trim().split(" ");
         var nuevaPersonaHumana =
             new PersonaHumana(
-                new CorreoElectronico(csv.getEmail()),
+                MedioDeContacto.correo(csv.getEmail()),
                 nombreApellido[0],
                 (nombreApellido.length > 1) ? nombreApellido[1] : "",
                 csv.getDocumento(),
@@ -51,7 +50,7 @@ public class ImportadorDonantesCsv {
       case JURIDICA:
         var nuevaPersonaJuridica =
             new PersonajeJuridica(
-                new CorreoElectronico(csv.getEmail()),
+                MedioDeContacto.correo(csv.getEmail()),
                 csv.getDocumento(),
                 csv.getTipoDoc(),
                 csv.getNombreRazonSocial(),
@@ -68,7 +67,7 @@ public class ImportadorDonantesCsv {
   // El teléfono es opcional: muchas filas reales no lo traen.
   private static void agregarTelefono(Donante donante, String telefono) {
     if (telefono != null && !telefono.isBlank()) {
-      donante.addMedioDeContacto(new Sms(telefono.trim()));
+      donante.addMedioDeContacto(MedioDeContacto.sms(telefono.trim()));
     }
   }
 }

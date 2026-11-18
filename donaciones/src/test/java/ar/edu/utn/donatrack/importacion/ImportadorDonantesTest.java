@@ -3,12 +3,10 @@ package ar.edu.utn.donatrack.importacion;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
+import ar.edu.utn.donatrack.donantes.Canal;
 import ar.edu.utn.donatrack.donantes.Donante;
-import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
-import ar.edu.utn.donatrack.donantes.Sms;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.security.AuthService;
 import ar.edu.utn.donatrack.security.Role;
@@ -38,9 +36,6 @@ class ImportadorDonantesTest implements WithSimplePersistenceUnit {
               .getResultList()
               .forEach(this::remove);
           createQuery("select d from Donante d", Donante.class)
-              .getResultList()
-              .forEach(this::remove);
-          createQuery("select m from MedioDeContacto m", MedioDeContacto.class)
               .getResultList()
               .forEach(this::remove);
         });
@@ -101,7 +96,7 @@ class ImportadorDonantesTest implements WithSimplePersistenceUnit {
   }
 
   @Test
-  void loQueSeGuardaEnLoteSeLeeIgualQueSiLoHubieraGuardadoHibernate() throws Exception {
+  void guardaDonantesConSusMediosYCuentasSinDuplicarRepetidos() throws Exception {
     String csv =
         "TipoPersona,TipoDoc,Documento,Nombre/Razón Social,Email,Teléfono\n"
             + "HUMANA,DNI,42000001,Ana Lote,ana.lote@example.org,+54 11 5555-0001\n"
@@ -129,9 +124,9 @@ class ImportadorDonantesTest implements WithSimplePersistenceUnit {
     assertEquals("Ana", ana.getNombre());
     assertEquals(TipoDocumento.DNI, ana.getDocumento());
     assertEquals(2, ana.getMediosDeContacto().size());
-    assertTrue(ana.getMediosDeContacto().stream().anyMatch(Sms.class::isInstance));
+    assertTrue(ana.getMediosDeContacto().stream().anyMatch(m -> m.getCanal() == Canal.SMS));
     assertEquals("ana.lote@example.org", ana.getMedioContactoPredeterminado().getContacto());
-    assertTrue(ana.getMedioContactoPredeterminado() instanceof CorreoElectronico);
+    assertTrue(ana.getMedioContactoPredeterminado().esCorreo());
 
     PersonajeJuridica coop =
         createQuery(

@@ -3,10 +3,9 @@ package ar.edu.utn.donatrack.notificaciones;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Genero;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
-import ar.edu.utn.donatrack.donantes.Sms;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -35,7 +34,7 @@ class ServicioNotificacionesTest {
     Notificacion notificacion =
         new Notificacion(
             new PersonaHumana(
-                new CorreoElectronico("donante@example.org"),
+                MedioDeContacto.correo("donante@example.org"),
                 "Ana",
                 "Pérez",
                 "30111222",
@@ -67,14 +66,14 @@ class ServicioNotificacionesTest {
                 (destinatario, mensaje) -> ResultadoEnvio.fallido("No corresponde")));
     PersonaHumana donante =
         new PersonaHumana(
-            new CorreoElectronico("donante@example.org"),
+            MedioDeContacto.correo("donante@example.org"),
             "Ana",
             "Pérez",
             "30111222",
             TipoDocumento.DNI,
             Genero.FEMENINO,
             "Calle 123");
-    Sms predeterminado = new Sms("+541112345678");
+    MedioDeContacto predeterminado = MedioDeContacto.sms("+541112345678");
     donante.addMedioDeContacto(predeterminado);
     donante.setContactoPredeterminado(predeterminado);
     Notificacion notificacion = new Notificacion(donante, "Tu donación fue asignada.");

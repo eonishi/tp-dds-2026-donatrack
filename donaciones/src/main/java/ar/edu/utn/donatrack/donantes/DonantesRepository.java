@@ -157,7 +157,8 @@ public class DonantesRepository implements WithSimplePersistenceUnit {
   public boolean existeCorreo(String correo) {
     return !createQuery(
             "select d.id from Donante d join d.mediosDeContacto m"
-                + " where type(m) = CorreoElectronico and lower(m.contacto) = :correo",
+                + " where m.canal = ar.edu.utn.donatrack.donantes.Canal.CORREO"
+                + " and lower(m.contacto) = :correo",
             UUID.class)
         .setParameter("correo", correo.trim().toLowerCase())
         .setMaxResults(1)

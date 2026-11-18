@@ -3,17 +3,14 @@ package ar.edu.utn.donatrack.web.controller;
 import static ar.edu.utn.donatrack.web.controller.Formularios.enumerado;
 import static ar.edu.utn.donatrack.web.controller.Formularios.obligatorio;
 
-import ar.edu.utn.donatrack.donantes.CorreoElectronico;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
 import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
-import ar.edu.utn.donatrack.donantes.Sms;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.donantes.TipoOrganizacion;
-import ar.edu.utn.donatrack.donantes.Whatsapp;
 import ar.edu.utn.donatrack.web.controller.Formularios.DatoInvalido;
 import io.javalin.http.Context;
 import java.util.ArrayList;
@@ -95,13 +92,9 @@ final class FormularioDonante {
       campos.put("donanteDireccion", humana.getDireccion());
     }
     MedioDeContacto predeterminado = donante.getMedioContactoPredeterminado();
-    campos.put(
-        "donanteMedioContacto",
-        predeterminado instanceof Whatsapp
-            ? "WHATSAPP"
-            : predeterminado instanceof Sms ? "SMS" : "CORREO");
+    campos.put("donanteMedioContacto", predeterminado.getCanal().name());
     donante.getMediosDeContacto().stream()
-        .filter(m -> m instanceof Sms || m instanceof Whatsapp)
+        .filter(MedioDeContacto::esTelefono)
         .findFirst()
         .ifPresent(m -> campos.put("donanteTelefono", m.getContacto()));
     return campos;
@@ -146,7 +139,7 @@ final class FormularioDonante {
     if (juridica) {
       persona =
           new PersonajeJuridica(
-              new CorreoElectronico(correo),
+              MedioDeContacto.correo(correo),
               numeroDocumento,
               TipoDocumento.CUIT,
               obligatorio(ctx, "donanteRazonSocial", "la razón social").trim(),
@@ -158,7 +151,7 @@ final class FormularioDonante {
     } else {
       PersonaHumana humana =
           new PersonaHumana(
-              new CorreoElectronico(correo),
+              MedioDeContacto.correo(correo),
               obligatorio(ctx, "donanteNombre", "el nombre").trim(),
               obligatorio(ctx, "donanteApellido", "el apellido").trim(),
               numeroDocumento,
@@ -184,7 +177,7 @@ final class FormularioDonante {
       throw new DatoInvalido("Elegí un medio de contacto válido.");
     }
     List<MedioDeContacto> medios = new ArrayList<>();
-    medios.add(new CorreoElectronico(correo));
+    medios.add(MedioDeContacto.correo(correo));
     boolean conTelefono = telefono != null && !telefono.isBlank();
     if (conTelefono) {
       telefono = telefono.trim();
@@ -192,7 +185,10 @@ final class FormularioDonante {
         throw new DatoInvalido(
             "El teléfono debe usar formato internacional E.164, por ejemplo +5491155555555.");
       }
-      medios.add("WHATSAPP".equals(preferido) ? new Whatsapp(telefono) : new Sms(telefono));
+      medios.add(
+          "WHATSAPP".equals(preferido)
+              ? MedioDeContacto.whatsapp(telefono)
+              : MedioDeContacto.sms(telefono));
     } else if ("SMS".equals(preferido) || "WHATSAPP".equals(preferido)) {
       throw new DatoInvalido("Para recibir avisos por SMS o WhatsApp cargá un teléfono.");
     }
