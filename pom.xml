@@ -29,7 +29,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- Ultima version de la linea 6: Javalin 7 cambia la API de rutas y handlers. -->
         <javalin.version>6.7.0</javalin.version>
-        <flyway.version>13.11.1</flyway.version>
     </properties>
 
     <dependencies>
@@ -61,16 +60,6 @@
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
             <version>5.9</version> <!-- Usá la última versión disponible -->
-        </dependency>
-        <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-core</artifactId>
-            <version>${flyway.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-database-postgresql</artifactId>
-            <version>${flyway.version}</version>
         </dependency>
     </dependencies>
 
