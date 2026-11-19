@@ -27,9 +27,19 @@ import java.util.List;
 public enum EstadoDonacion {
   EN_DEPOSITO {
     @Override
+    public boolean admiteModificacion() {
+      return true;
+    }
+
+    @Override
+    public boolean admiteAsignacion() {
+      return true;
+    }
+
+    @Override
     public void asignar(Donacion donacion, PublicadorDeEventos publicador) {
       transicionar(donacion, ASIGNACION_REALIZADA, null);
-      if (donacion.getDonante() != null && donacion.getEntidadBeneficiaria() != null) {
+      if (donacion.getEntidadBeneficiaria() != null) {
         publicador.publicar(
             new EventoAsignacion(donacion.getDonante(), donacion.getEntidadBeneficiaria()));
       }
@@ -45,11 +55,6 @@ public enum EstadoDonacion {
     public void planificarRuta(Donacion donacion) {
       transicionar(donacion, LISTA_PARA_ENTREGAR, null);
     }
-
-    @Override
-    public void marcarVencida(Donacion donacion) {
-      transicionar(donacion, VENCIDA, null);
-    }
   },
   LISTA_PARA_ENTREGAR {
     @Override
@@ -60,16 +65,11 @@ public enum EstadoDonacion {
       }
       donacion.registrarCamion(idCamion);
       transicionar(donacion, EN_TRASLADO, null);
-      if (donacion.getDonante() != null && donacion.getEntidadBeneficiaria() != null) {
+      if (donacion.getEntidadBeneficiaria() != null) {
         publicador.publicar(
             new EventoInicioRuta(
                 List.of(donacion.getDonante(), donacion.getEntidadBeneficiaria()), idCamion));
       }
-    }
-
-    @Override
-    public void marcarVencida(Donacion donacion) {
-      transicionar(donacion, VENCIDA, null);
     }
   },
   EN_TRASLADO {
@@ -81,7 +81,7 @@ public enum EstadoDonacion {
       }
       transicionar(donacion, ENTREGADA, null);
       donacion.getEntidadBeneficiaria().aplicarDonacionRecibida(donacion);
-      if (donacion.getDonante() != null && donacion.getIdCamion().isPresent()) {
+      if (donacion.getIdCamion().isPresent()) {
         publicador.publicar(
             new EventoEntregaExitosa(
                 donacion.getDonante(),
@@ -95,16 +95,11 @@ public enum EstadoDonacion {
     public void reportarFalla(
         Donacion donacion, String justificacion, PublicadorDeEventos publicador) {
       transicionar(donacion, ENTREGA_FALLIDA, justificacion);
-      if (donacion.getDonante() != null && donacion.getEntidadBeneficiaria() != null) {
+      if (donacion.getEntidadBeneficiaria() != null) {
         publicador.publicar(
             new EventoEntregaNoSatisfactoria(
                 donacion.getDonante(), donacion.getEntidadBeneficiaria(), justificacion));
       }
-    }
-
-    @Override
-    public void marcarVencida(Donacion donacion) {
-      transicionar(donacion, VENCIDA, null);
     }
   },
   ENTREGADA,
@@ -122,6 +117,24 @@ public enum EstadoDonacion {
     }
   },
   VENCIDA;
+
+  /**
+   * Indica si en este estado se pueden modificar o eliminar los bienes de la donación.
+   *
+   * @return {@code true} sólo en los estados que lo admiten; por defecto, {@code false}
+   */
+  public boolean admiteModificacion() {
+    return false;
+  }
+
+  /**
+   * Indica si en este estado la donación puede entrar al matchmaking para ser asignada.
+   *
+   * @return {@code true} sólo en los estados que lo admiten; por defecto, {@code false}
+   */
+  public boolean admiteAsignacion() {
+    return false;
+  }
 
   public void asignar(Donacion donacion, PublicadorDeEventos publicador) {
     noPermitido("asignar");

@@ -48,7 +48,7 @@ public class Bien {
     this.cantidad = cantidad;
     this.unidad = unidad;
     this.fechaVencimiento = fechaVencimiento;
-    this.estadoDeUso = estadoDeUso;
+    this.estadoDeUso = estadoDeUso == null ? EstadoUso.NO_APLICA : estadoDeUso;
     this.subcategoria = Objects.requireNonNull(subcategoria, "subcategoria no puede ser null");
   }
 
@@ -80,8 +80,44 @@ public class Bien {
     return fechaVencimiento;
   }
 
+  /**
+   * Devuelve el estado de uso del bien.
+   *
+   * @return el estado de uso; {@link EstadoUso#NO_APLICA} si no se indicó, nunca {@code null}
+   */
   public EstadoUso getEstadoDeUso() {
-    return estadoDeUso;
+    // Las filas cargadas por JPA no pasan por el constructor.
+    return estadoDeUso == null ? EstadoUso.NO_APLICA : estadoDeUso;
+  }
+
+  /**
+   * Clasificación del bien que decide con qué otros bienes puede compartir una donación.
+   *
+   * @param subcategoria subcategoría del bien
+   * @param fechaVencimiento fecha de vencimiento, o {@code null} si no es perecedero
+   * @param estadoDeUso estado de uso, nunca {@code null}
+   */
+  public record Segmento(
+      SubCategoria subcategoria, LocalDate fechaVencimiento, EstadoUso estadoDeUso) {}
+
+  /**
+   * Devuelve el segmento del bien: subcategoría, fecha de vencimiento y estado de uso.
+   *
+   * @return el segmento del bien
+   */
+  public Segmento segmento() {
+    return new Segmento(subcategoria, fechaVencimiento, getEstadoDeUso());
+  }
+
+  /**
+   * Indica si este bien puede compartir donación con otro.
+   *
+   * @param otro bien con el que se compara (no nulo)
+   * @return {@code true} si ambos pertenecen al mismo segmento
+   * @throws NullPointerException si {@code otro} es {@code null}
+   */
+  public boolean mismoSegmentoQue(Bien otro) {
+    return segmento().equals(Objects.requireNonNull(otro, "otro no puede ser null").segmento());
   }
 
   /**

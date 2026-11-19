@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -65,8 +66,8 @@ public class Donacion {
 
   private String idCamion;
 
-  @ManyToOne
-  @JoinColumn(name = "donante_id")
+  @ManyToOne(optional = false)
+  @JoinColumn(name = "donante_id", nullable = false)
   private Donante donante;
 
   protected Donacion() {}
@@ -121,26 +122,86 @@ public class Donacion {
   }
 
   /**
+   * Indica si la donación admite modificar o eliminar sus bienes; lo decide su estado.
+   *
+   * @return {@code true} si el estado actual admite la modificación
+   */
+  public boolean esModificable() {
+    return estado.admiteModificacion();
+  }
+
+  /**
+   * Indica si la donación puede entrar al matchmaking para ser asignada; lo decide su estado.
+   *
+   * @return {@code true} si el estado actual admite la asignación
+   */
+  public boolean esAsignable() {
+    return estado.admiteAsignacion();
+  }
+
+  /**
+   * Indica si la donación está viajando hacia la entidad beneficiaria.
+   *
+   * @return {@code true} si el estado actual es {@link EstadoDonacion#EN_TRASLADO}
+   */
+  public boolean estaEnTraslado() {
+    return estado == EstadoDonacion.EN_TRASLADO;
+  }
+
+  /**
+   * Indica si la entidad beneficiaria ya confirmó la recepción. Mira el estado actual; para saber
+   * si alguna vez se entregó a una entidad, ver {@link #fueEntregadaA}.
+   *
+   * @return {@code true} si el estado actual es {@link EstadoDonacion#ENTREGADA}
+   */
+  public boolean estaEntregada() {
+    return estado == EstadoDonacion.ENTREGADA;
+  }
+
+  /**
+   * Momento de la última salida a traslado registrada en el historial. Si hubo un reintento
+   * (entrega fallida, vuelta al depósito y nuevo traslado), es la salida más reciente.
+   *
+   * @return la fecha de salida, o vacío si la donación nunca salió a traslado
+   */
+  public Optional<LocalDateTime> fechaDeTraslado() {
+    return ultimaFechaEn(EstadoDonacion.EN_TRASLADO);
+  }
+
+  /**
+   * Momento de la última transición a {@link EstadoDonacion#ENTREGADA} registrada en el historial.
+   *
+   * @return la fecha de entrega, o vacío si la donación nunca se entregó
+   */
+  public Optional<LocalDateTime> fechaDeEntrega() {
+    return ultimaFechaEn(EstadoDonacion.ENTREGADA);
+  }
+
+  private Optional<LocalDateTime> ultimaFechaEn(EstadoDonacion estadoBuscado) {
+    return historialEstado.stream()
+        .filter(entrada -> entrada.getEstadoAlcanzado() == estadoBuscado)
+        .map(HistorialEstado::getFecha)
+        .max(Comparator.naturalOrder());
+  }
+
+  /**
    * Reemplaza los bienes de la donación conservando una copia defensiva de la lista recibida.
    *
    * @param nuevosBienes bienes que pasan a componer la donación (no vacíos ni nulos)
+   * @throws IllegalStateException si el estado actual no admite modificar la donación
    * @throws IllegalArgumentException si la lista es nula, está vacía o contiene un bien nulo
    */
   public void reemplazarBienes(List<Bien> nuevosBienes) {
+    if (!esModificable()) {
+      throw new IllegalStateException("Sólo se puede modificar una donación en depósito.");
+    }
     if (nuevosBienes == null
         || nuevosBienes.isEmpty()
         || nuevosBienes.stream().anyMatch(Objects::isNull)) {
       throw new IllegalArgumentException("La donación debe contener al menos un bien válido.");
     }
-    long segmentos =
-        nuevosBienes.stream()
-            .map(
-                b ->
-                    new SegmentacionKey(
-                        b.getSubcategoria(), b.getFechaVencimiento(), b.getEstadoDeUso()))
-            .distinct()
-            .count();
-    if (segmentos != 1) {
+    Bien primero = nuevosBienes.get(0);
+    if (!nuevosBienes.stream().allMatch(primero::mismoSegmentoQue)) {
       throw new IllegalArgumentException(
           "Una donación debe mantener una única subcategoría, fecha de vencimiento y estado de uso."
               + " Para mezclar segmentos, registre una nueva carga.");
@@ -235,6 +296,33 @@ public class Donacion {
   }
 
   /**
+   * Indica si esta donación está asignada a la entidad beneficiaria indicada.
+   *
+   * <p>Solo mira la asignación actual; no exige que la donación se haya entregado (para eso está
+   * {@link #fueEntregadaA(EntidadBeneficiaria, LocalDate)}).
+   *
+   * @param entidadId identificador de la entidad beneficiaria (no nulo)
+   * @return {@code true} si la donación tiene asignada la entidad con ese identificador
+   * @throws NullPointerException si {@code entidadId} es {@code null}
+   */
+  public boolean estaAsignadaA(Long entidadId) {
+    Objects.requireNonNull(entidadId, "entidadId no puede ser null");
+    return entidadBeneficiaria != null && entidadId.equals(entidadBeneficiaria.getId());
+  }
+
+  /**
+   * Indica si esta donación la hizo la persona donante indicada.
+   *
+   * @param donanteId identificador de la persona donante (no nulo)
+   * @return {@code true} si la donación la hizo el donante con ese identificador
+   * @throws NullPointerException si {@code donanteId} es {@code null}
+   */
+  public boolean fueDonadaPor(UUID donanteId) {
+    Objects.requireNonNull(donanteId, "donanteId no puede ser null");
+    return donanteId.equals(donante.getId());
+  }
+
+  /**
    * Indica si esta donación fue entregada a la entidad indicada dentro de la ventana pedida.
    *
    * <p>La entrega se evalúa sobre el estado propio de la donación: cuenta toda transición a {@link
@@ -252,11 +340,7 @@ public class Donacion {
     if (!entidad.equals(this.entidadBeneficiaria)) {
       return false;
     }
-    return historialEstado.stream()
-        .anyMatch(
-            entrada ->
-                entrada.getEstadoAlcanzado() == EstadoDonacion.ENTREGADA
-                    && !entrada.getFecha().isBefore(fechaDesde.atStartOfDay()));
+    return fechaDeEntrega().filter(fecha -> !fecha.isBefore(fechaDesde.atStartOfDay())).isPresent();
   }
 
   public boolean esPerecedera() {

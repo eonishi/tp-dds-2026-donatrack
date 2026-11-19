@@ -5,7 +5,6 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
-import ar.edu.utn.donatrack.donaciones.EstadoDonacion;
 import ar.edu.utn.donatrack.fotos.FotosRecepcion;
 import ar.edu.utn.donatrack.fotos.FotosRecepcion.FotoSubida;
 import ar.edu.utn.donatrack.notificaciones.PublicadorDiferido;
@@ -116,7 +115,7 @@ public class RecepcionesController implements WithSimplePersistenceUnit {
   }
 
   private static void exigirEnCamino(Donacion donacion) {
-    if (donacion.getEstado() != EstadoDonacion.EN_TRASLADO) {
+    if (!donacion.estaEnTraslado()) {
       throw new IllegalStateException("Esta donación ya no está en camino.");
     }
   }
@@ -129,11 +128,10 @@ public class RecepcionesController implements WithSimplePersistenceUnit {
     } catch (IllegalArgumentException e) {
       throw new NotFoundResponse();
     }
-    Long entidadId = usuario.getEntidadId().orElse(null);
+    Long entidadId = usuario.getEntidadId().orElseThrow(NotFoundResponse::new);
     return donaciones
         .findById(id)
-        .filter(d -> d.getEntidadBeneficiaria() != null)
-        .filter(d -> d.getEntidadBeneficiaria().getId().equals(entidadId))
+        .filter(d -> d.estaAsignadaA(entidadId))
         .orElseThrow(NotFoundResponse::new);
   }
 
@@ -170,13 +168,13 @@ public class RecepcionesController implements WithSimplePersistenceUnit {
     modelo.put(
         "enCamino",
         propias.stream()
-            .filter(d -> d.getEstado() == EstadoDonacion.EN_TRASLADO)
+            .filter(Donacion::estaEnTraslado)
             .map(d -> new RecepcionVista(d, d.getId().equals(conError) ? error : null))
             .toList());
     modelo.put(
         "recibidas",
         propias.stream()
-            .filter(d -> d.getEstado() == EstadoDonacion.ENTREGADA)
+            .filter(Donacion::estaEntregada)
             .map(d -> new RecepcionVista(d, null))
             .toList());
     modelo.put("maximoFotos", FotosRecepcion.MAXIMO_FOTOS);
@@ -210,15 +208,11 @@ public class RecepcionesController implements WithSimplePersistenceUnit {
     }
 
     public String getSalio() {
-      return Vistas.fechaDe(donacion, EstadoDonacion.EN_TRASLADO)
-          .map(Vistas.FECHA_HORA::format)
-          .orElse("");
+      return donacion.fechaDeTraslado().map(Vistas.FECHA_HORA::format).orElse("");
     }
 
     public String getRecibida() {
-      return Vistas.fechaDe(donacion, EstadoDonacion.ENTREGADA)
-          .map(Vistas.FECHA_HORA::format)
-          .orElse("");
+      return donacion.fechaDeEntrega().map(Vistas.FECHA_HORA::format).orElse("");
     }
 
     public List<String> getFotos() {

@@ -451,6 +451,82 @@ class DonacionesApiHttpTest implements WithSimplePersistenceUnit {
   }
 
   @Test
+  void seleccionDeOtraEntidadSobreDonacionAsignadaDevuelveConflictYNoReasigna() throws Exception {
+    UUID donanteId = crearDonante();
+    long entidadId = crearEntidad("Comedor Asignado");
+    long otraEntidadId = crearEntidad("Comedor Otro");
+    crearNecesidad(entidadId, "Arroz");
+    UUID donacionId = crearDonacion(donanteId, "Arroz");
+    assertEquals(
+        201,
+        request("POST", "/api/v1/donaciones/" + donacionId + "/propuesta-asignacion", null)
+            .statusCode());
+    assertEquals(
+        200,
+        request(
+                "PUT",
+                "/api/v1/donaciones/" + donacionId + "/propuesta-asignacion",
+                "{\"entidadBeneficiariaId\":" + entidadId + "}")
+            .statusCode());
+
+    HttpResponse<String> reasignacion =
+        request(
+            "PUT",
+            "/api/v1/donaciones/" + donacionId + "/propuesta-asignacion",
+            "{\"entidadBeneficiariaId\":" + otraEntidadId + "}");
+
+    assertEquals(409, reasignacion.statusCode());
+    assertEquals(
+        "La donación ya tiene una entidad beneficiaria asignada.",
+        json(reasignacion).get("message").asText());
+    HttpResponse<String> donacion = request("GET", "/api/v1/donaciones/" + donacionId, null);
+    assertEquals(entidadId, json(donacion).get("entidadBeneficiariaId").asLong());
+  }
+
+  @Test
+  void donanteConDonacionesNoSePuedeEliminar() throws Exception {
+    UUID donanteId = crearDonante();
+    UUID donacionId = crearDonacion(donanteId, "Arroz");
+
+    HttpResponse<String> borrado = request("DELETE", "/api/v1/donantes/" + donanteId, null);
+
+    assertEquals(409, borrado.statusCode());
+    assertEquals(
+        "No se puede eliminar un donante con donaciones asociadas.",
+        json(borrado).get("message").asText());
+    assertEquals(200, request("GET", "/api/v1/donantes/" + donanteId, null).statusCode());
+
+    assertEquals(204, request("DELETE", "/api/v1/donaciones/" + donacionId, null).statusCode());
+    assertEquals(204, request("DELETE", "/api/v1/donantes/" + donanteId, null).statusCode());
+  }
+
+  @Test
+  void entidadConDonacionAsignadaNoSePuedeEliminar() throws Exception {
+    UUID donanteId = crearDonante();
+    long entidadId = crearEntidad("Comedor Con Donaciones");
+    crearNecesidad(entidadId, "Arroz");
+    UUID donacionId = crearDonacion(donanteId, "Arroz");
+    request("POST", "/api/v1/donaciones/" + donacionId + "/propuesta-asignacion", null);
+    assertEquals(
+        200,
+        request(
+                "PUT",
+                "/api/v1/donaciones/" + donacionId + "/propuesta-asignacion",
+                "{\"entidadBeneficiariaId\":" + entidadId + "}")
+            .statusCode());
+
+    HttpResponse<String> borrado = request("DELETE", "/api/v1/beneficiarias/" + entidadId, null);
+
+    assertEquals(409, borrado.statusCode());
+    assertEquals(
+        "No se puede eliminar una entidad con donaciones asignadas.",
+        json(borrado).get("message").asText());
+    assertEquals(
+        200,
+        request("GET", "/api/v1/beneficiarias/" + entidadId + "/necesidades", null).statusCode());
+  }
+
+  @Test
   void seleccionDeEntidadFueraDelRankingDevuelveConflict() throws Exception {
     UUID donanteId = crearDonante();
     long entidadRankeadaId = crearEntidad("Comedor Match");

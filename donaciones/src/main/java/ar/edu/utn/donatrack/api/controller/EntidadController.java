@@ -81,11 +81,7 @@ public final class EntidadController implements WithSimplePersistenceUnit {
   private void eliminar(Context ctx) {
     Long id = entidadId(ctx, "id");
     buscar(id);
-    if (donaciones.getDonaciones().stream()
-        .anyMatch(
-            d ->
-                d.getEntidadBeneficiaria() != null
-                    && d.getEntidadBeneficiaria().getId().equals(id))) {
+    if (donaciones.getDonaciones().stream().anyMatch(d -> d.estaAsignadaA(id))) {
       throw ApiException.conflict("No se puede eliminar una entidad con donaciones asignadas.");
     }
     withTransaction(() -> entidades.deleteById(id));

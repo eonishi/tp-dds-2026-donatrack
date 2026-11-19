@@ -27,8 +27,11 @@ import ar.edu.utn.donatrack.notificaciones.eventos.EventoNotificable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class DonacionTest {
@@ -94,6 +97,80 @@ class DonacionTest {
         donante,
         donacion.getDonante(),
         "Donante nunca debe limpiarse (diferente de entidadBeneficiaria)");
+  }
+
+  @Test
+  void donacionEnDeposito_EsModificableYAsignable() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+
+    assertTrue(donacion.esModificable());
+    assertTrue(donacion.esAsignable());
+  }
+
+  @Test
+  void donacionAsignada_NoEsModificableNiAsignable() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"), notificaciones);
+
+    assertFalse(donacion.esModificable());
+    assertFalse(donacion.esAsignable());
+  }
+
+  @Test
+  void reemplazarBienes_FueraDeDeposito_LanzaIllegalStateExceptionYConservaLosBienes() {
+    Bien original = crearBienDummy();
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(original));
+    donacion.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"), notificaciones);
+
+    IllegalStateException error =
+        assertThrows(
+            IllegalStateException.class,
+            () -> donacion.reemplazarBienes(List.of(crearBienDummy())));
+
+    assertEquals("Sólo se puede modificar una donación en depósito.", error.getMessage());
+    assertEquals(List.of(original), donacion.getBienes());
+  }
+
+  @Test
+  void reemplazarBienes_SinEstadoDeUsoYConNoAplica_LosAceptaComoUnSoloSegmento() {
+    SubCategoria fideos = new SubCategoria("Fideos", Categoria.ALIMENTO);
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    Bien sinEstado = new Bien("Fideos", "", 1.0, UnidadMedida.KILOGRAMOS, null, null, fideos);
+    Bien noAplica =
+        new Bien("Fideos", "", 2.0, UnidadMedida.KILOGRAMOS, null, EstadoUso.NO_APLICA, fideos);
+
+    donacion.reemplazarBienes(List.of(sinEstado, noAplica));
+
+    assertEquals(List.of(sinEstado, noAplica), donacion.getBienes());
+  }
+
+  @Test
+  void reemplazarBienes_SegmentosDistintos_LanzaIllegalArgumentExceptionYConservaLosBienes() {
+    SubCategoria sillas = new SubCategoria("Sillas", Categoria.MOBILIARIO);
+    Bien original = crearBienDummy();
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(original));
+    List<Bien> mezclados =
+        List.of(
+            new Bien("Silla", "", 1.0, UnidadMedida.UNIDADES, null, EstadoUso.NUEVO, sillas),
+            new Bien("Silla", "", 1.0, UnidadMedida.UNIDADES, null, EstadoUso.USADO, sillas));
+
+    IllegalArgumentException error =
+        assertThrows(IllegalArgumentException.class, () -> donacion.reemplazarBienes(mezclados));
+
+    assertEquals(
+        "Una donación debe mantener una única subcategoría, fecha de vencimiento y estado de uso."
+            + " Para mezclar segmentos, registre una nueva carga.",
+        error.getMessage());
+    assertEquals(List.of(original), donacion.getBienes());
+  }
+
+  @Test
+  void marcarVencida_FueraDeDeposito_LanzaIllegalStateExceptionYConservaElEstado() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.confirmarEntidadBeneficiaria(nuevaEntidad("Hogar"), notificaciones);
+
+    assertThrows(IllegalStateException.class, donacion::marcarVencida);
+    assertEquals(EstadoDonacion.ASIGNACION_REALIZADA, donacion.getEstado());
   }
 
   @Test
@@ -602,6 +679,67 @@ class DonacionTest {
   }
 
   @Test
+  void fueDonadaPor_MismoDonante_RetornaTrue() {
+    UUID donanteId = UUID.randomUUID();
+    Donacion donacion = nuevaDonacion(crearDonanteConId(donanteId), List.of(crearBienDummy()));
+
+    assertTrue(donacion.fueDonadaPor(donanteId));
+  }
+
+  @Test
+  void fueDonadaPor_OtroDonante_RetornaFalse() {
+    Donacion donacion =
+        nuevaDonacion(crearDonanteConId(UUID.randomUUID()), List.of(crearBienDummy()));
+
+    assertFalse(donacion.fueDonadaPor(UUID.randomUUID()));
+  }
+
+  @Test
+  void fueDonadaPor_IdNulo_LanzaNullPointerException() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+
+    assertThrows(NullPointerException.class, () -> donacion.fueDonadaPor(null));
+  }
+
+  @Test
+  void estaAsignadaA_SinEntidad_RetornaFalse() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+
+    assertFalse(donacion.estaAsignadaA(7L));
+  }
+
+  @Test
+  void estaAsignadaA_MismaEntidad_RetornaTrue() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.setEntidadBeneficiaria(new EntidadBeneficiaria(7L, "Hogar", "Dir", "Tel"));
+
+    assertTrue(donacion.estaAsignadaA(7L));
+  }
+
+  @Test
+  void estaAsignadaA_OtraEntidad_RetornaFalse() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.setEntidadBeneficiaria(new EntidadBeneficiaria(7L, "Hogar", "Dir", "Tel"));
+
+    assertFalse(donacion.estaAsignadaA(8L));
+  }
+
+  @Test
+  void estaAsignadaA_EntidadSinPersistir_RetornaFalse() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.setEntidadBeneficiaria(nuevaEntidad("Hogar"));
+
+    assertFalse(donacion.estaAsignadaA(7L));
+  }
+
+  @Test
+  void estaAsignadaA_IdNulo_LanzaNullPointerException() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+
+    assertThrows(NullPointerException.class, () -> donacion.estaAsignadaA(null));
+  }
+
+  @Test
   void confirmarEntidadBeneficiaria_SinInstanceOf_TransicionaCorrectamente() {
     Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
     EntidadBeneficiaria entidad = nuevaEntidad("Hogar");
@@ -627,6 +765,107 @@ class DonacionTest {
         "Llamar confirmarEntidadBeneficiaria desde AsignacionRealizada debe lanzar excepción");
   }
 
+  // ── Preguntas sobre el estado actual ──────────────────────────────
+
+  @Test
+  void estaEnTraslado_DonacionEnTraslado_DevuelveTrue() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, null);
+
+    assertTrue(donacion.estaEnTraslado());
+    assertFalse(donacion.estaEntregada());
+  }
+
+  @Test
+  void estaEnTraslado_DonacionEnDeposito_DevuelveFalse() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+
+    assertFalse(donacion.estaEnTraslado());
+    assertFalse(donacion.estaEntregada());
+  }
+
+  @Test
+  void estaEntregada_DonacionEntregada_DevuelveTrue() {
+    Donacion donacion = entregadaA(new EntidadBeneficiaria(1L, "Hogar", "Dir", "Tel"));
+
+    assertTrue(donacion.estaEntregada());
+    assertFalse(donacion.estaEnTraslado());
+  }
+
+  @Test
+  void fechaDeEntrega_DonacionEntregada_DevuelveLaFechaDeLaTransicionAEntregada() {
+    Donacion donacion = entregadaA(new EntidadBeneficiaria(1L, "Hogar", "Dir", "Tel"));
+    LocalDateTime registrada =
+        donacion.getHistorialEstado().stream()
+            .filter(h -> h.getEstadoAlcanzado() == EstadoDonacion.ENTREGADA)
+            .findFirst()
+            .orElseThrow()
+            .getFecha();
+
+    assertEquals(Optional.of(registrada), donacion.fechaDeEntrega());
+  }
+
+  @Test
+  void fechaDeEntrega_EntregaTrasUnIntentoFallido_DevuelveLaFechaDeLaEntregaYNoLaDelIntento() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, null);
+    donacion.cambiarEstado(EstadoDonacion.ENTREGA_FALLIDA, "No había nadie");
+    donacion.cambiarEstado(EstadoDonacion.EN_DEPOSITO, null);
+    donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, null);
+    donacion.cambiarEstado(EstadoDonacion.ENTREGADA, null);
+    List<HistorialEstado> historial = donacion.getHistorialEstado();
+    LocalDateTime entrega = historial.get(historial.size() - 1).getFecha();
+
+    assertEquals(Optional.of(entrega), donacion.fechaDeEntrega());
+  }
+
+  @Test
+  void fechaDeEntrega_IntentoFallidoSinEntrega_DevuelveVacio() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, null);
+    donacion.cambiarEstado(EstadoDonacion.ENTREGA_FALLIDA, "No había nadie");
+
+    assertEquals(Optional.empty(), donacion.fechaDeEntrega());
+  }
+
+  @Test
+  void fechaDeEntrega_DonacionNoEntregada_DevuelveVacio() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, null);
+
+    assertEquals(Optional.empty(), donacion.fechaDeEntrega());
+  }
+
+  @Test
+  void fechaDeTraslado_ReintentoTrasEntregaFallida_DevuelveLaUltimaSalida() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+    donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, null);
+    donacion.cambiarEstado(EstadoDonacion.ENTREGA_FALLIDA, "No había nadie");
+    donacion.cambiarEstado(EstadoDonacion.EN_DEPOSITO, null);
+    LocalDateTime primeraSalida = donacion.getHistorialEstado().get(0).getFecha();
+    esperarQueAvanceElReloj(primeraSalida);
+    donacion.cambiarEstado(EstadoDonacion.EN_TRASLADO, null);
+    List<HistorialEstado> historial = donacion.getHistorialEstado();
+    LocalDateTime segundaSalida = historial.get(historial.size() - 1).getFecha();
+
+    assertTrue(segundaSalida.isAfter(primeraSalida), "Las dos salidas deben distinguirse");
+    assertEquals(Optional.of(segundaSalida), donacion.fechaDeTraslado());
+  }
+
+  @Test
+  void fechaDeTraslado_SinTraslado_DevuelveVacio() {
+    Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
+
+    assertEquals(Optional.empty(), donacion.fechaDeTraslado());
+  }
+
+  /** El historial registra en microsegundos: espera a que el reloj supere {@code instante}. */
+  private static void esperarQueAvanceElReloj(LocalDateTime instante) {
+    while (!LocalDateTime.now().truncatedTo(ChronoUnit.MICROS).isAfter(instante)) {
+      Thread.onSpinWait();
+    }
+  }
+
   private static Donacion entregadaA(EntidadBeneficiaria entidad) {
     Donacion donacion = nuevaDonacion(crearDonanteDummy(), List.of(crearBienDummy()));
     donacion.confirmarEntidadBeneficiaria(entidad, notificacionesDescartadas());
@@ -647,6 +886,18 @@ class DonacionTest {
         null,
         EstadoUso.NO_APLICA,
         new SubCategoria("X", Categoria.ALIMENTO));
+  }
+
+  private static Donante crearDonanteConId(UUID id) {
+    return new PersonaHumana(
+        id,
+        MedioDeContacto.correo("test@test.com"),
+        "Juan",
+        "Perez",
+        "12345678",
+        TipoDocumento.DNI,
+        Genero.MASCULINO,
+        "Calle Falsa 123");
   }
 
   private static Donante crearDonanteDummy() {

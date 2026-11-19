@@ -3,6 +3,8 @@ package ar.edu.utn.donatrack.donaciones;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ar.edu.utn.donatrack.bienes.Bien;
 import ar.edu.utn.donatrack.bienes.Categoria;
@@ -19,7 +21,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
+import javax.persistence.PersistenceException;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -86,6 +90,34 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
     assertEquals(EstadoUso.NO_APLICA, bienes.get(0).getEstadoDeUso());
     assertEquals(alimentos.getNombre(), bienes.get(0).getSubcategoria().getNombre());
     assertEquals(Categoria.ALIMENTO, bienes.get(0).getSubcategoria().getCategoria());
+  }
+
+  @Test
+  void unaDonacionSinDonanteNoSePuedePersistir() {
+    Donacion sinDonante = new Donacion();
+
+    PersistenceException error =
+        assertThrows(
+            PersistenceException.class,
+            () -> {
+              persist(sinDonante);
+              entityManager().flush();
+            },
+            "La base debe rechazar una donación sin donante");
+
+    // El rechazo tiene que venir del donante y no de otra restricción: si se quitara la de
+    // donante, cualquier otro campo obligatorio haría pasar el test sin probar nada.
+    assertTrue(
+        mensajesDeLaCadena(error).contains("donante"),
+        "El rechazo debe deberse al donante faltante, no a otra restricción");
+  }
+
+  private static String mensajesDeLaCadena(Throwable error) {
+    StringBuilder mensajes = new StringBuilder();
+    for (Throwable actual = error; actual != null; actual = actual.getCause()) {
+      mensajes.append(actual.getMessage()).append('\n');
+    }
+    return mensajes.toString().toLowerCase(Locale.ROOT);
   }
 
   @Test
@@ -219,6 +251,31 @@ class DonacionPersistenciaTest implements SimplePersistenceTest {
 
     assertEquals("UNIDADES", unidad, "La columna debe guardar el nombre del enum, no su índice");
     assertEquals("USADO", estadoDeUso, "La columna debe guardar el nombre del enum, no su índice");
+  }
+
+  @Test
+  void unBienConEstadoDeUsoNuloEnLaBaseSeRecargaComoNoAplica() {
+    SubCategoria alimentos = new SubCategoria(nombreUnicoAlimentos(), Categoria.ALIMENTO);
+    Donante donante = crearDonante();
+    Donacion donacion = new Donacion(donante, List.of(crearBien(alimentos, "Arroz", 2.0)));
+    persist(alimentos);
+    persist(donante);
+    persist(donacion);
+    entityManager().flush();
+    // Simula una fila previa a la normalización: la columna admite NULL y Hibernate, al recargar,
+    // asigna el campo sin pasar por el constructor de Bien.
+    entityManager()
+        .createNativeQuery("UPDATE Bien SET estadoDeUso = NULL WHERE donacion_id = :id")
+        .setParameter("id", donacion.getId())
+        .executeUpdate();
+    entityManager().clear();
+
+    Bien recargado = find(Donacion.class, donacion.getId()).getBienes().get(0);
+
+    assertEquals(
+        EstadoUso.NO_APLICA,
+        recargado.getEstadoDeUso(),
+        "Un estado de uso nulo en la base debe leerse como NO_APLICA");
   }
 
   private static String nombreUnicoAlimentos() {

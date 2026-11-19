@@ -18,7 +18,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /** Ayudas comunes de los controllers de vistas: sesión, modelo base y formatos para mostrar. */
 final class Vistas {
@@ -103,14 +102,6 @@ final class Vistas {
 
   static List<String> bienes(Donacion donacion) {
     return donacion.getBienes().stream().map(Vistas::describir).toList();
-  }
-
-  /** Cuándo llegó la donación a {@code estado} por última vez. */
-  static Optional<LocalDateTime> fechaDe(Donacion donacion, EstadoDonacion estado) {
-    return donacion.getHistorialEstado().stream()
-        .filter(h -> h.getEstadoAlcanzado() == estado)
-        .map(HistorialEstado::getFecha)
-        .max(Comparator.naturalOrder());
   }
 
   /** Último cambio de estado, para ordenar de lo más reciente a lo más viejo. */

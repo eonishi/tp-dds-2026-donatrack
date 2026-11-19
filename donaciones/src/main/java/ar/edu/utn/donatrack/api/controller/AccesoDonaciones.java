@@ -38,16 +38,11 @@ final class AccesoDonaciones {
 
   private static boolean esDonante(Usuario usuario, Donacion donacion) {
     return usuario.hasRole(Role.DONANTE)
-        && donacion.getDonante() != null
-        && usuario.getDonanteId().map(donacion.getDonante().getId()::equals).orElse(false);
+        && usuario.getDonanteId().map(donacion::fueDonadaPor).orElse(false);
   }
 
   private static boolean esBeneficiaria(Usuario usuario, Donacion donacion) {
     return usuario.hasRole(Role.BENEFICIARIO)
-        && donacion.getEntidadBeneficiaria() != null
-        && usuario
-            .getEntidadId()
-            .map(donacion.getEntidadBeneficiaria().getId()::equals)
-            .orElse(false);
+        && usuario.getEntidadId().map(donacion::estaAsignadaA).orElse(false);
   }
 }

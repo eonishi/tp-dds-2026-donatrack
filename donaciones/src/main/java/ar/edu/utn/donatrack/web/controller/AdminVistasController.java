@@ -116,11 +116,7 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
 
   private void marcarVencida(Context ctx) {
     Vistas.usuario(ctx);
-    Donacion donacion = donacion(ctx);
-    if (donacion.getEstado() != EstadoDonacion.EN_DEPOSITO) {
-      throw new IllegalStateException("La donación ya no está en el depósito.");
-    }
-    vencer(List.of(donacion));
+    vencer(List.of(donacion(ctx)));
     ctx.redirect("/admin/vencidas?ok=vencida");
   }
 
@@ -201,7 +197,7 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
             p ->
                 donaciones
                     .findById(p.getDonacion().getId())
-                    .filter(d -> d.getEstado() == EstadoDonacion.EN_DEPOSITO)
+                    .filter(Donacion::esAsignable)
                     .map(d -> new PropuestaVista(d, p, d.getId().equals(conError) ? error : null)))
         .flatMap(Optional::stream)
         .toList();
