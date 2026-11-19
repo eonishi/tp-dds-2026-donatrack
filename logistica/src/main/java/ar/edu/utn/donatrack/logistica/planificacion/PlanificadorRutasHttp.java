@@ -77,6 +77,11 @@ public class PlanificadorRutasHttp implements PlanificadorRutas {
           httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
       validarRespuesta(response);
 
+      // Suposición de diseño: el componente externo es hipotético y no posee una especificación
+      // canónica de respuesta. Asumimos que responde un JSON {"loteId": "<uuid>"} con el
+      // identificador
+      // asignado al lote para luego correlacionarlo con la notificación asincrónica recibida en el
+      // callback.
       LoteIdResponseDto resultado =
           objectMapper.readValue(response.body(), LoteIdResponseDto.class);
       if (resultado == null || resultado.loteId() == null) {
