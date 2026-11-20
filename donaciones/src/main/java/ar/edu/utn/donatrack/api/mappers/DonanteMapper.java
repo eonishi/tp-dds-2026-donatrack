@@ -53,6 +53,17 @@ public final class DonanteMapper {
     return canal == Canal.CORREO ? "EMAIL" : canal.name();
   }
 
+  /** Lo inverso de {@link #tipoDeMedio}: el canal de un tipo de medio de la API. */
+  private static Canal canal(String tipo) {
+    String nombre = tipo == null ? "" : tipo.toUpperCase(Locale.ROOT);
+    return switch (nombre) {
+      case "EMAIL" -> Canal.CORREO;
+      case "SMS" -> Canal.SMS;
+      case "WHATSAPP" -> Canal.WHATSAPP;
+      default -> throw new IllegalArgumentException("Tipo de contacto inválido: " + nombre + ".");
+    };
+  }
+
   private static Donante armar(DonanteRequest request, List<Representante> siNoVienen) {
     exigirDatosDelAlta(request);
     List<MedioDeContacto> medios = medios(request);
@@ -118,13 +129,7 @@ public final class DonanteMapper {
   }
 
   private static MedioDeContacto medio(MedioContactoRequest contacto) {
-    String tipo = contacto.tipo() == null ? "" : contacto.tipo().toUpperCase(Locale.ROOT);
-    return switch (tipo) {
-      case "EMAIL" -> MedioDeContacto.correo(contacto.contacto());
-      case "SMS" -> MedioDeContacto.sms(contacto.contacto());
-      case "WHATSAPP" -> MedioDeContacto.whatsapp(contacto.contacto());
-      default -> throw new IllegalArgumentException("Tipo de contacto inválido: " + tipo + ".");
-    };
+    return new MedioDeContacto(canal(contacto.tipo()), contacto.contacto());
   }
 
   private static int predeterminado(DonanteRequest request) {

@@ -248,6 +248,23 @@ class RegistroHttpTest implements WithSimplePersistenceUnit {
   }
 
   @Test
+  void avisaQueElMedioDeContactoPreferidoFaltaONoExiste() throws Exception {
+    Map<String, String> sinElegir = donante("sin.medio@example.org", "70111222");
+    sinElegir.remove("donanteMedioContacto");
+    HttpResponse<String> faltante = registrar(sinElegir);
+    assertEquals(400, faltante.statusCode());
+    assertTrue(
+        faltante.body().contains("Falta completar el medio de contacto preferido."),
+        faltante.body());
+
+    Map<String, String> inventado = donante("sin.medio@example.org", "70111222");
+    inventado.put("donanteMedioContacto", "PALOMA");
+    HttpResponse<String> invalido = registrar(inventado);
+    assertEquals(400, invalido.statusCode());
+    assertTrue(invalido.body().contains("Elegí un medio de contacto válido."), invalido.body());
+  }
+
+  @Test
   void requiresEmailEvenWithPreferredPhoneAndRejectsUnavailableContact() throws Exception {
     for (String channel : new String[] {"SMS", "WHATSAPP", "INVALID"}) {
       Map<String, String> fields = donante("phone@example.org", "50111222");

@@ -6,13 +6,14 @@ import static ar.edu.utn.donatrack.web.controller.Formularios.obligatorio;
 import ar.edu.utn.donatrack.api.dto.DonanteDtos.DonanteRequest;
 import ar.edu.utn.donatrack.api.dto.DonanteDtos.DonanteResponse;
 import ar.edu.utn.donatrack.api.dto.DonanteDtos.MedioContactoRequest;
-import ar.edu.utn.donatrack.api.dto.DonanteDtos.MedioContactoResponse;
 import ar.edu.utn.donatrack.api.mappers.ApiMapper;
 import ar.edu.utn.donatrack.api.mappers.DonanteMapper;
+import ar.edu.utn.donatrack.donantes.Canal;
 import ar.edu.utn.donatrack.donantes.DocumentoEnUso;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import ar.edu.utn.donatrack.donantes.Genero;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.donantes.TipoOrganizacion;
 import ar.edu.utn.donatrack.donantes.TipoPersona;
@@ -81,16 +82,11 @@ final class FormularioDonante {
       campos.put("donanteGenero", nombre(datos.genero()));
       campos.put("donanteDireccion", datos.direccion());
     }
-    for (MedioContactoResponse medio : datos.mediosDeContacto()) {
-      if ("EMAIL".equals(medio.tipo())) {
-        campos.putIfAbsent("correo", medio.contacto());
-      } else {
-        campos.putIfAbsent("donanteTelefono", medio.contacto());
-      }
-      if (medio.predeterminado()) {
-        campos.put("donanteMedioContacto", "EMAIL".equals(medio.tipo()) ? "CORREO" : medio.tipo());
-      }
+    for (MedioDeContacto medio : donante.getMediosDeContacto()) {
+      campos.putIfAbsent(medio.esCorreo() ? "correo" : "donanteTelefono", medio.getContacto());
     }
+    // El <option> del preferido tiene el nombre de su Canal.
+    campos.put("donanteMedioContacto", donante.getMedioContactoPredeterminado().getCanal().name());
     return campos;
   }
 
@@ -152,15 +148,18 @@ final class FormularioDonante {
    */
   private static int leerMediosDeContacto(
       Context ctx, String correo, List<MedioContactoRequest> medios) {
-    String preferido = obligatorio(ctx, "donanteMedioContacto", "el medio de contacto preferido");
-    if (!Set.of("CORREO", "SMS", "WHATSAPP").contains(preferido)) {
-      throw new DatoInvalido("Elegí un medio de contacto válido.");
-    }
-    boolean prefiereTelefono = !"CORREO".equals(preferido);
-    medios.add(new MedioContactoRequest("EMAIL", correo));
+    // Los <option> del formulario usan los nombres de Canal (CORREO, SMS, WHATSAPP).
+    Canal preferido =
+        enumerado(
+            Canal.class,
+            obligatorio(ctx, "donanteMedioContacto", "el medio de contacto preferido"),
+            "un medio de contacto válido");
+    boolean prefiereTelefono = preferido != Canal.CORREO;
+    medios.add(new MedioContactoRequest(DonanteMapper.tipoDeMedio(Canal.CORREO), correo));
     String telefono = ctx.formParam("donanteTelefono");
     if (telefono != null && !telefono.isBlank()) {
-      medios.add(new MedioContactoRequest(prefiereTelefono ? preferido : "SMS", telefono.trim()));
+      Canal delTelefono = prefiereTelefono ? preferido : Canal.SMS;
+      medios.add(new MedioContactoRequest(DonanteMapper.tipoDeMedio(delTelefono), telefono));
     } else if (prefiereTelefono) {
       throw new DatoInvalido("Para recibir avisos por SMS o WhatsApp cargá un teléfono.");
     }
