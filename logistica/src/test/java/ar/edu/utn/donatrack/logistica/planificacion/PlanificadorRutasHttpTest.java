@@ -24,6 +24,8 @@ import org.junit.jupiter.api.Test;
  * headers y el manejo de errores, sin invocar a ningún proveedor real.
  */
 class PlanificadorRutasHttpTest {
+  private static final String URL_CALLBACK =
+      "http://localhost:9001/logistica/planificacion/callback";
 
   private HttpServer servidor;
   private final AtomicReference<String> metodo = new AtomicReference<>();
@@ -87,7 +89,9 @@ class PlanificadorRutasHttpTest {
     UUID donacionId = UUID.randomUUID();
     DonacionPlanificable donacion = crearDonacion(donacionId, 42L);
 
-    UUID devuelto = planificador.enviarLote(new LoteDonaciones(List.of(donacion), List.of(camion)));
+    UUID devuelto =
+        planificador.enviarLote(
+            new LoteDonaciones(List.of(donacion), List.of(camion), URL_CALLBACK));
 
     assertEquals(loteId, devuelto);
     assertEquals("POST", metodo.get());
@@ -112,6 +116,8 @@ class PlanificadorRutasHttpTest {
     assertEquals(45.0, camionJson.get("volumenM3").asDouble(), 0.001);
     assertEquals(2.5, camionJson.get("alturaM").asDouble(), 0.001);
     assertEquals(5000.0, camionJson.get("capacidadCargaKg").asDouble(), 0.001);
+
+    assertEquals(URL_CALLBACK, cuerpo.get("urlCallback").asText());
   }
 
   @Test
@@ -125,7 +131,9 @@ class PlanificadorRutasHttpTest {
 
     planificador.enviarLote(
         new LoteDonaciones(
-            List.of(crearDonacion(primera, 1L), crearDonacion(segunda, 2L)), List.of(camion)));
+            List.of(crearDonacion(primera, 1L), crearDonacion(segunda, 2L)),
+            List.of(camion),
+            URL_CALLBACK));
 
     JsonNode cuerpo = new ObjectMapper().readTree(this.cuerpo.get());
     assertEquals(2, cuerpo.get("donaciones").size());
@@ -140,7 +148,9 @@ class PlanificadorRutasHttpTest {
     PlanificadorRutasHttp planificador = crearAdaptador();
     LoteDonaciones lote =
         new LoteDonaciones(
-            List.of(crearDonacion(UUID.randomUUID(), 42L)), List.of(crearCamion("ABC123")));
+            List.of(crearDonacion(UUID.randomUUID(), 42L)),
+            List.of(crearCamion("ABC123")),
+            URL_CALLBACK);
 
     RuntimeException ex = assertThrows(RuntimeException.class, () -> planificador.enviarLote(lote));
 
@@ -156,7 +166,9 @@ class PlanificadorRutasHttpTest {
     PlanificadorRutasHttp planificador = crearAdaptador();
     LoteDonaciones lote =
         new LoteDonaciones(
-            List.of(crearDonacion(UUID.randomUUID(), 42L)), List.of(crearCamion("ABC123")));
+            List.of(crearDonacion(UUID.randomUUID(), 42L)),
+            List.of(crearCamion("ABC123")),
+            URL_CALLBACK);
 
     RuntimeException ex = assertThrows(RuntimeException.class, () -> planificador.enviarLote(lote));
 
@@ -170,7 +182,9 @@ class PlanificadorRutasHttpTest {
     PlanificadorRutasHttp planificador = crearAdaptador();
     LoteDonaciones lote =
         new LoteDonaciones(
-            List.of(crearDonacion(UUID.randomUUID(), 42L)), List.of(crearCamion("ABC123")));
+            List.of(crearDonacion(UUID.randomUUID(), 42L)),
+            List.of(crearCamion("ABC123")),
+            URL_CALLBACK);
 
     RuntimeException ex = assertThrows(RuntimeException.class, () -> planificador.enviarLote(lote));
 
