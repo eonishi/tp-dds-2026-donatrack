@@ -1,7 +1,9 @@
 package ar.edu.utn.donatrack.donantes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -29,6 +31,24 @@ class ReglasDelDonanteTest {
         TipoDocumento.CUIT.normalizar("30-71234567-9"));
     assertThrows(IllegalArgumentException.class, () -> TipoDocumento.CUIT.normalizar("30-111"));
     assertThrows(IllegalArgumentException.class, () -> TipoDocumento.DNI.normalizar(" "));
+  }
+
+  @Test
+  void elDocumentoCoincideAunqueSeEscribaDistinto() {
+    PersonajeJuridica coop =
+        new PersonajeJuridica(
+            MedioDeContacto.correo("coop@test.com"),
+            "30-71234567-9",
+            TipoDocumento.CUIT,
+            "Cooperativa",
+            TipoOrganizacion.EMPRESA,
+            "Alimentos");
+
+    assertTrue(coop.tieneDocumento("30712345679"));
+    assertTrue(coop.tieneDocumento(" 30-71234567-9 "));
+    assertFalse(coop.tieneDocumento("30712345670"));
+    assertFalse(coop.tieneDocumento("no es un cuit"));
+    assertFalse(coop.tieneDocumento(null));
   }
 
   @Test

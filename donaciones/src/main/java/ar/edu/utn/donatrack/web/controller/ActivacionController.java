@@ -3,7 +3,6 @@ package ar.edu.utn.donatrack.web.controller;
 import static io.javalin.apibuilder.ApiBuilder.get;
 import static io.javalin.apibuilder.ApiBuilder.post;
 
-import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import ar.edu.utn.donatrack.security.AuthService;
 import ar.edu.utn.donatrack.security.Usuario;
@@ -56,7 +55,7 @@ public class ActivacionController {
             correo,
             documento,
             contrasena,
-            id -> donantes.findById(id).map(Donante::getNumDocumento));
+            (id, numero) -> donantes.findById(id).map(d -> d.tieneDocumento(numero)).orElse(false));
     if (activado.isEmpty()) {
       // Mismo mensaje para "no existe" y "no coincide": no revela qué correos tienen cuenta.
       ctx.status(400)

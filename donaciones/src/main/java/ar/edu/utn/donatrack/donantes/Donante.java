@@ -123,6 +123,18 @@ public abstract class Donante implements Notificable {
     return documento;
   }
 
+  /**
+   * Si el número es el documento de esta persona, escrito como sea: "30-71234567-9" y "30712345679"
+   * son el mismo CUIT. Un número que ni siquiera tiene la forma del tipo no coincide.
+   */
+  public boolean tieneDocumento(String numero) {
+    try {
+      return numDocumento.equals(documento.normalizar(numero));
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
+  }
+
   public Optional<String> extraerEmail() {
     return mediosDeContacto.stream()
         .filter(MedioDeContacto::esCorreo)

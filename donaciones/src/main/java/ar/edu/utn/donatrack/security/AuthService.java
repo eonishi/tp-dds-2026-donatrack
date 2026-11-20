@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
+import java.util.function.BiPredicate;
 import org.mindrot.jbcrypt.BCrypt;
 
 /**
@@ -129,15 +129,12 @@ public class AuthService implements WithSimplePersistenceUnit {
    * Activa una cuenta importada: la persona prueba quién es con el número de documento que figura
    * en su registro de donante y elige su contraseña.
    *
-   * @param documentoDe devuelve el número de documento del donante vinculado a la cuenta
+   * @param esSuDocumento si el documento ingresado es el del donante (por id) vinculado a la cuenta
    * @return el usuario activado, o vacío si el correo no tiene una cuenta pendiente o el documento
    *     no coincide (no se distingue cuál de los dos, para no revelar qué correos existen)
    */
   public Optional<Usuario> activar(
-      String email,
-      String documento,
-      String password,
-      Function<UUID, Optional<String>> documentoDe) {
+      String email, String documento, String password, BiPredicate<UUID, String> esSuDocumento) {
     if (email == null || documento == null || password == null) {
       return Optional.empty();
     }
@@ -149,8 +146,7 @@ public class AuthService implements WithSimplePersistenceUnit {
                 .filter(
                     u ->
                         u.getDonanteId()
-                            .flatMap(documentoDe)
-                            .map(doc -> doc.trim().equalsIgnoreCase(documento.trim()))
+                            .map(donanteId -> esSuDocumento.test(donanteId, documento))
                             .orElse(false))
                 .map(
                     u -> {

@@ -197,6 +197,31 @@ class VistasAdminHttpTest {
   }
 
   @Test
+  void unCuitImportadoConGuionesSeActivaEscribiendoloSinGuiones() throws Exception {
+    String csv =
+        "TipoPersona,TipoDoc,Documento,Nombre/Razón Social,Email,Teléfono\n"
+            + "JURIDICA,CUIT,30-52235350-3,Santa Fe Industrial,santafe@example.org,\n";
+    escenario.subir(
+        "/admin/importar",
+        List.of(
+            new Archivo(
+                "archivo", "donantes.csv", "text/csv", csv.getBytes(StandardCharsets.UTF_8))),
+        admin);
+    esperarImportacion();
+
+    HttpResponse<String> activacion =
+        escenario.formulario(
+            "/activar",
+            Map.of(
+                "email", "santafe@example.org",
+                "documento", "30522353503",
+                "password", "nueva-clave",
+                "confirmacion", "nueva-clave"),
+            "");
+    assertEquals(302, activacion.statusCode());
+  }
+
+  @Test
   void soloLaAdministracionImporta() throws Exception {
     String donante = escenario.login("donante@donatrack.local", "donante123");
     assertEquals(403, escenario.get("/admin/importar", donante).statusCode());
