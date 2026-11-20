@@ -6,7 +6,6 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import io.javalin.http.Context;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -39,19 +38,10 @@ public final class Sesiones {
   private record Abierta(UUID usuarioId, Instant vence) {}
 
   private final Map<String, Abierta> abiertas = new ConcurrentHashMap<>();
-  private final Clock reloj;
-
-  public Sesiones() {
-    this(Clock.systemUTC());
-  }
-
-  Sesiones(Clock reloj) {
-    this.reloj = reloj;
-  }
 
   /** Abre una sesión nueva para el usuario y le deja la cookie. */
   public void abrir(Context ctx, Usuario usuario) {
-    Instant ahora = reloj.instant();
+    Instant ahora = Instant.now();
     Instant vence = ahora.plus(DURACION);
     // Se aprovecha cada ingreso para descartar las vencidas que nadie volvió a usar.
     abiertas.values().removeIf(sesion -> sesion.vence().isBefore(ahora));
@@ -61,7 +51,6 @@ public final class Sesiones {
     String token =
         JWT.create()
             .withSubject(usuario.getId().toString())
-            .withClaim("email", usuario.getEmail())
             .withClaim("sid", sid)
             // Los roles van en el token solo para logística; acá se leen siempre de la base.
             .withClaim("roles", usuario.getRoles().stream().map(Enum::name).toList())
@@ -77,26 +66,15 @@ public final class Sesiones {
   }
 
   /**
-   * De quién es la sesión del request: el token tiene que estar bien firmado, su sesión abierta y
-   * sin vencer, y ser de la misma persona a la que se le abrió.
+   * De quién es la sesión del request: el token tiene que estar bien firmado y sin vencer (lo
+   * verifica {@link #decodificar}), y su sesión seguir abierta (no se cerró ni se reinició el
+   * servicio).
    */
   public Optional<UUID> usuarioId(Context ctx) {
     return decodificar(ctx)
-        .flatMap(
-            jwt -> {
-              String sid = jwt.getClaim("sid").asString();
-              Abierta sesion = sid == null ? null : abiertas.get(sid);
-              if (sesion == null) {
-                return Optional.empty();
-              }
-              if (sesion.vence().isBefore(reloj.instant())) {
-                abiertas.remove(sid);
-                return Optional.empty();
-              }
-              return sesion.usuarioId().toString().equals(jwt.getSubject())
-                  ? Optional.of(sesion.usuarioId())
-                  : Optional.empty();
-            });
+        .map(jwt -> jwt.getClaim("sid").asString())
+        .map(abiertas::get)
+        .map(Abierta::usuarioId);
   }
 
   /** El token tal como vino, para reenviárselo a logística en nombre de la persona. */
