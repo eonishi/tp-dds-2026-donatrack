@@ -110,11 +110,10 @@ final class FormularioDonante {
     int predeterminado = leerMediosDeContacto(ctx, correo, medios);
 
     if ("JURIDICA".equals(tipoPersona)) {
-      // El CUIT se puede escribir con guiones (30-12345678-9).
-      String cuit = obligatorio(ctx, "donanteCuit", "el CUIT").trim().replace("-", "");
+      // El CUIT se puede escribir con guiones (30-12345678-9): el dominio los saca.
       return new DonanteRequest(
           TipoPersona.JURIDICA,
-          cuit,
+          obligatorio(ctx, "donanteCuit", "el CUIT"),
           TipoDocumento.CUIT,
           medios,
           predeterminado,
@@ -133,7 +132,7 @@ final class FormularioDonante {
     }
     return new DonanteRequest(
         TipoPersona.HUMANA,
-        obligatorio(ctx, "donanteNumeroDocumento", "el número de documento").trim(),
+        obligatorio(ctx, "donanteNumeroDocumento", "el número de documento"),
         enumerado(
             TipoDocumento.class, ctx.formParam("donanteTipoDocumento"), "el tipo de documento"),
         medios,
@@ -180,10 +179,14 @@ final class FormularioDonante {
 
   private static void exigirDocumentoLibre(
       DonanteRequest request, Donante actual, DonantesRepository donantes) {
-    if (donantes.documentoEnUso(
-        request.tipoDocumento(),
-        request.numeroDocumento(),
-        actual == null ? null : actual.getId())) {
+    boolean enUso =
+        comoDatoInvalido(
+            () ->
+                donantes.documentoEnUso(
+                    request.tipoDocumento(),
+                    request.numeroDocumento(),
+                    actual == null ? null : actual.getId()));
+    if (enUso) {
       throw new DatoInvalido("Ya hay una persona donante registrada con ese documento.");
     }
   }

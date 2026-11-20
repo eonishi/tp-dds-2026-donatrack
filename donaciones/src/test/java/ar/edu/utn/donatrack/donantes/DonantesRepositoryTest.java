@@ -40,8 +40,8 @@ class DonantesRepositoryTest implements SimplePersistenceTest {
             TipoDocumento.DNI,
             Genero.FEMENINO,
             "Av. Siempreviva 742");
-    donante.addMedioDeContacto(MedioDeContacto.sms("1145558888"));
-    donante.addMedioDeContacto(MedioDeContacto.whatsapp("1145559999"));
+    donante.addMedioDeContacto(MedioDeContacto.sms("+541145558888"));
+    donante.addMedioDeContacto(MedioDeContacto.whatsapp("+541145559999"));
     assertNull(
         donante.getId(),
         "Una persona recién construida no tiene id: lo asigna el proveedor al guardarla");
@@ -115,7 +115,7 @@ class DonantesRepositoryTest implements SimplePersistenceTest {
             "Fundación Test",
             TipoOrganizacion.ONG,
             "Alimentos");
-    organizacion.addMedioDeContacto(MedioDeContacto.whatsapp("1145550000"));
+    organizacion.addMedioDeContacto(MedioDeContacto.whatsapp("+541145550000"));
     organizacion.agregarRepresentante(new Representante("Maria", "Perez"));
     assertNull(
         organizacion.getId(),

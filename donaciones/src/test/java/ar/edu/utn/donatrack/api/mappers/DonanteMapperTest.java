@@ -42,7 +42,7 @@ class DonanteMapperTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> DonanteMapper.nuevo(humana("30111222", 35, soloTelefono, 0)));
-    assertEquals("Debe incluir un correo electrónico (EMAIL).", error.getMessage());
+    assertEquals("Debe incluir un correo electrónico.", error.getMessage());
   }
 
   @Test
@@ -57,9 +57,11 @@ class DonanteMapperTest {
   }
 
   @Test
-  void elCuitTieneOnceDigitos() {
+  void elCuitTieneOnceDigitosYSeGuardaSinGuiones() {
+    assertEquals(
+        "30712345679", DonanteMapper.nuevo(juridica("30-71234567-9", null)).getNumDocumento());
     assertThrows(
-        IllegalArgumentException.class, () -> DonanteMapper.nuevo(juridica("30-71234567-9", null)));
+        IllegalArgumentException.class, () -> DonanteMapper.nuevo(juridica("30-7123456-9", null)));
   }
 
   @Test

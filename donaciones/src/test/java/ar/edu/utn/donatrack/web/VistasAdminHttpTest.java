@@ -137,7 +137,7 @@ class VistasAdminHttpTest {
     escenario.crearDonante("Ya Registrada", "20000001", "ya@example.org");
     String csv =
         "TipoPersona,TipoDoc,Documento,Nombre/Razón Social,Email,Teléfono\n"
-            + "HUMANA,DNI,30111222,Ana Gómez,ana@example.org,1155550000\n"
+            + "HUMANA,DNI,30111222,Ana Gómez,ana@example.org,+54 11 5555-0000\n"
             + "HUMANA,DNI,20000001,Ya Registrada,ya@example.org,\n"
             + "MARCIANA,DNI,1,Nadie,nadie@example.org,\n";
 

@@ -25,8 +25,8 @@ class DonantePersistenciaTest implements SimplePersistenceTest {
             TipoDocumento.DNI,
             Genero.FEMENINO,
             "Av. Siempreviva 742");
-    donante.addMedioDeContacto(MedioDeContacto.sms("1145558888"));
-    donante.addMedioDeContacto(MedioDeContacto.whatsapp("1145559999"));
+    donante.addMedioDeContacto(MedioDeContacto.sms("+541145558888"));
+    donante.addMedioDeContacto(MedioDeContacto.whatsapp("+541145559999"));
     assertNull(
         donante.getId(),
         "Un donante recién construido no tiene id: lo asigna el proveedor al persistirlo");
@@ -59,7 +59,7 @@ class DonantePersistenciaTest implements SimplePersistenceTest {
     assertTrue(medios.stream().anyMatch(m -> m.getCanal() == Canal.SMS), "Falta el SMS");
     assertTrue(medios.stream().anyMatch(m -> m.getCanal() == Canal.WHATSAPP), "Falta el WhatsApp");
     assertEquals(
-        "1145558888",
+        "+541145558888",
         medios.stream()
             .filter(m -> m.getCanal() == Canal.SMS)
             .map(MedioDeContacto::getContacto)

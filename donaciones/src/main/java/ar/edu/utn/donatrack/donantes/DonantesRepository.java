@@ -139,14 +139,21 @@ public class DonantesRepository implements WithSimplePersistenceUnit {
 
   /**
    * Si el documento ya es de otra persona donante. Al editar se pasa el id de quien se edita, así
-   * su propio documento no cuenta como ocupado; en un alta va {@code null}.
+   * su propio documento no cuenta como ocupado; en un alta va {@code null}. El número se compara
+   * como lo guarda el dominio, así "30-71234567-9" encuentra a "30712345679".
+   *
+   * @throws IllegalArgumentException si el número no tiene la forma de su tipo de documento
    */
   public boolean documentoEnUso(TipoDocumento tipo, String numero, UUID salvo) {
+    if (tipo == null) {
+      // Sin tipo no hay documento que comparar: el alta lo rechaza por su lado.
+      return false;
+    }
     return createQuery(
             "select d.id from Donante d where d.documento = :tipo and d.numDocumento = :numero",
             UUID.class)
         .setParameter("tipo", tipo)
-        .setParameter("numero", numero)
+        .setParameter("numero", tipo.normalizar(numero))
         .getResultList()
         .stream()
         .anyMatch(id -> !id.equals(salvo));

@@ -75,18 +75,15 @@ public class PersonajeJuridica extends Donante {
     return Collections.unmodifiableList(representantes);
   }
 
-  public void actualizarDatosJuridicos(
-      String razonSocial,
-      TipoOrganizacion tipoOrganizacion,
-      String rubro,
-      List<Representante> representantes) {
-    this.razonSocial = razonSocial;
-    this.tipoOrganizacion = tipoOrganizacion;
-    this.rubro = rubro;
+  @Override
+  protected void copiarDatosPropios(Donante datos) {
+    PersonajeJuridica otra = (PersonajeJuridica) datos;
+    this.razonSocial = otra.razonSocial;
+    this.tipoOrganizacion = otra.tipoOrganizacion;
+    this.rubro = otra.rubro;
+    List<Representante> nuevos = List.copyOf(otra.representantes);
     this.representantes.clear();
-    if (representantes != null) {
-      representantes.forEach(this::agregarRepresentante);
-    }
+    nuevos.forEach(this::agregarRepresentante);
   }
 
   @Override

@@ -1,6 +1,7 @@
 package ar.edu.utn.donatrack.importacion;
 
 import ar.edu.utn.donatrack.donantes.Donante;
+import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.security.AuthService;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
@@ -172,12 +173,13 @@ public class ImportadorDonantes implements WithSimplePersistenceUnit {
       Map<String, UUID> porCorreo,
       Map<String, UUID> porDocumento,
       Set<String> correosConCuenta) {
-    String correo = obligatorio(csv.getEmail(), "falta el correo").trim().toLowerCase();
-    if (!correo.matches("[^@\\s]+@[^@\\s]+\\.[^@\\s]+")) {
-      throw new IllegalArgumentException("el correo no es válido");
+    // El correo y el documento se validan y normalizan como en cualquier alta: los busca igual que
+    // como quedaron guardados.
+    String correo = MedioDeContacto.correo(csv.getEmail()).getContacto().toLowerCase();
+    if (csv.getTipoDoc() == null) {
+      throw new IllegalArgumentException("Falta el tipo de documento.");
     }
-    String documento =
-        csv.getTipoDoc() + ":" + obligatorio(csv.getDocumento(), "falta el documento").trim();
+    String documento = csv.getTipoDoc() + ":" + csv.getTipoDoc().normalizar(csv.getDocumento());
     UUID donanteId = porCorreo.getOrDefault(correo, porDocumento.get(documento));
     if (donanteId == null) {
       Donante donante = ImportadorDonantesCsv.mapearDonante(csv);
@@ -196,13 +198,6 @@ public class ImportadorDonantes implements WithSimplePersistenceUnit {
       persist(authService.cuentaPendiente(correo, donanteId));
       lote.cuentas++;
     }
-  }
-
-  private static String obligatorio(String valor, String motivo) {
-    if (valor == null || valor.isBlank()) {
-      throw new IllegalArgumentException(motivo);
-    }
-    return valor;
   }
 
   private static String motivo(RuntimeException e) {

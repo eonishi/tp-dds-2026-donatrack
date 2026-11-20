@@ -263,8 +263,7 @@ class RegistroHttpTest implements WithSimplePersistenceUnit {
   @Test
   void rejectsMalformedPhonesBeforeCreatingAccountsOrWelcomes() throws Exception {
     for (String channel : new String[] {"CORREO", "SMS", "WHATSAPP"}) {
-      for (String phone :
-          new String[] {"abc", "1155555555", "+54 91155555555", "+0123456", "+1234567890123456"}) {
+      for (String phone : new String[] {"abc", "1155555555", "+0123456", "+1234567890123456"}) {
         Map<String, String> fields = donante("badphone@example.org", "60111222");
         fields.put("donanteTelefono", phone);
         fields.put("donanteMedioContacto", channel);

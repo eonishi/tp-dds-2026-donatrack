@@ -39,20 +39,20 @@ public class RepositoriosTest implements SimplePersistenceTest {
             TipoDocumento.DNI,
             Genero.FEMENINO,
             "Calle siempre morida 1234");
-    elsa.addMedioDeContacto(MedioDeContacto.sms("115558833"));
-    elsa.addMedioDeContacto(MedioDeContacto.whatsapp("null"));
+    elsa.addMedioDeContacto(MedioDeContacto.sms("+54115558833"));
+    elsa.addMedioDeContacto(MedioDeContacto.whatsapp("+54115558834"));
 
     // Persona Juridica
     MedioDeContacto emailFundacion = MedioDeContacto.correo("fundidos@hotmail.com");
     PersonajeJuridica fundacion =
         new PersonajeJuridica(
             emailFundacion,
-            "90-111222333-1",
+            "90-11122233-1",
             TipoDocumento.CUIT,
             "Fundacion fundidos",
             TipoOrganizacion.ONG,
             "Lo que venga");
-    fundacion.addMedioDeContacto(MedioDeContacto.whatsapp("222555588899"));
+    fundacion.addMedioDeContacto(MedioDeContacto.whatsapp("+54222555588899"));
     fundacion.agregarRepresentante(new Representante("elrre", "presentate"));
 
     repo.addMany(List.of(elsa, fundacion));
@@ -100,7 +100,7 @@ public class RepositoriosTest implements SimplePersistenceTest {
     PersonajeJuridica original =
         new PersonajeJuridica(
             email,
-            "30-111222333-1",
+            "30-11122233-1",
             TipoDocumento.CUIT,
             "Original SRL",
             TipoOrganizacion.EMPRESA,
@@ -111,7 +111,7 @@ public class RepositoriosTest implements SimplePersistenceTest {
     PersonajeJuridica actualizada =
         new PersonajeJuridica(
             mismoEmail,
-            "30-111222333-1",
+            "30-11122233-1",
             TipoDocumento.CUIT,
             "Actualizada SRL",
             TipoOrganizacion.EMPRESA,
@@ -135,7 +135,7 @@ public class RepositoriosTest implements SimplePersistenceTest {
     PersonajeJuridica nuevo =
         new PersonajeJuridica(
             email,
-            "30-999888777-1",
+            "30-99988877-1",
             TipoDocumento.CUIT,
             "Nueva SRL",
             TipoOrganizacion.EMPRESA,
@@ -155,10 +155,20 @@ public class RepositoriosTest implements SimplePersistenceTest {
 
     PersonajeJuridica a =
         new PersonajeJuridica(
-            emailA, "30-111", TipoDocumento.CUIT, "A SRL", TipoOrganizacion.EMPRESA, "Rubro A");
+            emailA,
+            "30-11111111-1",
+            TipoDocumento.CUIT,
+            "A SRL",
+            TipoOrganizacion.EMPRESA,
+            "Rubro A");
     PersonajeJuridica b =
         new PersonajeJuridica(
-            emailB, "30-222", TipoDocumento.CUIT, "B SRL", TipoOrganizacion.EMPRESA, "Rubro B");
+            emailB,
+            "30-22222222-2",
+            TipoDocumento.CUIT,
+            "B SRL",
+            TipoOrganizacion.EMPRESA,
+            "Rubro B");
 
     repo.addMany(List.of(a));
     assertEquals(1, repo.getDonantes().size(), "addMany debe haber insertado un donante");

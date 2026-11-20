@@ -80,12 +80,16 @@ public class PersonaHumana extends Donante {
     this.direccion = direccion;
   }
 
-  public void actualizarDatosPersonales(
-      String nombre, String apellido, Genero genero, String direccion) {
-    this.nombre = nombre;
-    this.apellido = apellido;
-    this.genero = genero;
-    this.direccion = direccion;
+  @Override
+  protected void copiarDatosPropios(Donante datos) {
+    PersonaHumana otra = (PersonaHumana) datos;
+    this.nombre = otra.nombre;
+    this.apellido = otra.apellido;
+    this.genero = otra.genero;
+    this.direccion = otra.direccion;
+    if (otra.edad != null) {
+      this.edad = otra.edad;
+    }
   }
 
   @Override
