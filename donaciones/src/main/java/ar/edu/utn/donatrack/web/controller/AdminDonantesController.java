@@ -5,6 +5,7 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donantes.Canal;
+import ar.edu.utn.donatrack.donantes.DocumentoEnUso;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import ar.edu.utn.donatrack.donantes.MedioDeContacto;
@@ -109,7 +110,7 @@ public final class AdminDonantesController implements WithSimplePersistenceUnit 
               ctx, "/activar?correo=" + URLEncoder.encode(correo, StandardCharsets.UTF_8));
       notificaciones.publicar(new EventoBienvenida(guardado, enlace));
       volverAlListado(ctx, "creado", donante.getNumDocumento());
-    } catch (DatoInvalido e) {
+    } catch (DatoInvalido | DocumentoEnUso e) {
       Map<String, Object> modelo = Vistas.modelo(usuario);
       modelo.put("error", e.getMessage());
       modelo.put("form", valoresDelFormulario(ctx));
@@ -142,7 +143,7 @@ public final class AdminDonantesController implements WithSimplePersistenceUnit 
             }
           });
       volverAlListado(ctx, "editado", actual.getNumDocumento());
-    } catch (DatoInvalido e) {
+    } catch (DatoInvalido | DocumentoEnUso e) {
       ctx.status(400);
       mostrarEdicion(ctx, actual, valoresDelFormulario(ctx), e.getMessage());
     }

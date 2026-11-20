@@ -4,9 +4,11 @@ import ar.edu.utn.donatrack.web.Busqueda;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import org.hibernate.exception.ConstraintViolationException;
 
 /**
  * Repositorio de donantes respaldado por JPA: toda lectura consulta la base y toda escritura
@@ -109,6 +111,25 @@ public class DonantesRepository implements WithSimplePersistenceUnit {
       return donante;
     }
     return merge(donante);
+  }
+
+  /**
+   * Si el error es la base rechazando un documento repetido. Pasa cuando dos altas con el mismo
+   * documento pasan juntas el chequeo previo ({@link #documentoEnUso}): la segunda choca contra la
+   * restricción al confirmar la transacción.
+   */
+  public static boolean esDocumentoRepetido(Throwable error) {
+    for (Throwable causa = error; causa != null; causa = causa.getCause()) {
+      if (causa instanceof ConstraintViolationException violacion
+          && violacion.getConstraintName() != null
+          && violacion
+              .getConstraintName()
+              .toLowerCase(Locale.ROOT)
+              .contains(Donante.DOCUMENTO_UNICO)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**

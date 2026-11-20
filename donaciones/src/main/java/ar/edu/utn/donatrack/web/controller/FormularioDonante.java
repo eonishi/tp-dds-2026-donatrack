@@ -9,6 +9,7 @@ import ar.edu.utn.donatrack.api.dto.DonanteDtos.MedioContactoRequest;
 import ar.edu.utn.donatrack.api.dto.DonanteDtos.MedioContactoResponse;
 import ar.edu.utn.donatrack.api.mappers.ApiMapper;
 import ar.edu.utn.donatrack.api.mappers.DonanteMapper;
+import ar.edu.utn.donatrack.donantes.DocumentoEnUso;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import ar.edu.utn.donatrack.donantes.Genero;
@@ -187,7 +188,7 @@ final class FormularioDonante {
                     request.numeroDocumento(),
                     actual == null ? null : actual.getId()));
     if (enUso) {
-      throw new DatoInvalido("Ya hay una persona donante registrada con ese documento.");
+      throw new DocumentoEnUso();
     }
   }
 

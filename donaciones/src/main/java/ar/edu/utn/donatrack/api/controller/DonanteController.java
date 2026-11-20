@@ -14,6 +14,7 @@ import ar.edu.utn.donatrack.api.mappers.ApiMapper;
 import ar.edu.utn.donatrack.api.mappers.DonanteMapper;
 import ar.edu.utn.donatrack.api.validation.DtoValidator;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
+import ar.edu.utn.donatrack.donantes.DocumentoEnUso;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import ar.edu.utn.donatrack.notificaciones.PublicadorDiferido;
@@ -110,7 +111,7 @@ public final class DonanteController implements WithSimplePersistenceUnit {
 
   private void exigirDocumentoLibre(DonanteRequest request, UUID salvo) {
     if (donantes.documentoEnUso(request.tipoDocumento(), request.numeroDocumento(), salvo)) {
-      throw ApiException.conflict("Ya existe un donante con ese documento.");
+      throw new DocumentoEnUso();
     }
   }
 }

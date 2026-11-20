@@ -33,10 +33,13 @@ import javax.persistence.UniqueConstraint;
 @Table(
     uniqueConstraints =
         @UniqueConstraint(
-            name = "uk_donante_documento",
+            name = Donante.DOCUMENTO_UNICO,
             columnNames = {"documento", "numDocumento"}))
 @Inheritance(strategy = InheritanceType.JOINED)
 public abstract class Donante implements Notificable {
+  /** Nombre de la restricción de la base que impide repetir tipo y número de documento. */
+  static final String DOCUMENTO_UNICO = "uk_donante_documento";
+
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
   private UUID id;

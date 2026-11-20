@@ -113,10 +113,21 @@ class DonantePersistenciaTest implements SimplePersistenceTest {
     persist(humana("uno@test.com", "30999888"));
     entityManager().flush();
     persist(humana("otro@test.com", "30999888"));
-    assertThrows(
-        javax.persistence.PersistenceException.class,
-        () -> entityManager().flush(),
-        "La constraint uk_donante_documento debe rechazar el documento repetido");
+    var error =
+        assertThrows(
+            javax.persistence.PersistenceException.class,
+            () -> entityManager().flush(),
+            "La constraint uk_donante_documento debe rechazar el documento repetido");
+    assertTrue(
+        DonantesRepository.esDocumentoRepetido(error),
+        "El handler de la API tiene que reconocerlo para responder 409");
+  }
+
+  @Test
+  void otroErrorDeLaBaseNoSeConfundeConUnDocumentoRepetido() {
+    assertFalse(
+        DonantesRepository.esDocumentoRepetido(
+            new javax.persistence.PersistenceException("se cayó la conexión")));
   }
 
   @Test
