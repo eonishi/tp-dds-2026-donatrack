@@ -84,6 +84,8 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
     get("/admin/vencidas", this::vencidas, Role.ADMIN);
     post("/admin/vencidas", this::marcarTodasVencidas, Role.ADMIN);
     post("/admin/vencidas/{id}", this::marcarVencida, Role.ADMIN);
+    get("/admin/entregas-fallidas", this::entregasFallidas, Role.ADMIN);
+    post("/admin/entregas-fallidas/{id}/deposito", this::retornarAlDeposito, Role.ADMIN);
     get("/admin/asignaciones", this::asignaciones, Role.ADMIN);
     post("/admin/asignaciones", this::generarPropuestas, Role.ADMIN);
     post("/admin/asignaciones/{id}", this::asignar, Role.ADMIN);
@@ -92,6 +94,42 @@ public class AdminVistasController implements WithSimplePersistenceUnit {
     post("/admin/camiones/{patente}/eliminar", this::eliminarCamion, Role.ADMIN);
     get("/admin/importar", this::importaciones, Role.ADMIN);
     post("/admin/importar", this::importar, Role.ADMIN);
+  }
+
+  private void entregasFallidas(Context ctx) {
+    Usuario usuario = Vistas.usuario(ctx);
+    Map<String, Object> modelo = Vistas.modelo(usuario);
+    modelo.put("donaciones", donaciones.getDonacionesEnEstado(EstadoDonacion.ENTREGA_FALLIDA)
+        .stream().map(d -> new FallidaVista(d, LocalDate.now(clock))).toList());
+    ctx.render("admin-entregas-fallidas", modelo);
+  }
+
+  private void retornarAlDeposito(Context ctx) {
+    withTransaction(() -> {
+      Donacion donacion = donacion(ctx);
+      donacion.retornarAlDeposito();
+      donaciones.save(donacion);
+    });
+    ctx.redirect("/admin/entregas-fallidas");
+  }
+
+  public static final class FallidaVista {
+    private final Donacion donacion;
+    private final DepositoVista detalle;
+
+    FallidaVista(Donacion donacion, LocalDate hoy) {
+      this.donacion = donacion;
+      this.detalle = new DepositoVista(donacion, hoy);
+    }
+    public String getId() { return detalle.getId(); }
+    public List<String> getBienes() { return detalle.getBienes(); }
+    public String getVence() { return detalle.getVence(); }
+    public boolean isVencida() { return detalle.isVencida(); }
+    public String getJustificacion() {
+      return donacion.getHistorialEstado().stream()
+          .filter(h -> h.getEstadoAlcanzado() == EstadoDonacion.ENTREGA_FALLIDA)
+          .reduce((a, b) -> b).map(h -> h.getJustificacion()).orElse("");
+    }
   }
 
   // --- Donaciones vencidas en depósito (#57) ---

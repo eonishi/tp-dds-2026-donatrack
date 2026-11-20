@@ -1,0 +1,19 @@
+{{#partial "titulo"}}Entregas fallidas · DonaTrack{{/partial}}
+{{#partial "contenido"}}
+<section class="py-4">
+  <h1>Entregas fallidas</h1>
+  <p>Confirmá el regreso al depósito cuando la donación haya llegado.</p>
+  {{#each donaciones}}
+  <div class="tarjeta p-4 mb-3">
+    <p><strong>Donación:</strong> {{id}}</p>
+    <p><strong>Motivo:</strong> {{justificacion}}</p>
+    <ul>{{#each bienes}}<li>{{this}}</li>{{/each}}</ul>
+    <p><strong>Vencimiento:</strong> {{#if vence}}{{vence}}{{else}}No perecedera{{/if}} {{#if vencida}}<strong>Vencida</strong>{{/if}}</p>
+    <form method="post" action="/admin/entregas-fallidas/{{id}}/deposito">
+      <button type="submit" class="btn btn-primary">Confirmar regreso al depósito</button>
+    </form>
+  </div>
+  {{else}}<p>No hay entregas fallidas.</p>{{/each}}
+</section>
+{{/partial}}
+{{> layout}}

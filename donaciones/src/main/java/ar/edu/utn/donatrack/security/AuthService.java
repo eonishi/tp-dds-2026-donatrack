@@ -168,7 +168,10 @@ public class AuthService implements WithSimplePersistenceUnit {
 
   public Optional<Usuario> login(Context ctx, String email, String password) {
     Optional<Usuario> usuario = authenticate(email, password);
-    usuario.ifPresent(u -> abrirSesion(ctx, u));
+    usuario.ifPresent(u -> {
+      withTransaction(() -> merge(u).registrarIngreso(java.time.LocalDateTime.now()));
+      abrirSesion(ctx, u);
+    });
     return usuario;
   }
 

@@ -5,6 +5,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.time.LocalDateTime;
+import javax.persistence.PrePersist;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -47,6 +49,28 @@ public class Usuario {
   private UUID donanteId;
 
   private Long entidadId;
+
+  private LocalDateTime fechaRegistro;
+  private LocalDateTime lastLogin;
+  private LocalDateTime avisoAusencia;
+
+  @PrePersist
+  private void registrarFecha() {
+    if (fechaRegistro == null) fechaRegistro = LocalDateTime.now();
+  }
+
+  public void registrarIngreso(LocalDateTime fecha) {
+    lastLogin = fecha;
+    avisoAusencia = null;
+  }
+
+  public void registrarAvisoAusencia(LocalDateTime fecha) {
+    avisoAusencia = fecha;
+  }
+
+  public void inicializarFechaRegistro(LocalDateTime fecha) {
+    if (fechaRegistro == null) fechaRegistro = fecha;
+  }
 
   protected Usuario() {}
 

@@ -160,6 +160,18 @@ El horario, la frecuencia y los reintentos pertenecen al planificador externo. L
 periódica que sigue dentro de un microservicio es la ubicación de entidades en el mapa
 (geocodificación), en el proceso HTTP de donaciones.
 
+En Docker, por ejemplo, la ejecución manual del aviso de ausencia es:
+
+```bash
+docker compose run --rm --no-deps --entrypoint java donaciones -cp 'app.jar:lib/*' ar.edu.utn.donatrack.schedules.AusenciaDonantesRunner
+```
+
+En producción agregar `-f docker-compose.prod.yml` después de `docker compose`. Programar esa
+ejecución diariamente en el servidor; el servicio HTTP no la ejecuta por sí mismo. Las cuentas
+existentes sin fecha de registro comienzan el conteo al ejecutar la tarea por primera vez. El aviso
+se vuelve a habilitar cuando la persona inicia sesión; si el proveedor rechaza el envío, se intenta
+en la siguiente ejecución.
+
 ## Fotos de recepción (Supabase Storage)
 
 Cuando una entidad beneficiaria confirma una recepción, sube fotos que se publican en
@@ -182,6 +194,9 @@ recrearlo. Se aceptan hasta 5 fotos JPG, PNG o WebP de 5 MB; el tipo se verifica
 del archivo, no por su nombre.
 
 ## Notificaciones reales para la demo
+
+`DONATRACK_WEB_ORIGIN` debe contener la URL pública de la aplicación, sin ruta: se utiliza para
+construir los enlaces de seguimiento según el rol. En Docker se configura en `.env`.
 
 El microservicio `donaciones` usa Resend para correo y Twilio Trial para SMS y WhatsApp. Las
 credenciales se leen exclusivamente desde variables de entorno. Con Docker van en el `.env` (están

@@ -5,6 +5,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.List;
+import java.time.LocalDateTime;
 
 /**
  * Repositorio de usuarios respaldado por JPA.
@@ -13,6 +15,22 @@ import java.util.UUID;
  * repositorios del módulo.
  */
 public class UsuariosRepository implements WithSimplePersistenceUnit {
+
+  public List<String> correosAdministradores() {
+    return createQuery("select distinct u.email from Usuario u join u.roles r where r = :rol", String.class)
+        .setParameter("rol", Role.ADMIN).getResultList();
+  }
+
+  public List<Usuario> donantesSinFechaRegistro() {
+    return createQuery("select u from Usuario u where u.donanteId is not null and u.fechaRegistro is null", Usuario.class)
+        .getResultList();
+  }
+
+  public List<Usuario> donantesInactivos(LocalDateTime limite) {
+    return createQuery("select u from Usuario u where u.donanteId is not null and u.avisoAusencia is null "
+        + "and coalesce(u.lastLogin, u.fechaRegistro) < :limite", Usuario.class)
+        .setParameter("limite", limite).getResultList();
+  }
 
   public Optional<Usuario> buscarPorEmail(String email) {
     if (email == null) {

@@ -15,7 +15,7 @@ import java.util.Objects;
  */
 public class EventoEntregaExitosa implements EventoNotificable {
   private static final DateTimeFormatter FORMATO_FECHA_ENTREGA =
-      DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+      DateTimeFormatter.ofPattern("dd/MM/yyyy 'a las' HH:mm 'hs'");
 
   private final Donante donante;
   private final EntidadBeneficiaria entidad;

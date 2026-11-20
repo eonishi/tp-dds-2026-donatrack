@@ -58,7 +58,7 @@ class EventoNotificableTest {
 
     assertFalse(notificaciones.isEmpty());
     for (Notificacion n : notificaciones) {
-      assertTrue(n.mensaje().contains("2026-07-10T15:00:00"));
+      assertTrue(n.mensaje().contains("10/07/2026 a las 15:00 hs"));
       assertTrue(n.mensaje().contains("ABC123"));
     }
   }
@@ -73,7 +73,7 @@ class EventoNotificableTest {
 
     assertEquals(2, notificaciones.size());
     for (Notificacion notificacion : notificaciones) {
-      assertTrue(notificacion.mensaje().contains("2026-07-10T15:04:05"));
+      assertTrue(notificacion.mensaje().contains("10/07/2026 a las 15:04 hs"));
       assertFalse(notificacion.mensaje().contains("987654321"));
     }
   }
@@ -148,63 +148,16 @@ class EventoNotificableTest {
   }
 
   @Test
-  void eventoInicioRuta_sinBaseConfigurada_usaElMapaPorDefecto() {
-    String anterior = System.clearProperty(PROPIEDAD_TRACKING);
+  void eventoInicioRuta_usaLaPaginaDeSeguimientoDeCadaRol() {
+    String anterior = System.setProperty("donatrack.web.origin", "https://donatrack.example/");
     try {
-      assertCadaNotificacionContieneUnaVez(
-          new EventoInicioRuta(List.of(donante, entidad), "AB123CD"),
-          "https://mapa.donatrack.org/tracking/AB123CD");
+      var avisos = new EventoInicioRuta(List.of(donante, entidad), "AB123CD").generarNotificaciones();
+      assertTrue(avisos.get(0).mensaje().contains("https://donatrack.example/donante/seguimiento"));
+      assertTrue(avisos.get(1).mensaje().contains("https://donatrack.example/entidad/seguimiento"));
+      assertFalse(avisos.get(0).mensaje().contains("AB123CD"));
     } finally {
-      restaurarPropiedad(anterior);
+      if (anterior == null) System.clearProperty("donatrack.web.origin");
+      else System.setProperty("donatrack.web.origin", anterior);
     }
-  }
-
-  @Test
-  void eventoInicioRuta_conBaseConfigurada_normalizaLaBarraFinal() {
-    String anterior = System.setProperty(PROPIEDAD_TRACKING, "https://otro.mapa/t/");
-    try {
-      assertCadaNotificacionContieneUnaVez(
-          new EventoInicioRuta(List.of(donante, entidad), "AB123CD"),
-          "https://otro.mapa/t/AB123CD");
-    } finally {
-      restaurarPropiedad(anterior);
-    }
-  }
-
-  @Test
-  void eventoInicioRuta_conBaseSinBarraFinal_agregaLaBarra() {
-    String anterior = System.setProperty(PROPIEDAD_TRACKING, "https://otro.mapa/t");
-    try {
-      assertCadaNotificacionContieneUnaVez(
-          new EventoInicioRuta(List.of(donante, entidad), "AB123CD"),
-          "https://otro.mapa/t/AB123CD");
-    } finally {
-      restaurarPropiedad(anterior);
-    }
-  }
-
-  private static final String PROPIEDAD_TRACKING = "donatrack.tracking.url";
-
-  private static void restaurarPropiedad(String anterior) {
-    if (anterior == null) {
-      System.clearProperty(PROPIEDAD_TRACKING);
-    } else {
-      System.setProperty(PROPIEDAD_TRACKING, anterior);
-    }
-  }
-
-  private void assertCadaNotificacionContieneUnaVez(EventoInicioRuta evento, String url) {
-    List<Notificacion> notificaciones = evento.generarNotificaciones();
-
-    assertEquals(2, notificaciones.size());
-    for (Notificacion n : notificaciones) {
-      assertEquals(
-          "La ruta de entrega ha comenzado. Seguí el recorrido en el mapa: " + url, n.mensaje());
-      assertEquals(1, apariciones(n.mensaje(), url));
-    }
-  }
-
-  private int apariciones(String texto, String buscado) {
-    return (texto.length() - texto.replace(buscado, "").length()) / buscado.length();
   }
 }

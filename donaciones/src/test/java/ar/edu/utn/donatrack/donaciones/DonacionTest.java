@@ -560,7 +560,7 @@ class DonacionTest {
             donante, entidad, fechaEntrega, donacion.getIdCamion().orElseThrow());
 
     String fechaEsperada =
-        fechaEntrega.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"));
+        fechaEntrega.format(DateTimeFormatter.ofPattern("dd/MM/yyyy 'a las' HH:mm 'hs'"));
     for (Notificacion notificacion : evento.generarNotificaciones()) {
       assertTrue(notificacion.mensaje().contains(fechaEsperada));
       assertTrue(notificacion.mensaje().contains("AF123ZZ"));
@@ -608,10 +608,9 @@ class DonacionTest {
 
     donacion.iniciarTraslado("AA123BB", notificaciones);
 
-    String mensaje =
-        "La ruta de entrega ha comenzado. Seguí el recorrido en el mapa: "
-            + "https://mapa.donatrack.org/tracking/AA123BB";
-    assertEquals(List.of("test@test.com|" + mensaje, "hogar@test.com|" + mensaje), correosEnviados);
+    assertEquals(2, correosEnviados.size());
+    assertTrue(correosEnviados.get(0).contains("/donante/seguimiento"));
+    assertTrue(correosEnviados.get(1).contains("/entidad/seguimiento"));
   }
 
   @Test

@@ -25,26 +25,28 @@ public class NotificadorPorCanal {
     this.whatsapp = Objects.requireNonNull(whatsapp);
   }
 
-  public void enviarPorCorreo(String direccion, String mensaje) {
-    enviar("CORREO", () -> correo.enviar(direccion, ASUNTO_POR_DEFECTO, mensaje));
+  public boolean enviarPorCorreo(String direccion, String mensaje) {
+    return enviar("CORREO", () -> correo.enviar(direccion, ASUNTO_POR_DEFECTO, mensaje));
   }
 
-  public void enviarPorSms(String numero, String mensaje) {
-    enviar("SMS", () -> sms.enviar(numero, mensaje));
+  public boolean enviarPorSms(String numero, String mensaje) {
+    return enviar("SMS", () -> sms.enviar(numero, mensaje));
   }
 
-  public void enviarPorWhatsapp(String numero, String mensaje) {
-    enviar("WHATSAPP", () -> whatsapp.enviar(numero, mensaje));
+  public boolean enviarPorWhatsapp(String numero, String mensaje) {
+    return enviar("WHATSAPP", () -> whatsapp.enviar(numero, mensaje));
   }
 
-  private void enviar(String canal, Supplier<ResultadoEnvio> envio) {
+  private boolean enviar(String canal, Supplier<ResultadoEnvio> envio) {
     try {
       ResultadoEnvio resultado = envio.get();
       if (!resultado.exitoso()) {
         LOGGER.warn("Fallo de notificación canal={} detalle={}", canal, resultado.detalle());
       }
+      return resultado.exitoso();
     } catch (RuntimeException error) {
       LOGGER.warn("Fallo de notificación canal={} detalle={}", canal, error.getMessage());
+      return false;
     }
   }
 }

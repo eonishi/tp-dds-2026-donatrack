@@ -22,6 +22,10 @@ public class EventoEntregaNoSatisfactoria implements EventoNotificable {
 
   @Override
   public List<Notificacion> generarNotificaciones() {
+    return generarNotificaciones(List.of());
+  }
+
+  public List<Notificacion> generarNotificaciones(List<String> correosAdministradores) {
     List<Notificacion> notificaciones = new ArrayList<>();
     String mensajeDonante =
         "La entrega a " + entidad.getRazonSocial() + " no pudo completarse: " + motivo;
@@ -29,15 +33,13 @@ public class EventoEntregaNoSatisfactoria implements EventoNotificable {
     String mensajeEntidad = "La entrega no pudo completarse: " + motivo;
     notificaciones.add(new Notificacion(entidad, mensajeEntidad));
 
-    String adminConfig =
-        System.getProperty("donatrack.admin.emails", System.getenv("DONATRACK_ADMIN_EMAILS"));
-    if (adminConfig != null && !adminConfig.isBlank()) {
+    if (!correosAdministradores.isEmpty()) {
       String mensajeAdmin =
           "Alerta: La entrega a "
               + entidad.getRazonSocial()
               + " no pudo completarse. Motivo: "
               + motivo;
-      for (String email : adminConfig.split(",")) {
+      for (String email : correosAdministradores) {
         notificaciones.add(new Notificacion(administrador(email.trim()), mensajeAdmin));
       }
     }

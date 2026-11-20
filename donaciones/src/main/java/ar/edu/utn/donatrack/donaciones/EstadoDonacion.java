@@ -5,7 +5,6 @@ import ar.edu.utn.donatrack.notificaciones.eventos.EventoAsignacion;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoEntregaExitosa;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoEntregaNoSatisfactoria;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoInicioRuta;
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -86,7 +85,7 @@ public enum EstadoDonacion {
             new EventoEntregaExitosa(
                 donacion.getDonante(),
                 donacion.getEntidadBeneficiaria(),
-                LocalDateTime.now(),
+                donacion.getHistorialEstado().get(donacion.getHistorialEstado().size() - 1).getFecha(),
                 donacion.getIdCamion().get()));
       }
     }

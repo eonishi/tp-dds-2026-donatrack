@@ -1,6 +1,10 @@
 package ar.edu.utn.donatrack.notificaciones;
 
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoNotificable;
+import ar.edu.utn.donatrack.notificaciones.eventos.EventoEntregaNoSatisfactoria;
+import ar.edu.utn.donatrack.security.UsuariosRepository;
+import ar.edu.utn.donatrack.donantes.Donante;
+import ar.edu.utn.donatrack.notificaciones.eventos.EventoAusenciaDonante;
 import java.util.List;
 import java.util.Objects;
 import org.slf4j.Logger;
@@ -32,7 +36,19 @@ public class ServicioNotificaciones implements PublicadorDeEventos {
    */
   @Override
   public void publicar(EventoNotificable evento) {
-    List<Notificacion> notificaciones = evento.generarNotificaciones();
+    List<Notificacion> notificaciones;
+    if (evento instanceof EventoEntregaNoSatisfactoria falla) {
+      List<String> correos;
+      try {
+        correos = new UsuariosRepository().correosAdministradores();
+      } catch (RuntimeException error) {
+        LOGGER.warn("No se pudieron obtener los correos de administradores", error);
+        correos = List.of();
+      }
+      notificaciones = falla.generarNotificaciones(correos);
+    } else {
+      notificaciones = evento.generarNotificaciones();
+    }
     notificaciones.forEach(this::enviar);
     registrarEnBandeja(notificaciones);
   }
@@ -44,6 +60,25 @@ public class ServicioNotificaciones implements PublicadorDeEventos {
    */
   public PublicadorDiferido publicadorDiferido() {
     return new PublicadorDiferido(this);
+  }
+
+  /** Envía el recordatorio una vez que el proveedor lo acepta. */
+  public boolean publicarAusencia(Donante donante) {
+    Notificacion aviso = new EventoAusenciaDonante(donante).generarNotificaciones().get(0);
+    var medio = donante.getMedioContactoPredeterminado();
+    if (medio == null) return false;
+    boolean aceptado;
+    if (medio.getCanal() == ar.edu.utn.donatrack.donantes.Canal.CORREO) {
+      aceptado = notificador.enviarPorCorreo(medio.getContacto(), aviso.mensaje());
+    } else if (medio.getCanal() == ar.edu.utn.donatrack.donantes.Canal.SMS) {
+      aceptado = notificador.enviarPorSms(medio.getContacto(), aviso.mensaje());
+    } else if (medio.getCanal() == ar.edu.utn.donatrack.donantes.Canal.WHATSAPP) {
+      aceptado = notificador.enviarPorWhatsapp(medio.getContacto(), aviso.mensaje());
+    } else {
+      return false;
+    }
+    if (aceptado) registrarEnBandeja(List.of(aviso));
+    return aceptado;
   }
 
   /**

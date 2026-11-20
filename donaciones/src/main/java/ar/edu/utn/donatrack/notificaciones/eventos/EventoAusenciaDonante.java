@@ -17,7 +17,7 @@ public class EventoAusenciaDonante implements EventoNotificable {
     return List.of(
         new Notificacion(
             donante,
-            "Hace más de 20 días que no recibimos una donación tuya. "
+            "Hace más de 20 días que no ingresás a DonaTrack. "
                 + "¿Te animas a colaborar nuevamente?"));
   }
 }

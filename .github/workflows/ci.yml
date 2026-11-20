@@ -159,9 +159,8 @@ jobs:
             cd ~/donatrack
             # Credenciales de notificaciones: salen de los GitHub Secrets y se escriben en un .env aparte
             # (solo legible por el usuario), así el .env principal que se creó a mano no se toca.
-            # Si algún secret no está cargado, se deja el archivo anterior tal cual.
-            if [ -n "$RESEND_API_KEY" ] && [ -n "$RESEND_FROM" ] && [ -n "$TWILIO_ACCOUNT_SID" ] \
-               && [ -n "$TWILIO_AUTH_TOKEN" ] && [ -n "$TWILIO_SMS_FROM" ] && [ -n "$TWILIO_WHATSAPP_FROM" ]; then
+            # Cada canal es opcional: Resend no depende de configurar Twilio.
+            if [ -n "$RESEND_API_KEY$RESEND_FROM$TWILIO_ACCOUNT_SID$TWILIO_AUTH_TOKEN$TWILIO_SMS_FROM$TWILIO_WHATSAPP_FROM" ]; then
               umask 077
               {
                 printf 'RESEND_API_KEY=%s\n' "$RESEND_API_KEY"
@@ -172,7 +171,7 @@ jobs:
                 printf 'TWILIO_WHATSAPP_FROM=%s\n' "$TWILIO_WHATSAPP_FROM"
               } > .env.notificaciones
             else
-              echo "AVISO: faltan secrets de notificaciones en GitHub; se mantiene el .env.notificaciones anterior (si existe)."
+              echo "AVISO: no hay secrets de notificaciones; se mantiene el .env.notificaciones anterior (si existe)."
             fi
             # Las imágenes son privadas (el repo lo es): login con el token del job, que vence al terminar.
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
