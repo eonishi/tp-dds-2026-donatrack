@@ -25,8 +25,8 @@ class DonantePersistenciaTest implements SimplePersistenceTest {
             TipoDocumento.DNI,
             Genero.FEMENINO,
             "Av. Siempreviva 742");
-    donante.addMedioDeContacto(MedioDeContacto.sms("1145558888"));
-    donante.addMedioDeContacto(MedioDeContacto.whatsapp("1145559999"));
+    donante.addMedioDeContacto(MedioDeContacto.sms("+541145558888"));
+    donante.addMedioDeContacto(MedioDeContacto.whatsapp("+541145559999"));
     assertNull(
         donante.getId(),
         "Un donante recién construido no tiene id: lo asigna el proveedor al persistirlo");
@@ -59,7 +59,7 @@ class DonantePersistenciaTest implements SimplePersistenceTest {
     assertTrue(medios.stream().anyMatch(m -> m.getCanal() == Canal.SMS), "Falta el SMS");
     assertTrue(medios.stream().anyMatch(m -> m.getCanal() == Canal.WHATSAPP), "Falta el WhatsApp");
     assertEquals(
-        "1145558888",
+        "+541145558888",
         medios.stream()
             .filter(m -> m.getCanal() == Canal.SMS)
             .map(MedioDeContacto::getContacto)
@@ -106,5 +106,52 @@ class DonantePersistenciaTest implements SimplePersistenceTest {
     assertEquals(1, representantes.size(), "El representante debe persistirse");
     assertEquals("Ana", representantes.get(0).getNombre());
     assertEquals("Gomez", representantes.get(0).getApellido());
+  }
+
+  @Test
+  void laBaseNoAceptaDosDonantesConElMismoDocumento() {
+    persist(humana("uno@test.com", "30999888"));
+    entityManager().flush();
+    persist(humana("otro@test.com", "30999888"));
+    var error =
+        assertThrows(
+            javax.persistence.PersistenceException.class,
+            () -> entityManager().flush(),
+            "La constraint uk_donante_documento debe rechazar el documento repetido");
+    assertTrue(
+        DonantesRepository.esDocumentoRepetido(error),
+        "El handler de la API tiene que reconocerlo para responder 409");
+  }
+
+  @Test
+  void otroErrorDeLaBaseNoSeConfundeConUnDocumentoRepetido() {
+    assertFalse(
+        DonantesRepository.esDocumentoRepetido(
+            new javax.persistence.PersistenceException("se cayó la conexión")));
+  }
+
+  @Test
+  void elDocumentoPropioNoCuentaComoEnUsoAlEditar() {
+    PersonaHumana ana = humana("ana.doc@test.com", "30777666");
+    persist(ana);
+    entityManager().flush();
+    DonantesRepository repo = new DonantesRepository();
+
+    assertTrue(repo.documentoEnUso(TipoDocumento.DNI, "30777666", null), "En un alta, está en uso");
+    assertFalse(
+        repo.documentoEnUso(TipoDocumento.DNI, "30777666", ana.getId()),
+        "Editando a Ana, su propio documento está libre");
+    assertFalse(repo.documentoEnUso(TipoDocumento.DNI, "11111111", null));
+  }
+
+  private static PersonaHumana humana(String correo, String documento) {
+    return new PersonaHumana(
+        MedioDeContacto.correo(correo),
+        "Ana",
+        "Gomez",
+        documento,
+        TipoDocumento.DNI,
+        Genero.FEMENINO,
+        "Calle 1");
   }
 }

@@ -15,7 +15,6 @@ import ar.edu.utn.donatrack.beneficiarios.Necesidad;
 import ar.edu.utn.donatrack.beneficiarios.NecesidadRecurrente;
 import ar.edu.utn.donatrack.donaciones.Donacion;
 import ar.edu.utn.donatrack.donaciones.HistorialEstado;
-import ar.edu.utn.donatrack.donantes.Canal;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.MedioDeContacto;
 import ar.edu.utn.donatrack.donantes.PersonaHumana;
@@ -35,9 +34,7 @@ public final class ApiMapper {
             .map(
                 medio ->
                     new MedioContactoResponse(
-                        medio.esCorreo()
-                            ? "EMAIL"
-                            : medio.getCanal() == Canal.WHATSAPP ? "WHATSAPP" : "SMS",
+                        DonanteMapper.tipoDeMedio(medio.getCanal()),
                         medio.getContacto(),
                         medio.equals(donante.getMedioContactoPredeterminado())))
             .toList();
@@ -55,6 +52,7 @@ public final class ApiMapper {
         contactos,
         humana == null ? null : humana.getNombre(),
         humana == null ? null : humana.getApellido(),
+        humana == null ? null : humana.getEdad(),
         humana == null ? null : humana.getGenero(),
         humana == null ? null : humana.getDireccion(),
         juridica == null ? null : juridica.getRazonSocial(),

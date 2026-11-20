@@ -248,6 +248,23 @@ class RegistroHttpTest implements WithSimplePersistenceUnit {
   }
 
   @Test
+  void avisaQueElMedioDeContactoPreferidoFaltaONoExiste() throws Exception {
+    Map<String, String> sinElegir = donante("sin.medio@example.org", "70111222");
+    sinElegir.remove("donanteMedioContacto");
+    HttpResponse<String> faltante = registrar(sinElegir);
+    assertEquals(400, faltante.statusCode());
+    assertTrue(
+        faltante.body().contains("Falta completar el medio de contacto preferido."),
+        faltante.body());
+
+    Map<String, String> inventado = donante("sin.medio@example.org", "70111222");
+    inventado.put("donanteMedioContacto", "PALOMA");
+    HttpResponse<String> invalido = registrar(inventado);
+    assertEquals(400, invalido.statusCode());
+    assertTrue(invalido.body().contains("Elegí un medio de contacto válido."), invalido.body());
+  }
+
+  @Test
   void requiresEmailEvenWithPreferredPhoneAndRejectsUnavailableContact() throws Exception {
     for (String channel : new String[] {"SMS", "WHATSAPP", "INVALID"}) {
       Map<String, String> fields = donante("phone@example.org", "50111222");
@@ -263,8 +280,7 @@ class RegistroHttpTest implements WithSimplePersistenceUnit {
   @Test
   void rejectsMalformedPhonesBeforeCreatingAccountsOrWelcomes() throws Exception {
     for (String channel : new String[] {"CORREO", "SMS", "WHATSAPP"}) {
-      for (String phone :
-          new String[] {"abc", "1155555555", "+54 91155555555", "+0123456", "+1234567890123456"}) {
+      for (String phone : new String[] {"abc", "1155555555", "+0123456", "+1234567890123456"}) {
         Map<String, String> fields = donante("badphone@example.org", "60111222");
         fields.put("donanteTelefono", phone);
         fields.put("donanteMedioContacto", channel);

@@ -3,14 +3,20 @@ package ar.edu.utn.donatrack.web.controller;
 import static ar.edu.utn.donatrack.web.controller.Formularios.enumerado;
 import static ar.edu.utn.donatrack.web.controller.Formularios.obligatorio;
 
+import ar.edu.utn.donatrack.api.dto.DonanteDtos.DonanteRequest;
+import ar.edu.utn.donatrack.api.dto.DonanteDtos.DonanteResponse;
+import ar.edu.utn.donatrack.api.dto.DonanteDtos.MedioContactoRequest;
+import ar.edu.utn.donatrack.api.mappers.ApiMapper;
+import ar.edu.utn.donatrack.api.mappers.DonanteMapper;
+import ar.edu.utn.donatrack.donantes.Canal;
+import ar.edu.utn.donatrack.donantes.DocumentoEnUso;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import ar.edu.utn.donatrack.donantes.Genero;
 import ar.edu.utn.donatrack.donantes.MedioDeContacto;
-import ar.edu.utn.donatrack.donantes.PersonaHumana;
-import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
 import ar.edu.utn.donatrack.donantes.TipoDocumento;
 import ar.edu.utn.donatrack.donantes.TipoOrganizacion;
+import ar.edu.utn.donatrack.donantes.TipoPersona;
 import ar.edu.utn.donatrack.web.controller.Formularios.DatoInvalido;
 import io.javalin.http.Context;
 import java.util.ArrayList;
@@ -18,181 +24,180 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * El formulario de persona donante (humana o jurídica), campos {@code donante*}. Lo comparten el
- * registro público y el alta y la edición desde la administración, así las tres pantallas validan
- * lo mismo. No persiste nada: eso lo decide quien lo llama.
+ * registro público y el alta y la edición desde la administración.
+ *
+ * <p>Solo traduce: los campos del formulario pasan a un {@link DonanteRequest}, y del alta y la
+ * edición se encarga {@link DonanteMapper}, el mismo que usa la API. Para abrir la edición, los
+ * datos salen de {@link ApiMapper#donante}. No persiste nada: eso lo decide quien lo llama.
  */
 final class FormularioDonante {
   private FormularioDonante() {}
 
   /** Una persona donante nueva. Su documento no puede estar ya registrado. */
   static Donante armar(Context ctx, String correo, DonantesRepository donantes) {
-    Donante nuevo = construir(ctx, correo);
-    exigirDocumentoLibre(nuevo, donantes);
+    DonanteRequest request = leer(ctx, correo);
+    Donante nuevo = comoDatoInvalido(() -> DonanteMapper.nuevo(request));
+    exigirDocumentoLibre(request, null, donantes);
     return nuevo;
   }
 
   /**
    * Pasa lo cargado en el formulario a una persona donante que ya existe. No se puede cambiar el
-   * tipo de persona, y el documento nuevo no puede ser de otra persona.
+   * tipo de persona (lo rechaza {@link DonanteMapper#aplicar}), y el documento nuevo no puede ser
+   * de otra persona. Los representantes no están en el formulario: se conservan los que tenía.
    */
   static void aplicar(Donante actual, Context ctx, String correo, DonantesRepository donantes) {
-    Donante datos = construir(ctx, correo);
-    if (datos.getClass() != actual.getClass()) {
-      throw new DatoInvalido("No se puede cambiar el tipo de persona.");
-    }
-    boolean cambiaDocumento =
-        datos.getDocumento() != actual.getDocumento()
-            || !datos.getNumDocumento().equals(actual.getNumDocumento());
-    if (cambiaDocumento) {
-      exigirDocumentoLibre(datos, donantes);
-    }
-    actual.actualizarIdentificacion(datos.getNumDocumento(), datos.getDocumento());
-    if (actual instanceof PersonaHumana humana && datos instanceof PersonaHumana nueva) {
-      humana.actualizarDatosPersonales(
-          nueva.getNombre(), nueva.getApellido(), nueva.getGenero(), nueva.getDireccion());
-      humana.setEdad(nueva.getEdad());
-    } else if (actual instanceof PersonajeJuridica juridica
-        && datos instanceof PersonajeJuridica nueva) {
-      // Los representantes no están en el formulario: se conservan los que tenía.
-      juridica.actualizarDatosJuridicos(
-          nueva.getRazonSocial(),
-          nueva.getTipoOrganizacion(),
-          nueva.getRubro(),
-          List.copyOf(juridica.getRepresentantes()));
-    }
-    actual.reemplazarMediosDeContacto(
-        datos.getMediosDeContacto(),
-        datos.getMediosDeContacto().indexOf(datos.getMedioContactoPredeterminado()));
+    DonanteRequest request = leer(ctx, correo);
+    exigirDocumentoLibre(request, actual, donantes);
+    comoDatoInvalido(
+        () -> {
+          DonanteMapper.aplicar(actual, request);
+          return actual;
+        });
   }
 
   /**
-   * Lo inverso de {@link #aplicar}: los campos del formulario con los datos de una persona donante,
+   * Lo inverso de {@link #leer}: los campos del formulario con los datos de una persona donante,
    * para abrir la edición ya completa.
    */
   static Map<String, String> valores(Donante donante) {
+    DonanteResponse datos = ApiMapper.donante(donante);
     Map<String, String> campos = new HashMap<>();
-    donante.extraerEmail().ifPresent(correo -> campos.put("correo", correo));
-    if (donante instanceof PersonajeJuridica juridica) {
-      campos.put("donanteTipoPersona", "JURIDICA");
-      campos.put("donanteCuit", juridica.getNumDocumento());
-      campos.put("donanteRazonSocial", juridica.getRazonSocial());
-      campos.put("donanteTipoOrganizacion", nombre(juridica.getTipoOrganizacion()));
-      campos.put("donanteRubro", juridica.getRubro());
-    } else if (donante instanceof PersonaHumana humana) {
-      campos.put("donanteTipoPersona", "HUMANA");
-      campos.put("donanteNombre", humana.getNombre());
-      campos.put("donanteApellido", humana.getApellido());
-      campos.put("donanteEdad", humana.getEdad() == null ? "" : humana.getEdad().toString());
-      campos.put("donanteTipoDocumento", nombre(humana.getDocumento()));
-      campos.put("donanteNumeroDocumento", humana.getNumDocumento());
-      campos.put("donanteGenero", nombre(humana.getGenero()));
-      campos.put("donanteDireccion", humana.getDireccion());
+    campos.put("donanteTipoPersona", datos.tipoPersona().name());
+    if (datos.tipoPersona() == TipoPersona.JURIDICA) {
+      campos.put("donanteCuit", datos.numeroDocumento());
+      campos.put("donanteRazonSocial", datos.razonSocial());
+      campos.put("donanteTipoOrganizacion", nombre(datos.tipoOrganizacion()));
+      campos.put("donanteRubro", datos.rubro());
+    } else {
+      campos.put("donanteNombre", datos.nombre());
+      campos.put("donanteApellido", datos.apellido());
+      campos.put("donanteEdad", datos.edad() == null ? "" : datos.edad().toString());
+      campos.put("donanteTipoDocumento", nombre(datos.tipoDocumento()));
+      campos.put("donanteNumeroDocumento", datos.numeroDocumento());
+      campos.put("donanteGenero", nombre(datos.genero()));
+      campos.put("donanteDireccion", datos.direccion());
     }
-    MedioDeContacto predeterminado = donante.getMedioContactoPredeterminado();
-    campos.put("donanteMedioContacto", predeterminado.getCanal().name());
-    donante.getMediosDeContacto().stream()
-        .filter(MedioDeContacto::esTelefono)
-        .findFirst()
-        .ifPresent(m -> campos.put("donanteTelefono", m.getContacto()));
+    for (MedioDeContacto medio : donante.getMediosDeContacto()) {
+      campos.putIfAbsent(medio.esCorreo() ? "correo" : "donanteTelefono", medio.getContacto());
+    }
+    // El <option> del preferido tiene el nombre de su Canal.
+    campos.put("donanteMedioContacto", donante.getMedioContactoPredeterminado().getCanal().name());
     return campos;
   }
 
-  private static String nombre(Enum<?> valor) {
-    return valor == null ? "" : valor.name();
-  }
-
-  private static void exigirDocumentoLibre(Donante donante, DonantesRepository donantes) {
-    if (donantes.existeDocumento(donante.getDocumento(), donante.getNumDocumento())) {
-      throw new DatoInvalido("Ya hay una persona donante registrada con ese documento.");
-    }
-  }
-
-  /** Lee y valida el formulario, y arma con él una persona donante sin guardar. */
-  private static Donante construir(Context ctx, String correo) {
+  /**
+   * Lee los campos del formulario y los pasa a un request. Acá solo se valida lo propio del
+   * formulario (que los campos estén y tengan forma); las reglas del donante son de {@link
+   * DonanteMapper}.
+   */
+  private static DonanteRequest leer(Context ctx, String correo) {
     String tipoPersona = obligatorio(ctx, "donanteTipoPersona", "el tipo de persona");
     if (!Set.of("HUMANA", "JURIDICA").contains(tipoPersona)) {
       throw new DatoInvalido("Elegí el tipo de persona.");
     }
-    boolean juridica = "JURIDICA".equals(tipoPersona);
-    TipoDocumento tipoDocumento =
-        juridica
-            ? TipoDocumento.CUIT
-            : enumerado(
-                TipoDocumento.class, ctx.formParam("donanteTipoDocumento"), "el tipo de documento");
-    String numeroDocumento =
-        obligatorio(
-                ctx,
-                juridica ? "donanteCuit" : "donanteNumeroDocumento",
-                juridica ? "el CUIT" : "el número de documento")
-            .trim();
-    if (juridica) {
-      numeroDocumento = numeroDocumento.replace("-", "");
-      if (!numeroDocumento.matches("[0-9]{11}")) {
-        throw new DatoInvalido("El CUIT debe tener 11 dígitos.");
-      }
-    }
+    List<MedioContactoRequest> medios = new ArrayList<>();
+    int predeterminado = leerMediosDeContacto(ctx, correo, medios);
 
-    Donante persona;
-    if (juridica) {
-      persona =
-          new PersonajeJuridica(
-              MedioDeContacto.correo(correo),
-              numeroDocumento,
-              TipoDocumento.CUIT,
-              obligatorio(ctx, "donanteRazonSocial", "la razón social").trim(),
-              enumerado(
-                  TipoOrganizacion.class,
-                  ctx.formParam("donanteTipoOrganizacion"),
-                  "el tipo de organización"),
-              obligatorio(ctx, "donanteRubro", "el rubro").trim());
-    } else {
-      PersonaHumana humana =
-          new PersonaHumana(
-              MedioDeContacto.correo(correo),
-              obligatorio(ctx, "donanteNombre", "el nombre").trim(),
-              obligatorio(ctx, "donanteApellido", "el apellido").trim(),
-              numeroDocumento,
-              tipoDocumento,
-              enumerado(Genero.class, ctx.formParam("donanteGenero"), "el género"),
-              obligatorio(ctx, "donanteDireccion", "la dirección").trim());
-      try {
-        humana.setEdad(Integer.parseInt(obligatorio(ctx, "donanteEdad", "la edad").trim()));
-      } catch (IllegalArgumentException e) {
-        throw new DatoInvalido("La edad debe ser un número entero entre 0 y 130.");
-      }
-      persona = humana;
+    if ("JURIDICA".equals(tipoPersona)) {
+      // El CUIT se puede escribir con guiones (30-12345678-9): el dominio los saca.
+      return new DonanteRequest(
+          TipoPersona.JURIDICA,
+          obligatorio(ctx, "donanteCuit", "el CUIT"),
+          TipoDocumento.CUIT,
+          medios,
+          predeterminado,
+          null,
+          null,
+          null,
+          null,
+          null,
+          obligatorio(ctx, "donanteRazonSocial", "la razón social").trim(),
+          enumerado(
+              TipoOrganizacion.class,
+              ctx.formParam("donanteTipoOrganizacion"),
+              "el tipo de organización"),
+          obligatorio(ctx, "donanteRubro", "el rubro").trim(),
+          null);
     }
-    aplicarMediosDeContacto(persona, ctx, correo);
-    return persona;
+    return new DonanteRequest(
+        TipoPersona.HUMANA,
+        obligatorio(ctx, "donanteNumeroDocumento", "el número de documento"),
+        enumerado(
+            TipoDocumento.class, ctx.formParam("donanteTipoDocumento"), "el tipo de documento"),
+        medios,
+        predeterminado,
+        obligatorio(ctx, "donanteNombre", "el nombre").trim(),
+        obligatorio(ctx, "donanteApellido", "el apellido").trim(),
+        edad(ctx),
+        enumerado(Genero.class, ctx.formParam("donanteGenero"), "el género"),
+        obligatorio(ctx, "donanteDireccion", "la dirección").trim(),
+        null,
+        null,
+        null,
+        null);
   }
 
-  // El correo siempre es un medio de contacto; el teléfono, si se cargó, va por SMS o WhatsApp.
-  private static void aplicarMediosDeContacto(Donante persona, Context ctx, String correo) {
+  /**
+   * El correo siempre es un medio de contacto; el teléfono, si se cargó, va por SMS o WhatsApp
+   * según el preferido. Devuelve la posición del medio preferido.
+   */
+  private static int leerMediosDeContacto(
+      Context ctx, String correo, List<MedioContactoRequest> medios) {
+    // Los <option> del formulario usan los nombres de Canal (CORREO, SMS, WHATSAPP).
+    Canal preferido =
+        enumerado(
+            Canal.class,
+            obligatorio(ctx, "donanteMedioContacto", "el medio de contacto preferido"),
+            "un medio de contacto válido");
+    boolean prefiereTelefono = preferido != Canal.CORREO;
+    medios.add(new MedioContactoRequest(DonanteMapper.tipoDeMedio(Canal.CORREO), correo));
     String telefono = ctx.formParam("donanteTelefono");
-    String preferido = obligatorio(ctx, "donanteMedioContacto", "el medio de contacto preferido");
-    if (!Set.of("CORREO", "SMS", "WHATSAPP").contains(preferido)) {
-      throw new DatoInvalido("Elegí un medio de contacto válido.");
-    }
-    List<MedioDeContacto> medios = new ArrayList<>();
-    medios.add(MedioDeContacto.correo(correo));
-    boolean conTelefono = telefono != null && !telefono.isBlank();
-    if (conTelefono) {
-      telefono = telefono.trim();
-      if (!telefono.matches("\\+[1-9][0-9]{1,14}")) {
-        throw new DatoInvalido(
-            "El teléfono debe usar formato internacional E.164, por ejemplo +5491155555555.");
-      }
-      medios.add(
-          "WHATSAPP".equals(preferido)
-              ? MedioDeContacto.whatsapp(telefono)
-              : MedioDeContacto.sms(telefono));
-    } else if ("SMS".equals(preferido) || "WHATSAPP".equals(preferido)) {
+    if (telefono != null && !telefono.isBlank()) {
+      Canal delTelefono = prefiereTelefono ? preferido : Canal.SMS;
+      medios.add(new MedioContactoRequest(DonanteMapper.tipoDeMedio(delTelefono), telefono));
+    } else if (prefiereTelefono) {
       throw new DatoInvalido("Para recibir avisos por SMS o WhatsApp cargá un teléfono.");
     }
-    boolean prefiereTelefono = "SMS".equals(preferido) || "WHATSAPP".equals(preferido);
-    persona.reemplazarMediosDeContacto(medios, prefiereTelefono ? 1 : 0);
+    return prefiereTelefono ? 1 : 0;
+  }
+
+  private static Integer edad(Context ctx) {
+    try {
+      return Integer.parseInt(obligatorio(ctx, "donanteEdad", "la edad").trim());
+    } catch (NumberFormatException e) {
+      throw new DatoInvalido("La edad debe ser un número entero entre 0 y 130.");
+    }
+  }
+
+  private static void exigirDocumentoLibre(
+      DonanteRequest request, Donante actual, DonantesRepository donantes) {
+    boolean enUso =
+        comoDatoInvalido(
+            () ->
+                donantes.documentoEnUso(
+                    request.tipoDocumento(),
+                    request.numeroDocumento(),
+                    actual == null ? null : actual.getId()));
+    if (enUso) {
+      throw new DocumentoEnUso();
+    }
+  }
+
+  /** Las reglas del donante avisan con IllegalArgumentException; la pantalla, con DatoInvalido. */
+  private static <T> T comoDatoInvalido(Supplier<T> paso) {
+    try {
+      return paso.get();
+    } catch (IllegalArgumentException e) {
+      throw new DatoInvalido(e.getMessage());
+    }
+  }
+
+  private static String nombre(Enum<?> valor) {
+    return valor == null ? "" : valor.name();
   }
 }

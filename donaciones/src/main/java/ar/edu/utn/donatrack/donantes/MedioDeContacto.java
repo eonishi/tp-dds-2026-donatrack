@@ -26,9 +26,12 @@ public class MedioDeContacto {
 
   protected MedioDeContacto() {}
 
+  /**
+   * @throws IllegalArgumentException si el contacto no tiene la forma que pide el canal
+   */
   public MedioDeContacto(Canal canal, String contacto) {
     this.canal = Objects.requireNonNull(canal);
-    this.contacto = contacto;
+    this.contacto = canal.normalizar(contacto);
   }
 
   public static MedioDeContacto correo(String direccion) {
@@ -46,7 +49,7 @@ public class MedioDeContacto {
   /** Para los lugares que exigen un correo (el alta de un donante, los correos de una entidad). */
   public static MedioDeContacto exigirCorreo(MedioDeContacto medio) {
     if (medio == null || !medio.esCorreo()) {
-      throw new IllegalArgumentException("Se esperaba un correo electrónico.");
+      throw new IllegalArgumentException("Debe incluir un correo electrónico.");
     }
     return medio;
   }
