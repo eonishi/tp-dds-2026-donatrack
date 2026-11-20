@@ -10,6 +10,7 @@ import ar.edu.utn.donatrack.logistica.monitoreo.MonitorRutas;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotas;
 import ar.edu.utn.donatrack.logistica.planificacion.DonacionesRemotasImpl;
 import ar.edu.utn.donatrack.logistica.planificacion.PlanificadorRutas;
+import ar.edu.utn.donatrack.logistica.planificacion.PlanificadorRutasHttp;
 import ar.edu.utn.donatrack.logistica.planificacion.ServicioPlanificacionRutas;
 import ar.edu.utn.donatrack.logistica.security.LogisticaSecurity;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -86,12 +87,12 @@ public class MainLogistica implements WithSimplePersistenceUnit {
                 new ResolversLogistica(
                     camionRepo, rutaRepo, repartidorRepo, monitorRutas, donacionesRemotas)));
 
-    // El proceso web solo atiende el callback del planificador (procesarResultado).
-    // El envío de lotes (planificar) lo ejecuta PlanificacionRutasRunner de forma autónoma.
+    String planificadorUrl =
+        System.getenv().getOrDefault("PLANIFICADOR_RUTAS_URL", "http://localhost:9002");
+    String planificadorApiKey =
+        System.getenv().getOrDefault("PLANIFICADOR_RUTAS_API_KEY", "PLANIFICADOR_SECRET_KEY");
     PlanificadorRutas planificadorRutas =
-        lote -> {
-          throw new UnsupportedOperationException("El servidor web no envía lotes");
-        };
+        new PlanificadorRutasHttp(planificadorUrl, planificadorApiKey, httpClient, objectMapper);
     // URL que se le pasa al planificador externo para que avise el resultado de cada lote.
     String urlCallback =
         System.getenv()
