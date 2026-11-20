@@ -41,11 +41,11 @@ public final class AdminEntidadesController {
             modelo,
             "/admin/entidades",
             busqueda,
-            entidades.contar(busqueda),
+            entidades.contarPorTexto(busqueda),
             ctx.queryParam("pagina"),
             POR_PAGINA);
 
-    List<EntidadBeneficiaria> encontradas = entidades.buscar(busqueda, desde, POR_PAGINA);
+    List<EntidadBeneficiaria> encontradas = entidades.buscarPorTexto(busqueda, desde, POR_PAGINA);
     Set<Long> conCuenta =
         authService.entidadesConCuenta(
             encontradas.stream().map(EntidadBeneficiaria::getId).toList());

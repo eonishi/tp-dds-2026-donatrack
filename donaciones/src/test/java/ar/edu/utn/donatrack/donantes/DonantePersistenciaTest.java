@@ -107,4 +107,40 @@ class DonantePersistenciaTest implements SimplePersistenceTest {
     assertEquals("Ana", representantes.get(0).getNombre());
     assertEquals("Gomez", representantes.get(0).getApellido());
   }
+
+  @Test
+  void laBaseNoAceptaDosDonantesConElMismoDocumento() {
+    persist(humana("uno@test.com", "30999888"));
+    entityManager().flush();
+    persist(humana("otro@test.com", "30999888"));
+    assertThrows(
+        javax.persistence.PersistenceException.class,
+        () -> entityManager().flush(),
+        "La constraint uk_donante_documento debe rechazar el documento repetido");
+  }
+
+  @Test
+  void elDocumentoPropioNoCuentaComoEnUsoAlEditar() {
+    PersonaHumana ana = humana("ana.doc@test.com", "30777666");
+    persist(ana);
+    entityManager().flush();
+    DonantesRepository repo = new DonantesRepository();
+
+    assertTrue(repo.documentoEnUso(TipoDocumento.DNI, "30777666", null), "En un alta, está en uso");
+    assertFalse(
+        repo.documentoEnUso(TipoDocumento.DNI, "30777666", ana.getId()),
+        "Editando a Ana, su propio documento está libre");
+    assertFalse(repo.documentoEnUso(TipoDocumento.DNI, "11111111", null));
+  }
+
+  private static PersonaHumana humana(String correo, String documento) {
+    return new PersonaHumana(
+        MedioDeContacto.correo(correo),
+        "Ana",
+        "Gomez",
+        documento,
+        TipoDocumento.DNI,
+        Genero.FEMENINO,
+        "Calle 1");
+  }
 }

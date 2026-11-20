@@ -138,17 +138,18 @@ public class DonantesRepository implements WithSimplePersistenceUnit {
   }
 
   /**
-   * @return si ya hay un donante con ese tipo y número de documento
+   * Si el documento ya es de otra persona donante. Al editar se pasa el id de quien se edita, así
+   * su propio documento no cuenta como ocupado; en un alta va {@code null}.
    */
-  public boolean existeDocumento(TipoDocumento tipo, String numero) {
-    return !createQuery(
+  public boolean documentoEnUso(TipoDocumento tipo, String numero, UUID salvo) {
+    return createQuery(
             "select d.id from Donante d where d.documento = :tipo and d.numDocumento = :numero",
             UUID.class)
         .setParameter("tipo", tipo)
         .setParameter("numero", numero)
-        .setMaxResults(1)
         .getResultList()
-        .isEmpty();
+        .stream()
+        .anyMatch(id -> !id.equals(salvo));
   }
 
   /**
@@ -174,25 +175,28 @@ public class DonantesRepository implements WithSimplePersistenceUnit {
    * @param desde cuántos donantes saltear
    * @param cantidad cuántos devolver como máximo
    */
-  public List<Donante> buscar(String texto, int desde, int cantidad) {
+  public List<Donante> buscarPorTexto(String texto, int desde, int cantidad) {
     var consulta =
         createQuery(
-            "select d from Donante d" + filtro(texto) + " order by d.numDocumento, d.id",
+            "select d from Donante d"
+                + condicionDeBusqueda(texto)
+                + " order by d.numDocumento, d.id",
             Donante.class);
     Busqueda.patron(texto).ifPresent(p -> consulta.setParameter("patron", p));
     return consulta.setFirstResult(desde).setMaxResults(cantidad).getResultList();
   }
 
   /**
-   * @return cuántos donantes cumplen el mismo filtro que {@link #buscar}
+   * @return cuántos donantes cumplen el mismo filtro que {@link #buscarPorTexto}
    */
-  public long contar(String texto) {
-    var consulta = createQuery("select count(d) from Donante d" + filtro(texto), Long.class);
+  public long contarPorTexto(String texto) {
+    var consulta =
+        createQuery("select count(d) from Donante d" + condicionDeBusqueda(texto), Long.class);
     Busqueda.patron(texto).ifPresent(p -> consulta.setParameter("patron", p));
     return consulta.getSingleResult();
   }
 
-  private static String filtro(String texto) {
+  private static String condicionDeBusqueda(String texto) {
     if (Busqueda.patron(texto).isEmpty()) {
       return "";
     }

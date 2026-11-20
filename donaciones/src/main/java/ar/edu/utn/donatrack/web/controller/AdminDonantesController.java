@@ -210,11 +210,11 @@ public final class AdminDonantesController implements WithSimplePersistenceUnit 
             modelo,
             "/admin/donantes",
             busqueda,
-            donantes.contar(busqueda),
+            donantes.contarPorTexto(busqueda),
             paginaPedida,
             POR_PAGINA);
 
-    List<Donante> encontrados = donantes.buscar(busqueda, desde, POR_PAGINA);
+    List<Donante> encontrados = donantes.buscarPorTexto(busqueda, desde, POR_PAGINA);
     Map<UUID, Usuario> cuentas =
         authService.cuentasDeDonantes(encontrados.stream().map(Donante::getId).toList());
     modelo.put("donantes", encontrados.stream().map(d -> fila(d, cuentas.get(d.getId()))).toList());

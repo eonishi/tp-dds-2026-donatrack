@@ -9,18 +9,13 @@ import static io.javalin.apibuilder.ApiBuilder.put;
 
 import ar.edu.utn.donatrack.api.dto.DonanteDtos.DonanteRequest;
 import ar.edu.utn.donatrack.api.dto.DonanteDtos.DonanteResponse;
-import ar.edu.utn.donatrack.api.dto.DonanteDtos.MedioContactoRequest;
 import ar.edu.utn.donatrack.api.error.ApiException;
 import ar.edu.utn.donatrack.api.mappers.ApiMapper;
+import ar.edu.utn.donatrack.api.mappers.DonanteMapper;
 import ar.edu.utn.donatrack.api.validation.DtoValidator;
 import ar.edu.utn.donatrack.donaciones.DonacionesRepository;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
-import ar.edu.utn.donatrack.donantes.MedioDeContacto;
-import ar.edu.utn.donatrack.donantes.PersonaHumana;
-import ar.edu.utn.donatrack.donantes.PersonajeJuridica;
-import ar.edu.utn.donatrack.donantes.Representante;
-import ar.edu.utn.donatrack.donantes.TipoPersona;
 import ar.edu.utn.donatrack.notificaciones.PublicadorDiferido;
 import ar.edu.utn.donatrack.notificaciones.ServicioNotificaciones;
 import ar.edu.utn.donatrack.notificaciones.eventos.EventoBienvenida;
@@ -28,8 +23,6 @@ import ar.edu.utn.donatrack.security.Role;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import io.javalin.http.Context;
 import io.javalin.security.RouteRole;
-import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 
 public final class DonanteController implements WithSimplePersistenceUnit {
@@ -74,12 +67,13 @@ public final class DonanteController implements WithSimplePersistenceUnit {
 
   private void crear(Context ctx) {
     DonanteRequest request = DtoValidator.validate(ctx.bodyAsClass(DonanteRequest.class));
-    validar(request, null);
+    Donante nuevo = DonanteMapper.nuevo(request);
+    exigirDocumentoLibre(request, null);
     PublicadorDiferido publicador = notificaciones.publicadorDiferido();
     DonanteResponse creado =
         withTransaction(
             () -> {
-              Donante donante = donantes.save(construirDonante(request));
+              Donante donante = donantes.save(nuevo);
               publicador.publicar(new EventoBienvenida(donante));
               return donante(donante);
             });
@@ -91,11 +85,11 @@ public final class DonanteController implements WithSimplePersistenceUnit {
     UUID id = HttpSupport.id(ctx, "id");
     Donante actual = buscar(id);
     DonanteRequest request = DtoValidator.validate(ctx.bodyAsClass(DonanteRequest.class));
-    validar(request, id);
-    if ((actual instanceof PersonaHumana) != (request.tipoPersona() == TipoPersona.HUMANA)) {
+    if (!DonanteMapper.mismoTipo(actual, request)) {
       throw ApiException.conflict("No se puede cambiar el tipo de persona del donante.");
     }
-    aplicarCambios(actual, request);
+    exigirDocumentoLibre(request, id);
+    DonanteMapper.aplicar(actual, request);
     DonanteResponse actualizado = withTransaction(() -> donante(donantes.save(actual)));
     ctx.json(actualizado);
   }
@@ -114,122 +108,9 @@ public final class DonanteController implements WithSimplePersistenceUnit {
     return donantes.findById(id).orElseThrow(() -> ApiException.notFound("Donante", id));
   }
 
-  private Donante construirDonante(DonanteRequest request) {
-    MedioDeContacto email =
-        medios(request).stream()
-            .filter(MedioDeContacto::esCorreo)
-            .findFirst()
-            .orElseThrow(() -> new IllegalArgumentException("Debe incluir un medio EMAIL."));
-    if (request.tipoPersona() == TipoPersona.HUMANA) {
-      PersonaHumana persona =
-          new PersonaHumana(
-              email,
-              request.nombre(),
-              request.apellido(),
-              request.numeroDocumento(),
-              request.tipoDocumento(),
-              request.genero(),
-              request.direccion());
-      actualizarMediosDeContacto(persona, request);
-      return persona;
-    }
-    PersonajeJuridica persona =
-        new PersonajeJuridica(
-            email,
-            request.numeroDocumento(),
-            request.tipoDocumento(),
-            request.razonSocial(),
-            request.tipoOrganizacion(),
-            request.rubro());
-    persona.actualizarDatosJuridicos(
-        request.razonSocial(),
-        request.tipoOrganizacion(),
-        request.rubro(),
-        representantes(request));
-    actualizarMediosDeContacto(persona, request);
-    return persona;
-  }
-
-  private void aplicarCambios(Donante donante, DonanteRequest request) {
-    donante.actualizarIdentificacion(request.numeroDocumento(), request.tipoDocumento());
-    actualizarMediosDeContacto(donante, request);
-    if (donante instanceof PersonaHumana persona) {
-      persona.actualizarDatosPersonales(
-          request.nombre(), request.apellido(), request.genero(), request.direccion());
-    } else {
-      ((PersonajeJuridica) donante)
-          .actualizarDatosJuridicos(
-              request.razonSocial(),
-              request.tipoOrganizacion(),
-              request.rubro(),
-              representantes(request));
-    }
-  }
-
-  private void validar(DonanteRequest request, UUID actual) {
-    boolean existe =
-        donantes.getDonantes().stream()
-            .anyMatch(
-                d ->
-                    !d.getId().equals(actual)
-                        && d.getDocumento() == request.tipoDocumento()
-                        && d.getNumDocumento().equals(request.numeroDocumento()));
-    if (existe) {
+  private void exigirDocumentoLibre(DonanteRequest request, UUID salvo) {
+    if (donantes.documentoEnUso(request.tipoDocumento(), request.numeroDocumento(), salvo)) {
       throw ApiException.conflict("Ya existe un donante con ese documento.");
     }
-    if (request.contactoPredeterminado() != null
-        && (request.contactoPredeterminado() < 0
-            || request.contactoPredeterminado() >= request.mediosDeContacto().size())) {
-      throw new IllegalArgumentException(
-          "contactoPredeterminado debe apuntar a un contacto existente.");
-    }
-    if (request.tipoPersona() == TipoPersona.HUMANA
-        && (request.nombre() == null
-            || request.nombre().isBlank()
-            || request.apellido() == null
-            || request.apellido().isBlank()
-            || request.genero() == null
-            || request.direccion() == null
-            || request.direccion().isBlank())) {
-      throw new IllegalArgumentException(
-          "Una persona humana requiere nombre, apellido, género y dirección.");
-    }
-    if (request.tipoPersona() == TipoPersona.JURIDICA
-        && (request.razonSocial() == null
-            || request.razonSocial().isBlank()
-            || request.tipoOrganizacion() == null
-            || request.rubro() == null
-            || request.rubro().isBlank())) {
-      throw new IllegalArgumentException(
-          "Una persona jurídica requiere razón social, tipo de organización y rubro.");
-    }
-  }
-
-  private void actualizarMediosDeContacto(Donante donante, DonanteRequest request) {
-    donante.reemplazarMediosDeContacto(
-        medios(request),
-        request.contactoPredeterminado() == null ? 0 : request.contactoPredeterminado());
-  }
-
-  private List<MedioDeContacto> medios(DonanteRequest request) {
-    return request.mediosDeContacto().stream().map(this::medio).toList();
-  }
-
-  private MedioDeContacto medio(MedioContactoRequest contacto) {
-    return switch (contacto.tipo().toUpperCase(Locale.ROOT)) {
-      case "EMAIL" -> MedioDeContacto.correo(contacto.contacto());
-      case "WHATSAPP" -> MedioDeContacto.whatsapp(contacto.contacto());
-      case "SMS" -> MedioDeContacto.sms(contacto.contacto());
-      default ->
-          throw new IllegalArgumentException("tipo de contacto inválido: " + contacto.tipo());
-    };
-  }
-
-  private List<Representante> representantes(DonanteRequest request) {
-    return request.representantes() == null
-        ? List.of()
-        : request.representantes().stream()
-            .map(r -> new Representante(r.nombre(), r.apellido()))
-            .toList();
   }
 }

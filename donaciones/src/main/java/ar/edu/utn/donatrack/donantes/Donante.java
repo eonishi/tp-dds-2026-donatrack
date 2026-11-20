@@ -24,8 +24,17 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.OrderColumn;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
+// Un documento identifica a una sola persona donante: lo garantiza la base, no solo los chequeos de
+// las pantallas.
 @Entity
+@Table(
+    uniqueConstraints =
+        @UniqueConstraint(
+            name = "uk_donante_documento",
+            columnNames = {"documento", "numDocumento"}))
 @Inheritance(strategy = InheritanceType.JOINED)
 public abstract class Donante implements Notificable {
   @Id

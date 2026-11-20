@@ -88,11 +88,11 @@ public class BeneficiariosRepository implements WithSimplePersistenceUnit {
    * @param desde cuántas entidades saltear
    * @param cantidad cuántas devolver como máximo
    */
-  public List<EntidadBeneficiaria> buscar(String texto, int desde, int cantidad) {
+  public List<EntidadBeneficiaria> buscarPorTexto(String texto, int desde, int cantidad) {
     var pagina =
         createQuery(
             "select e.id from EntidadBeneficiaria e"
-                + filtro(texto)
+                + condicionDeBusqueda(texto)
                 + " order by e.razonSocial, e.id",
             Long.class);
     Busqueda.patron(texto).ifPresent(p -> pagina.setParameter("patron", p));
@@ -109,16 +109,17 @@ public class BeneficiariosRepository implements WithSimplePersistenceUnit {
   }
 
   /**
-   * @return cuántas entidades cumplen el mismo filtro que {@link #buscar}
+   * @return cuántas entidades cumplen el mismo filtro que {@link #buscarPorTexto}
    */
-  public long contar(String texto) {
+  public long contarPorTexto(String texto) {
     var consulta =
-        createQuery("select count(e) from EntidadBeneficiaria e" + filtro(texto), Long.class);
+        createQuery(
+            "select count(e) from EntidadBeneficiaria e" + condicionDeBusqueda(texto), Long.class);
     Busqueda.patron(texto).ifPresent(p -> consulta.setParameter("patron", p));
     return consulta.getSingleResult();
   }
 
-  private static String filtro(String texto) {
+  private static String condicionDeBusqueda(String texto) {
     if (Busqueda.patron(texto).isEmpty()) {
       return "";
     }
