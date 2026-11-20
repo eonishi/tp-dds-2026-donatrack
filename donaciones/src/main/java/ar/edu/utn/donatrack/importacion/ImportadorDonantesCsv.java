@@ -67,7 +67,7 @@ public class ImportadorDonantesCsv {
   // El teléfono es opcional: muchas filas reales no lo traen.
   private static void agregarTelefono(Donante donante, String telefono) {
     if (telefono != null && !telefono.isBlank()) {
-      donante.addMedioDeContacto(MedioDeContacto.sms(telefono.trim()));
+      donante.addMedioDeContacto(MedioDeContacto.sms(telefono));
     }
   }
 }

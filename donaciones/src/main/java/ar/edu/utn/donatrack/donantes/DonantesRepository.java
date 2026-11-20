@@ -4,9 +4,11 @@ import ar.edu.utn.donatrack.web.Busqueda;
 import io.github.flbulgarelli.jpa.extras.simple.WithSimplePersistenceUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import org.hibernate.exception.ConstraintViolationException;
 
 /**
  * Repositorio de donantes respaldado por JPA: toda lectura consulta la base y toda escritura
@@ -112,6 +114,25 @@ public class DonantesRepository implements WithSimplePersistenceUnit {
   }
 
   /**
+   * Si el error es la base rechazando un documento repetido. Pasa cuando dos altas con el mismo
+   * documento pasan juntas el chequeo previo ({@link #documentoEnUso}): la segunda choca contra la
+   * restricción al confirmar la transacción.
+   */
+  public static boolean esDocumentoRepetido(Throwable error) {
+    for (Throwable causa = error; causa != null; causa = causa.getCause()) {
+      if (causa instanceof ConstraintViolationException violacion
+          && violacion.getConstraintName() != null
+          && violacion
+              .getConstraintName()
+              .toLowerCase(Locale.ROOT)
+              .contains(Donante.DOCUMENTO_UNICO)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Busca un donante por su identidad.
    *
    * @param id identidad del donante
@@ -138,17 +159,25 @@ public class DonantesRepository implements WithSimplePersistenceUnit {
   }
 
   /**
-   * @return si ya hay un donante con ese tipo y número de documento
+   * Si el documento ya es de otra persona donante. Al editar se pasa el id de quien se edita, así
+   * su propio documento no cuenta como ocupado; en un alta va {@code null}. El número se compara
+   * como lo guarda el dominio, así "30-71234567-9" encuentra a "30712345679".
+   *
+   * @throws IllegalArgumentException si el número no tiene la forma de su tipo de documento
    */
-  public boolean existeDocumento(TipoDocumento tipo, String numero) {
-    return !createQuery(
+  public boolean documentoEnUso(TipoDocumento tipo, String numero, UUID salvo) {
+    if (tipo == null) {
+      // Sin tipo no hay documento que comparar: el alta lo rechaza por su lado.
+      return false;
+    }
+    return createQuery(
             "select d.id from Donante d where d.documento = :tipo and d.numDocumento = :numero",
             UUID.class)
         .setParameter("tipo", tipo)
-        .setParameter("numero", numero)
-        .setMaxResults(1)
+        .setParameter("numero", tipo.normalizar(numero))
         .getResultList()
-        .isEmpty();
+        .stream()
+        .anyMatch(id -> !id.equals(salvo));
   }
 
   /**
@@ -174,25 +203,28 @@ public class DonantesRepository implements WithSimplePersistenceUnit {
    * @param desde cuántos donantes saltear
    * @param cantidad cuántos devolver como máximo
    */
-  public List<Donante> buscar(String texto, int desde, int cantidad) {
+  public List<Donante> buscarPorTexto(String texto, int desde, int cantidad) {
     var consulta =
         createQuery(
-            "select d from Donante d" + filtro(texto) + " order by d.numDocumento, d.id",
+            "select d from Donante d"
+                + condicionDeBusqueda(texto)
+                + " order by d.numDocumento, d.id",
             Donante.class);
     Busqueda.patron(texto).ifPresent(p -> consulta.setParameter("patron", p));
     return consulta.setFirstResult(desde).setMaxResults(cantidad).getResultList();
   }
 
   /**
-   * @return cuántos donantes cumplen el mismo filtro que {@link #buscar}
+   * @return cuántos donantes cumplen el mismo filtro que {@link #buscarPorTexto}
    */
-  public long contar(String texto) {
-    var consulta = createQuery("select count(d) from Donante d" + filtro(texto), Long.class);
+  public long contarPorTexto(String texto) {
+    var consulta =
+        createQuery("select count(d) from Donante d" + condicionDeBusqueda(texto), Long.class);
     Busqueda.patron(texto).ifPresent(p -> consulta.setParameter("patron", p));
     return consulta.getSingleResult();
   }
 
-  private static String filtro(String texto) {
+  private static String condicionDeBusqueda(String texto) {
     if (Busqueda.patron(texto).isEmpty()) {
       return "";
     }

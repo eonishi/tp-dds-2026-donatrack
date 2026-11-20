@@ -1,5 +1,7 @@
 package ar.edu.utn.donatrack.api.error;
 
+import ar.edu.utn.donatrack.donantes.DocumentoEnUso;
+import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import ar.edu.utn.donatrack.web.controller.PaginasDeError;
 import io.javalin.Javalin;
 import io.javalin.http.BadRequestResponse;
@@ -7,6 +9,7 @@ import io.javalin.http.Context;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import javax.persistence.PersistenceException;
 
 public final class ApiExceptionHandler {
   private ApiExceptionHandler() {}
@@ -26,17 +29,23 @@ public final class ApiExceptionHandler {
         (exception, ctx) ->
             write(ctx, clock, new ApiException(400, "INVALID_ARGUMENT", exception.getMessage())));
     app.exception(
+        DocumentoEnUso.class,
+        (exception, ctx) -> write(ctx, clock, ApiException.conflict(exception.getMessage())));
+    app.exception(
         IllegalStateException.class,
         (exception, ctx) ->
             write(ctx, clock, new ApiException(409, "INVALID_STATE", exception.getMessage())));
+    // Dos altas con el mismo documento a la vez: la base frena la segunda al confirmar.
     app.exception(
-        Exception.class,
+        PersistenceException.class,
         (exception, ctx) ->
             write(
                 ctx,
                 clock,
-                new ApiException(
-                    500, "INTERNAL_ERROR", "Ocurrió un error interno al procesar la solicitud.")));
+                DonantesRepository.esDocumentoRepetido(exception)
+                    ? ApiException.conflict(DocumentoEnUso.MENSAJE)
+                    : errorInterno()));
+    app.exception(Exception.class, (exception, ctx) -> write(ctx, clock, errorInterno()));
     app.error(
         404,
         ctx -> {
@@ -57,6 +66,11 @@ public final class ApiExceptionHandler {
                 new ApiException(405, "METHOD_NOT_ALLOWED", "El método HTTP no está permitido."));
           }
         });
+  }
+
+  private static ApiException errorInterno() {
+    return new ApiException(
+        500, "INTERNAL_ERROR", "Ocurrió un error interno al procesar la solicitud.");
   }
 
   private static void write(Context ctx, Clock clock, ApiException exception) {

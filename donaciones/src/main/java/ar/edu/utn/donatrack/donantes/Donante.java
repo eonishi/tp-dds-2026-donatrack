@@ -24,10 +24,22 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.OrderColumn;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
+// Un documento identifica a una sola persona donante: lo garantiza la base, no solo los chequeos de
+// las pantallas.
 @Entity
+@Table(
+    uniqueConstraints =
+        @UniqueConstraint(
+            name = Donante.DOCUMENTO_UNICO,
+            columnNames = {"documento", "numDocumento"}))
 @Inheritance(strategy = InheritanceType.JOINED)
 public abstract class Donante implements Notificable {
+  /** Nombre de la restricción de la base que impide repetir tipo y número de documento. */
+  static final String DOCUMENTO_UNICO = "uk_donante_documento";
+
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
   private UUID id;
@@ -55,9 +67,15 @@ public abstract class Donante implements Notificable {
 
   protected Donante() {}
 
+  /**
+   * @throws IllegalArgumentException si falta el tipo de documento o el número no tiene su forma
+   */
   public Donante(MedioDeContacto medioDeContacto, String numDocumento, TipoDocumento documento) {
     Objects.requireNonNull(medioDeContacto);
-    this.numDocumento = numDocumento;
+    if (documento == null) {
+      throw new IllegalArgumentException("Falta el tipo de documento.");
+    }
+    this.numDocumento = documento.normalizar(numDocumento);
     this.documento = documento;
     this.mediosDeContacto.add(medioDeContacto);
     this.contactoPredeterminado = medioDeContacto;
@@ -108,6 +126,18 @@ public abstract class Donante implements Notificable {
     return documento;
   }
 
+  /**
+   * Si el número es el documento de esta persona, escrito como sea: "30-71234567-9" y "30712345679"
+   * son el mismo CUIT. Un número que ni siquiera tiene la forma del tipo no coincide.
+   */
+  public boolean tieneDocumento(String numero) {
+    try {
+      return numDocumento.equals(documento.normalizar(numero));
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
+  }
+
   public Optional<String> extraerEmail() {
     return mediosDeContacto.stream()
         .filter(MedioDeContacto::esCorreo)
@@ -115,16 +145,37 @@ public abstract class Donante implements Notificable {
         .findFirst();
   }
 
-  public void actualizarIdentificacion(String numDocumento, TipoDocumento documento) {
-    this.numDocumento = numDocumento;
-    this.documento = documento;
+  /**
+   * Toma todos los datos de otra persona donante del mismo tipo, que ya pasó por sus propias
+   * validaciones. Conserva el id: así se edita sin dejar a medias a quien ya está guardado.
+   *
+   * @throws IllegalArgumentException si los datos son de otro tipo de persona
+   */
+  public void actualizarCon(Donante datos) {
+    if (!getClass().equals(datos.getClass())) {
+      throw new IllegalArgumentException("No se puede cambiar el tipo de persona.");
+    }
+    this.numDocumento = datos.numDocumento;
+    this.documento = datos.documento;
+    this.mediosDeContacto = new ArrayList<>(datos.mediosDeContacto);
+    this.contactoPredeterminado = datos.contactoPredeterminado;
+    copiarDatosPropios(datos);
   }
 
+  /** Lo propio de cada tipo de persona; {@link #actualizarCon} ya comprobó que es del mismo. */
+  protected abstract void copiarDatosPropios(Donante datos);
+
+  /**
+   * @throws IllegalArgumentException si no hay medios, ninguno es correo o el predeterminado no es
+   *     uno de ellos
+   */
   public void reemplazarMediosDeContacto(
       List<MedioDeContacto> nuevosMedios, int indicePredeterminado) {
     if (nuevosMedios == null || nuevosMedios.isEmpty()) {
       throw new IllegalArgumentException("Debe informar al menos un medio de contacto.");
     }
+    MedioDeContacto.exigirCorreo(
+        nuevosMedios.stream().filter(MedioDeContacto::esCorreo).findFirst().orElse(null));
     if (indicePredeterminado < 0 || indicePredeterminado >= nuevosMedios.size()) {
       throw new IllegalArgumentException("El contacto predeterminado no existe.");
     }

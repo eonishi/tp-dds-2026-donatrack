@@ -137,7 +137,7 @@ class VistasAdminHttpTest {
     escenario.crearDonante("Ya Registrada", "20000001", "ya@example.org");
     String csv =
         "TipoPersona,TipoDoc,Documento,Nombre/Razón Social,Email,Teléfono\n"
-            + "HUMANA,DNI,30111222,Ana Gómez,ana@example.org,1155550000\n"
+            + "HUMANA,DNI,30111222,Ana Gómez,ana@example.org,+54 11 5555-0000\n"
             + "HUMANA,DNI,20000001,Ya Registrada,ya@example.org,\n"
             + "MARCIANA,DNI,1,Nadie,nadie@example.org,\n";
 
@@ -194,6 +194,31 @@ class VistasAdminHttpTest {
                 "confirmacion", "otra-clave1"),
             "");
     assertEquals(400, deNuevo.statusCode(), "una cuenta activa no se puede volver a activar");
+  }
+
+  @Test
+  void unCuitImportadoConGuionesSeActivaEscribiendoloSinGuiones() throws Exception {
+    String csv =
+        "TipoPersona,TipoDoc,Documento,Nombre/Razón Social,Email,Teléfono\n"
+            + "JURIDICA,CUIT,30-52235350-3,Santa Fe Industrial,santafe@example.org,\n";
+    escenario.subir(
+        "/admin/importar",
+        List.of(
+            new Archivo(
+                "archivo", "donantes.csv", "text/csv", csv.getBytes(StandardCharsets.UTF_8))),
+        admin);
+    esperarImportacion();
+
+    HttpResponse<String> activacion =
+        escenario.formulario(
+            "/activar",
+            Map.of(
+                "email", "santafe@example.org",
+                "documento", "30522353503",
+                "password", "nueva-clave",
+                "confirmacion", "nueva-clave"),
+            "");
+    assertEquals(302, activacion.statusCode());
   }
 
   @Test

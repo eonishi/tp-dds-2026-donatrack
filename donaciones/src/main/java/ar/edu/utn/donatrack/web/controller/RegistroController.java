@@ -5,6 +5,7 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 
 import ar.edu.utn.donatrack.beneficiarios.BeneficiariosRepository;
 import ar.edu.utn.donatrack.beneficiarios.EntidadBeneficiaria;
+import ar.edu.utn.donatrack.donantes.DocumentoEnUso;
 import ar.edu.utn.donatrack.donantes.Donante;
 import ar.edu.utn.donatrack.donantes.DonantesRepository;
 import ar.edu.utn.donatrack.donantes.MedioDeContacto;
@@ -79,7 +80,7 @@ public final class RegistroController implements WithSimplePersistenceUnit {
                   notificaciones.publicar(new EventoBienvenida(entidad, enlaceIngreso(ctx))));
       authService.abrirSesion(ctx, usuario);
       ctx.redirect("/dashboard");
-    } catch (DatoInvalido e) {
+    } catch (DatoInvalido | DocumentoEnUso e) {
       ctx.status(400);
       ctx.render("registro", modeloConError(ctx, e.getMessage()));
     }

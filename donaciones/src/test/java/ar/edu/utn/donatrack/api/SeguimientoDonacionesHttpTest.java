@@ -96,6 +96,21 @@ class SeguimientoDonacionesHttpTest implements WithSimplePersistenceUnit {
   }
 
   @Test
+  void unDocumentoRepetidoEsUnConflictoYNoUnErrorInterno() throws Exception {
+    crearDonante("Sofía", "30111222", "sofia@example.org");
+    String repetido =
+        "{\"tipoPersona\":\"HUMANA\",\"numeroDocumento\":\"30.111.222\",\"tipoDocumento\":\"DNI\","
+            + "\"mediosDeContacto\":[{\"tipo\":\"EMAIL\",\"contacto\":\"otra@example.org\"}],"
+            + "\"contactoPredeterminado\":0,\"nombre\":\"Otra\",\"apellido\":\"Pérez\","
+            + "\"genero\":\"FEMENINO\",\"direccion\":\"Calle 123\"}";
+
+    HttpResponse<String> response = request("POST", "/api/v1/donantes", repetido, admin);
+
+    assertEquals(409, response.statusCode(), response.body());
+    assertTrue(response.body().contains("CONFLICT"), response.body());
+  }
+
+  @Test
   void laEntidadSigueElCamionYConfirmaLaRecepcionDeLoQueLeAsignaron() throws Exception {
     UUID donante = crearDonante("Sofía", "30111222", "sofia@example.org");
     long entidad = crearEntidad("Comedor Seguimiento");
