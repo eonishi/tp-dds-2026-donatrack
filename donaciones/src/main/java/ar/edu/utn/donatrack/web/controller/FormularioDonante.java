@@ -46,14 +46,11 @@ final class FormularioDonante {
 
   /**
    * Pasa lo cargado en el formulario a una persona donante que ya existe. No se puede cambiar el
-   * tipo de persona, y el documento nuevo no puede ser de otra persona. Los representantes no están
-   * en el formulario: se conservan los que tenía.
+   * tipo de persona (lo rechaza {@link DonanteMapper#aplicar}), y el documento nuevo no puede ser
+   * de otra persona. Los representantes no están en el formulario: se conservan los que tenía.
    */
   static void aplicar(Donante actual, Context ctx, String correo, DonantesRepository donantes) {
     DonanteRequest request = leer(ctx, correo);
-    if (!DonanteMapper.mismoTipo(actual, request)) {
-      throw new DatoInvalido("No se puede cambiar el tipo de persona.");
-    }
     exigirDocumentoLibre(request, actual, donantes);
     comoDatoInvalido(
         () -> {
